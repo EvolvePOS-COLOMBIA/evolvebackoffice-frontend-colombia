@@ -21,12 +21,7 @@ export function UserDeleteDialog({ userLabel, onDelete }: UserDeleteDialogProps)
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
-      <Button
-        type="button"
-        variant="ghost"
-        size="sm"
-        onClick={() => setOpen(true)}
-      >
+      <Button type="button" variant="destructive" size="sm" onClick={() => setOpen(true)}>
         <Trash2 className="size-4" />
         Delete
       </Button>
@@ -57,4 +52,3 @@ export function UserDeleteDialog({ userLabel, onDelete }: UserDeleteDialogProps)
     </Dialog>
   )
 }
-

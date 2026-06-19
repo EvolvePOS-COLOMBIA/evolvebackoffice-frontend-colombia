@@ -1,25 +1,27 @@
 import type { z } from "zod"
 
 import {
-  defaultVersionChange,
+  createDefaultVersionChange,
+  updateVersionSchema,
   versionChangeSchema,
   versionSchema,
 } from "@/features/versions/schemas/version-schema"
-import type { ReleaseChannel } from "@/types/domain"
+import type { ReleaseType } from "@/types/domain"
 
 export type VersionFormValues = z.infer<typeof versionSchema>
+export type UpdateVersionFormValues = z.infer<typeof updateVersionSchema>
 export type VersionChangeFormValues = z.infer<typeof versionChangeSchema>
 
 export type VersionFilters = {
   softwareId: string
-  releaseChannel: ReleaseChannel | "all"
-  criticality: "all" | "critical" | "standard"
+  releaseType: ReleaseType | "all"
+  mandatory: "all" | "mandatory" | "optional"
 }
 
 export const defaultVersionFilters: VersionFilters = {
   softwareId: "all",
-  releaseChannel: "all",
-  criticality: "all",
+  releaseType: "all",
+  mandatory: "all",
 }
 
-export const emptyVersionChange = { ...defaultVersionChange }
+export const emptyVersionChange = createDefaultVersionChange()

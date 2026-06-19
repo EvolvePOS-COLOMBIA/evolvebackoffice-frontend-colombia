@@ -11,28 +11,33 @@ import { Input } from "@/components/ui/input"
 import { useAuth } from "@/features/auth/hooks/use-auth"
 import { loginSchema } from "@/features/auth/schemas/login-schema"
 import type { LoginFormValues } from "@/features/auth/types/auth-types"
+import Spinner from "@/components/Spinner"
+import { notify } from "@/hooks/use-notify"
+import type { LoginResponse } from "@/types/domain"
 
 export function LoginForm() {
   const navigate = useNavigate()
-  const { login } = useAuth()
+  const { login, isLogging } = useAuth()
 
   const form = useForm<LoginFormValues>({
     resolver: zodResolver(loginSchema),
     defaultValues: {
-      email: "admin@evolve.local",
-      password: "evolve123",
+      email: "admin",
+      password: "KlJiZPzE83g5Eqau",
     },
   })
 
   const onSubmit = (values: LoginFormValues) => {
-    try {
-      login(values.email, values.password)
-      navigate("/versions")
-    } catch (error) {
-      form.setError("root", {
-        message: error instanceof Error ? error.message : "Unable to sign in right now.",
-      })
-    }
+    login(values, {
+      onSuccess: (res: LoginResponse) => {
+        const username = res.user.fullName || res.user.email || "User"
+        notify.success(`Welcome back, ${username}.`)
+        navigate("/dashboard")
+      },
+      onError: (error) => {
+        notify.error(error instanceof Error ? error.message : "Unable to sign in right now.")
+      },
+    })
   }
 
   return (
@@ -40,7 +45,7 @@ export function LoginForm() {
       <section className="flex items-center">
         <Card className="mx-auto w-full max-w-xl bg-card/88">
           <CardHeader className="space-y-2">
-            <Badge tone="neutral" className="w-fit">
+            <Badge tone="primary" className="w-fit">
               Secure access
             </Badge>
             <CardTitle className="text-2xl">Sign in to Version Manager</CardTitle>
@@ -57,9 +62,9 @@ export function LoginForm() {
                   name="email"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Email</FormLabel>
+                      <FormLabel>Username</FormLabel>
                       <FormControl>
-                        <Input placeholder="admin@evolve.local" {...field} />
+                        <Input placeholder="email or username" {...field} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -73,7 +78,7 @@ export function LoginForm() {
                     <FormItem>
                       <FormLabel>Password</FormLabel>
                       <FormControl>
-                        <Input type="password" placeholder="Minimum 6 characters" {...field} />
+                        <Input type="password" placeholder="Minimum 8 characters" {...field} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -91,9 +96,16 @@ export function LoginForm() {
                   <p className="text-sm font-medium text-destructive">{form.formState.errors.root.message}</p>
                 ) : null}
 
-                <Button type="submit" size="lg" className="w-full" disabled={form.formState.isSubmitting}>
-                  Sign In
-                  <ArrowRight className="size-4" />
+                <Button
+                  type="submit"
+                  size="lg"
+                  className="w-full"
+                  disabled={isLogging}
+                  onClick={() => form.handleSubmit(onSubmit)}
+                >
+                  {isLogging && <Spinner IsButton />}
+                  {isLogging ? "Signing in" : "Sign In"}
+                  {!isLogging && <ArrowRight className="size-4" />}
                 </Button>
               </form>
             </Form>

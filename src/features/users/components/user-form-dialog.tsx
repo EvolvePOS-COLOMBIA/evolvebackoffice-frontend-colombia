@@ -1,5 +1,5 @@
 import { zodResolver } from "@hookform/resolvers/zod"
-import { Pencil, Sparkles } from "lucide-react"
+import { Sparkles, SquarePen } from "lucide-react"
 import { useEffect } from "react"
 import { useForm } from "react-hook-form"
 
@@ -16,29 +16,33 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "
 import { Input } from "@/components/ui/input"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Switch } from "@/components/ui/switch"
+import { useCreateUser, useUpdateUser } from "@/features/users/hooks/use-users"
 import { createUserSchema, updateUserSchema } from "@/features/users/schemas/user-schema"
 import type { UserFormValues } from "@/features/users/types/user-types"
-import { useAppStore } from "@/store/app-store"
-import { type UserAccount, USER_ROLES } from "@/types/domain"
+import { notify } from "@/hooks/use-notify"
+import type { CreateUserRequest, UpdateUserRequest, UserResponse, UserRole } from "@/types/domain"
+import Spinner from "@/components/Spinner"
+
+const USER_ROLES: UserRole[] = ["admin", "user", "app"]
 
 type UserFormDialogProps = {
   open: boolean
   onOpenChange: (open: boolean) => void
-  userToEdit?: UserAccount | null
+  userToEdit?: UserResponse | null
 }
 
 const defaultValues: UserFormValues = {
   userName: "",
   email: "",
   fullName: "",
-  role: "user",
+  role: "admin",
   isActive: true,
   password: "",
 }
 
 export function UserFormDialog({ open, onOpenChange, userToEdit }: UserFormDialogProps) {
-  const createUser = useAppStore((state) => state.createUser)
-  const updateUser = useAppStore((state) => state.updateUser)
+  const { mutate: createUser, isPending: isCreating } = useCreateUser()
+  const { mutate: updateUser, isPending: isUpdating } = useUpdateUser()
   const isEditMode = Boolean(userToEdit)
 
   const form = useForm<UserFormValues>({
@@ -67,32 +71,68 @@ export function UserFormDialog({ open, onOpenChange, userToEdit }: UserFormDialo
   }, [form, open, userToEdit])
 
   const onSubmit = (values: UserFormValues) => {
-    try {
-      const { password, ...userValues } = values
-      void password
-      if (userToEdit) {
-        updateUser(userToEdit.id, userValues)
-      } else {
-        createUser(userValues)
+    if (userToEdit) {
+      const passwordValue = values.password?.trim() ?? ""
+      const payload: UpdateUserRequest = {
+        email: values.email,
+        fullName: values.fullName,
+        role: values.role as UserRole,
+        isActive: values.isActive,
+        ...(passwordValue.length > 0 ? { newPassword: passwordValue } : {}),
       }
-      form.reset()
-      onOpenChange(false)
-    } catch (error) {
-      form.setError("root", {
-        message: error instanceof Error ? error.message : "Unable to create the user.",
-      })
+
+      updateUser(
+        { userId: userToEdit.id, data: payload },
+        {
+          onSuccess: () => {
+            notify.success("User updated successfully.")
+            form.reset()
+            onOpenChange(false)
+          },
+          onError: (error) => {
+            notify.error(error instanceof Error ? error.message : "Unable to update the user.")
+            form.setError("root", {
+              message: error instanceof Error ? error.message : "Unable to update the user.",
+            })
+          },
+        }
+      )
+      return
     }
+
+    const createPayload: CreateUserRequest = {
+      userName: values.userName,
+      email: values.email,
+      fullName: values.fullName,
+      role: values.role as UserRole,
+      isActive: values.isActive,
+      password: values.password ?? "",
+    }
+
+    createUser(createPayload, {
+      onSuccess: () => {
+        notify.success("User created successfully.")
+        form.reset()
+        onOpenChange(false)
+      },
+      onError: (error) => {
+        notify.error(error instanceof Error ? error.message : "Unable to create the user.")
+        form.setError("root", {
+          message: error instanceof Error ? error.message : "Unable to create the user.",
+        })
+      },
+    })
   }
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="w-[calc(100%-5rem)] lg:w-[820px]">
+      <DialogContent className="w-[calc(100%-5rem)] lg:w-[850px]">
         <DialogHeader>
-          <DialogTitle>{isEditMode ? "Edit user" : "Create user"}</DialogTitle>
+          <DialogTitle>{isEditMode ? "Edit Selected User" : "Create a new User"}</DialogTitle>
           <DialogDescription>
             {isEditMode
-              ? "Update the selected user. Later this flow will call the backend user endpoints."
-              : "This is a mock-only flow for now. Later this form will call the backend user endpoints."}
+              ? "Username is immutable and cannot not be changed."
+              : "Fill in the form to create a new user account."}
           </DialogDescription>
         </DialogHeader>
 
@@ -106,7 +146,7 @@ export function UserFormDialog({ open, onOpenChange, userToEdit }: UserFormDialo
                   <FormItem>
                     <FormLabel>Username</FormLabel>
                     <FormControl>
-                      <Input placeholder="admin" autoComplete="off" {...field} />
+                      <Input placeholder="admin" autoComplete="off" {...field} readOnly={isEditMode} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -152,7 +192,7 @@ export function UserFormDialog({ open, onOpenChange, userToEdit }: UserFormDialo
                       <Input
                         type="password"
                         autoComplete={isEditMode ? "new-password" : "new-password"}
-                        placeholder={isEditMode ? "Leave empty to keep current password" : "Minimum 6 characters"}
+                        placeholder={isEditMode ? "Leave empty to keep current password" : "Minimum 8 characters"}
                         {...field}
                       />
                     </FormControl>
@@ -196,9 +236,7 @@ export function UserFormDialog({ open, onOpenChange, userToEdit }: UserFormDialo
                     <div className="flex items-center justify-between gap-4">
                       <div>
                         <FormLabel>Active</FormLabel>
-                        <p className="mt-1 text-sm text-muted-foreground">
-                          Inactive users should not be able to log in.
-                        </p>
+                        <p className="text-sm text-muted-foreground">Inactive users should not be able to log in.</p>
                       </div>
                       <FormControl>
                         <Switch checked={field.value} onCheckedChange={field.onChange} />
@@ -217,9 +255,14 @@ export function UserFormDialog({ open, onOpenChange, userToEdit }: UserFormDialo
               <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
                 Cancel
               </Button>
-              <Button type="submit">
-                {isEditMode ? <Pencil className="size-4" /> : <Sparkles className="size-4" />}
-                {isEditMode ? "Update user" : "Save user"}
+              <Button type="submit" disabled={isCreating || isUpdating}>
+                {(isCreating || isUpdating) && <Spinner IsButton />}
+
+                {/* Condición para ocultar el ícono durante la carga */}
+                {!(isCreating || isUpdating) &&
+                  (isEditMode ? <SquarePen className="size-4" /> : <Sparkles className="size-4" />)}
+
+                {isEditMode ? "Update User" : "Save User"}
               </Button>
             </DialogFooter>
           </form>

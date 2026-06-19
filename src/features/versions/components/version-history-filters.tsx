@@ -3,31 +3,31 @@ import { Filter } from "lucide-react"
 import { Badge } from "@/components/ui/badge"
 import { Card, CardContent } from "@/components/ui/card"
 import { Label } from "@/components/ui/label"
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import type { VersionFilters } from "@/features/versions/types/version-types"
-import {
-  RELEASE_CHANNEL_LABELS,
-  RELEASE_CHANNELS,
-  type SoftwareProduct,
-} from "@/types/domain"
+import { ReleaseType } from "@/types/domain"
+
+type SoftwareOption = {
+  id: string
+  name: string
+}
 
 type VersionHistoryFiltersProps = {
   filters: VersionFilters
   onChange: (filters: VersionFilters) => void
-  softwareProducts: SoftwareProduct[]
+  softwareProducts: SoftwareOption[]
 }
 
-export function VersionHistoryFilters({
-  filters,
-  onChange,
-  softwareProducts,
-}: VersionHistoryFiltersProps) {
+export function VersionHistoryFilters({ filters, onChange, softwareProducts }: VersionHistoryFiltersProps) {
+  const releaseTypeOptions: Array<{ value: ReleaseType; label: string }> = [
+    { value: ReleaseType.Development, label: "Development" },
+    { value: ReleaseType.Testing, label: "Testing" },
+    { value: ReleaseType.Staging, label: "Staging" },
+    { value: ReleaseType.Production, label: "Production" },
+    { value: ReleaseType.Preview, label: "Preview" },
+    { value: ReleaseType.Beta, label: "Beta" },
+  ]
+
   return (
     <Card>
       <CardContent className="space-y-4 px-5 py-5">
@@ -38,7 +38,7 @@ export function VersionHistoryFilters({
           <div className="min-w-0 flex-1">
             <p className="text-sm font-semibold text-foreground">Live Filters</p>
             <p className="text-sm text-muted-foreground">
-              Narrow results by product, release channel, and criticality.
+              Narrow results by product, release type, and mandatory status.
             </p>
           </div>
           <Badge tone="neutral" className="w-fit sm:ml-auto">
@@ -73,24 +73,24 @@ export function VersionHistoryFilters({
           </div>
 
           <div className="space-y-2">
-            <Label>Release Channel</Label>
+            <Label>Release Type</Label>
             <Select
-              value={filters.releaseChannel}
-              onValueChange={(releaseChannel) =>
+              value={String(filters.releaseType)}
+              onValueChange={(releaseType) =>
                 onChange({
                   ...filters,
-                  releaseChannel: releaseChannel as VersionFilters["releaseChannel"],
+                  releaseType: releaseType === "all" ? "all" : (Number(releaseType) as ReleaseType),
                 })
               }
             >
               <SelectTrigger>
-                <SelectValue placeholder="All channels" />
+                <SelectValue placeholder="All types" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">All channels</SelectItem>
-                {RELEASE_CHANNELS.map((channel) => (
-                  <SelectItem key={channel} value={channel}>
-                    {RELEASE_CHANNEL_LABELS[channel]}
+                <SelectItem value="all">All types</SelectItem>
+                {releaseTypeOptions.map((option) => (
+                  <SelectItem key={option.value} value={String(option.value)}>
+                    {option.label}
                   </SelectItem>
                 ))}
               </SelectContent>
@@ -98,13 +98,13 @@ export function VersionHistoryFilters({
           </div>
 
           <div className="space-y-2">
-            <Label>Criticality</Label>
+            <Label>Mandatory</Label>
             <Select
-              value={filters.criticality}
-              onValueChange={(criticality) =>
+              value={filters.mandatory}
+              onValueChange={(mandatory) =>
                 onChange({
                   ...filters,
-                  criticality: criticality as VersionFilters["criticality"],
+                  mandatory: mandatory as VersionFilters["mandatory"],
                 })
               }
             >
@@ -113,8 +113,8 @@ export function VersionHistoryFilters({
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">All</SelectItem>
-                <SelectItem value="critical">Critical</SelectItem>
-                <SelectItem value="standard">Standard</SelectItem>
+                <SelectItem value="mandatory">Mandatory</SelectItem>
+                <SelectItem value="optional">Optional</SelectItem>
               </SelectContent>
             </Select>
           </div>

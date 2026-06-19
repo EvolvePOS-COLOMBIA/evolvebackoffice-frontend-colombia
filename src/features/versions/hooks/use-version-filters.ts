@@ -4,25 +4,25 @@ import {
   defaultVersionFilters,
   type VersionFilters,
 } from "@/features/versions/types/version-types"
-import type { ReleaseVersion } from "@/types/domain"
-import { sortVersionsByReleaseDate } from "@/utils/version-utils"
+import type { SoftwareVersionResponse } from "@/types/domain"
+import { sortVersionsByPublishedAt } from "@/utils/version-utils"
 
-export function useVersionFilters(versions: ReleaseVersion[]) {
+export function useVersionFilters(versions: SoftwareVersionResponse[]) {
   const [filters, setFilters] = useState<VersionFilters>(defaultVersionFilters)
 
   const filteredVersions = useMemo(() => {
-    return sortVersionsByReleaseDate(versions).filter((version) => {
+    return sortVersionsByPublishedAt(versions).filter((version) => {
       const matchesSoftware =
-        filters.softwareId === "all" || version.softwareId === filters.softwareId
-      const matchesChannel =
-        filters.releaseChannel === "all" ||
-        version.releaseChannel === filters.releaseChannel
-      const matchesCriticality =
-        filters.criticality === "all" ||
-        (filters.criticality === "critical" && version.isCritical) ||
-        (filters.criticality === "standard" && !version.isCritical)
+        filters.softwareId === "all" ||
+        version.softwareProductId === filters.softwareId
+      const matchesType =
+        filters.releaseType === "all" || version.releaseType === filters.releaseType
+      const matchesMandatory =
+        filters.mandatory === "all" ||
+        (filters.mandatory === "mandatory" && version.isMandatory) ||
+        (filters.mandatory === "optional" && !version.isMandatory)
 
-      return matchesSoftware && matchesChannel && matchesCriticality
+      return matchesSoftware && matchesType && matchesMandatory
     })
   }, [filters, versions])
 

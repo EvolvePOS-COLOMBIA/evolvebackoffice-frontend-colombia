@@ -1,6 +1,8 @@
 import { z } from "zod"
 
-import { USER_ROLES } from "@/types/domain"
+import type { UserRole } from "@/types/domain"
+
+const USER_ROLES = ["admin", "user", "app"] as const satisfies readonly UserRole[]
 
 const baseUserSchema = z.object({
   userName: z
@@ -18,9 +20,16 @@ const baseUserSchema = z.object({
 })
 
 export const createUserSchema = baseUserSchema.extend({
-  password: z.string().min(6, "Password must have at least 6 characters."),
+  password: z
+    .string()
+    .min(8, "Password must be at least 8 characters long")
+    .max(128, "Password is too long")
+    .regex(/[A-Z]/, "Password must contain at least one uppercase letter")
+    .regex(/[a-z]/, "Password must contain at least one lowercase letter")
+    .regex(/[0-9]/, "Password must contain at least one number")
+    .regex(/[^A-Za-z0-9]/, "Password must contain at least one special character"),
 })
 
 export const updateUserSchema = baseUserSchema.extend({
-  password: z.string().min(6, "Password must have at least 6 characters.").optional().or(z.literal("")),
+  password: z.string().optional(),
 })

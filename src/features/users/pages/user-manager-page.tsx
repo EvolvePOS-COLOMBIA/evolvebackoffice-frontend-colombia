@@ -1,32 +1,35 @@
 import { useMemo, useState } from "react"
-import { Pencil, Plus, Users } from "lucide-react"
+import { Plus, SquarePen, Users } from "lucide-react"
 
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { ErrorState } from "@/components/ui/error-state"
 import { Input } from "@/components/ui/input"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
+import { useDeleteUser, useGetUsers } from "@/features/users/hooks/use-users"
 import { UserDeleteDialog } from "@/features/users/components/user-delete-dialog"
 import { UserFormDialog } from "@/features/users/components/user-form-dialog"
-import { useAppStore } from "@/store/app-store"
-import type { UserAccount } from "@/types/domain"
+import { notify } from "@/hooks/use-notify"
+import type { UserResponse } from "@/types/domain"
 import { formatDateTime } from "@/utils/format"
+import { UserManagerSkeleton } from "../components/user-manager-skeleton"
 
 export function UserManagerPage() {
-  const users = useAppStore((state) => state.users)
-  const deleteUser = useAppStore((state) => state.deleteUser)
+  const { data: users, isLoading, isError } = useGetUsers()
+  const { mutate: deleteUser } = useDeleteUser()
   const [isDialogOpen, setIsDialogOpen] = useState(false)
-  const [selectedUser, setSelectedUser] = useState<UserAccount | null>(null)
+  const [selectedUser, setSelectedUser] = useState<UserResponse | null>(null)
   const [query, setQuery] = useState("")
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
 
   const filteredUsers = useMemo(() => {
     const normalizedQuery = query.trim().toLowerCase()
     if (normalizedQuery.length === 0) {
-      return users
+      return users ?? []
     }
 
-    return users.filter((user) => {
+    return (users ?? []).filter((user) => {
       return (
         user.userName.toLowerCase().includes(normalizedQuery) ||
         user.email.toLowerCase().includes(normalizedQuery) ||
@@ -35,8 +38,8 @@ export function UserManagerPage() {
     })
   }, [query, users])
 
-  const totalUsers = users.length
-  const activeUsers = users.filter((user) => user.isActive).length
+  const totalUsers = users?.length ?? 0
+  const activeUsers = (users ?? []).filter((user) => user.isActive).length
 
   const handleCreateClick = () => {
     setSelectedUser(null)
@@ -44,10 +47,24 @@ export function UserManagerPage() {
     setIsDialogOpen(true)
   }
 
-  const handleEditClick = (user: UserAccount) => {
+  const handleEditClick = (user: UserResponse) => {
     setSelectedUser(user)
     setErrorMessage(null)
     setIsDialogOpen(true)
+  }
+
+  if (isLoading) return <UserManagerSkeleton />
+
+  if (isError) {
+    return (
+      <ErrorState
+        title="Unable to load users"
+        description="The user directory could not be retrieved from the API. Please try again in a moment."
+        eyebrow="User error"
+        icon={Users}
+        variant="inline"
+      />
+    )
   }
 
   return (
@@ -68,7 +85,7 @@ export function UserManagerPage() {
 
           <div className="grid grid-cols-2 gap-3">
             <SummaryTile label="Total users" value={totalUsers} />
-            <SummaryTile label="Active" value={activeUsers} />
+            <SummaryTile label="Active Users" value={activeUsers} />
           </div>
         </CardContent>
       </Card>
@@ -133,18 +150,20 @@ export function UserManagerPage() {
                     <TableCell className="text-right">
                       <div className="flex justify-end gap-2">
                         <Button type="button" variant="outline" size="sm" onClick={() => handleEditClick(user)}>
-                          <Pencil className="size-4" />
+                          <SquarePen className="size-4" />
                           Edit
                         </Button>
                         <UserDeleteDialog
                           userLabel={user.userName}
                           onDelete={() => {
-                            try {
-                              setErrorMessage(null)
-                              deleteUser(user.id)
-                            } catch (error) {
-                              setErrorMessage(error instanceof Error ? error.message : "Unable to delete the user.")
-                            }
+                            setErrorMessage(null)
+                            deleteUser(user.id, {
+                              onSuccess: () => notify.success("User deleted successfully."),
+                              onError: (error) => {
+                                notify.error(error instanceof Error ? error.message : "Unable to delete the user.")
+                                setErrorMessage(error instanceof Error ? error.message : "Unable to delete the user.")
+                              },
+                            })
                           }}
                         />
                       </div>
@@ -172,18 +191,20 @@ export function UserManagerPage() {
                     </div>
                     <div className="flex flex-wrap gap-2">
                       <Button type="button" variant="outline" size="sm" onClick={() => handleEditClick(user)}>
-                        <Pencil className="size-4" />
+                        <SquarePen className="size-4" />
                         Edit
                       </Button>
                       <UserDeleteDialog
                         userLabel={user.userName}
                         onDelete={() => {
-                          try {
-                            setErrorMessage(null)
-                            deleteUser(user.id)
-                          } catch (error) {
-                            setErrorMessage(error instanceof Error ? error.message : "Unable to delete the user.")
-                          }
+                          setErrorMessage(null)
+                          deleteUser(user.id, {
+                            onSuccess: () => notify.success("User deleted successfully."),
+                            onError: (error) => {
+                              notify.error(error instanceof Error ? error.message : "Unable to delete the user.")
+                              setErrorMessage(error instanceof Error ? error.message : "Unable to delete the user.")
+                            },
+                          })
                         }}
                       />
                     </div>
@@ -214,9 +235,7 @@ export function UserManagerPage() {
         open={isDialogOpen}
         onOpenChange={(open) => {
           setIsDialogOpen(open)
-          if (!open) {
-            setSelectedUser(null)
-          }
+          if (!open) setSelectedUser(null)
         }}
         userToEdit={selectedUser}
       />

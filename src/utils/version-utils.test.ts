@@ -1,9 +1,10 @@
 import { describe, expect, it } from "vitest"
 
 import {
-  generateSoftwareCode,
-  groupChangesByCategory,
+  buildVersionPackageFileName,
   isValidSemVer,
+  serializeVersionChanges,
+  sortVersionsByPublishedAt,
 } from "@/utils/version-utils"
 
 describe("isValidSemVer", () => {
@@ -19,41 +20,38 @@ describe("isValidSemVer", () => {
   })
 })
 
-describe("generateSoftwareCode", () => {
-  it("builds readable codes from the software name", () => {
-    expect(generateSoftwareCode("Evolve POS BackOffice", [])).toBe(
-      "SW-EVOLVEPOSBACKOFFICE"
-    )
-  })
+describe("sortVersionsByPublishedAt", () => {
+  it("sorts by publishedAtUtc descending", () => {
+    const sorted = sortVersionsByPublishedAt([
+      { id: "1", publishedAtUtc: "2026-06-01T10:00:00.000Z" },
+      { id: "2", publishedAtUtc: "2026-06-11T10:00:00.000Z" },
+      { id: "3", publishedAtUtc: "2026-01-01T00:00:00.000Z" },
+    ])
 
-  it("avoids collisions by adding an incremental suffix", () => {
-    const existing = ["SW-EVOLVEPOSBACKOFFICE", "SW-EVOLVEPOSBACKOFFICE-2"]
-
-    expect(generateSoftwareCode("Evolve POS BackOffice", existing)).toBe(
-      "SW-EVOLVEPOSBACKOFFICE-3"
-    )
+    expect(sorted.map((item) => item.id)).toEqual(["2", "1", "3"])
   })
 })
 
-describe("groupChangesByCategory", () => {
-  it("groups and orders changes according to the enum order", () => {
-    const groups = groupChangesByCategory([
-      {
-        id: "1",
-        versionId: "v1",
-        category: "Bug Fix",
-        description: "Fixes save flow",
-      },
-      {
-        id: "2",
-        versionId: "v1",
-        category: "Feature",
-        description: "Adds sync flow",
-      },
-    ])
+describe("buildVersionPackageFileName", () => {
+  it("builds a zip file name from software name and version", () => {
+    expect(buildVersionPackageFileName("Evolve POS BackOffice", "1.0.0")).toBe("Evolve-POS-BackOffice-1.0.0.zip")
+  })
 
-    expect(groups).toHaveLength(2)
-    expect(groups[0]?.type).toBe("Feature")
-    expect(groups[1]?.type).toBe("Bug Fix")
+  it("falls back to a generic software name when it is missing", () => {
+    expect(buildVersionPackageFileName(null, "2.5.1")).toBe("software-2.5.1.zip")
+  })
+})
+
+describe("serializeVersionChanges", () => {
+  it("serializes changes with trimmed descriptions", () => {
+    expect(
+      serializeVersionChanges([
+        {
+          id: "change-1",
+          type: "Feature",
+          description: "  Added the new reporting module.  ",
+        },
+      ])
+    ).toBe('[{"id":"change-1","type":"Feature","description":"Added the new reporting module."}]')
   })
 })

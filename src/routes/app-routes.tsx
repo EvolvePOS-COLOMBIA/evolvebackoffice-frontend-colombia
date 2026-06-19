@@ -3,22 +3,23 @@ import { BrowserRouter, Navigate, Route, Routes } from "react-router-dom"
 
 import { AppLayout } from "@/components/layout/app-layout"
 import { LoginPage } from "@/features/auth/pages/login-page"
+import { DashboardPage } from "@/features/dashboard/pages/dashboard-page"
 import { SoftwareCatalogPage } from "@/features/softwares/pages/software-catalog-page"
 import { UserManagerPage } from "@/features/users/pages/user-manager-page"
 import { VersionDetailPage } from "@/features/versions/pages/version-detail-page"
 import { VersionFormPage } from "@/features/versions/pages/version-form-page"
 import { VersionsHistoryPage } from "@/features/versions/pages/versions-history-page"
-import { useAppStore } from "@/store/app-store"
 import { ProtectedRoute } from "@/routes/protected-route"
 import { PublicRoute } from "@/routes/public-route"
+import { useAuth } from "@/features/auth/hooks/use-auth"
+import { notify } from "@/hooks/use-notify"
 
 function AppRoutesContent() {
-  const session = useAppStore((state) => state.session)
-  const logout = useAppStore((state) => state.logout)
-  const isAuthenticated = Boolean(session)
+  const { logout, isAuthenticated, session } = useAuth()
 
   useEffect(() => {
-    if (session && new Date(session.expiresAt).getTime() <= Date.now()) {
+    if (session && new Date(session.expiresAtUtc).getTime() <= Date.now()) {
+      notify.info("Your session has expired. Please sign in again.")
       logout()
     }
   }, [logout, session])
@@ -31,7 +32,8 @@ function AppRoutesContent() {
 
       <Route element={<ProtectedRoute />}>
         <Route element={<AppLayout />}>
-          <Route path="/" element={<Navigate to="/versions" replace />} />
+          <Route path="/" element={<Navigate to="/dashboard" replace />} />
+          <Route path="/dashboard" element={<DashboardPage />} />
           <Route path="/softwares" element={<SoftwareCatalogPage />} />
           <Route path="/users" element={<UserManagerPage />} />
           <Route path="/versions" element={<VersionsHistoryPage />} />
@@ -40,10 +42,7 @@ function AppRoutesContent() {
         </Route>
       </Route>
 
-      <Route
-        path="*"
-        element={<Navigate to={isAuthenticated ? "/versions" : "/login"} replace />}
-      />
+      <Route path="*" element={<Navigate to={isAuthenticated ? "/dashboard" : "/login"} replace />} />
     </Routes>
   )
 }

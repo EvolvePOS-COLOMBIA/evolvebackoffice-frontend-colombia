@@ -9,6 +9,9 @@ export const softwareSchema = z.object({
   description: z
     .string()
     .trim()
-    .min(12, "Description must contain at least 12 characters.")
-    .max(1000, "Description must contain at most 1000 characters."),
+    .max(1000, "Description must contain at most 1000 characters.")
+    .optional()
+    .or(z.literal(""))
+    .transform((value) => (value?.trim().length ? value : null)),
+  isActive: z.boolean(),
 })

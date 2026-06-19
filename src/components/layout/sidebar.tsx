@@ -1,20 +1,18 @@
 import { Link, NavLink, useLocation } from "react-router-dom"
-import { Boxes, LayoutTemplate, LogOut, MoonStar, PlusCircle, RotateCcw, SunMedium, Users } from "lucide-react"
+import { BarChart3, BookDown, Boxes, LayoutTemplate, LogOut, Users } from "lucide-react"
 
-import { useTheme } from "@/components/theme-provider"
-import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import { Separator } from "@/components/ui/separator"
-import { appConfig } from "@/config/env"
 import { useAuth } from "@/features/auth/hooks/use-auth"
-import { useAppStore } from "@/store/app-store"
 import { cn } from "@/lib/utils"
+import { useNotify } from "@/hooks/use-notify"
 
 const navigationItems = [
+  { to: "/dashboard", label: "Dashboard", icon: BarChart3 },
   { to: "/versions", label: "Version History", icon: LayoutTemplate },
   { to: "/softwares", label: "Software Catalog", icon: Boxes },
-  { to: "/versions/new", label: "Create Version", icon: PlusCircle },
+  { to: "/versions/new", label: "Create Version", icon: BookDown },
   { to: "/users", label: "User Manager", icon: Users },
 ]
 
@@ -28,18 +26,13 @@ export function Sidebar() {
 
 export function SidebarContent({ isMobile = false, onNavigate }: { isMobile?: boolean; onNavigate?: () => void }) {
   const { session, logout } = useAuth()
-  const resetDemoData = useAppStore((state) => state.resetDemoData)
-  const isMockMode = useAppStore((state) => state.isMockMode)
-  const { theme, setTheme } = useTheme()
 
   const { pathname } = useLocation()
-
-  const resolvedTheme =
-    theme === "system" ? (window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light") : theme
+  const notify = useNotify()
 
   return (
     <div className={cn("flex h-full flex-col px-5 py-5", isMobile && "overflow-y-auto bg-sidebar/95")}>
-      <Link to="/versions" onClick={onNavigate} className="flex items-center gap-3 px-2">
+      <Link to="/dashboard" onClick={onNavigate} className="flex items-center gap-3 px-2">
         <div className="flex size-12 items-center justify-center rounded-2xl border border-primary/20 bg-primary/10 text-primary">
           <LayoutTemplate className="size-5" />
         </div>
@@ -80,47 +73,26 @@ export function SidebarContent({ isMobile = false, onNavigate }: { isMobile?: bo
             <p className="text-[11px] font-semibold tracking-[0.24em] text-muted-foreground uppercase">
               Active Session
             </p>
-            <p className="text-sm font-medium text-foreground">{session?.user.name}</p>
-            <p className="text-sm text-muted-foreground">{session?.user.email}</p>
-          </div>
-          <div className="flex flex-wrap gap-2">
-            {isMockMode ? <Badge tone="warning">Mock API</Badge> : null}
-            <Badge tone="neutral" className="max-w-full truncate">
-              {appConfig.apiBaseUrl}
-            </Badge>
+            <div className="flex items-center gap-2">
+              <ProfileAvatar name={session?.user.fullName ?? session?.user.userName ?? ""} />
+              <div>
+                <p className="text-sm font-medium text-foreground">
+                  {session?.user.fullName ?? session?.user.userName ?? "—"}
+                </p>
+                <p className="text-sm text-muted-foreground">{session?.user.email ?? "—"}</p>
+              </div>
+            </div>
           </div>
         </CardContent>
       </Card>
 
       <div className="mt-4 grid gap-2">
         <Button
-          variant="outline"
-          className="justify-start bg-background/55"
-          onClick={() => {
-            setTheme(resolvedTheme === "dark" ? "light" : "dark")
-            onNavigate?.()
-          }}
-        >
-          {resolvedTheme === "dark" ? <SunMedium className="size-4" /> : <MoonStar className="size-4" />}
-          Toggle Theme
-        </Button>
-        <Button
-          variant="outline"
-          className="justify-start bg-background/55"
-          onClick={() => {
-            resetDemoData()
-            onNavigate?.()
-          }}
-        >
-          <RotateCcw className="size-4" />
-          Reset Demo Data
-        </Button>
-        <Button
           variant="ghost"
           className="justify-start"
           onClick={() => {
             logout()
-            onNavigate?.()
+            notify.info("Session closed.", { icon: <LogOut className="size-4 text-red-400" /> })
           }}
         >
           <LogOut className="size-4" />
@@ -130,3 +102,11 @@ export function SidebarContent({ isMobile = false, onNavigate }: { isMobile?: bo
     </div>
   )
 }
+
+const ProfileAvatar = ({ name, size = 9 }: { name: string; size?: number }) => (
+  <img
+    className={`size-${size} cursor-pointer`}
+    src={`https://ui-avatars.com/api/?name=${name}&rounded=true&bold=true&color=random&background=random`}
+    alt={`${name} Avatar`}
+  ></img>
+)

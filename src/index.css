@@ -7,11 +7,11 @@
 @custom-variant dark (&:is(.dark *));
 
 :root {
-  --background: oklch(0.985 0.002 236.9);
+  --background: oklch(100% 0.00011 271.152);
   --foreground: oklch(0.17 0.01 248.5);
-  --card: oklch(1 0 0);
+  --card: oklch(96.966% 0.00555 212.029 / 0.781);
   --card-foreground: oklch(0.17 0.01 248.5);
-  --popover: oklch(1 0 0);
+  --popover: oklch(95.299% 0.00536 16.139);
   --popover-foreground: oklch(0.17 0.01 248.5);
   --primary: oklch(0.66 0.123 221.32);
   --primary-foreground: oklch(0.14 0.01 248.5);
@@ -140,7 +140,7 @@
     @apply appearance-none;
   }
 
-/* --- ESTILOS GLOBALES PARA SCROLLBARS --- */
+  /* --- ESTILOS GLOBALES PARA SCROLLBARS --- */
   /* Para navegadores basados en Webkit (Chrome, Safari, Edge, Opera) */
   ::-webkit-scrollbar {
     width: 6px;

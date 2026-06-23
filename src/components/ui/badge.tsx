@@ -9,14 +9,14 @@ type BadgeProps = {
 }
 
 const toneClasses: Record<NonNullable<BadgeProps["tone"]>, string> = {
-  neutral: "border-border/70 bg-background/60 text-muted-foreground",
-  primary: "border-cyan-400/30 bg-cyan-500/10 text-cyan-200",
-  success: "border-emerald-400/30 bg-emerald-500/10 text-emerald-200",
-  warning: "border-amber-400/30 bg-amber-500/10 text-amber-200",
-  danger: "border-rose-400/30 bg-rose-500/10 text-rose-200",
-  info: "border-sky-400/30 bg-sky-500/10 text-sky-200",
-  purple: "border-purple-400/30 bg-purple-500/10 text-purple-200",
-  orange: "border-orange-400/30 bg-orange-500/10 text-orange-200",
+  neutral: "border-border/70 bg-background/60 text-muted-foreground ",
+  primary: "border-cyan-400/30 bg-cyan-500/10 dark:text-cyan-200 text-cyan-500",
+  success: "border-emerald-400/30 bg-emerald-500/10 dark:text-emerald-200 text-emerald-500",
+  warning: "border-amber-400/30 bg-amber-500/10 dark:text-amber-200 text-amber-500",
+  danger: "border-rose-400/30 bg-rose-500/10 dark:text-rose-200 text-rose-500",
+  info: "border-sky-400/30 bg-sky-500/10 dark:text-sky-200 text-sky-500",
+  purple: "border-purple-400/30 bg-purple-500/10 dark:text-purple-200 text-purple-500",
+  orange: "border-orange-400/30 bg-orange-500/10 dark:text-orange-200 text-orange-500",
 }
 
 export function Badge({ children, tone = "neutral", className }: BadgeProps) {

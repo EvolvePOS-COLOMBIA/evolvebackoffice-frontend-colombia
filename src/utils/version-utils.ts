@@ -98,26 +98,26 @@ export function getChangeTypeIcon(changeType: ChangeType) {
 export function getIconColorClass(tone: string, isBackground?: boolean): string {
   // Fondos sutiles con opacidad del 10% para mantener la coherencia con el Badge
   const bgColors: Record<string, string> = {
-    neutral: "bg-background/60 border-border/70",
-    primary: "bg-cyan-500/10 border-cyan-400/30",
-    success: "bg-emerald-500/10 border-emerald-400/30",
-    warning: "bg-amber-500/10 border-amber-400/30",
-    danger: "bg-rose-500/10 border-rose-400/30",
-    info: "bg-sky-500/10 border-sky-400/30",
-    purple: "bg-purple-500/10 border-purple-400/30",
-    orange: "bg-orange-500/10 border-orange-400/30",
+    neutral: "dark:bg-background/60 dark:border-border/70 bg-background/80 border-border/80",
+    primary: "dark:bg-cyan-500/10 dark:border-cyan-400/30 bg-cyan-500/10 border-cyan-400/30",
+    success: "dark:bg-emerald-500/10 dark:border-emerald-400/30 bg-emerald-500/10 border-emerald-400/30",
+    warning: "dark:bg-amber-500/10 dark:border-amber-400/30 bg-amber-500/10 border-amber-400/30",
+    danger: "dark:bg-rose-500/10 dark:border-rose-400/30 bg-rose-500/10 border-rose-400/30",
+    info: "dark:bg-sky-500/10 dark:border-sky-400/30 bg-sky-500/10 border-sky-400/30",
+    purple: "dark:bg-purple-500/10 dark:border-purple-400/30 bg-purple-500/10 border-purple-400/30",
+    orange: "dark:bg-orange-500/10 dark:border-orange-400/30 bg-orange-500/10 border-orange-400/30",
   }
 
   // Colores de texto/icono brillantes para contrastar sobre el fondo opaco
   const iconColors: Record<string, string> = {
     neutral: "text-muted-foreground",
-    primary: "text-cyan-200",
-    success: "text-emerald-200",
-    warning: "text-amber-200",
-    danger: "text-rose-200",
-    info: "text-sky-200",
-    purple: "text-purple-200",
-    orange: "text-orange-200",
+    primary: "dark:text-cyan-200 text-cyan-500/50",
+    success: "dark:text-emerald-200 text-emerald-500/50",
+    warning: "dark:text-amber-200 text-amber-500/50",
+    danger: "dark:text-rose-200 text-rose-500/50",
+    info: "dark:text-sky-200 text-sky-500/50",
+    purple: "dark:text-purple-200 text-purple-500/50",
+    orange: "dark:text-orange-200 text-orange-500/50",
   }
 
   if (isBackground) {

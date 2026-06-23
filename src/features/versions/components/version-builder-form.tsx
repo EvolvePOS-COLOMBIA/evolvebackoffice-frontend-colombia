@@ -51,7 +51,7 @@ export function VersionBuilderForm() {
     },
   })
 
-  const { fields, append, remove } = useFieldArray({
+  const { fields, prepend, remove } = useFieldArray({
     control: form.control,
     name: "changes",
     keyName: "fieldKey",
@@ -192,7 +192,10 @@ export function VersionBuilderForm() {
                         value={field.value}
                         onValueChange={(value) => {
                           field.onChange(value)
-                          form.setValue("softwareName", softwareProducts.find((software) => software.id === value)?.name ?? "")
+                          form.setValue(
+                            "softwareName",
+                            softwareProducts.find((software) => software.id === value)?.name ?? ""
+                          )
                         }}
                       >
                         <FormControl>
@@ -422,7 +425,7 @@ export function VersionBuilderForm() {
             </CardContent>
           </Card>
 
-          <Card>
+          <Card className="flex max-h-[860px] flex-1 flex-col">
             <CardHeader className="flex flex-row items-start justify-between gap-4">
               <div className="space-y-3">
                 <Badge tone="warning" className="w-fit">
@@ -430,12 +433,12 @@ export function VersionBuilderForm() {
                 </Badge>
                 <CardTitle className="text-2xl">Dynamic technical change entries</CardTitle>
               </div>
-              <Button type="button" variant="outline" onClick={() => append(createDefaultVersionChange())}>
+              <Button type="button" variant="outline" onClick={() => prepend(createDefaultVersionChange())}>
                 <Plus className="size-4" />
                 Add Change
               </Button>
             </CardHeader>
-            <CardContent className="space-y-4">
+            <CardContent className="min-h-0 flex-1 space-y-4 overflow-y-auto pr-2">
               {fields.map((field, index) => (
                 <Card key={field.fieldKey} className="rounded-[26px] border-border/70 bg-accent/35 shadow-none">
                   <CardContent className="space-y-4 px-4 py-4">

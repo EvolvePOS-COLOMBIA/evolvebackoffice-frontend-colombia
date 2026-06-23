@@ -16,12 +16,13 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Switch } from "@/components/ui/switch"
 import { Textarea } from "@/components/ui/textarea"
 import { useSoftwares } from "@/features/softwares/hooks/use-softwares"
-import { useCreateVersion } from "@/features/versions/hooks/use-versions"
+import { useCreateVersion, useVersions } from "@/features/versions/hooks/use-versions"
 import { CHANGE_TYPES, createDefaultVersionChange, versionSchema } from "@/features/versions/schemas/version-schema"
 import type { VersionFormValues } from "@/features/versions/types/version-types"
 import { notify } from "@/hooks/use-notify"
 import { ReleaseType } from "@/types/domain"
 import { formatBytes } from "@/utils/format"
+import { getNextVersionNumber } from "@/utils/version-utils"
 import Spinner from "@/components/Spinner"
 
 type VersionFormInput = z.input<typeof versionSchema>
@@ -62,7 +63,7 @@ export function VersionBuilderForm() {
 
   const activeSoftwareId = useMemo(() => watchValues.softwareProductId ?? "", [watchValues.softwareProductId])
   const { mutate: createVersion, isPending: isCreating } = useCreateVersion(activeSoftwareId)
-  // const { data: existingVersions } = useVersions(activeSoftwareId)
+  const { data: existingVersions } = useVersions(activeSoftwareId)
 
   const isReady =
     (watchValues.softwareProductId?.length ?? 0) > 0 &&
@@ -84,6 +85,20 @@ export function VersionBuilderForm() {
       ...form.getValues(),
     })
   }, [form, softwareProducts])
+
+  useEffect(() => {
+    if (!activeSoftwareId) {
+      return
+    }
+
+    const nextVersionNumber = getNextVersionNumber((existingVersions ?? []).map((version) => version.versionNumber))
+
+    form.setValue("versionNumber", nextVersionNumber, {
+      shouldDirty: false,
+      shouldTouch: false,
+      shouldValidate: true,
+    })
+  }, [activeSoftwareId, existingVersions, form])
 
   const onSubmit = (values: VersionFormValues) => {
     if (!zipFile) {
@@ -177,10 +192,7 @@ export function VersionBuilderForm() {
                         value={field.value}
                         onValueChange={(value) => {
                           field.onChange(value)
-                          form.setValues({
-                            ...form.getValues(),
-                            softwareName: softwareProducts.find((software) => software.id === value)?.name ?? "",
-                          })
+                          form.setValue("softwareName", softwareProducts.find((software) => software.id === value)?.name ?? "")
                         }}
                       >
                         <FormControl>

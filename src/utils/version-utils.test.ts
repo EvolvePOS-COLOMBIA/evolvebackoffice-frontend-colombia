@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest"
 
 import {
   buildVersionPackageFileName,
+  getNextVersionNumber,
   isValidSemVer,
   serializeVersionChanges,
   sortVersionsByPublishedAt,
@@ -39,6 +40,18 @@ describe("buildVersionPackageFileName", () => {
 
   it("falls back to a generic software name when it is missing", () => {
     expect(buildVersionPackageFileName(null, "2.5.1")).toBe("software-2.5.1.zip")
+  })
+})
+
+describe("getNextVersionNumber", () => {
+  it("returns the default initial version when there are no valid versions", () => {
+    expect(getNextVersionNumber([])).toBe("1.0.0.0")
+    expect(getNextVersionNumber([null, undefined, "invalid"])).toBe("1.0.0.0")
+  })
+
+  it("increments the latest valid four-part semantic version", () => {
+    expect(getNextVersionNumber(["1.0.0.0", "1.0.0.9", "1.0.0.2"])).toBe("1.0.0.10")
+    expect(getNextVersionNumber(["1.2.4.8", "1.10.0.3", "1.9.9.9"])).toBe("1.10.0.4")
   })
 })
 

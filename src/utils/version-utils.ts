@@ -1,6 +1,7 @@
 import { ReleaseType, type ChangeType, type VersionChange } from "@/types/domain"
 import { Sparkles, Bug, TrendingUp, ShieldAlert, AlertTriangle, Trash2, HelpCircle } from "lucide-react"
 const semVerPattern = /^\d+\.\d+\.\d+\.\d+$/
+const DEFAULT_VERSION_NUMBER = "1.0.0.0"
 
 export function isValidSemVer(value: string) {
   return semVerPattern.test(value.trim())
@@ -13,6 +14,32 @@ export function sortVersionsByPublishedAt<T extends { publishedAtUtc: string }>(
 export function buildVersionPackageFileName(softwareName: string | null | undefined, versionNumber: string) {
   const sanitizedSoftwareName = (softwareName ?? "software").trim().replaceAll(/\s+/g, "-")
   return `${sanitizedSoftwareName}-${versionNumber}.zip`
+}
+
+export function getNextVersionNumber(versionNumbers: Array<string | null | undefined>) {
+  const parsedVersions = versionNumbers
+    .filter((value): value is string => Boolean(value && isValidSemVer(value)))
+    .map((value) => value.split(".").map((segment) => Number(segment)))
+
+  if (parsedVersions.length === 0) {
+    return DEFAULT_VERSION_NUMBER
+  }
+
+  const highestVersion = parsedVersions.sort((left, right) => {
+    for (let index = 0; index < 4; index += 1) {
+      const difference = right[index] - left[index]
+      if (difference !== 0) {
+        return difference
+      }
+    }
+
+    return 0
+  })[0]
+
+  const nextVersion = [...highestVersion]
+  nextVersion[3] += 1
+
+  return nextVersion.join(".")
 }
 
 export function serializeVersionChanges(changes: VersionChange[]) {

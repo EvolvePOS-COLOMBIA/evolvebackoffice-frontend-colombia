@@ -85,7 +85,7 @@ export function DashboardPage() {
           <CardHeader className="flex flex-row items-start justify-between gap-4">
             <div className="space-y-1">
               <CardTitle>Recent Releases</CardTitle>
-              <CardDescription>Last published versions across all products.</CardDescription>
+              <CardDescription>Last 4 published versions across all products.</CardDescription>
             </div>
             <Button variant="default" asChild>
               <Link to="/versions">
@@ -96,7 +96,7 @@ export function DashboardPage() {
           </CardHeader>
           <CardContent className="space-y-3">
             {recentReleases.length > 0 ? (
-              recentReleases.map((release) => (
+              recentReleases.slice(0, 4).map((release) => (
                 <Link
                   key={release.versionId}
                   to={`/versions/${release.versionId}`}

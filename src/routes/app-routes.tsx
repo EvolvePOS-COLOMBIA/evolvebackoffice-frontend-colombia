@@ -15,7 +15,7 @@ import { useAuth } from "@/features/auth/hooks/use-auth"
 import { notify } from "@/hooks/use-notify"
 
 function AppRoutesContent() {
-  const { logout, isAuthenticated, session } = useAuth()
+  const { logout, isAuthenticated, session, isUserRole } = useAuth()
 
   useEffect(() => {
     if (session && new Date(session.expiresAtUtc).getTime() <= Date.now()) {
@@ -32,17 +32,23 @@ function AppRoutesContent() {
 
       <Route element={<ProtectedRoute />}>
         <Route element={<AppLayout />}>
-          <Route path="/" element={<Navigate to="/dashboard" replace />} />
-          <Route path="/dashboard" element={<DashboardPage />} />
+          <Route path="/" element={<Navigate to={isUserRole ? "/versions" : "/dashboard"} replace />} />
+          <Route path="/dashboard" element={isUserRole ? <Navigate to="/versions" replace /> : <DashboardPage />} />
           <Route path="/softwares" element={<SoftwareCatalogPage />} />
-          <Route path="/users" element={<UserManagerPage />} />
+          <Route path="/users" element={isUserRole ? <Navigate to="/versions" replace /> : <UserManagerPage />} />
           <Route path="/versions" element={<VersionsHistoryPage />} />
-          <Route path="/versions/new" element={<VersionFormPage />} />
+          <Route
+            path="/versions/new"
+            element={isUserRole ? <Navigate to="/versions" replace /> : <VersionFormPage />}
+          />
           <Route path="/versions/:versionId" element={<VersionDetailPage />} />
         </Route>
       </Route>
 
-      <Route path="*" element={<Navigate to={isAuthenticated ? "/dashboard" : "/login"} replace />} />
+      <Route
+        path="*"
+        element={<Navigate to={isAuthenticated ? (isUserRole ? "/versions" : "/dashboard") : "/login"} replace />}
+      />
     </Routes>
   )
 }

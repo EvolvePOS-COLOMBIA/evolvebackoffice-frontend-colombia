@@ -21,6 +21,7 @@ export function useAuth() {
 
   // Estado derivado en memoria RAM
   const token = session?.accessToken
+  const isUserRole = session?.user.role === "user"
 
   /**
    * Operación de Escritura en Servidor (Mutación)
@@ -65,6 +66,7 @@ export function useAuth() {
   return {
     session,
     isAuthenticated: Boolean(token && session), // Booleano derivado reactivo
+    isUserRole,
     login: handleLogin,
     isLogging: loginMutation.isPending, // Flags semánticos mapeados para legibilidad
     isLoginError: loginMutation.isError,

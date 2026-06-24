@@ -8,6 +8,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { ErrorState } from "@/components/ui/error-state"
 import Spinner from "@/components/Spinner"
 import { VersionEditDialog } from "@/features/versions/components/version-edit-dialog"
+import { useAuth } from "@/features/auth/hooks/use-auth"
 import { useAllVersions, useVersionPackageDownload } from "@/features/versions/hooks/use-versions"
 import { formatBytes, formatDate } from "@/utils/format"
 import {
@@ -23,6 +24,7 @@ import { cn } from "@/lib/utils"
 import type { ChangeType } from "@/types/domain"
 
 export function VersionDetailPage() {
+  const { isUserRole } = useAuth()
   const { versionId } = useParams()
   const { data: releaseVersions, isLoading, isError } = useAllVersions()
   const { handleDownloadVersion, isDownloadingVersion } = useVersionPackageDownload()
@@ -95,10 +97,13 @@ export function VersionDetailPage() {
           </Link>
         </Button>
         <div className="flex gap-3">
-          <Button variant="secondary" onClick={() => setIsEditDialogOpen(true)}>
-            <SquarePen className="size-4" />
-            Edit Version
-          </Button>
+          {!isUserRole && (
+            <Button variant="secondary" onClick={() => setIsEditDialogOpen(true)}>
+              <SquarePen className="size-4" />
+              Edit Version
+            </Button>
+          )}
+
           <Button
             disabled={isDownloadingVersion(version.id)}
             onClick={() =>
@@ -114,12 +119,14 @@ export function VersionDetailPage() {
         </div>
       </div>
 
-      <VersionEditDialog
-        open={isEditDialogOpen}
-        onOpenChange={setIsEditDialogOpen}
-        version={version}
-        availableVersions={availableRequiredVersions}
-      />
+      {!isUserRole && (
+        <VersionEditDialog
+          open={isEditDialogOpen}
+          onOpenChange={setIsEditDialogOpen}
+          version={version}
+          availableVersions={availableRequiredVersions}
+        />
+      )}
 
       <Card>
         <CardContent className="flex flex-col gap-6 p-6 lg:p-8 xl:flex-row xl:items-start xl:justify-between">

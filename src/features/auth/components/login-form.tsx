@@ -32,7 +32,7 @@ export function LoginForm() {
       onSuccess: (res: LoginResponse) => {
         const username = res.user.fullName || res.user.email || "User"
         notify.success(`Welcome back, ${username}.`)
-        navigate("/dashboard")
+        navigate(res.user.role === "user" ? "/versions" : "/dashboard")
       },
       onError: (error) => {
         notify.error(error instanceof Error ? error.message : "Unable to sign in right now.")

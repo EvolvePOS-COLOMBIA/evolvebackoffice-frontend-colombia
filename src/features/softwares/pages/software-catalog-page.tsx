@@ -8,6 +8,7 @@ import { ErrorState } from "@/components/ui/error-state"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { SoftwareFormDialog } from "@/features/softwares/components/software-form-dialog"
 import { useDeleteSoftware, useSoftwares } from "@/features/softwares/hooks/use-softwares"
+import { useAuth } from "@/features/auth/hooks/use-auth"
 import { notify } from "@/hooks/use-notify"
 import { formatDate } from "@/utils/format"
 import { useAllVersions } from "@/features/versions/hooks/use-versions"
@@ -16,6 +17,7 @@ import { SoftwareCatalogSkeleton } from "../components/software-catalog-skeleton
 import type { SoftwareResponse } from "@/types/domain"
 
 export function SoftwareCatalogPage() {
+  const { isUserRole } = useAuth()
   const [isDialogOpen, setIsDialogOpen] = useState(false)
   const [softwareToEdit, setSoftwareToEdit] = useState<SoftwareResponse | null>(null)
 
@@ -76,16 +78,18 @@ export function SoftwareCatalogPage() {
           <p className="text-sm text-muted-foreground">Name, description, and release count.</p>
         </div>
 
-        <Button
-          className="sm:self-start"
-          onClick={() => {
-            setSoftwareToEdit(null)
-            setIsDialogOpen(true)
-          }}
-        >
-          <Plus className="size-4" />
-          Add Software
-        </Button>
+        {!isUserRole && (
+          <Button
+            className="sm:self-start"
+            onClick={() => {
+              setSoftwareToEdit(null)
+              setIsDialogOpen(true)
+            }}
+          >
+            <Plus className="size-4" />
+            Add Software
+          </Button>
+        )}
       </div>
 
       <Card>
@@ -103,7 +107,7 @@ export function SoftwareCatalogPage() {
                   <TableHead>Versions</TableHead>
                   <TableHead>Status</TableHead>
                   <TableHead>Created</TableHead>
-                  <TableHead className="text-right">Actions</TableHead>
+                  {!isUserRole ? <TableHead className="text-right">Actions</TableHead> : null}
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -124,26 +128,30 @@ export function SoftwareCatalogPage() {
                       </Badge>
                     </TableCell>
                     <TableCell className="text-nowrap">{formatDate(software.createdAtUtc)}</TableCell>
-                    <TableCell className="flex justify-end gap-2">
-                      <Button
-                        type="button"
-                        variant="outline"
-                        size="sm"
-                        onClick={() => {
-                          setSoftwareToEdit(software)
-                          setIsDialogOpen(true)
-                        }}
-                      >
-                        <SquarePen className="size-4" />
-                        Edit
-                      </Button>
-                      <AlertDeleteDialog
-                        title="Delete Software"
-                        description="This action cannot be undone. You are about to remove"
-                        selectedLabel={software.name}
-                        onDelete={() => handleDeleteSoftware(software)}
-                      />
-                    </TableCell>
+                    {!isUserRole ? (
+                      <TableCell className="text-right">
+                        <div className="flex justify-end gap-2">
+                          <Button
+                            type="button"
+                            variant="outline"
+                            size="sm"
+                            onClick={() => {
+                              setSoftwareToEdit(software)
+                              setIsDialogOpen(true)
+                            }}
+                          >
+                            <SquarePen className="size-4" />
+                            Edit
+                          </Button>
+                          <AlertDeleteDialog
+                            title="Delete Software"
+                            description="This action cannot be undone. You are about to remove"
+                            selectedLabel={software.name}
+                            onDelete={() => handleDeleteSoftware(software)}
+                          />
+                        </div>
+                      </TableCell>
+                    ) : null}
                   </TableRow>
                 ))}
               </TableBody>
@@ -173,26 +181,28 @@ export function SoftwareCatalogPage() {
 
                   <p className="text-sm leading-7 text-muted-foreground">{software.description ?? "—"}</p>
 
-                  <div className="grid gap-3 border-t border-border/70 pt-4 sm:grid-cols-2">
-                    <Button
-                      type="button"
-                      variant="outline"
-                      size="sm"
-                      onClick={() => {
-                        setSoftwareToEdit(software)
-                        setIsDialogOpen(true)
-                      }}
-                    >
-                      <SquarePen className="size-4" />
-                      Edit
-                    </Button>
-                    <AlertDeleteDialog
-                      title="Delete Software"
-                      description="Are you sure you want to delete this software product? "
-                      selectedLabel={software.name}
-                      onDelete={() => handleDeleteSoftware(software)}
-                    />
-                  </div>
+                  {!isUserRole && (
+                    <div className="grid gap-3 border-t border-border/70 pt-4 sm:grid-cols-2">
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={() => {
+                          setSoftwareToEdit(software)
+                          setIsDialogOpen(true)
+                        }}
+                      >
+                        <SquarePen className="size-4" />
+                        Edit
+                      </Button>
+                      <AlertDeleteDialog
+                        title="Delete Software"
+                        description="Are you sure you want to delete this software product? "
+                        selectedLabel={software.name}
+                        onDelete={() => handleDeleteSoftware(software)}
+                      />
+                    </div>
+                  )}
                 </CardContent>
               </Card>
             ))}
@@ -200,14 +210,16 @@ export function SoftwareCatalogPage() {
         </CardContent>
       </Card>
 
-      <SoftwareFormDialog
-        open={isDialogOpen}
-        onOpenChange={(open) => {
-          setIsDialogOpen(open)
-          if (!open) setSoftwareToEdit(null)
-        }}
-        softwareToEdit={softwareToEdit}
-      />
+      {!isUserRole && (
+        <SoftwareFormDialog
+          open={isDialogOpen}
+          onOpenChange={(open) => {
+            setIsDialogOpen(open)
+            if (!open) setSoftwareToEdit(null)
+          }}
+          softwareToEdit={softwareToEdit}
+        />
+      )}
 
       {softwareCards.length === 0 ? (
         <Card className="p-8 text-center">
@@ -215,7 +227,9 @@ export function SoftwareCatalogPage() {
             <Boxes className="size-6" />
           </div>
           <h2 className="mt-4 text-lg font-semibold text-foreground">No software products yet</h2>
-          <p className="mt-2 text-sm text-muted-foreground">Add your first product to unlock the version builder.</p>
+          <p className="mt-2 text-sm text-muted-foreground">
+            {!isUserRole ? "Add your first product to unlock the version builder." : "No software products available."}
+          </p>
         </Card>
       ) : null}
     </div>

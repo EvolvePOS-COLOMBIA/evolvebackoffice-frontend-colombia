@@ -8,6 +8,7 @@ import { ErrorState } from "@/components/ui/error-state"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { VersionHistoryFilters } from "@/features/versions/components/version-history-filters"
 import { useSoftwares } from "@/features/softwares/hooks/use-softwares"
+import { useAuth } from "@/features/auth/hooks/use-auth"
 import { useAllVersions, useVersionPackageDownload } from "@/features/versions/hooks/use-versions"
 import { ReleaseType } from "@/types/domain"
 import { formatDate, formatDateTime } from "@/utils/format"
@@ -26,6 +27,7 @@ const RELEASE_TYPE_LABELS: Record<ReleaseType, string> = {
 }
 
 export function VersionsHistoryPage() {
+  const { isUserRole } = useAuth()
   const { data: softwareProducts, isLoading: isLoadingSoftwares, isError: isErrorSoftwares } = useSoftwares()
   const { data: releaseVersions, isLoading: isLoadingVersions, isError: isErrorVersions } = useAllVersions()
   const { handleDownloadVersion, isDownloadingVersion } = useVersionPackageDownload()
@@ -85,21 +87,23 @@ export function VersionsHistoryPage() {
             <CardTitle>Release Matrix</CardTitle>
             <CardDescription className="-mt-2">Chronological overview of every product release.</CardDescription>
           </div>
-          <Button variant="default" asChild>
-            <Link to="/versions/new">
-              <Plus className="size-4" />
-              Add Version
-            </Link>
-          </Button>
+          {!isUserRole && (
+            <Button variant="default" asChild>
+              <Link to="/versions/new">
+                <Plus className="size-4" />
+                Add Version
+              </Link>
+            </Button>
+          )}
         </CardHeader>
         <CardContent className="space-y-4">
-          {isLoadingVersions ? (
+          {isLoadingVersions && (
             <Card className="border-border/70 bg-background/45 shadow-none">
               <CardContent className="p-6 text-sm text-muted-foreground">Loading versions...</CardContent>
             </Card>
-          ) : null}
+          )}
 
-          {isErrorVersions ? (
+          {isErrorVersions && (
             <ErrorState
               variant="inline"
               title="Unable to load versions"
@@ -107,14 +111,16 @@ export function VersionsHistoryPage() {
               eyebrow="Timeline error"
               icon={LayoutTemplate}
             />
-          ) : null}
+          )}
 
           {filteredVersions.length === 0 && !isLoadingVersions && !isErrorVersions ? (
             <Card className="flex flex-col items-center justify-center p-7 text-center">
               <Info className="mb-2 size-12 text-muted-foreground" />
               <h2 className="text-lg font-semibold text-foreground">No versions match the current filters</h2>
               <p className="text-sm text-muted-foreground">
-                Try a less restrictive combination or create a new version.
+                {!isUserRole
+                  ? "Try a less restrictive combination or create a new version."
+                  : "Try a less restrictive combination to inspect more releases."}
               </p>
             </Card>
           ) : (

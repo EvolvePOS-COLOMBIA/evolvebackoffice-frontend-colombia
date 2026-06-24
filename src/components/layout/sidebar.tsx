@@ -25,14 +25,14 @@ export function Sidebar() {
 }
 
 export function SidebarContent({ isMobile = false, onNavigate }: { isMobile?: boolean; onNavigate?: () => void }) {
-  const { session, logout } = useAuth()
+  const { session, logout, isUserRole } = useAuth()
 
   const { pathname } = useLocation()
   const notify = useNotify()
 
   return (
     <div className={cn("flex h-full flex-col px-5 py-5", isMobile && "overflow-y-auto bg-sidebar/95")}>
-      <Link to="/dashboard" onClick={onNavigate} className="flex items-center gap-3 px-2">
+      <Link to={isUserRole ? "/versions" : "/dashboard"} onClick={onNavigate} className="flex items-center gap-3 px-2">
         <div className="flex size-12 items-center justify-center rounded-2xl border border-primary/20 bg-primary/10 text-primary">
           <LayoutTemplate className="size-5" />
         </div>
@@ -45,26 +45,36 @@ export function SidebarContent({ isMobile = false, onNavigate }: { isMobile?: bo
       <Separator className="my-5" />
 
       <nav className="flex flex-1 flex-col gap-2">
-        {navigationItems.map((item) => {
-          const Icon = item.icon
+        {navigationItems
+          .filter((item) => {
+            // Rutas protegidas que los usuarios con 'isUserRole' NO deben ver
+            const restrictedRoutes = ["/users", "/dashboard", "/versions/new"]
 
-          return (
-            <NavLink
-              key={item.to}
-              to={item.to}
-              onClick={onNavigate}
-              className={cn(
-                "flex items-center gap-3 rounded-2xl border px-4 py-3 text-sm font-medium transition-colors",
-                pathname === item.to
-                  ? "border-primary/20 bg-primary/10 text-sidebar-foreground"
-                  : "border-transparent text-muted-foreground hover:border-border/70 hover:bg-accent/70 hover:text-foreground"
-              )}
-            >
-              <Icon className="size-4" />
-              {item.label}
-            </NavLink>
-          )
-        })}
+            if (restrictedRoutes.includes(item.to)) {
+              return !isUserRole
+            }
+            return true
+          })
+          .map((item) => {
+            const Icon = item.icon
+            const isActive = pathname === item.to
+            return (
+              <NavLink
+                key={item.to}
+                to={item.to}
+                onClick={onNavigate}
+                className={cn(
+                  "flex items-center gap-3 rounded-2xl border px-4 py-3 text-sm font-medium transition-colors",
+                  isActive
+                    ? "border-primary/20 bg-primary/10 text-sidebar-foreground"
+                    : "border-transparent text-muted-foreground hover:border-border/70 hover:bg-accent/70 hover:text-foreground"
+                )}
+              >
+                <Icon className="size-4" />
+                {item.label}
+              </NavLink>
+            )
+          })}
       </nav>
 
       <Card className="mt-5 rounded-[26px] bg-background/55">

@@ -4,10 +4,11 @@ import { queryClient } from "@/config/react-query"
 import { createUser, deleteUser, updateUser, getUsers } from "@/features/auth/services/auth.service"
 import type { CreateUserRequest, UpdateUserRequest } from "@/types/domain"
 
-export function useGetUsers() {
+export function useGetUsers(enabled = true) {
   return useQuery({
     queryKey: ["users"],
     queryFn: getUsers,
+    enabled,
   })
 }
 

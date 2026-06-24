@@ -6,6 +6,7 @@ import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet"
+import { useAuth } from "@/features/auth/hooks/use-auth"
 import { useGetUsers } from "@/features/users/hooks/use-users"
 import { useSoftwares } from "@/features/softwares/hooks/use-softwares"
 import { useAllVersions } from "@/features/versions/hooks/use-versions"
@@ -13,8 +14,9 @@ import { useAppStore } from "@/store/app-store"
 import { useLocation } from "react-router-dom"
 
 export function Navbar() {
+  const { isUserRole } = useAuth()
   const { data: softwareProducts } = useSoftwares()
-  const { data: users } = useGetUsers()
+  const { data: users } = useGetUsers(!isUserRole)
   const { data: releaseVersions } = useAllVersions()
 
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
@@ -55,7 +57,7 @@ export function Navbar() {
         <div className="flex flex-wrap items-center gap-2 overflow-x-auto pb-1 sm:pb-0">
           <Badge tone="neutral">{softwareProducts?.length ?? 0} products</Badge>
           <Badge tone="neutral">{releaseVersions?.length ?? 0} versions</Badge>
-          <Badge tone="neutral">{users?.length ?? 0} users</Badge>
+          {!isUserRole && <Badge tone="neutral">{users?.length ?? 0} users</Badge>}
           <Button
             variant="outline"
             className="justify-start bg-background/55"

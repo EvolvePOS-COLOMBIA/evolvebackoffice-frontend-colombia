@@ -1,8 +1,9 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query"
-import { useAppStore } from "@/store/app-store"
-import { login, type LoginRequest } from "@/features/auth/services/auth.service"
 import { useNavigate } from "react-router-dom"
-import type { LoginResponse } from "@/types/domain"
+
+import { loginBusinessAdmin, loginPlatformAdmin } from "@/features/auth/services/auth.service"
+import type { AppRole, AppSession, BusinessLoginFormValues, PlatformLoginFormValues } from "@/features/auth/types"
+import { useAppStore } from "@/store/app-store"
 
 /**
  * Custom Hook: useAuth
@@ -10,41 +11,42 @@ import type { LoginResponse } from "@/types/domain"
  * Aísla la UI de los detalles de implementación de Zustand, React Query y el Router.
  */
 export function useAuth() {
-  // 1. Instanciación de Hooks de Infraestructura
   const queryClient = useQueryClient()
   const navigate = useNavigate()
 
-  // 2. Selectores Atómicos de Zustand (Evitan re-renders innecesarios en la UI)
   const session = useAppStore((state) => state.session)
+  const activeTenant = useAppStore((state) => state.activeTenant)
+  const platformClients = useAppStore((state) => state.platformClients)
+  const setActiveTenant = useAppStore((state) => state.setActiveTenant)
   const setSession = useAppStore((state) => state.setSession)
   const storeLogout = useAppStore((state) => state.logout)
 
-  // Estado derivado en memoria RAM
   const token = session?.accessToken
-  const isUserRole = session?.user.role === "user"
+  const role = session?.user.role
+  const isPlatformAdmin = role === "PlatformAdmin"
+  const isBusinessAdmin = role === "BusinessAdmin"
+  const availableTenants = platformClients.filter((client) => session?.managedTenantIds.includes(client.id))
+  const currentTenant = availableTenants.find((client) => client.id === activeTenant) ?? availableTenants[0] ?? null
 
-  /**
-   * Operación de Escritura en Servidor (Mutación)
-   * Gestiona el flujo asíncrono y side-effects del inicio de sesión.
-   */
-  const loginMutation = useMutation({
-    mutationFn: (payload: LoginRequest) => login(payload),
+  const platformLoginMutation = useMutation({
+    mutationFn: (payload: PlatformLoginFormValues) => loginPlatformAdmin(payload),
   })
 
-  // 3. Tipos de Opciones de Inicio de Sesión
-  // Define las funciones de callback para el éxito y el error de inicio de sesión.
   interface LoginOptions {
-    onSuccess?: (sessionData: LoginResponse) => void
+    onSuccess?: (sessionData: AppSession) => void
     onError?: (error: unknown) => void
   }
 
-  const handleLogin = (payload: LoginRequest, options?: LoginOptions) => {
-    loginMutation.mutate(payload, {
+  const businessLoginMutation = useMutation({
+    mutationFn: (payload: BusinessLoginFormValues) => loginBusinessAdmin(payload, platformClients),
+  })
+
+  const handlePlatformLogin = (payload: PlatformLoginFormValues, options?: LoginOptions) => {
+    platformLoginMutation.mutate(payload, {
       onSuccess: (sessionData) => {
-        options?.onSuccess?.(sessionData)
-        // Persist the session after the caller-specific side effects run.
         setSession(sessionData)
         queryClient.setQueryData(["authSession"], sessionData)
+        options?.onSuccess?.(sessionData)
       },
       onError: (error) => {
         options?.onError?.(error)
@@ -52,24 +54,54 @@ export function useAuth() {
     })
   }
 
-  /**
-   * Orquestador de Cierre de Sesión
-   * Garantiza la limpieza absoluta del entorno de ejecución (Seguridad multi-usuario).
-   */
-  const logout = () => {
-    storeLogout() // Evacúa el estado del cliente y LocalStorage
-    queryClient.clear() // Destruye la caché de React Query para evitar fugas de información
-    navigate("/login") // Despacha la redirección de inicio de sesión
+  const handleBusinessLogin = (payload: BusinessLoginFormValues, options?: LoginOptions) => {
+    businessLoginMutation.mutate(payload, {
+      onSuccess: (sessionData) => {
+        setSession(sessionData)
+        queryClient.setQueryData(["authSession"], sessionData)
+        options?.onSuccess?.(sessionData)
+      },
+      onError: (error) => {
+        options?.onError?.(error)
+      },
+    })
   }
 
-  //  expuesto a los componentes de la UI
+  const logout = () => {
+    storeLogout()
+    queryClient.clear()
+    navigate("/login")
+  }
+
+  const defaultRoute = getDefaultRoute(role)
+
   return {
     session,
-    isAuthenticated: Boolean(token && session), // Booleano derivado reactivo
-    isUserRole,
-    login: handleLogin,
-    isLogging: loginMutation.isPending, // Flags semánticos mapeados para legibilidad
-    isLoginError: loginMutation.isError,
+    activeTenant,
+    currentTenant,
+    availableTenants,
+    isAuthenticated: Boolean(token && session),
+    isPlatformAdmin,
+    isBusinessAdmin,
+    defaultRoute,
+    hasRole: (allowedRoles: AppRole[]) => (role ? allowedRoles.includes(role) : false),
+    loginPlatform: handlePlatformLogin,
+    loginBusiness: handleBusinessLogin,
+    setActiveTenant,
+    isLogging: platformLoginMutation.isPending || businessLoginMutation.isPending,
+    isLoginError: platformLoginMutation.isError || businessLoginMutation.isError,
     logout,
   }
+}
+
+function getDefaultRoute(role?: AppRole) {
+  if (role === "PlatformAdmin") {
+    return "/platform/dashboard"
+  }
+
+  if (role === "BusinessAdmin") {
+    return "/business/dashboard"
+  }
+
+  return "/login"
 }

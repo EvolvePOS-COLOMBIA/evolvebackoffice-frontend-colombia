@@ -8,8 +8,17 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { ErrorState } from "@/components/ui/error-state"
 import { DashboardSkeleton } from "@/features/dashboard/components/dashboard-skeleton"
 import { useDashboardSummary } from "@/features/dashboard/hooks/use-dashboard"
+import { ReleaseType } from "@/types/domain"
 import { formatDateTime } from "@/utils/format"
-import { RELEASE_TYPE_LABELS } from "@/utils/version-utils"
+
+const RELEASE_TYPE_LABELS: Record<ReleaseType, string> = {
+  [ReleaseType.Development]: "Development",
+  [ReleaseType.Testing]: "Testing",
+  [ReleaseType.Staging]: "Staging",
+  [ReleaseType.Production]: "Production",
+  [ReleaseType.Preview]: "Preview",
+  [ReleaseType.Beta]: "Beta",
+}
 
 function formatCount(value: number) {
   return new Intl.NumberFormat("en-US").format(value)

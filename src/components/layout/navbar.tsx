@@ -1,28 +1,21 @@
 import { Menu, MoonStar, SunMedium } from "lucide-react"
 import { useState } from "react"
+import { useLocation } from "react-router-dom"
 
 import { SidebarContent } from "@/components/layout/sidebar"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet"
 import { useAuth } from "@/features/auth/hooks/use-auth"
-import { useGetUsers } from "@/features/users/hooks/use-users"
-import { useSoftwares } from "@/features/softwares/hooks/use-softwares"
-import { useAllVersions } from "@/features/versions/hooks/use-versions"
 import { useAppStore } from "@/store/app-store"
-import { useLocation } from "react-router-dom"
 
 export function Navbar() {
-  const { isUserRole } = useAuth()
-  const { data: softwareProducts } = useSoftwares()
-  const { data: users } = useGetUsers(!isUserRole)
-  const { data: releaseVersions } = useAllVersions()
-
+  const { availableTenants, currentTenant, isBusinessAdmin, isPlatformAdmin, setActiveTenant } = useAuth()
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
-
   const location = useLocation()
-
+  const clients = useAppStore((state) => state.platformClients)
   const theme = useAppStore((state) => state.theme)
   const setTheme = useAppStore((state) => state.setTheme)
 
@@ -42,22 +35,45 @@ export function Navbar() {
             <SheetContent side="left" className="p-0 lg:hidden">
               <SheetHeader className="sr-only">
                 <SheetTitle>Navigation</SheetTitle>
-                <SheetDescription>Access the main sections of Version Manager.</SheetDescription>
+                <SheetDescription>Access the main sections of POS Manager.</SheetDescription>
               </SheetHeader>
               <SidebarContent isMobile onNavigate={() => setIsMobileMenuOpen(false)} />
             </SheetContent>
           </Sheet>
 
           <div className="min-w-0 space-y-1">
-            <p className="text-[11px] font-semibold tracking-[0.3em] text-primary/80 uppercase">Evolve Versions</p>
+            <p className="text-[11px] font-semibold tracking-[0.3em] text-primary/80 uppercase">POS Manager</p>
             <h2 className="mt-1 text-xl font-semibold text-foreground">{getPageTitle(location.pathname)}</h2>
           </div>
         </div>
 
         <div className="flex flex-wrap items-center gap-2 overflow-x-auto pb-1 sm:pb-0">
-          <Badge tone="neutral">{softwareProducts?.length ?? 0} products</Badge>
-          <Badge tone="neutral">{releaseVersions?.length ?? 0} versions</Badge>
-          {!isUserRole && <Badge tone="neutral">{users?.length ?? 0} users</Badge>}
+          {isPlatformAdmin ? (
+            <>
+              <Badge tone="neutral">{clients.length} clients</Badge>
+              <Badge tone="neutral">{clients.filter((client) => client.status === "active").length} active</Badge>
+            </>
+          ) : null}
+          {isBusinessAdmin ? (
+            <>
+              <Badge tone="neutral">{availableTenants.length} businesses</Badge>
+              {currentTenant ? <Badge tone="info">{currentTenant.slug}</Badge> : null}
+              <div className="min-w-[220px]">
+                <Select value={currentTenant?.id} onValueChange={setActiveTenant}>
+                  <SelectTrigger className="bg-background/55">
+                    <SelectValue placeholder="Select business" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {availableTenants.map((tenant) => (
+                      <SelectItem key={tenant.id} value={tenant.id}>
+                        {tenant.businessName}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </>
+          ) : null}
           <Button
             variant="outline"
             className="justify-start bg-background/55"
@@ -75,10 +91,12 @@ export function Navbar() {
 }
 
 function getPageTitle(pathname: string) {
-  if (pathname.startsWith("/dashboard")) return "Dashboard"
-  if (pathname.startsWith("/softwares")) return "Software Catalog"
-  if (pathname.startsWith("/users")) return "User Manager"
-  if (pathname.startsWith("/versions/new")) return "Version Builder"
-  if (pathname.startsWith("/versions/")) return "Version Details"
-  return "Global Version History"
+  if (pathname.startsWith("/platform/dashboard")) return "Platform Dashboard"
+  if (pathname.startsWith("/platform/clients")) return "Client Management"
+  if (pathname.startsWith("/business/dashboard")) return "Business Dashboard"
+  if (pathname.startsWith("/business/items")) return "Items"
+  if (pathname.startsWith("/business/inventory")) return "Inventory"
+  if (pathname.startsWith("/business/people")) return "People"
+  if (pathname.startsWith("/business/settings")) return "Settings"
+  return "Overview"
 }

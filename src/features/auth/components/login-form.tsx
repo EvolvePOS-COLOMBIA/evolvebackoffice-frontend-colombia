@@ -22,7 +22,7 @@ export function LoginForm() {
   const businessForm = useForm<BusinessLoginFormValues>({
     resolver: zodResolver(businessLoginSchema),
     defaultValues: {
-      slug: "northstar-market",
+      slug: "harbor-cafe",
       email: "owner@northstar.co",
       password: "Business123",
     },
@@ -137,7 +137,9 @@ export function LoginForm() {
                     />
 
                     {businessForm.formState.errors.root ? (
-                      <p className="text-sm font-medium text-destructive">{businessForm.formState.errors.root.message}</p>
+                      <p className="text-sm font-medium text-destructive">
+                        {businessForm.formState.errors.root.message}
+                      </p>
                     ) : null}
 
                     <Button type="submit" size="lg" className="w-full" disabled={isLogging}>
@@ -181,7 +183,9 @@ export function LoginForm() {
                     />
 
                     {platformForm.formState.errors.root ? (
-                      <p className="text-sm font-medium text-destructive">{platformForm.formState.errors.root.message}</p>
+                      <p className="text-sm font-medium text-destructive">
+                        {platformForm.formState.errors.root.message}
+                      </p>
                     ) : null}
 
                     <Button type="submit" size="lg" className="w-full" disabled={isLogging}>
@@ -212,7 +216,9 @@ export function LoginForm() {
             </Card>
 
             {defaultRoute !== "/login" ? (
-              <p className="text-center text-sm text-muted-foreground">Authenticated users are redirected automatically.</p>
+              <p className="text-center text-sm text-muted-foreground">
+                Authenticated users are redirected automatically.
+              </p>
             ) : null}
           </CardContent>
         </Card>
@@ -236,15 +242,7 @@ export function LoginForm() {
   )
 }
 
-function InfoPanel({
-  eyebrow,
-  title,
-  description,
-}: {
-  eyebrow: string
-  title: string
-  description: string
-}) {
+function InfoPanel({ eyebrow, title, description }: { eyebrow: string; title: string; description: string }) {
   return (
     <Card className="rounded-[30px] border-border/70 bg-background/65">
       <CardContent className="space-y-3 p-6">

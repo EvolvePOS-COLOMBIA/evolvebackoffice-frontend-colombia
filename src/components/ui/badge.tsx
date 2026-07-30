@@ -10,7 +10,7 @@ type BadgeProps = {
 
 const toneClasses: Record<NonNullable<BadgeProps["tone"]>, string> = {
   neutral: "border-border/70 bg-background/60 text-muted-foreground ",
-  primary: "border-cyan-400/30 bg-cyan-500/10 dark:text-cyan-200 text-cyan-500",
+  primary: "border-primary bg-primary/10 dark:text-primary text-primary",
   success: "border-emerald-400/30 bg-emerald-500/10 dark:text-emerald-200 text-emerald-500",
   warning: "border-amber-400/30 bg-amber-500/10 dark:text-amber-200 text-amber-500",
   danger: "border-rose-400/30 bg-rose-500/10 dark:text-rose-200 text-rose-500",

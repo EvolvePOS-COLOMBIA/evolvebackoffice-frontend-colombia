@@ -1,4 +1,4 @@
-import { Building2, LayoutDashboard, LogOut, Package, Settings, Users } from "lucide-react"
+import { BarChart3, Building2, LayoutDashboard, LogOut, Package, Settings, Users } from "lucide-react"
 import { Link, NavLink, useLocation } from "react-router-dom"
 
 import { Button } from "@/components/ui/button"
@@ -18,6 +18,7 @@ const businessNavigationItems = [
   { to: "/business/items", label: "Items", icon: Package },
   { to: "/business/inventory", label: "Inventory", icon: Building2 },
   { to: "/business/people", label: "People", icon: Users },
+  { to: "/business/reports", label: "Reports", icon: BarChart3 },
   { to: "/business/settings", label: "Settings", icon: Settings },
 ]
 
@@ -99,7 +100,10 @@ export function SidebarContent({ isMobile = false, onNavigate }: { isMobile?: bo
         </CardContent>
       </Card>
 
-      <span className="mt-4 text-center text-xs text-muted-foreground uppercase">Version 1.1.2.1</span>
+      <div className="mt-4 flex justify-between gap-4 px-2 text-[9px] text-muted-foreground uppercase">
+        <span>Backoffice Colombia</span>
+        <span>Version 1.1.2.1</span>
+      </div>
     </div>
   )
 }

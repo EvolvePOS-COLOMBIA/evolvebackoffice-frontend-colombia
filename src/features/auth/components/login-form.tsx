@@ -101,7 +101,7 @@ export function LoginForm() {
                         <FormItem>
                           <FormLabel>Business slug</FormLabel>
                           <FormControl>
-                            <Input placeholder="northstar-market" {...field} />
+                            <Input className="bg-white dark:bg-secondary" placeholder="northstar-market" {...field} />
                           </FormControl>
                           <FormMessage />
                         </FormItem>
@@ -115,7 +115,12 @@ export function LoginForm() {
                         <FormItem>
                           <FormLabel>Email</FormLabel>
                           <FormControl>
-                            <Input placeholder="owner@northstar.co" type="email" {...field} />
+                            <Input
+                              className="bg-white dark:bg-secondary"
+                              placeholder="owner@northstar.co"
+                              type="email"
+                              {...field}
+                            />
                           </FormControl>
                           <FormMessage />
                         </FormItem>
@@ -129,7 +134,12 @@ export function LoginForm() {
                         <FormItem>
                           <FormLabel>Password</FormLabel>
                           <FormControl>
-                            <Input type="password" placeholder="Minimum 6 characters" {...field} />
+                            <Input
+                              className="bg-white dark:bg-secondary"
+                              type="password"
+                              placeholder="Minimum 6 characters"
+                              {...field}
+                            />
                           </FormControl>
                           <FormMessage />
                         </FormItem>
@@ -161,7 +171,12 @@ export function LoginForm() {
                         <FormItem>
                           <FormLabel>Email</FormLabel>
                           <FormControl>
-                            <Input placeholder="platform@posmanager.app" type="email" {...field} />
+                            <Input
+                              className="bg-white dark:bg-secondary"
+                              placeholder="platform@posmanager.app"
+                              type="email"
+                              {...field}
+                            />
                           </FormControl>
                           <FormMessage />
                         </FormItem>
@@ -175,7 +190,12 @@ export function LoginForm() {
                         <FormItem>
                           <FormLabel>Password</FormLabel>
                           <FormControl>
-                            <Input type="password" placeholder="Minimum 6 characters" {...field} />
+                            <Input
+                              className="bg-white dark:bg-secondary"
+                              type="password"
+                              placeholder="Minimum 6 characters"
+                              {...field}
+                            />
                           </FormControl>
                           <FormMessage />
                         </FormItem>

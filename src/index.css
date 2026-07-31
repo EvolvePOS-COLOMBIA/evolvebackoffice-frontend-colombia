@@ -13,15 +13,15 @@
   --card-foreground: oklch(0.17 0.01 248.5);
   --popover: oklch(95.299% 0.00536 16.139);
   --popover-foreground: oklch(0.17 0.01 248.5);
-  --primary: #29a1ff;
+  --primary: oklch(69.1% 0.17099 248.017);
   --primary-foreground: oklch(0.14 0.01 248.5);
   --secondary: oklch(0.95 0.003 247.9);
   --secondary-foreground: oklch(0.22 0.012 248.9);
   --muted: oklch(0.94 0.006 247.9);
-  --muted-foreground: oklch(0.49 0.02 247.1);
+  --muted-foreground: oklch(49.077% 0.01908 245.428);
   --accent: oklch(0.96 0.013 223.2);
   --accent-foreground: oklch(0.18 0.01 248.5);
-  --destructive: oklch(0.61 0.208 24.62);
+  --destructive: oklch(64.263% 0.21531 28.791);
   --border: oklch(0.89 0.01 247.6);
   --input: oklch(0.89 0.01 247.6);
   --ring: oklch(0.7 0.063 223.1);
@@ -56,7 +56,7 @@
   --muted-foreground: oklch(0.73 0.014 242.8);
   --accent: oklch(0.31 0.026 227.3);
   --accent-foreground: oklch(0.98 0.004 236.9);
-  --destructive: oklch(0.7 0.188 21.84);
+  --destructive: oklch(64.263% 0.21531 28.791);
   --border: oklch(1 0 0 / 9%);
   --input: oklch(1 0 0 / 12%);
   --ring: oklch(0.72 0.052 223.1);
@@ -193,4 +193,21 @@
   }
   scrollbar-width: thin;
   scrollbar-color: color-mix(in oklch, var(--muted-foreground) 25%, transparent) transparent;
+}
+
+@utility animate-float {
+  animation: float 6s ease-in-out infinite;
+}
+
+@keyframes float {
+  0%,
+  100% {
+    transform: translateY(0px) rotate(90deg);
+  }
+  25% {
+    transform: translateY(-10px) rotate(93deg);
+  }
+  75% {
+    transform: translateY(-10px) rotate(87deg);
+  }
 }

@@ -6,14 +6,17 @@ import type { TenantClient } from "@/features/platform/clients/types"
 import type { AppSession } from "@/features/auth/types"
 
 type ThemeMode = "light" | "dark" | "system"
+type Locale = "es" | "en"
 
 type AppState = {
   session: AppSession | null
   theme: ThemeMode
+  locale: Locale
   activeTenant: string | null
   platformClients: TenantClient[]
   setSession: (session: AppSession | null) => void
   setTheme: (theme: ThemeMode) => void
+  setLocale: (locale: Locale) => void
   setActiveTenant: (tenantId: string) => void
   savePlatformClient: (client: TenantClient) => void
   deletePlatformClient: (clientId: string) => void
@@ -25,6 +28,7 @@ export const useAppStore = create<AppState>()(
     (set, get) => ({
       session: null,
       theme: "system",
+      locale: "es",
       activeTenant: null,
       platformClients: defaultTenantClients,
 
@@ -45,6 +49,8 @@ export const useAppStore = create<AppState>()(
       },
 
       setTheme: (theme) => set({ theme }),
+
+      setLocale: (locale) => set({ locale }),
 
       setActiveTenant: (tenantId) => {
         const session = get().session
@@ -99,6 +105,7 @@ export const useAppStore = create<AppState>()(
       partialize: (state) => ({
         session: state.session,
         theme: state.theme,
+        locale: state.locale,
         activeTenant: state.activeTenant,
         platformClients: state.platformClients,
       }),

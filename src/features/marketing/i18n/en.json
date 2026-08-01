@@ -1,0 +1,15 @@
+{
+  "pos_manager": "POS Manager",
+  "multitenant_frontend": "Multitenant Frontend",
+  "saas_operations": "SaaS operations",
+  "main_heading": "One control center for platform teams and every business they manage.",
+  "main_desc": "Centralize tenant onboarding, preserve role-based access, and let business administrators switch between storefronts without interrupting their session.",
+  "go_to_login": "Go to login",
+  "explore_protected_flow": "Explore protected flow",
+  "platform_administration": "Platform administration",
+  "platform_administration_desc": "Create and maintain tenants, monitor active clients, and keep the whole portfolio under control.",
+  "business_operations": "Business operations",
+  "business_operations_desc": "Switch the active business instantly and keep dashboards aligned with the current tenant context.",
+  "clean_saas_dashboards": "Clean SaaS dashboards",
+  "clean_saas_dashboards_desc": "Feature-driven routing, persisted session state, and consistent shadcn-style UI patterns."
+}

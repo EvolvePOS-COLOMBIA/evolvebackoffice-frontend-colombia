@@ -1,0 +1,15 @@
+{
+  "pos_manager": "POS Manager",
+  "multitenant_frontend": "Frontend Multitenant",
+  "saas_operations": "Operaciones SaaS",
+  "main_heading": "Un centro de control para equipos de plataforma y cada negocio que gestionan.",
+  "main_desc": "Centraliza la incorporación de tenants, preserva el acceso basado en roles y permite a los administradores de negocio cambiar entre tiendas sin interrumpir su sesión.",
+  "go_to_login": "Ir al login",
+  "explore_protected_flow": "Explorar flujo protegido",
+  "platform_administration": "Administración de plataforma",
+  "platform_administration_desc": "Crea y mantiene tenants, monitorea clientes activos y mantiene todo el portafolio bajo control.",
+  "business_operations": "Operaciones de negocio",
+  "business_operations_desc": "Cambia el negocio activo al instante y mantiene los dashboards alineados con el contexto del tenant actual.",
+  "clean_saas_dashboards": "Dashboards SaaS limpios",
+  "clean_saas_dashboards_desc": "Enrutamiento basado en features, estado de sesión persistido y patrones de UI consistentes con shadcn."
+}

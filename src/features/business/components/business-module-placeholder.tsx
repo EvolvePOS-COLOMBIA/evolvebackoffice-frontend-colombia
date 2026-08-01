@@ -1,5 +1,6 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { useAuth } from "@/features/auth/hooks/use-auth"
+import { useTranslation } from "@/i18n/use-i18n"
 
 export function BusinessModulePlaceholder({
   title,
@@ -9,6 +10,7 @@ export function BusinessModulePlaceholder({
   description: string
 }) {
   const { currentTenant } = useAuth()
+  const { t } = useTranslation("common")
 
   return (
     <Card className="rounded-[30px]">
@@ -18,11 +20,10 @@ export function BusinessModulePlaceholder({
       </CardHeader>
       <CardContent className="space-y-4">
         <div className="rounded-[24px] border border-border/70 bg-accent/35 p-5">
-          <p className="text-[11px] font-semibold tracking-[0.22em] text-muted-foreground uppercase">Current business</p>
-          <p className="mt-3 text-lg font-semibold text-foreground">{currentTenant?.businessName ?? "No business selected"}</p>
+          <p className="text-[11px] font-semibold tracking-[0.22em] text-muted-foreground uppercase">{t("current_business")}</p>
+          <p className="mt-3 text-lg font-semibold text-foreground">{currentTenant?.businessName ?? t("no_business_selected")}</p>
           <p className="mt-2 text-sm leading-7 text-muted-foreground">
-            This placeholder is already tenant-aware, so the future implementation can plug into the active business
-            context directly.
+            {t("placeholder_desc")}
           </p>
         </div>
       </CardContent>

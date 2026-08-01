@@ -1,0 +1,11 @@
+{
+  "inventory": "Inventory",
+  "stock_control": "Stock Control",
+  "stock_control_desc": "Track every unit that enters or leaves your store. Monitor stock levels, manage suppliers, and keep costs under control.",
+  "suppliers": "Suppliers",
+  "suppliers_desc": "Manage contact information, price agreements, and terms for all product providers.",
+  "purchase_orders": "Purchase Orders",
+  "purchase_orders_desc": "Create, track, and manage incoming orders to replenish stock and control costs.",
+  "physical_inventory": "Physical Inventory",
+  "physical_inventory_desc": "Perform actual stock counts and reconcile discrepancies between the system and physical goods."
+}

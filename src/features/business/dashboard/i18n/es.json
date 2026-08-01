@@ -1,0 +1,16 @@
+{
+  "business_overview": "Resumen del negocio",
+  "welcome_to": "Bienvenido a {{businessName}}.",
+  "welcome_default": "Bienvenido al espacio de trabajo del negocio.",
+  "business_dashboard_desc": "Tu dashboard actual sigue el negocio seleccionado. Cambiar de tenant mantiene la sesión activa y el shell sincronizado.",
+  "managed_businesses": "Negocios gestionados",
+  "active_tenant": "Tenant activo",
+  "inventory_modules": "Módulos de inventario",
+  "people_modules": "Módulos de personas",
+  "items": "Artículos",
+  "items_desc": "Los flujos de catálogo y unidades de venta están listos para el siguiente paso de implementación.",
+  "inventory": "Inventario",
+  "inventory_desc": "Usa el contexto del tenant activo para delimitar stock, movimientos y datos de reposición.",
+  "people": "Personas",
+  "people_desc": "La gestión de empleados y clientes consciente del rol puede construirse sobre el mismo contexto de tenant."
+}

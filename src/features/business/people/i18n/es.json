@@ -1,0 +1,13 @@
+{
+  "people": "Personas",
+  "team_customers": "Equipo y Clientes",
+  "team_customers_desc": "Administra las personas detrás de tu negocio. Desde el acceso de empleados hasta la lealtad de clientes, todo está delimitado a tu tienda.",
+  "customers": "Clientes",
+  "customers_desc": "Administra datos de contacto, historial de compras e información de lealtad para tus clientes.",
+  "users": "Usuarios",
+  "users_desc": "Controla cuentas de empleados, credenciales de inicio de sesión y configuraciones de acceso personal para el sistema.",
+  "roles": "Roles",
+  "roles_desc": "Define permisos y niveles de acceso para diferentes grupos de usuarios (ej: Gerente, Cajero, Admin).",
+  "time_clock": "Reloj de Tiempo",
+  "time_clock_desc": "Rastrea y administra las horas de trabajo de los cajores, incluyendo entrada/salida y ajustes de horas."
+}

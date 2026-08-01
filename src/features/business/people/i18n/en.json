@@ -1,0 +1,13 @@
+{
+  "people": "People",
+  "team_customers": "Team & Customers",
+  "team_customers_desc": "Manage the people behind your business. From employee access to customer loyalty, everything is scoped to your store.",
+  "customers": "Customers",
+  "customers_desc": "Manage contact details, purchase history, and loyalty information for your clients.",
+  "users": "Users",
+  "users_desc": "Control employee accounts, login credentials, and personal access settings for the system.",
+  "roles": "Roles",
+  "roles_desc": "Define permissions and access levels for different user groups (e.g., Manager, Cashier, Admin).",
+  "time_clock": "Time Clock",
+  "time_clock_desc": "Tracks and manages cashiers' work hours, including clock-ins/outs, and hour adjustments."
+}

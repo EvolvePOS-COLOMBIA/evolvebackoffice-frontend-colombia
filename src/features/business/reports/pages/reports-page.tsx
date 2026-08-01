@@ -1,37 +1,40 @@
 import { BarChart3, BookOpen, ClipboardList, CurlyBraces, Logs } from "lucide-react"
 
+import { useTranslation } from "@/i18n/use-i18n"
 import { HubPageLayout } from "@/features/business/components/hub-page-layout"
 import { ItemCard, type ItemCardLink } from "@/features/business/components/item-card"
 
-const reportsLinks: ItemCardLink[] = [
-  {
-    name: "Reports (Standard - Dynamic - Custom)",
-    label: "Generate, print and download reports of your store operation system.",
-    icon: ClipboardList,
-  },
-  {
-    name: "Journal",
-    label: "View a detailed chronological log of all transactions and system activities.",
-    icon: BookOpen,
-  },
-  {
-    name: "Update Batch Info",
-    label: "Review and manage groups of processed transactions for daily closing and reconciliation.",
-    icon: CurlyBraces,
-  },
-  {
-    name: "WooCommerce Orders",
-    label: "Review and manage WooCommerce orders of WooCommerce store.",
-    icon: Logs,
-  },
-]
-
 export function ReportsPage() {
+  const { t } = useTranslation("business-reports")
+
+  const reportsLinks: ItemCardLink[] = [
+    {
+      name: t("standard_dynamic_custom"),
+      label: t("standard_dynamic_custom_desc"),
+      icon: ClipboardList,
+    },
+    {
+      name: t("journal"),
+      label: t("journal_desc"),
+      icon: BookOpen,
+    },
+    {
+      name: t("update_batch_info"),
+      label: t("update_batch_info_desc"),
+      icon: CurlyBraces,
+    },
+    {
+      name: t("woocommerce_orders"),
+      label: t("woocommerce_orders_desc"),
+      icon: Logs,
+    },
+  ]
+
   return (
     <HubPageLayout
-      badge="Reports"
-      title="Insights & Analytics"
-      description="Track your store performance, review transactions, and generate the reports that keep your business in shape."
+      badge={t("reports")}
+      title={t("insights_analytics")}
+      description={t("insights_analytics_desc")}
       icon={BarChart3}
     >
       {reportsLinks.map((item) => (

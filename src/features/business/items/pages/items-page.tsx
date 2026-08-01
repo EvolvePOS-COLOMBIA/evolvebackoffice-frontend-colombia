@@ -8,61 +8,63 @@ import {
   SwatchBook,
   Tag,
   Wrench,
-  type LucideIcon,
 } from "lucide-react"
 
+import { useTranslation } from "@/i18n/use-i18n"
 import { HubPageLayout } from "@/features/business/components/hub-page-layout"
 import { ItemCard, type ItemCardLink } from "@/features/business/components/item-card"
 
-const itemLinks: ItemCardLink[] = [
-  {
-    name: "Product Catalog",
-    label: "Browse, search, and manage every product in your store.",
-    icon: ClipboardList,
-  },
-  {
-    name: "Departments",
-    label: "Group your products into departments and sub-departments for cleaner reporting.",
-    icon: Building2,
-  },
-  {
-    name: "Discounts & Promos",
-    label: "Create deals, happy hours, and volume discounts to drive sales.",
-    icon: Tag,
-  },
-  {
-    name: "Schedules",
-    label: "Set time-based pricing and availability for seasonal or hourly items.",
-    icon: Clock,
-  },
-  {
-    name: "Tax Rules",
-    label: "Define tax rates and apply them to the right products and transactions.",
-    icon: Receipt,
-  },
-  {
-    name: "Brands & Sizes",
-    label: "Organize products by brand and manage size variants in one place.",
-    icon: SwatchBook,
-  },
-  {
-    name: "Modifiers",
-    label: "Add-ons, flavors, extras — let customers customize their orders.",
-    icon: Pencil,
-  },
-  {
-    name: "Bulk Editor",
-    label: "Update prices, categories, or attributes across hundreds of items at once.",
-    icon: Wrench,
-  },
-]
-
 export function ItemsPage() {
+  const { t } = useTranslation("business-items")
+
+  const itemLinks: ItemCardLink[] = [
+    {
+      name: t("product_catalog"),
+      label: t("product_catalog_desc"),
+      icon: ClipboardList,
+    },
+    {
+      name: t("departments"),
+      label: t("departments_desc"),
+      icon: Building2,
+    },
+    {
+      name: t("discounts_promos"),
+      label: t("discounts_promos_desc"),
+      icon: Tag,
+    },
+    {
+      name: t("schedules"),
+      label: t("schedules_desc"),
+      icon: Clock,
+    },
+    {
+      name: t("tax_rules"),
+      label: t("tax_rules_desc"),
+      icon: Receipt,
+    },
+    {
+      name: t("brands_sizes"),
+      label: t("brands_sizes_desc"),
+      icon: SwatchBook,
+    },
+    {
+      name: t("modifiers"),
+      label: t("modifiers_desc"),
+      icon: Pencil,
+    },
+    {
+      name: t("bulk_editor"),
+      label: t("bulk_editor_desc"),
+      icon: Wrench,
+    },
+  ]
+
   return (
     <HubPageLayout
-      badge="Items"
-      title="Product Hub"
-      description="Everything your store sells starts here. Build your catalog, set prices, and keep your offerings sharp."
+      badge={t("items")}
+      title={t("product_hub")}
+      description={t("product_hub_desc")}
       icon={Package}
     >
       {itemLinks.map((item) => (

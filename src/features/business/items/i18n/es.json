@@ -1,0 +1,21 @@
+{
+  "items": "Artículos",
+  "product_hub": "Centro de Productos",
+  "product_hub_desc": "Todo lo que tu tienda vende comienza aquí. Construye tu catálogo, establece precios y mantén tus ofertas afiladas.",
+  "product_catalog": "Catálogo de Productos",
+  "product_catalog_desc": "Busca, explora y administra cada producto en tu tienda.",
+  "departments": "Departamentos",
+  "departments_desc": "Agrupa tus productos en departamentos y subdepartamentos para reportes más limpios.",
+  "discounts_promos": "Descuentos y Promos",
+  "discounts_promos_desc": "Crea ofertas, happy hours y descuentos por volumen para impulsar ventas.",
+  "schedules": "Horarios",
+  "schedules_desc": "Establece precios y disponibilidad por tiempo para artículos estacionales o por hora.",
+  "tax_rules": "Reglas de Impuestos",
+  "tax_rules_desc": "Define tasas de impuestos y aplícalas a los productos y transacciones correctos.",
+  "brands_sizes": "Marcas y Tamaños",
+  "brands_sizes_desc": "Organiza productos por marca y administra variantes de tamaño en un solo lugar.",
+  "modifiers": "Modificadores",
+  "modifiers_desc": "Complementos, sabores, extras — deja que los clientes personalicen sus pedidos.",
+  "bulk_editor": "Editor Masivo",
+  "bulk_editor_desc": "Actualiza precios, categorías o atributos de cientos de artículos a la vez."
+}

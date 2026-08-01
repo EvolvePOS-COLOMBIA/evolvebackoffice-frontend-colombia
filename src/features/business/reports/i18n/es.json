@@ -1,0 +1,13 @@
+{
+  "reports": "Reportes",
+  "insights_analytics": "Insights y Analíticas",
+  "insights_analytics_desc": "Rastrea el rendimiento de tu tienda, revisa transacciones y genera los reportes que mantienen tu negocio en forma.",
+  "standard_dynamic_custom": "Reportes (Estándar - Dinámico - Personalizado)",
+  "standard_dynamic_custom_desc": "Genera, imprime y descarga reportes de tu sistema de operaciones de tienda.",
+  "journal": "Diario",
+  "journal_desc": "Ve un registro cronológico detallado de todas las transacciones y actividades del sistema.",
+  "update_batch_info": "Actualizar Info de Lote",
+  "update_batch_info_desc": "Revisa y administra grupos de transacciones procesadas para el cierre diario y reconciliación.",
+  "woocommerce_orders": "Órdenes WooCommerce",
+  "woocommerce_orders_desc": "Revisa y administra las órdenes de WooCommerce de tu tienda WooCommerce."
+}

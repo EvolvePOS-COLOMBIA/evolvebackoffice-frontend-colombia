@@ -1,0 +1,11 @@
+{
+  "inventory": "Inventario",
+  "stock_control": "Control de Stock",
+  "stock_control_desc": "Rastrea cada unidad que entra o sale de tu tienda. Monitorea niveles de stock, administra proveedores y mantén los costos bajo control.",
+  "suppliers": "Proveedores",
+  "suppliers_desc": "Administra información de contacto, acuerdos de precios y términos para todos los proveedores de productos.",
+  "purchase_orders": "Órdenes de Compra",
+  "purchase_orders_desc": "Crea, rastrea y administra pedidos entrantes para reponer stock y controlar costos.",
+  "physical_inventory": "Inventario Físico",
+  "physical_inventory_desc": "Realiza conteos físicos de stock y reconcilia discrepancias entre el sistema y los bienes físicos."
+}

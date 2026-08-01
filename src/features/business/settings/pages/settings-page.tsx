@@ -16,92 +16,95 @@ import {
 
 import { Card, CardContent } from "@/components/ui/card"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { useTranslation } from "@/i18n/use-i18n"
 import { ItemCard, type ItemCardLink } from "@/features/business/components/item-card"
 
-const globalLinks: ItemCardLink[] = [
-  {
-    name: "Main DB",
-    label: "Configure core system settings and manage database configuration parameters.",
-    icon: Server,
-  },
-  {
-    name: "Registers",
-    label: "Set up, configure, and manage Point of Sale (POS) terminals and workstations.",
-    icon: MonitorCog,
-  },
-  {
-    name: "Evolve Keyboard",
-    label: "Create and manage POS keyboard layouts.",
-    icon: Keyboard,
-  },
-  {
-    name: "Pole Display",
-    label: "Define settings and communication protocols for customer-facing display devices.",
-    icon: Tv,
-  },
-  {
-    name: "Printers",
-    label: "Configure, and manage individual receipt and label printers.",
-    icon: Printer,
-  },
-  {
-    name: "Printer Group",
-    label: "Create and manage groups of printers for efficient printing distribution and routing.",
-    icon: ListOrdered,
-  },
-  {
-    name: "Resource Configuration Group",
-    label: "Create and manage groups of resource configurations for efficient resource allocation and routing.",
-    icon: Layers,
-  },
-]
-
-const storeLinks: ItemCardLink[] = [
-  {
-    name: "Store Information",
-    label: "Edit essential details, physical address, and contact information for your location.",
-    icon: Store,
-  },
-  {
-    name: "Tenders",
-    label: "Manage accepted payment methods, cash rounding rules, and tender configurations.",
-    icon: CreditCard,
-  },
-  {
-    name: "Pos Options",
-    label: "Configure operational settings for the Point of Sale interface and transaction flow.",
-    icon: Settings,
-  },
-  {
-    name: "WooCommerce Integration",
-    label: "Manage data synchronization and field mapping for your online sales channels.",
-    icon: ArrowLeftRight,
-  },
-  {
-    name: "Delete transactions",
-    label: "Delete transactions from closed or pending batches to keep your system data organized.",
-    icon: ArchiveX,
-  },
-  {
-    name: "Gift Card",
-    label: "Configure gift card settings and options for your store.",
-    icon: CreditCard,
-  },
-  {
-    name: "Media Resource",
-    label: "Create and manage media resources for efficient resource allocation and routing.",
-    icon: Image,
-  },
-]
-
 export function SettingsPage() {
+  const { t } = useTranslation("business-settings")
+
+  const globalLinks: ItemCardLink[] = [
+    {
+      name: t("main_db"),
+      label: t("main_db_desc"),
+      icon: Server,
+    },
+    {
+      name: t("registers"),
+      label: t("registers_desc"),
+      icon: MonitorCog,
+    },
+    {
+      name: t("evolve_keyboard"),
+      label: t("evolve_keyboard_desc"),
+      icon: Keyboard,
+    },
+    {
+      name: t("pole_display"),
+      label: t("pole_display_desc"),
+      icon: Tv,
+    },
+    {
+      name: t("printers"),
+      label: t("printers_desc"),
+      icon: Printer,
+    },
+    {
+      name: t("printer_group"),
+      label: t("printer_group_desc"),
+      icon: ListOrdered,
+    },
+    {
+      name: t("resource_config_group"),
+      label: t("resource_config_group_desc"),
+      icon: Layers,
+    },
+  ]
+
+  const storeLinks: ItemCardLink[] = [
+    {
+      name: t("store_information"),
+      label: t("store_information_desc"),
+      icon: Store,
+    },
+    {
+      name: t("tenders"),
+      label: t("tenders_desc"),
+      icon: CreditCard,
+    },
+    {
+      name: t("pos_options"),
+      label: t("pos_options_desc"),
+      icon: Settings,
+    },
+    {
+      name: t("woocommerce_integration"),
+      label: t("woocommerce_integration_desc"),
+      icon: ArrowLeftRight,
+    },
+    {
+      name: t("delete_transactions"),
+      label: t("delete_transactions_desc"),
+      icon: ArchiveX,
+    },
+    {
+      name: t("gift_card"),
+      label: t("gift_card_desc"),
+      icon: CreditCard,
+    },
+    {
+      name: t("media_resource"),
+      label: t("media_resource_desc"),
+      icon: Image,
+    },
+  ]
+
   return (
     <Card className="relative overflow-hidden shadow-none">
       <CardContent className="p-4 lg:p-8">
         <header>
-          <h1 className="text-2xl font-semibold text-foreground">Settings</h1>
+          <h1 className="text-2xl font-semibold text-foreground">{t("settings")}</h1>
           <p className="max-w-4xl text-sm leading-5 text-muted-foreground">
-            Configure your store preferences, hardware, and system-wide settings from one place.
+            {t("settings_desc")}
           </p>
           <Settings
             color="#58626b"
@@ -112,10 +115,10 @@ export function SettingsPage() {
         <Tabs defaultValue="store" className="mt-6">
           <TabsList className="w-full">
             <TabsTrigger value="store" className="flex-1">
-              Store
+              {t("store")}
             </TabsTrigger>
             <TabsTrigger value="global" className="flex-1">
-              Global
+              {t("global")}
             </TabsTrigger>
           </TabsList>
 

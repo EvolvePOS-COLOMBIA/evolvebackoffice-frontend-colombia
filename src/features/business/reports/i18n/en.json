@@ -1,0 +1,13 @@
+{
+  "reports": "Reports",
+  "insights_analytics": "Insights & Analytics",
+  "insights_analytics_desc": "Track your store performance, review transactions, and generate the reports that keep your business in shape.",
+  "standard_dynamic_custom": "Reports (Standard - Dynamic - Custom)",
+  "standard_dynamic_custom_desc": "Generate, print and download reports of your store operation system.",
+  "journal": "Journal",
+  "journal_desc": "View a detailed chronological log of all transactions and system activities.",
+  "update_batch_info": "Update Batch Info",
+  "update_batch_info_desc": "Review and manage groups of processed transactions for daily closing and reconciliation.",
+  "woocommerce_orders": "WooCommerce Orders",
+  "woocommerce_orders_desc": "Review and manage WooCommerce orders of WooCommerce store."
+}

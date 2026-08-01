@@ -1,0 +1,16 @@
+{
+  "business_overview": "Business overview",
+  "welcome_to": "Welcome to {{businessName}}.",
+  "welcome_default": "Welcome to the business workspace.",
+  "business_dashboard_desc": "Your current dashboard follows the selected business. Switching tenants keeps the session active and the shell in sync.",
+  "managed_businesses": "Managed businesses",
+  "active_tenant": "Active tenant",
+  "inventory_modules": "Inventory modules",
+  "people_modules": "People modules",
+  "items": "Items",
+  "items_desc": "Catalog workflows and selling units are ready for the next implementation step.",
+  "inventory": "Inventory",
+  "inventory_desc": "Use the active tenant context to scope stock, movements, and replenishment data.",
+  "people": "People",
+  "people_desc": "Role-aware employee and customer management can build on the same tenant context."
+}

@@ -1,0 +1,21 @@
+{
+  "items": "Items",
+  "product_hub": "Product Hub",
+  "product_hub_desc": "Everything your store sells starts here. Build your catalog, set prices, and keep your offerings sharp.",
+  "product_catalog": "Product Catalog",
+  "product_catalog_desc": "Browse, search, and manage every product in your store.",
+  "departments": "Departments",
+  "departments_desc": "Group your products into departments and sub-departments for cleaner reporting.",
+  "discounts_promos": "Discounts & Promos",
+  "discounts_promos_desc": "Create deals, happy hours, and volume discounts to drive sales.",
+  "schedules": "Schedules",
+  "schedules_desc": "Set time-based pricing and availability for seasonal or hourly items.",
+  "tax_rules": "Tax Rules",
+  "tax_rules_desc": "Define tax rates and apply them to the right products and transactions.",
+  "brands_sizes": "Brands & Sizes",
+  "brands_sizes_desc": "Organize products by brand and manage size variants in one place.",
+  "modifiers": "Modifiers",
+  "modifiers_desc": "Add-ons, flavors, extras — let customers customize their orders.",
+  "bulk_editor": "Bulk Editor",
+  "bulk_editor_desc": "Update prices, categories, or attributes across hundreds of items at once."
+}

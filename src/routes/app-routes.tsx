@@ -17,13 +17,15 @@ import { ProtectedRoute } from "@/routes/protected-route"
 import { PublicRoute } from "@/routes/public-route"
 import { useAuth } from "@/features/auth/hooks/use-auth"
 import { notify } from "@/hooks/use-notify"
+import i18n from "@/i18n"
 
 function AppRoutesContent() {
   const { defaultRoute, isAuthenticated, logout, session } = useAuth()
 
   useEffect(() => {
     if (session && new Date(session.expiresAtUtc).getTime() <= Date.now()) {
-      notify.info("Your session has expired. Please sign in again.")
+      const t = i18n.getFixedT(null, "auth")
+      notify.info(t("session_expired"))
       logout()
     }
   }, [logout, session])

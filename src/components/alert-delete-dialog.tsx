@@ -10,6 +10,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog"
+import { useTranslation } from "@/i18n/use-i18n"
 
 type UserDeleteDialogProps = {
   title: string
@@ -20,6 +21,7 @@ type UserDeleteDialogProps = {
 
 export function AlertDeleteDialog({ title, description, selectedLabel, onDelete }: UserDeleteDialogProps) {
   const [open, setOpen] = useState(false)
+  const { t } = useTranslation()
 
   const handleDelete = () => {
     onDelete()
@@ -30,22 +32,22 @@ export function AlertDeleteDialog({ title, description, selectedLabel, onDelete 
     <Dialog open={open} onOpenChange={setOpen}>
       <Button type="button" variant="destructive" size="sm" onClick={() => setOpen(true)}>
         <Trash2 className="size-4" />
-        Delete
+        {t("delete")}
       </Button>
       <DialogContent>
         <DialogHeader>
           <DialogTitle>{title}</DialogTitle>
           <DialogDescription className="flex gap-2">
-            {description ? description : "This action cannot be undone. You are about to remove"}
+            {description ? description : t("delete_confirmation")}
             <span className="font-semibold text-foreground">{selectedLabel}</span>
           </DialogDescription>
         </DialogHeader>
         <DialogFooter>
           <Button type="button" variant="outline" onClick={() => setOpen(false)}>
-            Cancel
+            {t("cancel")}
           </Button>
           <Button type="button" variant="destructive" onClick={handleDelete}>
-            Delete
+            {t("delete")}
           </Button>
         </DialogFooter>
       </DialogContent>

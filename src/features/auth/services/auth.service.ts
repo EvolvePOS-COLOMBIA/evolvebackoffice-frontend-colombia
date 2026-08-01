@@ -1,4 +1,5 @@
 import type { AxiosResponse } from "axios"
+import i18n from "@/i18n"
 
 import { api } from "@/config/axios-client"
 import type { AppSession, BusinessLoginFormValues, PlatformLoginFormValues } from "@/features/auth/types"
@@ -49,11 +50,12 @@ function createFutureIso(hours: number) {
 }
 
 export async function loginPlatformAdmin(payload: PlatformLoginFormValues): Promise<AppSession> {
+  const t = i18n.getFixedT(null, "auth")
   const normalizedEmail = payload.email.trim().toLowerCase()
   const password = payload.password.trim()
 
   if (normalizedEmail !== demoPlatformAccount.email || password !== demoPlatformAccount.password) {
-    throw new Error("Invalid platform administrator credentials.")
+    throw new Error(t("invalid_platform_credentials"))
   }
 
   return {
@@ -74,6 +76,7 @@ export async function loginBusinessAdmin(
   payload: BusinessLoginFormValues,
   availableClients: TenantClient[] = defaultTenantClients
 ): Promise<AppSession> {
+  const t = i18n.getFixedT(null, "auth")
   const normalizedEmail = payload.email.trim().toLowerCase()
   const normalizedSlug = payload.slug.trim().toLowerCase()
   const password = payload.password.trim()
@@ -81,13 +84,13 @@ export async function loginBusinessAdmin(
   const account = demoBusinessAccounts.find((item) => item.email === normalizedEmail)
 
   if (!account || account.password !== password) {
-    throw new Error("Invalid business administrator credentials.")
+    throw new Error(t("invalid_business_credentials"))
   }
 
   const managedClients = availableClients.filter((client) => account.managedSlugs.includes(client.slug))
 
   if (!managedClients.some((client) => client.slug === normalizedSlug)) {
-    throw new Error("This account does not have access to the selected business slug.")
+    throw new Error(t("slug_not_found"))
   }
 
   const orderedManagedTenantIds = [

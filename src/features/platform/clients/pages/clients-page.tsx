@@ -12,12 +12,14 @@ import { useTenantClients } from "@/features/platform/clients/hooks/use-tenant-c
 import type { TenantClient, TenantClientFormValues } from "@/features/platform/clients/types"
 import { notify } from "@/hooks/use-notify"
 import { formatDateTime } from "@/utils/format"
+import { useTranslation } from "@/i18n/use-i18n"
 
 export function ClientsPage() {
   const { clients, createClient, removeClient, updateClient } = useTenantClients()
   const [query, setQuery] = useState("")
   const [isDialogOpen, setIsDialogOpen] = useState(false)
   const [selectedClient, setSelectedClient] = useState<TenantClient | null>(null)
+  const { t } = useTranslation("platform-clients")
 
   const filteredClients = useMemo(() => {
     const normalizedQuery = query.trim().toLowerCase()
@@ -39,16 +41,16 @@ export function ClientsPage() {
     try {
       if (selectedClient) {
         updateClient(selectedClient.id, values)
-        notify.success("Client updated successfully.")
+        notify.success(t("client_updated"))
       } else {
         createClient(values)
-        notify.success("Client created successfully.")
+        notify.success(t("client_created"))
       }
 
       setIsDialogOpen(false)
       setSelectedClient(null)
     } catch (error) {
-      notify.error(error instanceof Error ? error.message : "Unable to save the client.")
+      notify.error(error instanceof Error ? error.message : t("unable_to_save"))
     }
   }
 
@@ -57,18 +59,16 @@ export function ClientsPage() {
       <Card className="overflow-hidden">
         <CardContent className="grid gap-6 p-5 sm:p-6 lg:grid-cols-[1.2fr_0.8fr] lg:p-8">
           <div className="space-y-4">
-            <Badge tone="primary">Tenant management</Badge>
+            <Badge tone="primary">{t("tenant_management")}</Badge>
             <div>
-              <h1 className="text-3xl font-semibold text-balance text-foreground">Create and maintain tenant clients.</h1>
-              <p className="max-w-2xl text-sm leading-7 text-muted-foreground">
-                Search by business name or slug, update status, and keep role-based access aligned with each business.
-              </p>
+              <h1 className="text-3xl font-semibold text-balance text-foreground">{t("create_maintain_tenants")}</h1>
+              <p className="max-w-2xl text-sm leading-7 text-muted-foreground">{t("search_desc")}</p>
             </div>
           </div>
 
           <div className="grid grid-cols-2 gap-3">
-            <SummaryTile label="Total clients" value={clients.length} />
-            <SummaryTile label="Active clients" value={activeClients} />
+            <SummaryTile label={t("total_clients")} value={clients.length} />
+            <SummaryTile label={t("active_clients")} value={activeClients} />
           </div>
         </CardContent>
       </Card>
@@ -77,8 +77,8 @@ export function ClientsPage() {
         <CardHeader className="pb-0">
           <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
             <div className="space-y-1">
-              <CardTitle>Clients</CardTitle>
-              <CardDescription>Search by business name or tenant slug.</CardDescription>
+              <CardTitle>{t("clients")}</CardTitle>
+              <CardDescription>{t("search_clients_placeholder")}</CardDescription>
             </div>
             <Button
               onClick={() => {
@@ -87,7 +87,7 @@ export function ClientsPage() {
               }}
             >
               <Plus className="size-4" />
-              Create client
+              {t("create_client")}
             </Button>
           </div>
         </CardHeader>
@@ -95,10 +95,10 @@ export function ClientsPage() {
         <CardContent className="space-y-4 pt-6">
           <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
             <div className="max-w-xl flex-1">
-              <Input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Search clients..." />
+              <Input value={query} onChange={(event) => setQuery(event.target.value)} placeholder={t("search_clients")} />
             </div>
             <Badge tone="neutral" className="w-fit">
-              {filteredClients.length} result(s)
+              {filteredClients.length} {t("results")}
             </Badge>
           </div>
 
@@ -106,13 +106,13 @@ export function ClientsPage() {
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>Business name</TableHead>
-                  <TableHead>Slug</TableHead>
-                  <TableHead>Administrator email</TableHead>
-                  <TableHead>Phone</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead>Created</TableHead>
-                  <TableHead className="text-right">Actions</TableHead>
+                  <TableHead>{t("business_name")}</TableHead>
+                  <TableHead>{t("slug")}</TableHead>
+                  <TableHead>{t("administrator_email")}</TableHead>
+                  <TableHead>{t("phone")}</TableHead>
+                  <TableHead>{t("status")}</TableHead>
+                  <TableHead>{t("created")}</TableHead>
+                  <TableHead className="text-right">{t("actions")}</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -138,14 +138,14 @@ export function ClientsPage() {
                           }}
                         >
                           <SquarePen className="size-4" />
-                          Edit
+                          {t("edit")}
                         </Button>
                         <AlertDeleteDialog
-                          title="Delete tenant client"
+                          title={t("delete_tenant_client")}
                           selectedLabel={client.businessName}
                           onDelete={() => {
                             removeClient(client.id)
-                            notify.success("Client deleted successfully.")
+                            notify.success(t("client_deleted"))
                           }}
                         />
                       </div>
@@ -179,24 +179,24 @@ export function ClientsPage() {
                         }}
                       >
                         <SquarePen className="size-4" />
-                        Edit
+                        {t("edit")}
                       </Button>
                       <AlertDeleteDialog
-                        title="Delete tenant client"
+                        title={t("delete_tenant_client")}
                         selectedLabel={client.businessName}
                         onDelete={() => {
                           removeClient(client.id)
-                          notify.success("Client deleted successfully.")
+                          notify.success(t("client_deleted"))
                         }}
                       />
                     </div>
                   </div>
 
                   <div className="grid gap-3 sm:grid-cols-2">
-                    <CompactMeta label="Admin email" value={client.adminEmail} />
-                    <CompactMeta label="Phone" value={client.phone} />
-                    <CompactMeta label="Created" value={formatDateTime(client.createdAt)} />
-                    <CompactMeta label="Slug" value={client.slug} />
+                    <CompactMeta label={t("admin_email")} value={client.adminEmail} />
+                    <CompactMeta label={t("phone")} value={client.phone} />
+                    <CompactMeta label={t("created")} value={formatDateTime(client.createdAt)} />
+                    <CompactMeta label={t("slug")} value={client.slug} />
                   </div>
                 </CardContent>
               </Card>
@@ -208,8 +208,8 @@ export function ClientsPage() {
               <div className="mx-auto flex size-14 items-center justify-center rounded-3xl border border-border/70 bg-accent/60 text-muted-foreground">
                 <Building2 className="size-6" />
               </div>
-              <h2 className="mt-4 text-lg font-semibold text-foreground">No clients found</h2>
-              <p className="mt-2 text-sm text-muted-foreground">Try a different search or create a new tenant.</p>
+              <h2 className="mt-4 text-lg font-semibold text-foreground">{t("no_clients_found")}</h2>
+              <p className="mt-2 text-sm text-muted-foreground">{t("try_different_search")}</p>
             </Card>
           ) : null}
         </CardContent>

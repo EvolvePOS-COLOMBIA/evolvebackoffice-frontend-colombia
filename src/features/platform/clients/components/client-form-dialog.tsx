@@ -18,6 +18,7 @@ import { Input } from "@/components/ui/input"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { clientSchema } from "@/features/platform/clients/schemas/client-schema"
 import type { TenantClient, TenantClientFormValues } from "@/features/platform/clients/types"
+import { useTranslation } from "@/i18n/use-i18n"
 
 type ClientFormDialogProps = {
   open: boolean
@@ -43,9 +44,10 @@ export function ClientFormDialog({
   isSubmitting = false,
 }: ClientFormDialogProps) {
   const isEditMode = Boolean(clientToEdit)
+  const { t } = useTranslation("platform-clients")
 
   const form = useForm<TenantClientFormValues>({
-    resolver: zodResolver(clientSchema),
+    resolver: zodResolver(clientSchema(t)),
     defaultValues,
   })
 
@@ -72,10 +74,8 @@ export function ClientFormDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="w-[calc(100%-2rem)] lg:w-[760px]">
         <DialogHeader>
-          <DialogTitle>{isEditMode ? "Edit tenant client" : "Create tenant client"}</DialogTitle>
-          <DialogDescription>
-            Fill in the tenant metadata used by the platform workspace and role-based routing.
-          </DialogDescription>
+          <DialogTitle>{isEditMode ? t("edit_tenant_client") : t("create_tenant_client")}</DialogTitle>
+          <DialogDescription>{t("fill_metadata")}</DialogDescription>
         </DialogHeader>
 
         <Form {...form}>
@@ -86,9 +86,9 @@ export function ClientFormDialog({
                 name="businessName"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Business name</FormLabel>
+                    <FormLabel>{t("business_name")}</FormLabel>
                     <FormControl>
-                      <Input placeholder="Northstar Market" {...field} />
+                      <Input placeholder={t("business_name_placeholder")} {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -100,9 +100,9 @@ export function ClientFormDialog({
                 name="slug"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Slug</FormLabel>
+                    <FormLabel>{t("slug")}</FormLabel>
                     <FormControl>
-                      <Input placeholder="northstar-market" {...field} />
+                      <Input placeholder={t("slug_placeholder")} {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -116,9 +116,9 @@ export function ClientFormDialog({
                 name="adminEmail"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Administrator email</FormLabel>
+                    <FormLabel>{t("administrator_email")}</FormLabel>
                     <FormControl>
-                      <Input placeholder="owner@northstar.co" type="email" {...field} />
+                      <Input placeholder={t("email_placeholder")} type="email" {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -130,9 +130,9 @@ export function ClientFormDialog({
                 name="phone"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Phone</FormLabel>
+                    <FormLabel>{t("phone")}</FormLabel>
                     <FormControl>
-                      <Input placeholder="+57 300 111 2233" {...field} />
+                      <Input placeholder={t("phone_placeholder")} {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -145,16 +145,16 @@ export function ClientFormDialog({
               name="status"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Status</FormLabel>
+                  <FormLabel>{t("status")}</FormLabel>
                   <Select value={field.value} onValueChange={field.onChange}>
                     <FormControl>
                       <SelectTrigger>
-                        <SelectValue placeholder="Select a status" />
+                        <SelectValue placeholder={t("select_status")} />
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent>
-                      <SelectItem value="active">active</SelectItem>
-                      <SelectItem value="inactive">inactive</SelectItem>
+                      <SelectItem value="active">{t("active")}</SelectItem>
+                      <SelectItem value="inactive">{t("inactive")}</SelectItem>
                     </SelectContent>
                   </Select>
                   <FormMessage />
@@ -168,12 +168,12 @@ export function ClientFormDialog({
 
             <DialogFooter>
               <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
-                Cancel
+                {t("cancel")}
               </Button>
               <Button type="submit" disabled={isSubmitting}>
                 {isSubmitting && <Spinner IsButton />}
                 {!isSubmitting && (isEditMode ? <SquarePen className="size-4" /> : <Sparkles className="size-4" />)}
-                {isEditMode ? "Update client" : "Save client"}
+                {isEditMode ? t("update_client") : t("save_client")}
               </Button>
             </DialogFooter>
           </form>

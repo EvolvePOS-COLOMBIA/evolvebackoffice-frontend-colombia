@@ -1,0 +1,12 @@
+{
+  "platform_overview": "Resumen de plataforma",
+  "platform_overview_desc": "Opera el portafolio de tenants con confianza.",
+  "platform_overview_subtitle": "Rastrea el crecimiento de clientes, monitorea negocios inactivos y mantén la plataforma lista para incorporaciones.",
+  "total_clients": "Total de clientes",
+  "active_clients": "Clientes activos",
+  "inactive_clients": "Clientes inactivos",
+  "recent_activity": "Actividad reciente de clientes",
+  "recent_activity_desc": "Últimos tenants creados en el espacio de trabajo de la plataforma.",
+  "next_step": "Siguiente paso",
+  "next_step_desc": "Abre el módulo de Clientes para crear o actualizar registros de tenant, incluyendo slug y correo del administrador."
+}

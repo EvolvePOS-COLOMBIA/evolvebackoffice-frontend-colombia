@@ -3,9 +3,11 @@ import { Building2, CircleOff, CirclePlus, Sparkles } from "lucide-react"
 import { Badge } from "@/components/ui/badge"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { useAppStore } from "@/store/app-store"
+import { useTranslation } from "@/i18n/use-i18n"
 
 export function PlatformDashboardPage() {
   const clients = useAppStore((state) => state.platformClients)
+  const { t } = useTranslation("platform-dashboard")
 
   const activeClients = clients.filter((client) => client.status === "active").length
   const inactiveClients = clients.length - activeClients
@@ -16,27 +18,25 @@ export function PlatformDashboardPage() {
       <Card className="overflow-hidden">
         <CardContent className="grid gap-6 p-6 lg:grid-cols-[1.1fr_0.9fr] lg:p-8">
           <div className="space-y-4">
-            <Badge tone="primary">Platform overview</Badge>
+            <Badge tone="primary">{t("platform_overview")}</Badge>
             <div className="space-y-2">
-              <h1 className="text-3xl font-semibold text-balance text-foreground">Operate the tenant portfolio with confidence.</h1>
-              <p className="max-w-2xl text-sm leading-7 text-muted-foreground">
-                Track client growth, monitor inactive businesses, and keep the platform ready for onboarding.
-              </p>
+              <h1 className="text-3xl font-semibold text-balance text-foreground">{t("platform_overview_desc")}</h1>
+              <p className="max-w-2xl text-sm leading-7 text-muted-foreground">{t("platform_overview_subtitle")}</p>
             </div>
           </div>
 
           <div className="grid gap-3 sm:grid-cols-3">
-            <MetricCard label="Total clients" value={clients.length} icon={Building2} />
-            <MetricCard label="Active" value={activeClients} icon={Sparkles} />
-            <MetricCard label="Inactive" value={inactiveClients} icon={CircleOff} />
+            <MetricCard label={t("total_clients")} value={clients.length} icon={Building2} />
+            <MetricCard label={t("active_clients")} value={activeClients} icon={Sparkles} />
+            <MetricCard label={t("inactive_clients")} value={inactiveClients} icon={CircleOff} />
           </div>
         </CardContent>
       </Card>
 
       <Card>
         <CardHeader>
-          <CardTitle>Recent client activity</CardTitle>
-          <CardDescription>Newest tenants created in the platform workspace.</CardDescription>
+          <CardTitle>{t("recent_activity")}</CardTitle>
+          <CardDescription>{t("recent_activity_desc")}</CardDescription>
         </CardHeader>
         <CardContent className="grid gap-4 lg:grid-cols-3">
           {recentClients.map((client) => (
@@ -60,10 +60,8 @@ export function PlatformDashboardPage() {
             <CirclePlus className="size-5" />
           </div>
           <div>
-            <h2 className="text-lg font-semibold text-foreground">Next step</h2>
-            <p className="text-sm leading-7 text-muted-foreground">
-              Open the Clients module to create or update tenant records, including slug and administrator email.
-            </p>
+            <h2 className="text-lg font-semibold text-foreground">{t("next_step")}</h2>
+            <p className="text-sm leading-7 text-muted-foreground">{t("next_step_desc")}</p>
           </div>
         </CardContent>
       </Card>

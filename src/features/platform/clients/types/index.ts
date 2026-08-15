@@ -1,7 +1,3 @@
-import type { z } from "zod"
-
-import { clientSchema } from "@/features/platform/clients/schemas/client-schema"
-
 export interface TenantClient {
   id: string
   businessName: string
@@ -12,4 +8,10 @@ export interface TenantClient {
   createdAt: string
 }
 
-export type TenantClientFormValues = z.infer<typeof clientSchema>
+export interface TenantClientFormValues {
+  businessName: string
+  slug: string
+  adminEmail: string
+  phone: string
+  status: "active" | "inactive"
+}

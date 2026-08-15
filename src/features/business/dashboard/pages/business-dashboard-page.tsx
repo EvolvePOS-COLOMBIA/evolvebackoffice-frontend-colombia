@@ -1,77 +1,161 @@
-import { Boxes, Building2, PackageSearch, Users } from "lucide-react"
-
-import { Badge } from "@/components/ui/badge"
-import { Card, CardContent } from "@/components/ui/card"
-import { useAuth } from "@/features/auth/hooks/use-auth"
+import { useState, useCallback } from "react"
+import { Printer, Save, Settings } from "lucide-react"
+import { Button } from "@/components/ui/button"
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog"
 import { useTranslation } from "@/i18n/use-i18n"
+import { useLocaleFormat } from "@/hooks/use-locale-format"
+import { dashboardData, type Period } from "../mock/dashboard-data"
+import { PeriodFilter } from "../components/period-filter"
+import { StatsGrid } from "../components/stats-grid"
+import { DepartmentSalesChart } from "../components/department-sales-chart"
+import { TenderReportCard } from "../components/tender-report-card"
+import { YearOnYearChart } from "../components/year-on-year-chart"
+import { VsPreviousMonthChart } from "../components/vs-previous-month-chart"
+
+function getDateRange(
+  period: Period,
+  t: (key: string, options?: Record<string, unknown>) => string,
+  locale: string
+): string {
+  const now = new Date()
+  const day = now.getDate()
+  const month = now.toLocaleString(locale, { month: "long" })
+  const year = now.getFullYear()
+
+  switch (period) {
+    case "day":
+      return t("today", { month, day, year })
+    case "week": {
+      const start = new Date(now)
+      start.setDate(day - now.getDay())
+      const end = new Date(start)
+      end.setDate(start.getDate() + 6)
+      const startDay = start.getDate()
+      const endDay = end.getDate()
+      const endMonth = end.toLocaleString(locale, { month: "long" })
+      return t("this_week", { month: endMonth, start: startDay, end: endDay })
+    }
+    case "month":
+      return t("this_month", { month, year })
+  }
+}
 
 export function BusinessDashboardPage() {
-  const { availableTenants, currentTenant } = useAuth()
   const { t } = useTranslation("business-dashboard")
+  const { locale } = useLocaleFormat()
+  const [period, setPeriod] = useState<Period>("week")
+  const [alertOpen, setAlertOpen] = useState(false)
+  const [alertMessage, setAlertMessage] = useState("")
+
+  const showAlert = useCallback((message: string) => {
+    setAlertMessage(message)
+    setAlertOpen(true)
+  }, [])
+
+  const handlePrint = useCallback(() => showAlert(t("not_implemented")), [showAlert, t])
+  const handleSave = useCallback(() => showAlert(t("not_implemented")), [showAlert, t])
+  const handleSettings = useCallback(() => showAlert(t("not_implemented")), [showAlert, t])
+
+  const dateRange = getDateRange(period, t, locale)
 
   return (
-    <div className="space-y-6">
-      <Card className="overflow-hidden">
-        <CardContent className="grid gap-6 p-6 lg:grid-cols-[1.15fr_0.85fr] lg:p-8">
-          <div className="space-y-4">
-            <Badge tone="primary">{t("business_overview")}</Badge>
-            <div className="space-y-2">
-              <h1 className="text-3xl font-semibold text-balance text-foreground">
-                {currentTenant ? t("welcome_to", { businessName: currentTenant.businessName }) : t("welcome_default")}
-              </h1>
-              <p className="max-w-2xl text-sm leading-7 text-muted-foreground">
-                {t("business_dashboard_desc")}
-              </p>
+    <div>
+      <div className="dashboard grid grid-cols-1 gap-4 lg:grid-cols-[1fr_440px]">
+        {/* ═══════════════════════════════════════════
+            LEFT COLUMN: Period filter → Stats → Dept Sales → Year-on-year
+           ═══════════════════════════════════════════ */}
+        <div className="space-y-4">
+          {/* Period filter + action buttons */}
+          <div className="flex items-center gap-3">
+            <PeriodFilter value={period} onChange={setPeriod} />
+            <div className="ml-auto flex gap-3">
+              <Button variant="outline" size="icon" onClick={handlePrint} title={t("print")}>
+                <Printer className="size-4" />
+              </Button>
+              <Button variant="outline" size="icon" onClick={handleSave} title={t("save")}>
+                <Save className="size-4" />
+              </Button>
+              <Button variant="outline" size="icon" onClick={handleSettings} title={t("settings")}>
+                <Settings className="size-4" />
+              </Button>
             </div>
           </div>
 
-          <div className="grid gap-3 sm:grid-cols-2">
-            <MetricCard label={t("managed_businesses")} value={availableTenants.length} icon={Building2} />
-            <MetricCard label={t("active_tenant")} value={currentTenant ? 1 : 0} icon={Boxes} />
-            <MetricCard label={t("inventory_modules")} value={3} icon={PackageSearch} />
-            <MetricCard label={t("people_modules")} value={2} icon={Users} />
+          {/* Stats Grid */}
+          <div>
+            <StatsGrid stats={dashboardData.stats[period]} />
           </div>
-        </CardContent>
-      </Card>
 
-      <div className="grid gap-4 lg:grid-cols-3">
-        <FocusCard title={t("items")} description={t("items_desc")} />
-        <FocusCard title={t("inventory")} description={t("inventory_desc")} />
-        <FocusCard title={t("people")} description={t("people_desc")} />
-      </div>
-    </div>
-  )
-}
+          {/* Department Sales */}
+          <div>
+            <DepartmentSalesChart
+              data={dashboardData.departmentSales[period]}
+              dateRange={dateRange}
+              onPrint={handlePrint}
+              onSave={handleSave}
+            />
+          </div>
 
-function MetricCard({
-  label,
-  value,
-  icon: Icon,
-}: {
-  label: string
-  value: number
-  icon: typeof Building2
-}) {
-  return (
-    <Card className="rounded-3xl">
-      <CardContent className="space-y-3 p-5">
-        <div className="flex items-center justify-between">
-          <p className="text-[11px] font-semibold tracking-[0.24em] text-muted-foreground uppercase">{label}</p>
-          <Icon className="size-4 text-primary" />
+          {/* Year-on-year */}
+          <div>
+            <YearOnYearChart
+              data={dashboardData.yearOnYear.months}
+              total2025={dashboardData.yearOnYear.total2025}
+              total2026={dashboardData.yearOnYear.total2026}
+              onPrint={handlePrint}
+              onSave={handleSave}
+            />
+          </div>
         </div>
-        <p className="text-3xl font-semibold text-foreground">{value}</p>
-      </CardContent>
-    </Card>
-  )
-}
 
-function FocusCard({ title, description }: { title: string; description: string }) {
-  return (
-    <Card className="rounded-[28px] border-border/70 bg-background/45">
-      <CardContent className="space-y-3 p-5">
-        <h2 className="text-lg font-semibold text-foreground">{title}</h2>
-        <p className="text-sm leading-7 text-muted-foreground">{description}</p>
-      </CardContent>
-    </Card>
+        {/* ═══════════════════════════════════════════
+            RIGHT COLUMN: Tender Report → Vs. Previous Month
+           ═══════════════════════════════════════════ */}
+        <div className="space-y-4">
+          {/* Tender Report */}
+          <div>
+            <TenderReportCard
+              data={dashboardData.tenderReport[period]}
+              dateRange={dateRange}
+              onPrint={handlePrint}
+              onSave={handleSave}
+            />
+          </div>
+
+          {/* Vs. Previous Month */}
+          <div>
+            <VsPreviousMonthChart
+              weeks={dashboardData.vsPreviousMonth.weeks}
+              currentMonthName={dashboardData.vsPreviousMonth.currentMonthName}
+              previousMonthName={dashboardData.vsPreviousMonth.previousMonthName}
+              previousMonthTotal={dashboardData.vsPreviousMonth.previousMonthTotal}
+              currentMonthTotal={dashboardData.vsPreviousMonth.currentMonthTotal}
+              onPrint={handlePrint}
+              onSave={handleSave}
+            />
+          </div>
+        </div>
+      </div>
+
+      <AlertDialog open={alertOpen} onOpenChange={setAlertOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>{t("attention")}</AlertDialogTitle>
+            <AlertDialogDescription>{alertMessage}</AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogAction onClick={() => setAlertOpen(false)}>{t("understood")}</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    </div>
   )
 }

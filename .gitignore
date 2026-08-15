@@ -10,6 +10,8 @@ lerna-debug.log*
 node_modules
 dist
 dist-ssr
+coverage/*
+.env
 *.local
 
 # Editor directories and files
@@ -23,5 +25,16 @@ dist-ssr
 *.sln
 *.sw?
 
-.trae/*
-.env
+testsprite_tests/*
+
+testsprite_tests\tmp\config.json
+
+.trae
+
+.codegraph
+
+.testsprite
+
+.agents/*
+# opencode config (contains API keys)
+opencode.json

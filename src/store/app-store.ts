@@ -1,5 +1,6 @@
 import { create } from "zustand"
 import { persist } from "zustand/middleware"
+import i18n from "i18next"
 
 import { defaultTenantClients } from "@/features/platform/clients/data/default-clients"
 import type { TenantClient } from "@/features/platform/clients/types"
@@ -17,6 +18,7 @@ type AppState = {
   setSession: (session: AppSession | null) => void
   setTheme: (theme: ThemeMode) => void
   setLocale: (locale: Locale) => void
+  setAppLocale: (lang: Locale) => void
   setActiveTenant: (tenantId: string) => void
   savePlatformClient: (client: TenantClient) => void
   deletePlatformClient: (clientId: string) => void
@@ -51,6 +53,11 @@ export const useAppStore = create<AppState>()(
       setTheme: (theme) => set({ theme }),
 
       setLocale: (locale) => set({ locale }),
+
+      setAppLocale: (lang: Locale) => {
+        set({ locale: lang })
+        i18n.changeLanguage(lang)
+      },
 
       setActiveTenant: (tenantId) => {
         const session = get().session

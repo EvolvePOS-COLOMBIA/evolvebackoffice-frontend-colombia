@@ -1,19 +1,39 @@
-export function formatDate(date: string) {
-  return new Intl.DateTimeFormat("en-US", {
-    day: "2-digit",
-    month: "short",
-    year: "numeric",
-  }).format(new Date(date))
+import { getLocaleConfig } from "@/config/locale"
+import { useAppStore } from "@/store/app-store"
+
+function getLocale(lang?: string): string {
+  if (lang) return lang
+  const state = useAppStore.getState()
+  return getLocaleConfig(state.locale).locale
 }
 
-export function formatDateTime(date: string) {
-  return new Intl.DateTimeFormat("en-US", {
-    day: "2-digit",
-    month: "short",
-    year: "numeric",
-    hour: "2-digit",
-    minute: "2-digit",
-  }).format(new Date(date))
+export function formatCurrency(value: number, options?: { locale?: string; currency?: string }): string {
+  const locale = options?.locale ?? getLocale()
+  const currency = options?.currency ?? getLocaleConfig(useAppStore.getState().locale).currency
+
+  return new Intl.NumberFormat(locale, {
+    style: "currency",
+    currency,
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  }).format(value)
+}
+
+export function formatNumber(value: number, options?: { locale?: string }): string {
+  const locale = options?.locale ?? getLocale()
+  return new Intl.NumberFormat(locale).format(value)
+}
+
+export function formatDate(date: Date | string, options?: { locale?: string }): string {
+  const locale = options?.locale ?? getLocale()
+  const config = getLocaleConfig(useAppStore.getState().locale)
+  return new Intl.DateTimeFormat(locale, config.dateOptions).format(new Date(date))
+}
+
+export function formatDateTime(date: Date | string, options?: { locale?: string }): string {
+  const locale = options?.locale ?? getLocale()
+  const config = getLocaleConfig(useAppStore.getState().locale)
+  return new Intl.DateTimeFormat(locale, config.dateTimeOptions).format(new Date(date))
 }
 
 export function formatBytes(bytes: number) {

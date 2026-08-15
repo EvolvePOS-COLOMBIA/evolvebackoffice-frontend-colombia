@@ -35,17 +35,24 @@ export const useAppStore = create<AppState>()(
       platformClients: defaultTenantClients,
 
       setSession: (session) => {
-        const availableTenantIds = session?.managedTenantIds ?? []
+        const normalizedSession: AppSession | null = session
+          ? {
+              ...session,
+              managedTenantIds: session.managedTenantIds ?? [],
+            }
+          : null
+
+        const availableTenantIds = normalizedSession?.managedTenantIds ?? []
         const currentActiveTenant = get().activeTenant
         const nextActiveTenant =
-          session?.user.role === "BusinessAdmin"
+          normalizedSession?.user.role === "BusinessAdmin"
             ? availableTenantIds.includes(currentActiveTenant ?? "")
               ? currentActiveTenant
               : (availableTenantIds[0] ?? null)
             : null
 
         set({
-          session,
+          session: normalizedSession,
           activeTenant: nextActiveTenant,
         })
       },
@@ -61,12 +68,13 @@ export const useAppStore = create<AppState>()(
 
       setActiveTenant: (tenantId) => {
         const session = get().session
+        const managedTenantIds = session?.managedTenantIds ?? []
 
         if (session?.user.role !== "BusinessAdmin") {
           return
         }
 
-        if (!session.managedTenantIds.includes(tenantId)) {
+        if (!managedTenantIds.includes(tenantId)) {
           return
         }
 
@@ -91,10 +99,11 @@ export const useAppStore = create<AppState>()(
         const filteredClients = get().platformClients.filter((client) => client.id !== clientId)
         const activeTenant = get().activeTenant
         const session = get().session
+        const managedTenantIds = session?.managedTenantIds ?? []
 
         const fallbackTenant =
           session?.user.role === "BusinessAdmin"
-            ? (session.managedTenantIds.find((tenantId) => tenantId !== clientId) ?? null)
+            ? (managedTenantIds.find((tenantId) => tenantId !== clientId) ?? null)
             : null
 
         set({

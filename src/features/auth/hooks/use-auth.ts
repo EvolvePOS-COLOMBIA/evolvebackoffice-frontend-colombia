@@ -25,7 +25,8 @@ export function useAuth() {
   const role = session?.user.role
   const isPlatformAdmin = role === "PlatformAdmin"
   const isBusinessAdmin = role === "BusinessAdmin"
-  const availableTenants = platformClients.filter((client) => session?.managedTenantIds.includes(client.id))
+  const managedTenantIds = session?.managedTenantIds ?? []
+  const availableTenants = platformClients.filter((client) => managedTenantIds.includes(client.id))
   const currentTenant = availableTenants.find((client) => client.id === activeTenant) ?? availableTenants[0] ?? null
 
   const platformLoginMutation = useMutation({

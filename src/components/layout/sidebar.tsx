@@ -33,7 +33,6 @@ const businessNavigationItems = [
   { to: "/business/inventory", labelKey: "inventory", icon: Building2 },
   { to: "/business/people", labelKey: "people", icon: Users },
   { to: "/business/reports", labelKey: "reports", icon: BarChart3 },
-  { to: "/business/settings", labelKey: "settings", icon: Settings },
 ]
 
 export function Sidebar() {
@@ -88,6 +87,22 @@ export function SidebarContent({ isMobile = false, onNavigate }: { isMobile?: bo
           )
         })}
       </nav>
+
+      <NavLink
+        to="/business/settings"
+        onClick={onNavigate}
+        className={cn(
+          "flex items-center gap-3 rounded-2xl border border-l-3 px-4 py-3 text-sm font-medium transition-colors duration-300",
+          pathname === "/business/settings"
+            ? "border-primary/20 border-l-primary bg-primary/5 text-sidebar-foreground"
+            : "border-transparent text-muted-foreground hover:border-border/70 hover:bg-accent/70 hover:text-foreground"
+        )}
+      >
+        <Settings
+          className={cn("size-5", pathname === "/business/settings" ? "text-primary" : "text-muted-foreground")}
+        />
+        {t("settings")}
+      </NavLink>
 
       <Card className="mt-5 bg-background/55">
         <CardContent className="space-y-3 px-4 py-4">

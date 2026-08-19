@@ -12,7 +12,7 @@ import i18n from "@/i18n"
 import { useTranslation } from "@/i18n/use-i18n"
 
 export function Navbar() {
-  const { availableTenants, currentTenant, isBusinessAdmin, setActiveTenant } = useAuth()
+  const { isBusinessAdmin, tenantId } = useAuth()
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
   const { t } = useTranslation()
 
@@ -49,22 +49,11 @@ export function Navbar() {
             </SheetContent>
           </Sheet>
 
-          {isBusinessAdmin && (
-            <div className="min-w-[220px]">
-              <Select value={currentTenant?.id} onValueChange={setActiveTenant}>
-                <SelectTrigger className="bg-background/55">
-                  <SelectValue placeholder={t("select_business")} />
-                </SelectTrigger>
-                <SelectContent>
-                  {availableTenants.map((tenant) => (
-                    <SelectItem key={tenant.id} value={tenant.id}>
-                      {tenant.businessName}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+          {isBusinessAdmin && tenantId ? (
+            <div className="max-w-[280px] truncate rounded-md border border-border/70 bg-background/55 px-3 py-2 text-sm text-muted-foreground">
+              {tenantId}
             </div>
-          )}
+          ) : null}
         </div>
 
         <div className="flex flex-wrap items-center gap-2 overflow-x-auto pb-1 sm:pb-0">

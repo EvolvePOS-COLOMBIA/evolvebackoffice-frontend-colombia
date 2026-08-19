@@ -11,7 +11,7 @@ import { PeoplePage } from "@/features/business/people/pages/people-page"
 import { ReportsPage } from "@/features/business/reports/pages/reports-page"
 import { SettingsPage } from "@/features/business/settings/pages/settings-page"
 import { MarketingPage } from "@/features/marketing/pages/marketing-page"
-import { ClientsPage } from "@/features/platform/clients/pages/clients-page"
+import { TenantsPage } from "@/features/platform/tenants/pages/tenants-page"
 import { PlatformDashboardPage } from "@/features/platform/dashboard/pages/platform-dashboard-page"
 import { ProtectedRoute } from "@/routes/protected-route"
 import { PublicRoute } from "@/routes/public-route"
@@ -44,7 +44,7 @@ function AppRoutesContent() {
       <Route element={<ProtectedRoute allowedRoles={["PlatformAdmin"]} />}>
         <Route element={<AppLayout />}>
           <Route path="/platform/dashboard" element={<PlatformDashboardPage />} />
-          <Route path="/platform/clients" element={<ClientsPage />} />
+          <Route path="/platform/tenants" element={<TenantsPage />} />
         </Route>
       </Route>
 

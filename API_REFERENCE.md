@@ -1,874 +1,944 @@
-# BackendPOS — Referencia Completa de API
+================================================================================
+MANUAL DE IMPLEMENTACIÓN — BACKOFFICE WEB (React.js)
+BackendPOS — Arquitectura Multi-Tenant
+Versión: 1.1 | Fecha: 2026-08-18
+================================================================================
 
-> **Versión**: ASP.NET Core 10 · PostgreSQL · Arquitectura Clean Architecture + Multi-tenant (DB aislada por tenant)
-> **Destinatarios**:
-> 1. Equipo **React + TypeScript** (Frontend administrativo)
-> 2. Equipo **C# + WPF** (Software de caja / Terminal POS)
->
-> **URL base local**: `https://localhost:70xx` o `http://localhost:5xxx` (según launchSettings)
+Tabla de contenido:
 
----
+1. ARQUITECTURA GENERAL
+2. TECNOLOGÍAS RECOMENDADAS
+3. MODELOS DE SEGURIDAD Y AUTENTICACIÓN
+   3.1 Bearer JWT + X-Tenant-Id
+   3.2 Dos Login Pages: /login/admin y /login/pos
+   3.3 Refresh Token Rotation
+   3.4 X-Force-Password-Change header
+4. ROLES Y POLÍTICAS DE AUTORIZACIÓN
+5. ESTRUCTURA DE RUTAS (React Router v7)
+6. CATÁLOGO COMPLETO DE ENDPOINTS + EJEMPLOS
+7. TIPOS / INTERFACES TYPESCRIPT (client-side)
+8. FLUJOS UI CLAVE (con screenshots textuales y mockups)
+9. MANEJO DE ERRORES Y CÓDIGOS HTTP
+10. STORE GLOBAL (Zustand) CON AUTENTICACIÓN
+11. BUENAS PRÁCTICAS Y ACCESIBILIDAD
 
-## 📋 Tabla de Contenido
+================================================================================
 
-- [Convenciones Generales](#-convenciones-generales)
-  - [🔑 IDs externos: Sistema Doble Identificador (Caso A)](#-ids-externos-sistema-doble-identificador-caso-a)
-  - [Multi-Tenant: Header obligatorio `X-Tenant-Id`](#multi-tenant-header-obligatorio-x-tenant-id)
-  - [Autenticación JWT (pendiente conectar)](#autenticación-jwt-pendiente-conectar)
-  - [Rate Limiting](#rate-limiting)
-  - [Errores y Formatos](#errores-y-formatos)
-  - [Firma HMAC (opcional)](#firma-hmac-opcional-x-pos-signature)
-- **GRUPO A — ADMINISTRADORES DE LA PLATAFORMA (SUPER ADMIN)**
-  - [TENANTS — CRUD y gestión del ciclo de vida](#a1-tenants--crud-y-gestión-del-ciclo-de-vida)
-  - [TENANTS — Gestión de Seriales POS](#a2-tenants--gestión-de-seriales-pos)
-- **GRUPO B — ADMINISTRADORES DE NEGOCIO (TENANT ADMIN)**
-  - [AUTH — Login, Usuarios, Cambio de contraseña](#b1-auth--login-usuarios-cambio-de-contraseña)
-  - [CUSTOMERS — Clientes](#b2-customers--clientes)
-  - [ITEMS — Productos / Servicios](#b3-items--productos--servicios)
-  - [REGISTERS — Cajas Registradoras](#b4-registers--cajas-registradoras)
-  - [TRANSACTIONS — Ventas / Facturas](#b5-transactions--ventas--facturas)
-- **GRUPO C — TERMINALES POS (Software WPF)**
-  - [POS-TERMINAL · Autenticación de caja](#c1-pos-terminal-autenticación-de-caja)
-  - [POS-TERMINAL · Sincronización Full / Delta](#c2-pos-terminal-sincronización-full--delta)
-  - [POS-TERMINAL · Envío de facturas en bloque](#c3-pos-terminal-envío-de-facturas-en-bloque)
-- [APÉNDICE A — TODOS los DTOs](#apéndice-a--todos-los-dtos)
-- [APÉNDICE B — Valores por defecto `appsettings.json`](#apéndice-b--configuración-recomendada-appsettingsjson)
+1. # ARQUITECTURA GENERAL
 
----
+El Backoffice Web es el panel de administración de los tenants (negocios).
+Permite a los dueños/administradores/managers:
+· Gestionar usuarios del negocio (administradores, gerentes, cajeros).
+· Gestionar la caja (Register / serial codes POS).
+· Mantener el catálogo de clientes.
+· Mantener el catálogo de productos/servicios (Items) y su stock.
+· Ver transacciones, reportes diarios, cancelar facturas.
+· Desactivar seriales POS, activar/desactivar usuarios.
 
-## 🧭 Convenciones Generales
+Arquitectura cliente:
+· React 18+ con StrictMode.
+· TypeScript estricto (strictNullChecks, noImplicitAny, noUncheckedIndexedAccess: true).
+· API Wrapper sobre fetch o Axios con interceptores (Bearer token, auto-refresh, X-Tenant-Id).
+· React Router v7 con rutas protegidas (element: <RequireAuth>).
+· Zustand como store global (auth state + UI state).
+· TanStack Query v5 (antes React Query) para server state + cache invalidation.
+· UI: Ant Design v5 o Shadcn/ui (recomendado) + Tailwind v4.
+· Formularios: React Hook Form + Zod schema validation.
+· Internacionalización: react-i18next (es-CO primero).
+· Gráficos / dashboards: Recharts.
 
-### 🔑 IDs externos: Sistema Doble Identificador (Caso A)
+================================================================================ 2. TECNOLOGÍAS RECOMENDADAS
+================================================================================
 
-> **⚠️ Cambio CRÍTICO para los equipos React/WPF**:
->
-> Toda entidad expuesta por la **API** usa un **`Id` de tipo `Guid` (UUID v4)**. Internamente el motor de BD usa un `int Id` como clave clustered (para rendimiento de joins e inserts), pero el cliente **nunca ve el `int Id`** — solo el `PublicId` (mapeado transparente como `Id` en los DTOs).
+Dependencias mínimas (npm install):
+react, react-dom ^18.3 o ^19
+react-router-dom ^7
+@tanstack/react-query, @tanstack/react-table ^5
+zustand ^4
+axios ^1.7
+react-hook-form, @hookform/resolvers ^3
+zod ^3
+dayjs ^1
+@ant-design/icons, antd ^5 (si escoges AntD) - o alternativamente -
+tailwindcss, @tailwindcss/vite, shadcn/ui latest
 
-**Formato esperado de ID externo**: `11111111-1111-1111-1111-111111111111` (36 caracteres, 4 guiones, UUID v4).
+Dev dependencies:
+typescript ^5, vite ^6, @types/react, @types/react-dom
+eslint, @typescript-eslint/parser, prettier, husky, lint-staged
+vitest, @testing-library/react, @testing-library/user-event, msw
 
-| Dónde | Tipo ID | Ejemplo |
-|---|---|---|
-| **URLs de rutas** (`{id}`) | `:guid` (no `:int`) | `GET /api/tenants/22222222-2222-2222-2222-222222222222` |
-| **Body JSON (request)** — campos `*Id` | Guid string JSON | `"registerId": "33333333-3333-3333-3333-333333333333"` |
-| **Body JSON (response)** — `id`, `userId`, `customerId`, `itemId`, `registerId`, `transactionId` | Guid string JSON | `"id": "44444444-4444-4444-4444-444444444444"` |
-| **Diccionarios / Lookups en cliente** | Guid como key | `Dictionary<Guid, ItemDto> ItemsById` |
+================================================================================ 3. MODELOS DE SEGURIDAD Y AUTENTICACIÓN
+================================================================================
 
-> **Consejo para el equipo React/TS**: Definir `type UUID = string;` y wrapar todos los campos Id para evitar mezcla accidental con números.  
-> **Consejo para WPF/C#**: Usar `Guid.Empty` para "ninguno" (ej. `CustomerId = Guid.Empty` en una venta sin cliente) — **no usar `0`**.
+## 3.1 DOS HEADERS QUE VIAJAN EN TODOS LOS REQUESTS AUTENTICADOS
 
-Valores placeholder de ejemplo que usaremos en esta guía:
+1. Authorization: Bearer <JWT>
+2. X-Tenant-Id: <slug-del-tenant | Guid-PublicId del tenant>
 
-| Entidad | Guid ejemplo |
-|---|---|
-| Tenant Demo (Panadería María) | `22222222-2222-2222-2222-222222222222` |
-| Usuario Admin | `11111111-1111-1111-1111-111111111111` |
-| Usuario Cajero 1 | `55555555-5555-5555-5555-555555555555` |
-| Register (Caja Principal) | `33333333-3333-3333-3333-333333333333` |
-| Item "Pan de Queso" | `77777777-7777-7777-7777-777777777777` |
-| Serial POS AB12-… | `88888888-8888-8888-8888-888888888888` |
+Estos dos headers son REQUERIDOS en TODO endpoint que no sea anónimo
+(los endpoints de plataforma `/api/tenants/*` usan JWT del admin global pero NO
+requieren `X-Tenant-Id`, ya que operan sobre la BD maestra).
 
----
+- X-Tenant-Id se guarda en el sessionStorage/localStorage UNA SOLA VEZ cuando
+  el usuario hace login exitoso (viene en el payload JWT claim "ts" = slug del tenant).
+- El JWT claim "tid" = TenantPublicId en formato Guid.
+- El JWT claim "ts" = slug string del tenant (el que va en el header X-Tenant-Id).
+- El JWT claim "role" = Rol del usuario (ADMIN, MANAGER, CASHIER).
+- El JWT claim "sub" = UserPublicId Guid (el que se usa para change-password).
 
-### Multi-Tenant: Header obligatorio `X-Tenant-Id`
+NOTA: `X-Tenant-Id` acepta el slug (p. ej. "panaderia-maria-001"). El middleware
+resuelve EXCLUSIVAMENTE por header; si el header no viene, se considera request
+de plataforma (sin tenant).
 
-Todos los endpoints del **Grupo B** (tenant) y **la mayoría del Grupo C** (sync y batches) requieren el header `X-Tenant-Id`.
+## 3.2 PÁGINAS DE LOGIN
 
-| Caso | ¿Requiere `X-Tenant-Id`? |
-|---|---|
-| Grupo A (Tenants) | ❌ No. Resuelven contra BD MAESTRA directamente. |
-| **`POST /api/pos-terminal/authenticate`** | ❌ No. El tenant se resuelve desde el serial. |
-| Grupo B (Auth, Customers, Items, Registers, Transactions) | ✅ **SÍ** |
-| `POST /api/pos-terminal/sync/full`, `/sync/delta`, `/invoices/batch` | ✅ **SÍ** |
+Hay TRES modos de autenticación en el backend (AuthController.cs):
 
-El valor de `X-Tenant-Id` es el campo `TenantId` (string) del tenant — **no** el Guid Público ni el Id numérico. Ejemplo: `tenant-panaderia-maria`.
+| Modo                | Endpoint                      | X-Tenant-Id | Contra qué valida          |
+| ------------------- | ----------------------------- | ----------- | -------------------------- |
+| Plataforma (global) | POST /api/auth/login/platform | NO          | BD MAESTRA (admin global)  |
+| Backoffice tenant   | POST /api/auth/login/admin    | SÍ          | BD del tenant (email+pass) |
+| POS (cajero online) | POST /api/auth/login/pos      | SÍ          | BD del tenant (user+PIN)   |
 
-### Autenticación JWT (pendiente conectar)
+Los logins que operan sobre un tenant (admin y pos) REQUIEREN `X-Tenant-Id`.
+El login de plataforma NO (el JWT usa el tenant virtual "posco-system").
 
-> ⚠️ **Importante para el equipo React**: El backend ya tiene toda la estructura de JWT (`ITokenService`, `AuthResponseDto.Token`). En este build **los endpoints no validan el JWT en el pipeline todavía** (placeholder). El plan es que el login devuelva el token, y los endpoints del grupo B lo requieran vía `[Authorize]`. El `UserId` actual en `ChangePassword` está hardcodeado a Guid `11111111-1111-1111-1111-111111111111` temporalmente. Mencionado explícitamente por si React empieza a guardar tokens antes de la merge final.
+BOOTSTRAP (solo primera vez):
 
-### Rate Limiting
+- GET /api/auth/has-admin → { hasAdmin: bool } (¿existe admin global?)
+- POST /api/auth/bootstrap → crea el PRIMER admin global (si hasAdmin=false).
+  Body: BootstrapAdminDto { fullName, email, password, documentNumber? }
+  201 → { message, username, tempPin, note } (PIN POS se muestra UNA vez).
 
-| Política | Alcance | Límites |
-|---|---|---|
-| `PosAuthLimiter` | Solo `/api/pos-terminal/authenticate` por IP | **5 requests por minuto** · Ventana 1 minuto |
-| `PosActionLimiter` | Todos los endpoints de `PosTerminalController` por serial/IP | **120 requests por minuto** |
+ROUTE: /login/admin
+· Uso: login BACKOFFICE de un tenant (email + password larga y segura).
+· Pantalla típica:
+┌────────────────────────────────────────┐
+│ INICIAR SESIÓN ADMINISTRACIÓN │
+│ │
+│ Tenant: [ panaderia-maria-001 ] │
+│ Email: [_________@correo.com] │
+│ Password: [**********] │
+│ │
+│ [ Ingresar al Backoffice ] │
+│ ¿No recuerdas tu contraseña? │
+└────────────────────────────────────────┘
 
-Status code al exceder: **`429 Too Many Requests`** con body:
-```json
-{"error":"Too many requests","hint":"Intenta nuevamente en 60 segundos"}
-```
+ENDPOINT: POST /api/auth/login/admin
+HEADERS: X-Tenant-Id: <slug> (obligatorio)
+REQUEST BODY: LoginAdminDto { email, password }
+RESPONSE BODY: AuthResponseDto (user + JWT + RefreshToken + ForcePasswordChange)
 
-### Errores y Formatos
+REGLAS DE VALIDACIÓN CLIENTE (Zod schema): - Email: correo válido (standard). - Password: min 8 chars, al menos 1 mayúsc, 1 minúsc, 1 número, 1 símbolo.
 
-Casi todos los errores **400 BadRequest** devuelven:
+ROUTE: /login/platform
+· Uso: login del ADMINISTRADOR GLOBAL de la plataforma (gestiona tenants).
+· Pantalla:
+┌────────────────────────────────────────┐
+│ INICIAR SESIÓN PLATAFORMA │
+│ │
+│ Email: [ admin@posco.io ] │
+│ Password: [**********] │
+│ │
+│ [ Ingresar a la Plataforma ] │
+└────────────────────────────────────────┘
 
-```json
-{ "message": "Descripción humana del problema." }
-```
+ENDPOINT: POST /api/auth/login/platform
+HEADERS: NINGUNO especial (NO requiere X-Tenant-Id)
+REQUEST BODY: LoginAdminDto { email, password }
+RESPONSE BODY: AuthResponseDto
+REDIRECT: /admin/tenants
 
-Errores de validación FluentValidation devuelven el **`ModelStateDictionary`** estándar de ASP.NET:
+ROUTE: /login/pos
+· Uso: acceso RÁPIDO desde la web con credenciales cortas POS
+(Username 4-5 dígitos + PIN 4 dígitos).
+· Escenario típico: el cajero NO necesita la UI de administración pero
+sí quiere ver sus propias ventas, historial, imprimir reimpresiones...
+El administrador también puede entrar aquí si su cuenta tiene ambos
+hashes configurados (lo cual es el estándar).
+· Pantalla:
+┌────────────────────────────────────────┐
+│ INGRESAR CON CREDENCIALES POS │
+│ │
+│ Usuario: [____] (solo numérico) │
+│ PIN: [____] (solo numérico) │
+│ │
+│ [ Entrar ] │
+└────────────────────────────────────────┘
 
-```json
-{
-  "Email": ["El email es obligatorio.", "Formato de email inválido."],
-  "Password": ["Mínimo 6 caracteres."]
-}
-```
+ENDPOINT: POST /api/auth/login/pos
+HEADERS: X-Tenant-Id: <slug> (obligatorio)
+REQUEST BODY: LoginPosDto { username, pin }
+RESPONSE BODY: AuthResponseDto
 
-### Firma HMAC (opcional) `X-POS-Signature`
+VALIDACIÓN CLIENTE: - Username: regex /^\d{4,16}$/
+    - Pin:      regex /^\d{4}$/ (exactamente 4 dígitos).
 
-Si el backend tiene configurado `PosIntegration:GlobalSharedSecret` en `appsettings.json`, **todos** los endpoints de `PosTerminalController` validan una firma SHA256 con HMAC. El equipo **WPF** debe implementar:
+COMPORTAMIENTO COMÚN POST-LOGIN:
+· Si HTTP 200: 1. Parsear AuthResponseDto.user → role = user.Role. 2. Persistir JWT (httpOnly? NO; JWT en RAM Zustand), RefreshToken en
+httpOnly? NO en SPA. Guardar RefreshToken en sessionStorage con
+AES ligero (opcional) o al menos en un store no serializado.
+Nota: SPA no puede usar httpOnly cookie desde dominio cruzado. 3. Guardar user profile + X-Tenant-Id (claim "ts" del JWT, NO "tid"). 4. Si header en la respuesta: X-Force-Password-Change = "true"
+(o bien ForcePasswordChange=true en el body) → redirigir
+a /change-password OBLIGATORIO (bloquear el resto de rutas). 5. Redirigir según rol:
+ADMIN global (login platform) → /admin/tenants
+ADMIN tenant / MANAGER → /dashboard
+CASHIER → /mi-turno
 
-```
-signature = Base64( HMACSHA256( utf8(secret), utf8(raw_json_body) ) )
-Header:    X-POS-Signature: <signature>
-```
+## 3.3 REFRESH TOKEN ROTATION (silent refresh)
 
-Si `GlobalSharedSecret` es `null` (default), el middleware SKIPea la validación (feature-flag). Para entornos QA/producción se recomienda activarlo.
+- El JWT caduca a los 120 minutos por defecto (configurable: `Jwt:TokenExpirationMinutes`).
+  No hardcodear la expiración en el cliente; leer del claim `exp` del JWT.
+- El RefreshToken caduca a los 30 días por defecto (`Jwt:RefreshTokenExpirationMinutes` = 43200 min).
+- El cliente DEBE interceptar cualquier 401 en un endpoint autorizado
+  (cualquiera) y antes de propagar el error al usuario:
+  a) Obtener el RefreshToken (guardado tras login).
+  b) Llamar a POST /api/auth/refresh-jwt body: { refreshToken: "<valor>" }
+  c) HTTP 200 → recibir NUEVO JWT + NUEVO RefreshToken.
+  Actualizar store + guardar nuevo refreshToken (el viejo es revocado automáticamente).
+  Reintentar el request original con el JWT nuevo.
+  d) HTTP 401 en refresh → token revocado / expiró definitivamente.
+  Limpiar store completo, redirigir a /login/admin.
 
----
+- Tanto refresh como login endpoints usan rate-limit (`TenantLoginLimiter`:
+  5 req / 5 min por TenantId+IP). Si recibes 429, el body es
+  {"error":"Too many requests","hint":"Intenta nuevamente en 60 segundos"}
+  (NO hay header `Retry-After`). Esperar 60 s e intentar 1 vez más; luego forzar logout.
 
-# 🛡️ GRUPO A — ADMINISTRADORES DE LA PLATAFORMA
-
-Usar estos endpoints desde el **Panel Super Administrador** (la empresa que vende/alquila el POS). Toda la data aquí va a la **Base de Datos Maestra** (no a la BD del tenant).
-
----
-
-## A.1. TENANTS · CRUD y gestión del ciclo de vida
-
-**Ruta base**: `api/tenants`
-
-### A.1.1. Crear un Tenant nuevo + su BD
-
-```
-POST /api/tenants
-Body: CreateTenantDto
-```
-
-**Descripción**: Orquesta TODO: crear registro en Master DB → generar N códigos seriales (`MaxRegisters`) → crear BD PostgreSQL del tenant → ejecutar migraciones → crear usuario admin inicial con password temporal.
-
-**Body ejemplo**:
-```json
-{
-  "name": "Panadería María S.A.S.",
-  "contactEmail": "admin@panaderiamaria.com",
-  "phone": "+573111111111",
-  "address": "Carrera 10 # 20-30, Bogotá",
-  "maxRegisters": 3
-}
-```
-
-| Campo | Tipo | Req. | Descripción |
-|---|---|---|---|
-| `name` | string (100) | ✅ | Nombre del negocio (se usa en la UI del POS) |
-| `contactEmail` | string (200) | ✅ | Único global; se convierte en email del admin del tenant |
-| `phone` | string (20) | ❔ | Contacto |
-| `address` | string (500) | ❔ | |
-| `maxRegisters` | int? | ❔ | Número de cajas registradoras (default 3, **determina cuántos seriales se crean**). |
-
-**Respuesta 201 Created — `TenantResponseDto`** (⚠️ `id` y `serialCodes[].id` son **Guid**):
-```json
-{
-  "id": "22222222-2222-2222-2222-222222222222",
-  "name": "PANADERÍA MARÍA S.A.S.",
-  "tenantId": "PANADERIAMARIA-00002",
-  "contactEmail": "admin@panaderiamaria.com",
-  "phone": "+573111111111",
-  "address": "CARRERA 10 # 20-30, BOGOTÁ",
-  "isActive": true,
-  "maxRegisters": 3,
-  "currentRegisterCount": 0,
-  "serialCodes": [
-    {
-      "id": "88888888-8888-8888-8888-888888888888",
-      "serialCode": "AB12-CD34-EF56-GH78",
-      "status": "Unassigned",
-      "machineIdentifier": null,
-      "deviceName": null,
-      "activatedAt": null,
-      "lastSeenAt": null,
-      "createdAt": "2026-08-07T12:00:00Z"
-    }
-  ],
-  "createdAt": "2026-08-07T12:00:00Z"
-}
-```
-
-> 🔑 **Importante**: La contraseña temporal del admin se genera aleatoriamente y se **loguea en consola** (`LogInformation`). En un despliegue real, este valor se envía por email al cliente. El usuario tendrá `ForcePasswordChange=true` en el login.
-
-**Respuestas de error**:
-- `400` Si ya existe tenant con ese `ContactEmail`.
-- `500` Si falla la creación de la BD física en PostgreSQL (usuario sin privilegios `CREATEDB`, etc.)
-
----
-
-### A.1.2. Obtener un Tenant por ID (Guid)
-
-```
-GET /api/tenants/{id:guid}
-```
-
-Parámetro URL: `id` es el **Guid Público** del tenant (no el `TenantId` string ni el int interno).  
-Retorna `TenantResponseDto` (igual que la respuesta de crear) o **404**.
+  3.4 FORCE PASSWORD CHANGE (obligatorio)
 
 ---
 
-### A.1.3. Listar Tenants paginado
+Cualquier respuesta de login/refresh puede traer:
+Header: X-Force-Password-Change: "true"
+Body: ForcePasswordChange: true (siempre igual al header)
 
-```
-GET /api/tenants?pageNumber=1&pageSize=20
-```
-
-| Query param | Default |
-|---|---|
-| `pageNumber` | `1` (menor a 1 → 1) |
-| `pageSize` | `20` (rango permitido 1..100) |
-
-**Respuesta**:
-```json
-{
-  "data": [ /* TenantListResponseDto[] */
-    {
-      "id": "11111111-1111-1111-1111-111111111111",
-      "name": "SISTEMA PRINCIPAL",
-      "tenantId": "posco-system",
-      "contactEmail": "admin@posco.com",
-      "isActive": true,
-      "maxRegisters": 999,
-      "createdAt": "2026-01-01T00:00:00Z"
-    }
-  ],
-  "pageNumber": 1, "pageSize": 20,
-  "totalCount": 1, "totalPages": 1
-}
-```
-
----
-
-### A.1.4. Actualizar datos de un Tenant
-
-```
-PUT /api/tenants/{id:guid}
-Body: UpdateTenantDto
-```
-
-Body:
-```json
-{ "name": "...", "contactEmail": "...", "phone": "...", "address": "..." }
-```
-
-**Importante**: No se actualiza `MaxRegisters` por este endpoint. Si se hace en el futuro, requeriría regenerar seriales adicionales.
-
----
-
-### A.1.5. Activar / Desactivar Tenant
-
-```
-POST /api/tenants/{id:guid}/activate   → 204 NoContent
-POST /api/tenants/{id:guid}/deactivate → 204 NoContent
-```
-
-Un tenant desactivado:
-- No puede autenticar nuevas terminales POS.
-- Si el software POS intenta login de usuario, el middleware rechazará la resolución.
-
----
-
-### A.1.6. Eliminar Tenant (acción destructiva)
-
-```
-DELETE /api/tenants/{id:guid} → 204 NoContent
-```
-
-Acciones que ejecuta:
-1. Intenta `DROP DATABASE` de la BD física del tenant.
-2. Elimina el registro de `Tenants` en la Master DB.
-3. Elimina en cascada todos los `PosSerialCodes` del tenant.
-
-> Si falla la eliminación física de la BD, se elimina igualmente el registro (con warning en logs). Para entornos cloud con restricciones fuertes, habría que desacoplarlo en un proceso background.
-
----
-
-### A.1.7. Verificar cupo disponible de cajas
-
-```
-GET /api/tenants/{id:guid}/can-create-register
-```
-
-Respuesta:
-```json
-{
-  "tenantId": "22222222-2222-2222-2222-222222222222",
-  "canCreateRegister": true
-}
-```
-
-Nota: `tenantId` aquí es el **Guid Público** (no el int ni el slug) para mantener consistencia de contrato.
-
----
-
-## A.2. TENANTS · Gestión de Seriales POS
-
-### A.2.1. Listar los seriales de un tenant
-
-```
-GET /api/tenants/{id:guid}/serial-codes
-```
-
-Retorna `List<PosSerialCodeResponseDto>` (misma estructura del campo `serialCodes` del TenantResponse). Campos `status` posibles:
-
-| Status | Significado |
-|---|---|
-| `Unassigned` | Creado, sin activar. Disponible para que el cliente lo ingrese en el POS. |
-| `Activated` | Vinculado a una máquina (`MachineIdentifier` rellenado). |
-| `Decommissioned` | Liberado manualmente; puede volver a usarse. |
-
-### A.2.2. Liberar (Decommission) un serial
-
-```
-POST /api/tenants/{id:guid}/serial-codes/{serialId:guid}/decommission
-Body: { "reason": "PC dañado; se reemplazó la máquina." }
-```
-
-Tanto `id` (tenant) como `serialId` son **Guid Públicos**.
-
-Qué hace:
-1. Cambia estado en Master DB a `Decommissioned`, limpia `MachineIdentifier`, `DeviceName`, `ActivatedAt`.
-2. Va a la BD del tenant y busca el `Register` con ese `SerialCode`:
-   - Le quita `SerialCode` y `DeviceIdentifier`.
-   - Pone el `Register` en estado `Inactive`.
-3. **Medida 4 (Compensación)**: Si el paso 2 falla, se revierte el paso 1 para no quedar inconsistentes. Si incluso la compensación falla → `500` y **LogCritical** (requiere intervención manual).
-
----
-
-# 🏪 GRUPO B — ADMINISTRADORES DE NEGOCIO (TENANT)
-
-Este grupo lo consume el **Frontend React del cliente** (panadería, tienda, etc.).
-
-⚠️ **Todos requieren header `X-Tenant-Id: <tenant-string-id>`** y **JWT (cuando se active la auth)**.
-
----
-
-## B.1. AUTH · Login, Usuarios, Cambio de contraseña
-
-**Ruta base**: `api/auth`
-
-### B.1.1. Login del usuario del tenant
-
-```
-POST /api/auth/login
-Body: LoginDto
-```
-
-```json
-{ "email": "admin@panaderiamaria.com", "password": "temporal123" }
-```
-
-**Respuesta `AuthResponseDto`** — `user.id` es **Guid**:
-```json
-{
-  "user": {
-    "id": "11111111-1111-1111-1111-111111111111",
-    "fullName": "PANADERÍA MARÍA ADMINISTRADOR",
-    "email": "admin@panaderiamaria.com",
-    "role": "Admin",
-    "forcePasswordChange": true,
-    "isActive": true,
-    "lastLoginAt": null,
-    "createdAt": "2026-08-07T12:00:00Z"
-  },
-  "token": "jwt-mock-tenant-PANADERIAMARIA-00002-user-11111111111111111111111111111111",
-  "forcePasswordChange": true
-}
-```
-
-Además, si `forcePasswordChange=true` se envía **header extra**: `X-Force-Password-Change: true` (por si el frontend prefiere detectarlo por header).
-
-**Errores**:
-- `401 Unauthorized` → credenciales inválidas.
-- `400` → usuario inactivo, tenant inactivo, etc.
-
----
-
-### B.1.2. Crear un usuario
-
-```
-POST /api/auth/users
-Body: CreateUserDto → { "fullName": "Cajero 1", "email": "cajero1@panaderia.com", "password": "Abc123*" }
-```
-
-Roles permitidos: `Admin`, `Manager`, `Cashier` (actualmente se crea con `Cashier` por defecto en el servicio).  
-Devuelve `UserResponseDto` 201 Created. El campo `id` de la respuesta es Guid; úsalo en `Location` header.
-
-### B.1.3. Obtener / Actualizar usuario
-
-```
-GET  /api/auth/users/{id:guid}   → UserResponseDto | 404
-PUT  /api/auth/users/{id:guid}   → Body: UpdateUserDto { "fullName": "..." }
-```
-
-### B.1.4. Cambiar contraseña usuario actual
-
-```
+La app NO debe permitir navegar a ninguna otra ruta hasta que el usuario
+actualice su contraseña vía:
 POST /api/auth/change-password
-Body: { "currentPassword": "...", "newPassword": "..." } → 204 NoContent
-```
+Body: ChangePasswordDto { currentPassword, newPassword }
+Response: 204 No Content (sin body).
 
-> ⚠️ TODO técnico: Actualmente `userPublicId` hardcodeado a `11111111-1111-1111-1111-111111111111` (Guid admin demo). El equipo WPF/React debe tener en cuenta que este endpoint leerá el `UserId` desde claims del JWT cuando se active `[Authorize]`.
+Tras cambiar exitosamente → invalidar sesiones antiguas (la API ya revoca
+todos los refresh tokens del usuario con motivo "password_changed").
+Redirigir a /dashboard con toast "Contraseña actualizada exitosamente.
+Todas las demás sesiones fueron cerradas.".
 
----
+================================================================================ 4. ROLES Y POLÍTICAS DE AUTORIZACIÓN
+================================================================================
 
-## B.2. CUSTOMERS · Clientes
+Hay 3 roles en el sistema (mayúsculas en DB, no distinguen case en la API).
 
-**Ruta**: `api/customers` · **Todos los endpoints requieren `X-Tenant-Id`**
+┌───────────────┬──────────────────────────────────────────────────────────────────┐
+│ ROL │ ALCANCE + PERMISOS │
+├───────────────┼──────────────────────────────────────────────────────────────────┤
+│ ADMIN (global)│ Operaciones sobre TODOS los tenants (master DB). │
+│ │ Rutas /admin/\* │
+│ │ · Crear / listar / editar / activar tenants. │
+│ │ · Ver registros de auditoría globales. │
+│ │ · Asignar nuevos seriales codes POS a un tenant. │
+│ │ IMPORTANTE: Un usuario con rol "ADMIN" NO tiene acceso a un │
+│ │ tenant específico POR DEFECTO; debe existir su User en la │
+│ │ BD tenant correspondiente para autenticarse con X-Tenant-Id. │
+├───────────────┼──────────────────────────────────────────────────────────────────┤
+│ MANAGER │ Gestiona UN SOLO tenant (el del claim "tid"). │
+│ │ Política "RequireManagerOrAdmin" → puede: │
+│ │ · Crear / listar / actualizar / desactivar USUARIOS (tenant). │
+│ │ · CRUD de Customers, Items, Registers. │
+│ │ · Cancelar facturas (POST /{id}/cancel). │
+│ │ · Ajustar stock manual. │
+├───────────────┼──────────────────────────────────────────────────────────────────┤
+│ CASHIER │ Permisos mínimos dentro de UN tenant. │
+│ │ Política "RequireAnyUser" → puede: │
+│ │ · Ver su propio perfil (GET /users/{id}). │
+│ │ · Ver items, customers, registers (sólo lectura). │
+│ │ · Cambiar su propia password web (obligatorio si la era temp). │
+│ │ · Ver transacciones. │
+│ │ NO PUEDE: crear usuarios, cancelar facturas, ajustar stock, etc. │
+└───────────────┴──────────────────────────────────────────────────────────────────┘
 
-| Endpoint | Uso |
-|---|---|
-| `GET /api/customers?pageNumber=1&pageSize=20` | `{ data: CustomerResponseDto[], totalCount: N }` |
-| `GET /api/customers/{id:guid}` | Detalle · `id` es Guid |
-| `POST /api/customers` | Crear: `{ name, documentNumber?, email?, phone?, address?, city?, department? }` |
-| `PUT /api/customers/{id:guid}` | Actualizar (mismo body, todo opcional excepto `name`) |
-| `DELETE /api/customers/{id:guid}` | **Soft-delete**: No elimina; marca `IsActive = false`. → `204` |
+POLÍTICAS QUE VA A REVISAR EL CLIENTE EN RUTAS:
+(En el componente <ProtectedRoute allowedRoles={['ADMIN','MANAGER']}>)
 
-Unicity: `DocumentNumber` es único por tenant.
+================================================================================ 5. ESTRUCTURA DE RUTAS (React Router v7)
+================================================================================
 
----
+src/routes.tsx o src/App.tsx (createBrowserRouter):
 
-## B.3. ITEMS · Productos / Servicios
+/
+├── /login/admin (Pública) LoginAdminPage
+├── /login/pos (Pública) LoginPosPage
+│
+├── /change-password (Requiere auth, sin restricción de rol)
+│ │ ChangePasswordPage
+│ │ · SOLO es accesible si el usuario tiene ForcePasswordChange=true
+│ │ (si no, redirect /dashboard)
+│
+├── /admin (RequireAdmin global) Layout AdminPanel
+│ ├── /admin/tenants TenantsListPage
+│ ├── /admin/tenants/:id TenantDetailsPage
+│ └── /admin/tenants/:id/serials TenantSerialsPage
+│
+├── /dashboard (RequireManagerOrAdmin)
+│ DashboardVentasPage (widgets Recharts)
+│
+├── /users (RequireAnyUser listar, RequireManagerOrAdmin crear/editar)
+│ ├── /users/list UsersListPage
+│ └── /users/new (Manager/Admin) UserCreatePage
+│
+├── /registers (RequireManagerOrAdmin / List: AnyUser)
+│ ├── /registers/list RegistersListPage
+│ └── /registers/new RegisterCreatePage
+│
+├── /customers
+│ ├── /customers/list CustomersListPage
+│ ├── /customers/new (Manager/Admin) CustomerCreatePage
+│ └── /customers/:id/edit (Manager/Admin) CustomerEditPage
+│
+├── /items
+│ ├── /items/list ItemsListPage (con search + paginación)
+│ ├── /items/new (Manager/Admin) ItemCreatePage
+│ ├── /items/:id/edit (Manager/Admin) ItemEditPage
+│ └── /items/:id/stock (Manager/Admin) ItemAdjustStockPage
+│
+├── /transactions
+│ ├── /transactions/list (AnyUser, ver todo | Cashier, ver las suyas)
+│ └── /transactions/:id TransactionDetailPage
+│
+└── /profile (AnyUser) ProfilePage (datos + cambio password)
 
-**Ruta**: `api/items` · `X-Tenant-Id` obligatorio
+================================================================================ 6. CATÁLOGO COMPLETO DE ENDPOINTS + EJEMPLOS
+================================================================================
 
-| Endpoint | Uso |
-|---|---|
-| `GET /api/items?pageNumber=1&pageSize=20` | Listado paginado |
-| `GET /api/items/{id:guid}` | Detalle |
-| `POST /api/items` | Crear producto |
-| `PUT /api/items/{id:guid}` | Actualizar |
-| `POST /api/items/{id:guid}/stock` | Ajuste manual de stock |
+## 6.1 AUTH (api/auth/\*)
 
-### B.3.1. Crear producto
+PLATAFORMA — VERIFICAR SI EXISTE ADMIN GLOBAL:
+GET /api/auth/has-admin
+Response 200: { hasAdmin: boolean }
+· Sin auth. Úsalo al cargar el frontend: si hasAdmin=false → pantalla bootstrap.
 
-```json
+PLATAFORMA — BOOTSTRAP (crear primer admin global):
+POST /api/auth/bootstrap
+Body: { fullName, email, password, documentNumber? }
+Response 201: { message, username, tempPin, note }
+· Sin auth. Solo funciona si NO existe ningún admin en la BD maestra (hasAdmin=false).
+
+PLATAFORMA — LOGIN ADMIN GLOBAL:
+POST /api/auth/login/platform
+Headers: NINGUNO especial (NO requiere X-Tenant-Id)
+Body: { email: "admin@posco.io", password: "Admin#2025!" }
+Response 200: AuthResponseDto
+400: validación (password débil, email inválido)
+401: credenciales inválidas / cuenta bloqueada
+· El JWT generado usa el claim ts="posco-system" (tenant virtual, sin BD real).
+
+LOGIN BACKOFFICE TENANT (email + password larga):
+POST /api/auth/login/admin
+Headers: X-Tenant-Id (obligatorio)
+Body: { email: "admin@tiendita.com", password: "Admin#2025!" }
+Response 200: AuthResponseDto
+400: validación (password débil, email inválido)
+401: credenciales inválidas / usuario inactivo / bloqueado / sin credenciales web
+404: {"error":{"code":"tenant_not_found",...}} si el slug no existe o está inactivo
+
+LOGIN POS (username + pin):
+POST /api/auth/login/pos
+Headers: X-Tenant-Id (obligatorio)
+Body: { username: "6789", pin: "4729" }
+Response 200: AuthResponseDto
+400: formato no numérico, longitudes inválidas
+401: credenciales / usuario sin PIN asignado / bloqueado
+
+REFRESH JWT:
+POST /api/auth/refresh-jwt
+Body: { refreshToken: "64-hex-chars" }
+Response 200: AuthResponseDto (JWT nuevo + RefreshToken nuevo)
+400: { message: "El campo RefreshToken es obligatorio." }
+401: { error: "invalid_grant", message: "..." } → realizar logout.
+
+CAMBIAR PASSWORD WEB (cualquier usuario logueado):
+POST /api/auth/change-password
+Headers: Authorization + X-Tenant-Id
+Body: { currentPassword: "Admin#2025!", newPassword: "Admin#2026!!" }
+Response 204 No Content
+
+## 6.2 USUARIOS (api/auth/users)
+
+NOTA: El backend NO expone un endpoint de LISTADO de usuarios todavía
+(NO existe GET /api/auth/users). El backoffice obtiene cada usuario por su
+id: GET /api/auth/users/{id}. Si la UI necesita un listado, usar los datos
+del sync POS (UserSyncDto) o solicitar al equipo backend un endpoint nuevo.
+
+OBTENER 1 USUARIO (cualquier usuario autenticado del tenant):
+GET /api/auth/users/{id:Guid}
+→ UserResponseDto (sin PIN claro, sin password temporal)
+
+CREAR USUARIO (Manager/Admin):
+POST /api/auth/users
+Body CreateUserDto:
 {
-  "name": "Pan de queso",
-  "sku": "PAN-QUESO-001",
-  "description": "100g · 6 unidades",
-  "salePrice": 3500.0,
-  "costPrice": 1800.0,
-  "stock": 200,
-  "minStockLevel": 10,
-  "category": "Panadería"
+"fullName": "Carlos Pérez",
+"email": "carlos@tiendita.com", // PUEDE SER null para cajero sin web access.
+"documentType": 1, // 1=CC, 2=CE
+"documentNumber": "1023456789", // Solo letras y números; sin puntos/espacios.
+"role": "Cashier" // 'Cashier' | 'Manager' | 'Admin'
 }
-```
+Response 201 Created:
+Header Location: /api/auth/users/{id}
+Body: UserResponseDto (TemporaryPin + TemporaryWebPassword vienen en CLARO
+aquí y solo aquí. UI DEBE mostrar un modal imprimible con estas
+credenciales e IMPEDIR que el usuario siga hasta confirmar que las copió.)
 
-- `sku` debe ser **único por tenant**.
-- Por defecto `TrackInventory = true`, `IsActive = true`.
-- `minStockLevel` solo tiene efecto informativo (panel de alertas). El backend sí **bloquea ventas sin stock** por defecto (ver configuración `Business:AllowNegativeStock`).
+ACTUALIZAR NOMBRE USUARIO (Manager/Admin):
+PUT /api/auth/users/{id:Guid}
+Body: { fullName: "Carlos Alberto Pérez Gómez" }
+Response 200: UserResponseDto actualizado.
 
-### B.3.2. Ajuste manual stock
+## 6.3 TENANTS (api/tenants) — Solo ADMIN global (login platform, NO X-Tenant-Id).
 
-```
-POST /api/items/{id:guid}/stock
-Body (raw int): 50  → suma 50; Body: -10 → resta 10
-```
+CREAR TENANT:
+POST /api/tenants
+Body CreateTenantDto:
+{
+"name": "Tiendita Don Ramón S.A.S.",
+"contactEmail": "donramon@empresa.com",
+"phone": "3001234567",
+"address": "Calle 10 #12-34, Bogotá",
+"maxRegisters": 2,
+"adminDocumentType": 1, // 1=CC, 2=CE (opcional)
+"adminDocumentNumber": "1234567890" // (opcional; si no se envía el sistema
+// usa el tenantId como documento seed.)
+}
+201: TenantResponseDto (con SerialCodes dentro). Operación pesada (3-15 s): muestra spinner.
 
-`400` si intentas restar más stock que el disponible (a menos que se active AllowNegativeStock).
+LISTAR TENANTS:
+GET /api/tenants?pageNumber=1&pageSize=20 (pageSize rango [1..100])
+200: { data: TenantListResponseDto[], pageNumber, pageSize, totalCount, totalPages }
+
+OBTENER DETALLE TENANT:
+GET /api/tenants/{id}
+200: TenantResponseDto (incluye Lista<PosSerialCodeResponseDto>)
+
+ACTUALIZAR:
+PUT /api/tenants/{id}
+Body: { name, contactEmail, phone, address }
+200: TenantResponseDto
+
+ACTIVAR / DESACTIVAR TENANT (método POST, NO PUT):
+POST /api/tenants/{id}/activate → 204 (activa IsActive=true)
+POST /api/tenants/{id}/deactivate → 204 (IsActive=false)
+
+ELIMINAR TENANT (DESTRUCTIVO — borra la BD del tenant):
+DELETE /api/tenants/{id} → 204 (DROP DATABASE + fila master).
+⚠ USAR SOLO con confirmación explícita del usuario en doble modal.
+
+VALIDAR LÍMITE DE CAJAS (útil antes de mostrar "Agregar caja"):
+GET /api/tenants/{id}/can-create-register
+200: { tenantId, canCreateRegister: true/false }
+
+LISTAR SERIALES POS DEL TENANT:
+GET /api/tenants/{id}/serial-codes
+200: PosSerialCodeResponseDto[] (estados: Unassigned | Activated | Decommissioned)
+
+DECOMISIONAR SERIAL POS (libera la máquina; el POS recibe device_decommissioned):
+POST /api/tenants/{id}/serial-codes/{serialId}/decommission
+Body: { reason?: string } (opcional, para auditoría)
+200: PosSerialCodeResponseDto con status=Decommissioned
+
+## 6.4 CAJAS / REGISTERS (api/registers)
+
+GET /api/registers?pageNumber=1&pageSize=20 → { data: RegisterResponseDto[], totalCount }
+GET /api/registers/{id} → RegisterResponseDto
+POST /api/registers → Crear caja (Manager/Admin)
+{ name: "CAJA PRINCIPAL", code: "REG-AB12-0800", deviceIdentifier: null, serialCode: null }
+201: RegisterResponseDto + Location
+PUT /api/registers/{id} → Actualizar (name, deviceIdentifier, serialCode)
+POST /api/registers/{id}/status → Cambiar estado (Manager/Admin)
+Body: "Active" | "Inactive" | "Maintenance" | "Locked" (JSON string literal, con comillas)
+→ 204 No Content. NO es un toggle: envía el estado NUEVO explícito.
+
+## 6.5 CLIENTES (api/customers)
+
+GET /api/customers?pageNumber=1&pageSize=20 → { data: CustomerResponseDto[], totalCount }
+GET /api/customers/{id} → CustomerResponseDto
+POST /api/customers
+Body: { name, documentNumber?, email?, phone?, address?, city?, department? }
+201: CustomerResponseDto + Location
+PUT /api/customers/{id} → Actualizar (200)
+DELETE /api/customers/{id} → 204 (borrado lógico en el backend; IsActive=false)
+
+## 6.6 ITEMS / PRODUCTOS (api/items)
+
+GET /api/items?pageNumber=1&pageSize=20 → { data: ItemResponseDto[], totalCount }
+GET /api/items/{id} → ItemResponseDto
+POST /api/items
+Body: { name, sku?, description?, salePrice, costPrice, stock, minStockLevel, category? }
+201: ItemResponseDto + Location
+PUT /api/items/{id} → Actualizar datos (no stock) (200)
+POST /api/items/{id}/stock → Ajuste manual de stock (Manager/Admin)
+Body: 45 (JSON int: cantidad ENTERA de variación; >0 = entrada, <0 = salida)
+→ 204 No Content. NO es un {newStock, reason}: es un delta entero firmado.
+
+## 6.7 TRANSACCIONES / FACTURAS (api/transactions)
+
+GET /api/transactions?pageNumber=1&pageSize=20
+→ { data: TransactionResponseDto[], totalCount }
+(Ordenadas por fecha desc. Sin filtros por rango de fechas todavía;
+el listado es de las transacciones RECIENTES del tenant.)
+GET /api/transactions/{id} → Detalle + HasEntries (false si no hay lineas)
+POST /api/transactions
+Body CreateTransactionDto: { registerId, userId, customerId, paymentMethod, entries }
+→ 201 Created TransactionResponseDto (número fiscal asignado)
+customerId: Guid.Empty (00000000-0000-0000-0000-000000000000) = cliente ocasional.
+POST /api/transactions/{id}/cancel (Manager/Admin)
+→ 204 No Content (marca Status='Cancelled'; libera stock si aplica)
+
+================================================================================ 7. TIPOS / INTERFACES TYPESCRIPT (CLIENT-SIDE)
+================================================================================
+
+/\*
+
+- Archivo sugerido: src/types/api.ts
+-
+- Estas interfaces son 1:1 con los DTOs C# del backend definidos en TenantDtos.cs.
+- Puedes también importar este archivo a través de Orval (npm i orval) junto al
+- OpenApi.json descargado de /swagger/v1/swagger.json del backend para mantenerlo
+- automáticamente sincronizado.
+  \*/
+
+// ------- ENUMS -------
+export enum DocumentType {
+CedulaCiudadania = 1,
+CedulaExtranjeria = 2,
+}
+
+export type DocumentTypeLabel = Record<DocumentType, string>;
+export const DOCUMENT_TYPE_LABELS: DocumentTypeLabel = {
+[DocumentType.CedulaCiudadania]: 'Cédula de Ciudadanía (CC)',
+[DocumentType.CedulaExtranjeria]: 'Cédula de Extranjería (CE)',
+};
+
+export type Role = 'ADMIN' | 'MANAGER' | 'CASHIER';
+
+// ------- AUTH -------
+export interface LoginAdminDto {
+email: string; // Email válido.
+password: string; // 8+ chars, mayúsc, minúsc, número, símbolo.
+}
+
+export interface LoginPosDto {
+username: string; // 4-16 dígitos.
+pin: string; // Exactamente 4 dígitos.
+}
+
+export interface ChangePasswordDto {
+currentPassword: string;
+newPassword: string; // 8+ chars, política fuerte.
+}
+
+export interface RefreshTokenRequestDto {
+refreshToken: string; // 64 hex chars.
+}
+
+export interface UserResponseDto {
+id: string; // Guid (UUID v4).
+fullName: string;
+email: string | null;
+documentType: DocumentType | null;
+documentNumber: string | null;
+username: string; // 4-5 dígitos (username POS).
+role: Role | string;
+forcePasswordChange: boolean;
+isActive: boolean;
+lastLoginAt: string | null; // ISO8601 UTC.
+createdAt: string; // ISO8601 UTC.
+
+// Solo se devuelve EN LA RESPUESTA 201 DE CREAR USUARIO:
+temporaryPin: string | null; // "4729" (4 dígitos).
+temporaryWebPassword: string | null; // "Kg8$pQ29xT!vm3" (password larga temporal).
+}
+
+export interface AuthResponseDto {
+user: UserResponseDto;
+token: string; // JWT.
+refreshToken: string | null;
+refreshTokenExpiresAtUtc: string;
+forcePasswordChange: boolean;
+}
+
+export interface CreateUserDto {
+fullName: string;
+email: string | null; // null = cajero sin acceso web.
+documentType: DocumentType; // 1 | 2 (enum).
+documentNumber: string; // 1-50 letras/dígitos.
+role?: Role | string; // default 'Cashier'.
+}
+
+export interface UpdateUserDto {
+fullName: string;
+}
+
+// ------- TENANTS (ADMIN GLOBAL) -------
+export interface CreateTenantDto {
+name: string;
+contactEmail: string;
+phone: string | null;
+address: string | null;
+maxRegisters: number | null;
+adminDocumentType?: DocumentType | null;
+adminDocumentNumber?: string | null;
+}
+
+export interface UpdateTenantDto {
+name: string;
+contactEmail: string;
+phone: string | null;
+address: string | null;
+}
+
+export interface PosSerialCodeResponseDto {
+id: string; // Guid.
+serialCode: string; // "XXXX-XXXX-XXXX-XXXX"
+status: 'Unassigned' | 'Activated' | 'Decommissioned' | string;
+machineIdentifier: string | null;
+deviceName: string | null;
+activatedAt: string | null;
+lastSeenAt: string | null;
+createdAt: string;
+}
+
+export interface DecommissionSerialDto {
+reason?: string | null;
+}
+
+export interface TenantResponseDto {
+id: string; // Guid (PublicId).
+name: string;
+tenantId: string; // Slug único.
+contactEmail: string;
+phone: string | null;
+address: string | null;
+isActive: boolean;
+maxRegisters: number;
+currentRegisterCount:number;
+serialCodes: PosSerialCodeResponseDto[] | null;
+createdAt: string;
+}
+
+export interface TenantListResponseDto {
+id: string;
+name: string;
+tenantId: string;
+contactEmail: string;
+isActive: boolean;
+maxRegisters: number;
+createdAt: string;
+}
+
+export interface PagedTenantsResponse {
+data: TenantListResponseDto[];
+pageNumber: number;
+pageSize: number;
+totalCount: number;
+totalPages: number;
+}
+
+// ------- REGISTERS / CAJAS -------
+export interface CreateRegisterDto {
+name: string;
+code: string;
+deviceIdentifier: string | null;
+serialCode: string | null;
+}
+export interface UpdateRegisterDto {
+name: string;
+deviceIdentifier: string | null;
+serialCode: string | null;
+}
+export interface RegisterResponseDto {
+id: string;
+name: string;
+code: string;
+status: 'Active' | 'Inactive' | 'Maintenance' | 'Locked' | string;
+deviceIdentifier: string | null;
+serialCode: string | null;
+lastActivityAt: string | null;
+createdAt: string;
+}
+
+// ------- CLIENTES -------
+export interface CreateCustomerDto {
+name: string;
+documentNumber: string | null;
+email: string | null;
+phone: string | null;
+address: string | null;
+city: string | null;
+department: string | null;
+}
+export interface UpdateCustomerDto extends Partial<Omit<CreateCustomerDto, 'name'>> {
+name: string;
+}
+export interface CustomerResponseDto {
+id: string;
+name: string;
+documentNumber: string | null;
+email: string | null;
+phone: string | null;
+address: string | null;
+city: string | null;
+department: string | null;
+isActive: boolean;
+createdAt: string;
+}
+
+// ------- PRODUCTOS / ITEMS -------
+export interface CreateItemDto {
+name: string;
+sku?: string | null;
+description?: string | null;
+salePrice: number; // decimal.
+costPrice: number;
+stock: number; // int.
+minStockLevel: number;
+category?: string | null;
+}
+export interface UpdateItemDto {
+name: string;
+sku?: string | null;
+description?: string | null;
+salePrice?: number | null;
+costPrice?: number | null;
+category?: string | null;
+}
+export interface ItemResponseDto {
+id: string;
+name: string;
+sku: string | null;
+description: string | null;
+salePrice: number;
+costPrice: number;
+stock: number;
+minStockLevel: number;
+category: string | null;
+isActive: boolean;
+trackInventory: boolean;
+createdAt: string;
+}
+// Nota: el ajuste de stock del backend recibe un INT delta en el body (JSON number),
+// NO un objeto. quantity > 0 = entrada; quantity < 0 = salida. Respuesta 204.
+export type AdjustStockBody = number; // ej. 45 (entrada) o -3 (salida)
+
+// ------- TRANSACCIONES / FACTURAS -------
+export interface TransactionEntryDto {
+itemId: string; // Guid del Item.
+quantity: number; // int.
+unitPrice: number;
+lineDiscount: number; // default 0.
+}
+export interface CreateTransactionDto {
+registerId: string;
+userId: string;
+customerId?: string | null; // Guid.Empty = cliente ocasional.
+paymentMethod: 'Cash' | 'Card' | 'Transfer' | 'Mixed' | string;
+entries: TransactionEntryDto[];
+}
+export interface TransactionEntryResponseDto {
+id: string;
+transactionId: string;
+itemId: string;
+itemName: string;
+itemSku: string | null;
+quantity: number;
+unitPrice: number;
+lineDiscount: number;
+lineTotal: number;
+}
+export interface TransactionResponseDto {
+id: string;
+transactionNumber:string;
+registerId: string;
+userId: string;
+customerId: string;
+subtotal: number;
+taxAmount: number;
+discountAmount: number;
+totalAmount: number;
+paymentMethod: string;
+status: 'Open' | 'Completed' | 'Cancelled' | 'Refunded' | string;
+notes: string | null;
+hasEntries: boolean; // true = hay lineas; usar GET /transactions/{id}/entries (future) o expandir.
+}
+
+================================================================================ 8. FLUJOS UI CLAVE (mockups lógicos)
+================================================================================
 
 ---
 
-## B.4. REGISTERS · Cajas Registradoras
+## 8.1 PÁGINA: CREAR NUEVO USUARIO (Manager/Admin)
 
-**Ruta**: `api/registers` · `X-Tenant-Id` obligatorio
+Paso 1: Formulario CreateUserDto (React Hook Form + Zod):
 
-| Endpoint | Uso |
-|---|---|
-| `GET /api/registers` | Listar cajas del tenant |
-| `GET /api/registers/{id:guid}` | Detalle · `id` Guid |
-| `POST /api/registers` | Crear caja manual |
-| `PUT /api/registers/{id:guid}` | Actualizar |
-| `POST /api/registers/{id:guid}/status` | Body: `"Active"` / `"Inactive"` |
+- Nombre completo \* (max 100 chars)
+- Email (opcional, tipo email)
+- Tipo de documento \* (Select: [1] CC, [2] CE)
+- Número de documento \* (solo letras/números, max 50)
+- Rol \* (Radio/Select: Cashier / Manager / Admin. Default Cashier)
 
-### B.4.1. Crear caja manual
+Paso 2: POST /api/auth/users → si HTTP 201:
 
-```json
-{
-  "name": "Caja Principal",
-  "code": "CAJA-1",
-  "deviceIdentifier": "PC-CAJA-01-HWID",
-  "serialCode": "AB12-CD34-EF56-GH78"
-}
-```
-
-> **Recomendación al equipo React**: Generalmente **NO se crean cajas manualmente** — se crean automáticamente cuando la terminal POS se autentica (ver C.1). Este endpoint existe para mantenimiento o si el negocio quiere registrar previamente el nombre.
-
-Si se alcanza `Tenant.MaxRegisters` → **400**.
-
----
-
-## B.5. TRANSACTIONS · Ventas / Facturas
-
-**Ruta**: `api/transactions` · `X-Tenant-Id` obligatorio
-
-> 💡 **Nota para ambos equipos**: Este endpoint es para **ventas en línea** (realizadas desde la web, o si el POS está online y quiere enviar de una). Las **ventas offline** generadas en el WPF van por el **Endpoint C.3 (batch de facturas)** — no por este.
-
-| Endpoint | Uso |
-|---|---|
-| `GET /api/transactions?pageNumber=1&pageSize=20` | Listado reciente |
-| `GET /api/transactions/{id:guid}` | Detalle (incluye `HasEntries: true/false`; el detalle completo de líneas lo resuelve el servicio si se requiere) |
-| `POST /api/transactions` | Crear una venta online |
-| `POST /api/transactions/{id:guid}/cancel` | Cancelar (no reembolsar) |
-
-### B.5.1. Crear transacción online
-
-**⚠️ Todos los campos `*Id` son Guid. Para "sin cliente" usar `Guid.Empty` (no `0`).**
-
-```json
-{
-  "registerId": "33333333-3333-3333-3333-333333333333",
-  "userId": "55555555-5555-5555-5555-555555555555",
-  "customerId": "00000000-0000-0000-0000-000000000000",
-  "paymentMethod": "Cash",
-  "entries": [
-    {
-      "itemId": "77777777-7777-7777-7777-777777777777",
-      "quantity": 2,
-      "unitPrice": 3500.0,
-      "lineDiscount": 0
-    }
-  ]
-}
-```
-
-- `paymentMethod`: whitelist `Cash|Card|Transfer|Mixed` (configurable en `appsettings`).
-- Las líneas validan: stock disponible (bloqueo default), cantidad > 0, precio ≥ 0.
-- Campos `Subtotal`, `TaxAmount`, `DiscountAmount`, `TotalAmount` los calcula el backend (no se confía en el cliente).
+- MOSTRAR MODAL IMPOSIBLE DE CERRAR HASTA HABER CONFIRMADO 2 VECES:
+  ┌──────────────────────────────────────────────────────────────────────┐
+  │ ✅ Usuario creado exitosamente. │
+  │ │
+  │ ┌────────────────── DATOS DE ACCESO (SE ENTREGAN AL COLABORADOR) ──┐│
+  │ │ Nombre: CARLOS PÉREZ GÓMEZ ││
+  │ │ Tipo Documento: Cédula CC ││
+  │ │ Documento: 1.023.456.789 (opcional, UI formatea con .) ││
+  │ │ Username (POS): 6789 ││
+  │ │ PIN (Caja POS): 4729 ← resaltar en ROJO ││
+  │ │ Password Web: Kg8$pQ29xT!vm3 ← resaltar en AZUL ││
+  │ └──────────────────────────────────────────────────────────────────┘│
+  │ │
+  │ ⚠️ Estas credenciales NUNCA VOLVERÁN A MOSTRARSE desde el │
+  │ sistema. Asegúrese de escribirlas / imprimirlas y entregarlas │
+  │ físicamente a Carlos Pérez. │
+  │ │
+  │ [ ] He entregado las credenciales a Carlos Pérez. │
+  │ │
+  │ [ IR A LA LISTA DE USUARIOS ] │
+  └──────────────────────────────────────────────────────────────────────┘
+- El botón confirmar se HABILITA SÓLO cuando el checkbox está marcado.
 
 ---
 
-# 🖥️ GRUPO C — TERMINALES POS (Software WPF)
+## 8.2 PÁGINA: LISTA DE ITEMS
 
-**Ruta base**: `api/pos-terminal`
-
-Este bloque es para el **equipo WPF**. El flujo del cliente se resume en:
-
-```
-① → Authenticate con serial
-        ↓ (se recibe InitialSyncPayload; RegisterId es Guid)
-② → Almacenar localmente: TenantId, RegisterId (GUID!), Users, Items, Customers, StoreInfo
-③ → Polling cada X min: DeltaSync (con SinceUtc + RegisterId Guid)
-④ → Encolar facturas offline: SubmitInvoices en lotes de máx. 10
-⑤ → Repetir ③ y ④ indefinidamente
-```
+- Buscador top (nombre / SKU / categoría) debounce 300 ms, TanStack Query filter.
+- Tabla con: Nombre, SKU, Categoría, Precio Venta, Stock (badge ROJO si stock < minStockLevel),
+  Activo, Acciones (editar / ajustar stock).
+- Botón "Nuevo producto" (Manager/Admin).
+- Alerta stock bajo: Widget contador arriba de la tabla "12 productos con stock mínimo".
 
 ---
 
-## C.1. POS-TERMINAL · Autenticación de caja
+## 8.3 PÁGINA: CAMBIO DE CONTRASEÑA OBLIGATORIO
 
-```
-POST /api/pos-terminal/authenticate
-❌ No requiere X-Tenant-Id
-Rate Limit: PosAuthLimiter (5/min x IP)
-```
+- Bloquear navegación (Outlet wrapper: si forcePasswordChange ir a change-password).
+- Formulario: contraseña actual, contraseña nueva, confirmar nueva.
+- Validadores:
+  · newPassword == confirmNewPassword
+  · política fuerte password (regex 8+ mayúsc/minúsc/núm/símbolo)
+  · newPassword !== currentPassword
+- Enviar POST /change-password → si 204: toast "Contraseña actualizada"
+  - setForcePasswordChange(false) + redirect dashboard.
 
-**Body `PosTerminalAuthRequestDto`**:
-```json
-{
-  "serialCode": "AB12-CD34-EF56-GH78",
-  "machineIdentifier": "PC-CAJA-01-HWID",
-  "deviceName": "Caja Principal Piso 1"
+---
+
+## 8.4 PÁGINA: DETALLE DE TRANSACCIÓN (Manager/Admin puede cancelar)
+
+- Tarjeta resumen: Número, fecha, caja, cajero, cliente, subtotal, impuestos,
+  descuentos, total, método de pago, Estado (Completada en verde / Cancelada en rojo).
+- Tabla líneas: Item, Cant, Precio Unit, Desc, Subtotal línea.
+- Botón ROJO: Cancelar factura (SOLO si Status='Completed' y rol Manager/Admin).
+  Al hacer clic → modal confirmación con:
+  "¿Seguro que desea cancelar la factura FAC-000001? Esta acción: 1. Revertirá el stock de los productos (si trackInventory=true). 2. Marcará la factura como Cancelada PERMANENTEMENTE (no se puede deshacer). 3. Requiere ingresar un motivo (10-200 chars)."
+  [ Cancelar ] [ CONFIRMAR CANCELACIÓN ]
+
+================================================================================ 9. MANEJO DE ERRORES Y CÓDIGOS HTTP
+================================================================================
+
+Patrón: Interceptor global de Axios (o fetch wrapper) que:
+· Si HTTP 401 y request NO es /login/\* ni /refresh-jwt:
+→ silent refresh + retry.
+· Si HTTP 401 y request ES refresh-jwt o después de refresh sigue siendo 401:
+→ limpiar store y redirigir /login.
+· Si HTTP 403: toast red "No tienes permiso para realizar esta acción."
+· Si HTTP 400 con body.errors (FluentValidation ModelState):
+→ popular los errores en el formulario (React Hook Form setError).
+· Si HTTP 404: toast amarillo "El recurso solicitado no existe o fue eliminado."
+· Si HTTP 409/422: mostrar response.message en snackbar naranja.
+· Si HTTP 429: toast "Servidor saturado, intentando en X segundos..." + retry.
+· Si HTTP 5xx: toast rojo "Error del servidor. Si el problema persiste, contacte soporte." + mostrar al usuario un componente <FallbackUi onRetry={refetch}/>
+
+================================================================================ 10. STORE GLOBAL (Zustand) CON AUTENTICACIÓN
+================================================================================
+
+Sugerencia archivo src/store/auth.ts:
+
+import { create } from 'zustand';
+import { persist, createJSONStorage } from 'zustand/middleware';
+import { AuthResponseDto, Role, UserResponseDto } from '../types/api';
+
+interface AuthState {
+user: UserResponseDto | null;
+jwt: string | null;
+refreshToken: string | null;
+tenantId: string | null; // valor para header X-Tenant-Id.
+
+    setAuth:   (r: AuthResponseDto) => void;
+    updateUser:(u: Partial<UserResponseDto>) => void;
+    logout:    () => void;
+
 }
-```
 
-| Campo | Req | Notas WPF |
-|---|---|---|
-| `serialCode` | ✅ | Ingresado manualmente por el admin del negocio. Formato esperado `XXXX-XXXX-XXXX-XXXX` (mayúsculas/minúsculas aceptadas; se normaliza). |
-| `machineIdentifier` | ✅ | ID único de la máquina. **Debe ser estable** (no cambiar entre reinicios). Ejemplos de fuente WPF: `Win32_BIOS.SerialNumber + Win32_BaseBoard.SerialNumber`, o GUID generado 1 vez y guardado en `%ProgramData%\POSCo\machine.id`. Máx 100 chars. |
-| `deviceName` | ❔ | Nombre mostrable en el panel administrativo (100 chars). |
+export const useAuth = create<AuthState>()(
+persist(
+(set) => ({
+user: null, jwt: null, refreshToken: null, tenantId: null,
 
-**Validaciones aplicadas (relevantes para WPF)**:
-1. Formato regex del serial → 400.
-2. Serial inexistente → `Success:false`, msg: `"Serial no válido."`
-3. Tenant inactivo/sin BD → error.
-4. **Un machineId no puede tener 2 seriales activados** → error claro.
-5. **Serial activado en otra máquina** → error; se debe liberar desde A.2.2.
-6. Límite `MaxRegisters` alcanzado → error.
+        setAuth: (r) => set({
+          user: r.user,
+          jwt:  r.token,
+          refreshToken: r.refreshToken,
+          // El tenantId (slug) lo parseamos de un claim del JWT.
+          tenantId: parseJwtClaim<string>(r.token, 'ts') ?? null,
+        }),
+        updateUser: (u) => set((s) => ({ user: s.user ? { ...s.user, ...u } : s.user })),
+        logout: () => set({ user: null, jwt: null, refreshToken: null, tenantId: null }),
+      }),
+      {
+        name: 'pos.auth.v1',
+        storage: createJSONStorage(() => sessionStorage),
+        partialize: (s) => ({ /* NO persistir el JWT si quieres máxima seguridad;
+                                 persistir solo user sin datos sensibles. */ }),
+      }
+    )
 
-**Respuesta `PosTerminalAuthResponseDto` (éxito)** — ⚠️ `registerId` es **Guid**:
-```json
-{
-  "success": true,
-  "tenantId": "PANADERIAMARIA-00002",
-  "tenantName": "PANADERÍA MARÍA S.A.S.",
-  "registerId": "33333333-3333-3333-3333-333333333333",
-  "registerCode": "REG-AB12-0800",
-  "lastSyncUtc": "2026-08-07T14:00:00Z",
-  "initialSync": { /* InitialSyncPayloadDto completo */ }
-}
-```
-
-**Almacenar WPF**: `tenantId` (string) y `registerId` (**`Guid`**, NO int) son OBLIGATORIOS para todos los siguientes requests. El backend ya crea / activa la fila `Register` en la BD tenant con el `MachineIdentifier`.
-
-### C.1.1. InitialSyncPayloadDto (toda la base para offline)
-
-```csharp
-record InitialSyncPayloadDto(
-    StoreInfoDto      StoreInfo,   // Datos básicos tienda
-    List<UserSyncDto>     Users,   // Id: Guid. PIN offline + roles
-    List<ItemSyncDto>     Items,   // Id: Guid. Inventario actual
-    List<CustomerSyncDto> Customers, // Id: Guid
-    DateTime GeneratedAtUtc,
-    long    Version           // Incremental; WPF lo guarda como watermark
 );
-```
 
-| DTO | Campos clave WPF |
-|---|---|
-| `StoreInfoDto` | `DefaultTaxRate=0.19`, `DefaultCurrency=COP`, `Country=CO`. Muestra en impresiones tickets. |
-| `UserSyncDto` | `Id` (**Guid**) + `OfflinePinHash`: hash determinista; WPF puede pedir PIN de 4 dígitos al cajero y validarlo localmente con la misma rutina (recomendación: agregar endpoint auxiliar para especificar la función exacta si se usa). |
-| `ItemSyncDto` | `Id` (**Guid**). Todos los `IsActive=true`. Incluye `Stock` actual y `UpdatedAtUtc`. |
-| `CustomerSyncDto` | `Id` (**Guid**). `DocumentNumber` único; usa lo mismo que el `Customer` normal. |
-
----
-
-## C.2. POS-TERMINAL · Sincronización Full / Delta
-
-✅ **Requieren header `X-Tenant-Id`**
-
-### C.2.1. Full Sync (refresco completo)
-
-```
-POST /api/pos-terminal/sync/full
-Body: { "registerId": "33333333-3333-3333-3333-333333333333" }
-```
-
-⚠️ `registerId` es **Guid** — enviar `Guid.Empty` dispara `400`.
-
-Llamar solo cuando:
-- El POS inicia por primera vez y el `InitialSyncPayload` del login se perdió por algún motivo.
-- Botón manual de "Sincronizar todo".
-- Corrupción de la base local del POS.
-
-Devuelve exactamente el mismo `InitialSyncPayloadDto` del login.
-
-### C.2.2. Delta Sync (cambios desde fecha watermark)
-
-```
-POST /api/pos-terminal/sync/delta
-Body: DeltaSyncRequestDto
-```
-
-```json
-{
-  "registerId": "33333333-3333-3333-3333-333333333333",
-  "sinceUtc": "2026-08-07T14:00:00Z"
+Helper para parsear claims del JWT (sin librería):
+function parseJwtClaim<T>(token: string, claim: string): T | null {
+try {
+const base64Url = token.split('.')[1];
+const base64 = base64Url.replace(/-/g, '+').replace(/\_/g, '/');
+const jsonPayload = decodeURIComponent(atob(base64).split('').map(c =>
+'%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2)).join(''));
+const p = JSON.parse(jsonPayload);
+return (p[claim] ?? null) as T | null;
+} catch { return null; }
 }
-```
 
-- Si `sinceUtc` es `null`, el backend toma por defecto **"hace 24 horas"**.
-- Devuelve solo registros **creados o modificados** (`UpdatedAt/CreatedAt >= sinceUtc`).
-- Todos los `Items[].Id`, `Customers[].Id`, `Users[].Id` dentro del payload son **Guid**; usa este valor para Upsert local por clave primaria.
-- **Anti-flood**: Si la caja pide delta más seguido que `Business:MinDeltaSyncIntervalSeconds` (default 10s), el backend responde **payload vacío** (0 registros) sin registrar `SyncLog`.
-- WPF debe guardar `SyncUntilUtc` como nuevo watermark para el siguiente request.
+================================================================================ 11. BUENAS PRÁCTICAS Y ACCESIBILIDAD
+================================================================================
 
-**Respuesta `DeltaSyncResponseDto`**:
-```json
-{
-  "items": [ /* ItemSyncDto[] nuevos. Cada uno con Id (Guid) */ ],
-  "customers": [ /* CustomerSyncDto[] · Id Guid */ ],
-  "users": [ /* UserSyncDto[] · Id Guid */ ],
-  "syncUntilUtc": "2026-08-07T15:00:00Z",
-  "totalRecords": 13,
-  "version": 638980680000000000
-}
-```
+· ARIA Labels en botones sin texto (iconos).
+· Formularios: atributo htmlFor, focus en primer input invalid,
+error messages asociados con aria-describedby.
+· Manejo de loading: <Button loading /> en submit Mientras la request vuela.
+· Toast notifications: un system global (sonner o antd App.message) limitado a máximo 3 visibles.
+· Fechas: usar dayjs.locale('es-co') + formato human-friendly.
+· Monedas: Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP' }).
+· Skeleton loaders en listas (no spinners gigantes).
+· Imágenes placeholder (no existe en POS items aún pero si en un futuro).
+· Rutas protegidas con <RequireAuth role="..."/> y redirect con returnUrl para deep-link después de login.
+· Testing: Vitest + Testing Library para flujos login/change-password/crear-usuario mínimo.
+· CORS: asegurar que el backend acepta tu dominio (solo reportar al backend team si falla preflight).
+· Environment variables (Vite):
+VITE_API_BASE_URL=https://pos-api.miempresa.com/api
+VITE_APP_ENV=staging|production
+VITE_HMAC_SECRET_POS=... (solo si el cliente web también consume endpoints POS; normalmente no).
 
-💡 **Frecuencia polling recomendada**: 1 minuto en horas pico, 5 minutos en horas tranquilas. Nunca menos de 10s.
-
----
-
-## C.3. POS-TERMINAL · Envío de facturas en bloque
-
-```
-POST /api/pos-terminal/invoices/batch
-✅ X-Tenant-Id obligatorio
-Hasta 10 facturas por lote.
-```
-
-Este es el endpoint más robusto; procesa **ventas offline** que el POS generó sin conexión. **Cada factura es atómica**: si una falla, las demás 9 se procesan igualmente. La respuesta trae el status individual.
-
-### C.3.1. Body ejemplo `InvoiceBatchRequestDto`
-
-**⚠️ CRÍTICO WPF**: Todos los campos `registerId`, `userId`, `customerId`, `entries[].itemId` son **Guid**.  
-**Para "ninguno"**: `customerId = "00000000-0000-0000-0000-000000000000"` (Guid.Empty) — **NO `0`**.
-
-```json
-{
-  "registerId": "33333333-3333-3333-3333-333333333333",
-  "registerCode": "REG-AB12-0800",
-  "invoices": [
-    {
-      "externalTransactionId": "POSLOCAL-00000245",
-      "registerId": "33333333-3333-3333-3333-333333333333",
-      "registerCode": "REG-AB12-0800",
-      "userId": "55555555-5555-5555-5555-555555555555",
-      "userEmail": "cajero1@panaderia.com",
-      "customerId": "00000000-0000-0000-0000-000000000000",
-      "customerDocumentNumber": "CC-1234567890",
-      "customerName": "Cliente ocasional",
-      "subtotal": 14000.0,
-      "discountAmount": 500.0,
-      "taxAmount": 2565.0,
-      "totalAmount": 16065.0,
-      "paymentMethod": "Cash",
-      "notes": "Descuento de promoción 2x1",
-      "transactionAtUtc": "2026-08-07T12:44:10Z",
-      "entries": [
-        {
-          "itemId": "77777777-7777-7777-7777-777777777777",
-          "itemSku": "PAN-QUESO-001",
-          "itemName": "Pan de queso",
-          "quantity": 4,
-          "unitPrice": 3500.0,
-          "lineDiscount": 500.0,
-          "taxAmount": 1330.0
-        }
-      ]
-    }
-  ]
-}
-```
-
-| Campo (factura) | WPF Notas |
-|---|---|
-| `externalTransactionId` | ✅ **OBLIGATORIO** y único por caja (máx 100 chars). Clave de **idempotencia**: si el POS reenvía el mismo batch (timeout de red) y el backend ya procesó esa factura, retorna `success:true` sin duplicar. |
-| `userId` / `userEmail` | Al menos uno debe ser válido. `userId` es **Guid**. Si `userId` no existe pero `userEmail` sí, se resuelve automáticamente. Si el usuario está **inactivo** → la factura se rechaza individualmente. |
-| `customerId` / `customerDocumentNumber` / `customerName` | `customerId` es Guid o `Guid.Empty`; si está vacío pero hay `customerDocumentNumber` se busca o se CREA automáticamente un cliente mínimo. |
-| `subtotal / discountAmount / taxAmount / totalAmount` | Se validan matemáticamente: `Total = Subtotal + Tax − Discount` (tolerancia ±$0.01). También se valida `Sum(Qty × Unit − LnDto) ≈ Subtotal`. |
-| `paymentMethod` | Whitelist: `Cash/Card/Transfer/Mixed` por defecto. |
-| `transactionAtUtc` | Fecha real de la venta (offline). Tope máximo `MaxInvoiceOfflineAgeDays` días (default 30). No puede estar > 5 min en el futuro. |
-| `entries[]` | Al menos 1 línea. `itemId` Guid es preferente; si no, se busca por `itemSku`; si no existe, se graba la línea sin vínculo a Item (nombre y SKU copiados como texto). |
-
-### C.3.2. Validación stock (bloqueo por defecto)
-
-Por defecto el backend **bloquea** la factura individual si algún producto queda con stock < 0. El WPF debe reaccionar a este error en `results[i].errorMessage` — nota que el `Id` referenciado ahora es **Guid Público**:
-
-```json
-"Stock insuficiente para el producto 'Pan de queso' (PublicId=77777777-7777-7777-7777-777777777777). Stock actual=3, Requerido=5. Habilite Business:AllowNegativeStock=true si desea permitir ventas sin stock."
-```
-
-Estrategia sugerida WPF: Reencolar la factura con prioridad baja y notificar al cajero (tal vez hubo venta simultánea en línea y el stock ya no existe; llamar `DeltaSync` para refrescar inventario y reintentar).
-
-### C.3.3. Respuesta `InvoiceBatchResponseDto`
-
-⚠️ `results[].transactionId` es **Guid Público** (no int). Úsalo para el lookup local si necesitas enlazar la cola offline con la venta en backend.
-
-```json
-{
-  "batchId": "BATCH-20260807150000-1a2b3c4d5e6f7a8b9c0d1e2f",
-  "totalInvoices": 10,
-  "processedCount": 9,
-  "failedCount": 1,
-  "processedAtUtc": "2026-08-07T15:00:00Z",
-  "results": [
-    {
-      "externalTransactionId": "POSLOCAL-00000245",
-      "success": true,
-      "transactionId": "99999999-9999-9999-9999-999999999999",
-      "transactionNumber": "OFF-POSLOCAL-00000245"
-    },
-    {
-      "externalTransactionId": "POSLOCAL-00000246",
-      "success": false,
-      "errorMessage": "Usuario 'cajero_inactivo@panaderia.com' está inactivo..."
-    }
-  ]
-}
-```
-
-**Logica WPF tras recibir la respuesta**:
-
-| Status individual | Acción |
-|---|---|
-| `success: true` | Eliminar la factura de la cola offline persistente. Guardar `transactionId` (Guid) si necesitas trazabilidad futura. |
-| `success: false` | ✅ **NO eliminar de la cola**. Mostrar error al cajero; reintentar en próximo ciclo tras corregir el problema (stock, usuario activo, etc.). Si el error es de formato inválido (ej: campos faltantes), marcar como "Requiere revisión humana" y no reintentar indefinidamente. |
-
-**Status codes HTTP globales del lote**:
-- `200 OK` → Todas OK, o mix OK+Fail pero al menos 1 OK.
-- `422 UnprocessableEntity` → 0 facturas OK y todas falladas (ej: batch de 5 facturas y todas con cálculos inválidos).
-- `400` → Request entero inválido (no llega a procesar ninguna).
-
----
-
-# 📚 APÉNDICE A · TODOS los DTOs (resumen)
-
-Para referencia rápida del equipo React + WPF. Todos los DTOs están en [TenantDtos.cs](file:///d:/Proyectos/POSCo/BackendPOS/src/Application/DTOs/TenantDtos.cs).
-
-**Regla general de tipos**: Cualquier campo llamado `Id` o terminado en `Id` expuesto en un DTO es **`Guid`** (a menos que el nombre indique lo contrario, p.ej. `ExternalTransactionId` que es string libre).
-
-| DTO | Usado en |
-|---|---|
-| `CreateTenantDto`, `UpdateTenantDto`, `TenantResponseDto`, `TenantListResponseDto` | Grupo A · `Id = Guid` |
-| `PosSerialCodeResponseDto`, `DecommissionSerialDto` | Grupo A (seriales) · `Id = Guid` |
-| `LoginDto`, `AuthResponseDto`, `ChangePasswordDto` | Grupo B / Login · `User.Id = Guid` |
-| `CreateUserDto`, `UpdateUserDto`, `UserResponseDto` | Grupo B (usuarios) · `Id = Guid` |
-| `CreateCustomerDto`/`Update`/`Response` | Grupo B · `Id = Guid` |
-| `CreateItemDto`/`Update`/`Response` | Grupo B · `Id = Guid` |
-| `CreateRegisterDto`/`Update`/`Response` | Grupo B y C.1 (interno) · `Id = Guid` |
-| `TransactionEntryDto`, `CreateTransactionDto`, `TransactionResponseDto`/`EntryResponse` | Grupo B · `RegisterId / UserId / CustomerId / ItemId / TransactionId = Guid` |
-| `PosTerminalAuthRequestDto`, `PosTerminalAuthResponseDto` | **WPF C.1** · `RegisterId = Guid?` |
-| `InitialSyncPayloadDto`, `StoreInfoDto`, `UserSyncDto`, `ItemSyncDto`, `CustomerSyncDto` | **WPF C.1 + C.2.1** · Todos los Sync*.Id = Guid |
-| `DeltaSyncRequestDto`, `DeltaSyncResponseDto` | **WPF C.2.2** · `RegisterId = Guid` |
-| `InvoiceEntryBatchDto`, `InvoiceBatchItemDto`, `InvoiceBatchRequestDto`, `InvoiceBatchResultItemDto`, `InvoiceBatchResponseDto` | **WPF C.3** · `*Id` = Guid, `TransactionId` de resultado = Guid |
-
----
-
-# ⚙️ APÉNDICE B · Configuración recomendada `appsettings.json`
-
-Los equipos de despliegue y QA deben ajustar estos valores:
-
-```json
-{
-  "ConnectionStrings": {
-    "MasterDb": "Host=localhost;Port=5432;Database=posco_master;Username=postgres;Password=TU_PASSWORD;Pooling=true;"
-  },
-
-  "Business": {
-    "DefaultMaxRegisters": 3,
-
-    "AllowNegativeStock": false,
-    // ↑ false = BLOQUEA facturas batch sin stock (comportamiento default solicitado)
-
-    "MaxInvoiceOfflineAgeDays": 30,
-    // ↑ Tope de antiguedad de facturas offline aceptadas.
-
-    "MinDeltaSyncIntervalSeconds": 10,
-    // ↑ Anti-flood: mínimo tiempo entre delta-sync por caja.
-
-    "AllowedPaymentMethods": ["Cash", "Card", "Transfer", "Mixed"]
-  },
-
-  "PosIntegration": {
-    "GlobalSharedSecret": null
-    // ↑ Poner string aleatorio 32-64 chars en producción para activar
-    //   validación HMAC (X-POS-Signature header). Mientras null: skip.
-  }
-}
-```
-
----
-
-## 🗂️ Referencia rápida a controladores / archivos fuente
-
-| Endpoint Group | Controlador | Archivo |
-|---|---|---|
-| A (Platform Admin) | `TenantsController` | [TenantsController.cs](file:///d:/Proyectos/POSCo/BackendPOS/BackendPOS/Controllers/TenantsController.cs) |
-| B1 (Auth) | `AuthController` | [AuthController.cs](file:///d:/Proyectos/POSCo/BackendPOS/BackendPOS/Controllers/AuthController.cs) |
-| B2 (Customers) | `CustomersController` | [BusinessControllers.cs](file:///d:/Proyectos/POSCo/BackendPOS/BackendPOS/Controllers/BusinessControllers.cs#L87-L148) |
-| B3 (Items) | `ItemsController` | [BusinessControllers.cs](file:///d:/Proyectos/POSCo/BackendPOS/BackendPOS/Controllers/BusinessControllers.cs#L156-L215) |
-| B4 (Registers) | `RegistersController` | [BusinessControllers.cs](file:///d:/Proyectos/POSCo/BackendPOS/BackendPOS/Controllers/BusinessControllers.cs#L17-L80) |
-| B5 (Transactions online) | `TransactionsController` | [BusinessControllers.cs](file:///d:/Proyectos/POSCo/BackendPOS/BackendPOS/Controllers/BusinessControllers.cs#L223-L294) |
-| C (POS WPF integration) | `PosTerminalController` | [PosTerminalController.cs](file:///d:/Proyectos/POSCo/BackendPOS/BackendPOS/Controllers/PosTerminalController.cs) |
-
----
-
-_**Fin de la referencia**_. Cualquier actualización a endpoints debe reflejarse aquí.
+================================================================================
+FIN DEL DOCUMENTO.
+================================================================================

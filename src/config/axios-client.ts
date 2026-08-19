@@ -1,10 +1,11 @@
 import axios from "axios"
 import type { InternalAxiosRequestConfig } from "axios"
+import { appConfig } from "@/config/env"
 import { useAppStore } from "@/store/app-store"
 
 // Configuración inicial de Axios con la dirección del servidor
 export const api = axios.create({
-  baseURL: import.meta.env.VITE_API_URL,
+  baseURL: appConfig.apiBaseUrl,
   headers: {
     "Content-Type": "application/json",
   },

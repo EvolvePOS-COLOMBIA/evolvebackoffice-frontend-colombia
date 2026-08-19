@@ -1,132 +1,145 @@
-import type { AxiosResponse } from "axios"
+import axios, { type AxiosResponse } from "axios"
 import i18n from "@/i18n"
 
 import { api } from "@/config/axios-client"
-import type { AppSession, BusinessLoginFormValues, PlatformLoginFormValues } from "@/features/auth/types"
-import { defaultTenantClients } from "@/features/platform/clients/data/default-clients"
-import type { TenantClient } from "@/features/platform/clients/types"
-import type { CreateUserRequest, UpdateUserRequest, UserResponse } from "@/types/domain"
+import type {
+  AuthSession,
+  AuthResponseDto,
+  TenantLoginFormValues,
+  PlatformLoginFormValues,
+} from "@/features/auth/types"
 
-type DemoPlatformAccount = {
-  email: string
-  password: string
-  fullName: string
+export async function loginPlatformAdmin(payload: PlatformLoginFormValues): Promise<AuthSession> {
+  try {
+    const response: AxiosResponse<AuthResponseDto> = await api.post("/api/Auth/login/platform", {
+      email: payload.email.trim(),
+      password: payload.password,
+    })
+
+    return mapAuthResponseToSession(response.data, "PlatformAdmin", null)
+  } catch (error) {
+    throw mapPlatformLoginError(error)
+  }
 }
 
-type DemoBusinessAccount = {
-  email: string
-  password: string
-  fullName: string
-  managedSlugs: string[]
-}
+// The adapter is the boundary between Swagger DTOs and UI-owned session state.
+function mapAuthResponseToSession(
+  response: AuthResponseDto,
+  role: AuthSession["user"]["role"],
+  tenantId: string | null
+): AuthSession {
+  if (!response.token || !response.user) {
+    throw new Error("The login response was incomplete.")
+  }
 
-const demoPlatformAccount: DemoPlatformAccount = {
-  email: "platform@posmanager.app",
-  password: "Platform123",
-  fullName: "Platform Owner",
-}
+  const claims = readJwtClaims(response.token)
+  const backendRoles = [response.user.role, ...getClaimValues(claims, "role", "roles")]
 
-const demoBusinessAccounts: DemoBusinessAccount[] = [
-  {
-    email: "owner@northstar.co",
-    password: "Business123",
-    fullName: "Ariana Torres",
-    managedSlugs: ["northstar-market", "harbor-cafe"],
-  },
-  {
-    email: "manager@lunafoods.co",
-    password: "Business123",
-    fullName: "Daniel Rojas",
-    managedSlugs: ["luna-foods"],
-  },
-]
-
-function createSessionToken(prefix: string) {
-  return `${prefix}-${crypto.randomUUID()}`
-}
-
-function createFutureIso(hours: number) {
-  return new Date(Date.now() + hours * 60 * 60 * 1000).toISOString()
-}
-
-export async function loginPlatformAdmin(payload: PlatformLoginFormValues): Promise<AppSession> {
-  const t = i18n.getFixedT(null, "auth")
-  const normalizedEmail = payload.email.trim().toLowerCase()
-  const password = payload.password.trim()
-
-  if (normalizedEmail !== demoPlatformAccount.email || password !== demoPlatformAccount.password) {
-    throw new Error(t("invalid_platform_credentials"))
+  if (role === "PlatformAdmin" && !backendRoles.some(isPlatformRole)) {
+    throw new Error("This account is not authorized to access the platform.")
   }
 
   return {
-    accessToken: createSessionToken("platform-access"),
-    refreshToken: createSessionToken("platform-refresh"),
-    expiresAtUtc: createFutureIso(8),
+    accessToken: response.token,
+    refreshToken: response.refreshToken,
+    expiresAtUtc: getTokenExpiry(response.token) ?? response.refreshTokenExpiresAtUtc,
     user: {
-      id: "platform-admin-1",
-      email: demoPlatformAccount.email,
-      fullName: demoPlatformAccount.fullName,
-      role: "PlatformAdmin",
+      id: response.user.id,
+      email: response.user.email ?? response.user.username,
+      fullName: response.user.fullName || response.user.email || response.user.username,
+      role,
     },
-    managedTenantIds: [],
+    tenantId,
+    forcePasswordChange: response.forcePasswordChange,
   }
 }
 
-export async function loginBusinessAdmin(
-  payload: BusinessLoginFormValues,
-  availableClients: TenantClient[] = defaultTenantClients
-): Promise<AppSession> {
+function isPlatformRole(role: string | null | undefined) {
+  if (!role) {
+    return false
+  }
+
+  return ["admin", "platformadmin", "platform-admin", "superadmin", "super-admin"].includes(role.toLowerCase())
+}
+
+function readJwtClaims(token: string): Record<string, unknown> {
+  try {
+    const payload = token.split(".")[1]
+    if (!payload) {
+      return {}
+    }
+
+    return JSON.parse(atob(payload.replace(/-/g, "+").replace(/_/g, "/"))) as Record<string, unknown>
+  } catch {
+    return {}
+  }
+}
+
+function getClaimValues(claims: Record<string, unknown>, ...names: string[]) {
+  return names.flatMap((name) => {
+    const value = claims[name] ?? claims[`http://schemas.microsoft.com/ws/2008/06/identity/claims/${name}`]
+    return Array.isArray(value)
+      ? value.filter((item): item is string => typeof item === "string")
+      : typeof value === "string"
+        ? [value]
+        : []
+  })
+}
+
+function getTokenExpiry(token: string) {
+  const expiry = readJwtClaims(token).exp
+  return typeof expiry === "number" ? new Date(expiry * 1000).toISOString() : null
+}
+
+function mapPlatformLoginError(error: unknown) {
   const t = i18n.getFixedT(null, "auth")
-  const normalizedEmail = payload.email.trim().toLowerCase()
-  const normalizedSlug = payload.slug.trim().toLowerCase()
-  const password = payload.password.trim()
 
-  const account = demoBusinessAccounts.find((item) => item.email === normalizedEmail)
-
-  if (!account || account.password !== password) {
-    throw new Error(t("invalid_business_credentials"))
+  if (!axios.isAxiosError(error)) {
+    return error instanceof Error ? error : new Error(t("sign_in_error"))
   }
 
-  const managedClients = availableClients.filter((client) => account.managedSlugs.includes(client.slug))
-
-  if (!managedClients.some((client) => client.slug === normalizedSlug)) {
-    throw new Error(t("slug_not_found"))
+  if (error.response?.status === 400 || error.response?.status === 401) {
+    return new Error(t("invalid_platform_credentials"))
   }
 
-  const orderedManagedTenantIds = [
-    ...managedClients.filter((client) => client.slug === normalizedSlug).map((client) => client.id),
-    ...managedClients.filter((client) => client.slug !== normalizedSlug).map((client) => client.id),
-  ]
+  if (error.response?.status === 403) {
+    return new Error("This account is not authorized to access the platform.")
+  }
 
-  return {
-    accessToken: createSessionToken("business-access"),
-    refreshToken: createSessionToken("business-refresh"),
-    expiresAtUtc: createFutureIso(8),
-    user: {
-      id: `business-admin-${account.email}`,
-      email: account.email,
-      fullName: account.fullName,
-      role: "BusinessAdmin",
-    },
-    managedTenantIds: orderedManagedTenantIds,
+  return new Error(t("sign_in_error"))
+}
+
+export async function loginBusinessAdmin(payload: TenantLoginFormValues): Promise<AuthSession> {
+  try {
+    const response: AxiosResponse<AuthResponseDto> = await api.post(
+      "/api/Auth/login/admin",
+      {
+        email: payload.email.trim(),
+        password: payload.password,
+      },
+      { headers: { "X-Tenant-Id": payload.tenantPublicId.trim() } }
+    )
+
+    return mapAuthResponseToSession(response.data, "BusinessAdmin", payload.tenantPublicId.trim())
+  } catch (error) {
+    throw mapBusinessLoginError(error)
   }
 }
 
-export async function getUsers(): Promise<UserResponse[]> {
-  const response: AxiosResponse<UserResponse[]> = await api.get("/api/auth/users")
-  return response.data
-}
+function mapBusinessLoginError(error: unknown) {
+  const t = i18n.getFixedT(null, "auth")
 
-export async function createUser(payload: CreateUserRequest): Promise<UserResponse> {
-  const response: AxiosResponse<UserResponse> = await api.post("/api/auth/users", payload)
-  return response.data
-}
+  if (!axios.isAxiosError(error)) {
+    return error instanceof Error ? error : new Error(t("sign_in_error"))
+  }
 
-export async function updateUser(userId: string, payload: UpdateUserRequest): Promise<UserResponse> {
-  const response: AxiosResponse<UserResponse> = await api.put(`/api/auth/users/${userId}`, payload)
-  return response.data
-}
+  if (error.response?.status === 400 || error.response?.status === 401) {
+    return new Error(t("invalid_business_credentials"))
+  }
 
-export async function deleteUser(userId: string): Promise<void> {
-  await api.delete(`/api/auth/users/${userId}`)
+  if (error.response?.status === 403) {
+    return new Error(t("business_access_denied"))
+  }
+
+  return new Error(t("sign_in_error"))
 }

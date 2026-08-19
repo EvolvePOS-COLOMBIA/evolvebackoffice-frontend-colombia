@@ -2,7 +2,7 @@ import { useMutation, useQueryClient } from "@tanstack/react-query"
 import { useNavigate } from "react-router-dom"
 
 import { loginBusinessAdmin, loginPlatformAdmin } from "@/features/auth/services/auth.service"
-import type { AppRole, AppSession, BusinessLoginFormValues, PlatformLoginFormValues } from "@/features/auth/types"
+import type { AppRole, AuthSession, PlatformLoginFormValues, TenantLoginFormValues } from "@/features/auth/types"
 import { useAppStore } from "@/store/app-store"
 
 /**
@@ -15,9 +15,6 @@ export function useAuth() {
   const navigate = useNavigate()
 
   const session = useAppStore((state) => state.session)
-  const activeTenant = useAppStore((state) => state.activeTenant)
-  const platformClients = useAppStore((state) => state.platformClients)
-  const setActiveTenant = useAppStore((state) => state.setActiveTenant)
   const setSession = useAppStore((state) => state.setSession)
   const storeLogout = useAppStore((state) => state.logout)
 
@@ -25,22 +22,18 @@ export function useAuth() {
   const role = session?.user.role
   const isPlatformAdmin = role === "PlatformAdmin"
   const isBusinessAdmin = role === "BusinessAdmin"
-  const managedTenantIds = session?.managedTenantIds ?? []
-  const availableTenants = platformClients.filter((client) => managedTenantIds.includes(client.id))
-  const currentTenant = availableTenants.find((client) => client.id === activeTenant) ?? availableTenants[0] ?? null
-
   const platformLoginMutation = useMutation({
     mutationFn: (payload: PlatformLoginFormValues) => loginPlatformAdmin(payload),
   })
 
+  const businessLoginMutation = useMutation({
+    mutationFn: (payload: TenantLoginFormValues) => loginBusinessAdmin(payload),
+  })
+
   interface LoginOptions {
-    onSuccess?: (sessionData: AppSession) => void
+    onSuccess?: (sessionData: AuthSession) => void
     onError?: (error: unknown) => void
   }
-
-  const businessLoginMutation = useMutation({
-    mutationFn: (payload: BusinessLoginFormValues) => loginBusinessAdmin(payload, platformClients),
-  })
 
   const handlePlatformLogin = (payload: PlatformLoginFormValues, options?: LoginOptions) => {
     platformLoginMutation.mutate(payload, {
@@ -55,7 +48,7 @@ export function useAuth() {
     })
   }
 
-  const handleBusinessLogin = (payload: BusinessLoginFormValues, options?: LoginOptions) => {
+  const handleBusinessLogin = (payload: TenantLoginFormValues, options?: LoginOptions) => {
     businessLoginMutation.mutate(payload, {
       onSuccess: (sessionData) => {
         setSession(sessionData)
@@ -78,9 +71,7 @@ export function useAuth() {
 
   return {
     session,
-    activeTenant,
-    currentTenant,
-    availableTenants,
+    tenantId: session?.tenantId ?? null,
     isAuthenticated: Boolean(token && session),
     isPlatformAdmin,
     isBusinessAdmin,
@@ -88,9 +79,7 @@ export function useAuth() {
     hasRole: (allowedRoles: AppRole[]) => (role ? allowedRoles.includes(role) : false),
     loginPlatform: handlePlatformLogin,
     loginBusiness: handleBusinessLogin,
-    setActiveTenant,
     isLogging: platformLoginMutation.isPending || businessLoginMutation.isPending,
-    isLoginError: platformLoginMutation.isError || businessLoginMutation.isError,
     logout,
   }
 }

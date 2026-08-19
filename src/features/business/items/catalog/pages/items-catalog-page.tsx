@@ -14,7 +14,7 @@ import { AdjustStockDialog } from "../components/adjust-stock-dialog"
 import type { CreateItemFormValues } from "../schemas/item-schema"
 
 export function ItemsCatalogPage() {
-  const { t } = useTranslation("business-items")
+  const { t } = useTranslation("business-items-catalog")
   const [search, setSearch] = useState("")
   const [page, setPage] = useState(1)
   const [formOpen, setFormOpen] = useState(false)

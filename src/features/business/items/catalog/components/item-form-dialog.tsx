@@ -44,7 +44,7 @@ export function ItemFormDialog({
   isSubmitting = false,
 }: ItemFormDialogProps) {
   const isEditMode = Boolean(itemToEdit)
-  const { t } = useTranslation("business-items")
+  const { t } = useTranslation("business-items-catalog")
 
   const form = useForm<CreateItemFormValues>({
     resolver: zodResolver(createItemSchema(t)) as never,

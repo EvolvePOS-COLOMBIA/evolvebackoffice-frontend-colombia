@@ -20,7 +20,7 @@ type ItemsTableProps = {
 }
 
 export function ItemsTable({ items, onEdit, onAdjustStock }: ItemsTableProps) {
-  const { t } = useTranslation("business-items")
+  const { t } = useTranslation("business-items-catalog")
 
   if (items.length === 0) {
     return (

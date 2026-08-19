@@ -32,7 +32,7 @@ export function AdjustStockDialog({
   onSubmit,
   isSubmitting = false,
 }: AdjustStockDialogProps) {
-  const { t } = useTranslation("business-items")
+  const { t } = useTranslation("business-items-catalog")
 
   const form = useForm<AdjustStockFormValues>({
     resolver: zodResolver(adjustStockSchema(t)) as never,

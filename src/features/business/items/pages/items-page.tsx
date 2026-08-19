@@ -9,6 +9,7 @@ import {
   Tag,
   Wrench,
 } from "lucide-react"
+import { useNavigate } from "react-router-dom"
 
 import { useTranslation } from "@/i18n/use-i18n"
 import { HubPageLayout } from "@/features/business/components/hub-page-layout"
@@ -16,13 +17,15 @@ import { ItemCard, type ItemCardLink } from "@/features/business/components/item
 
 export function ItemsPage() {
   const { t } = useTranslation("business-items")
+  const navigate = useNavigate()
 
   const itemLinks: ItemCardLink[] = [
     {
       name: t("product_catalog"),
       label: t("product_catalog_desc"),
       icon: ClipboardList,
-      disabled: true,
+      disabled: false,
+      onClick: () => navigate("/business/items/catalog"),
     },
     {
       name: t("departments"),

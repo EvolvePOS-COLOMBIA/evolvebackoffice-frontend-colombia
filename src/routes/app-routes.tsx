@@ -7,6 +7,7 @@ import { LoginPage } from "@/features/auth/pages/login-page"
 import { BusinessDashboardPage } from "@/features/business/dashboard/pages/business-dashboard-page"
 import { InventoryPage } from "@/features/business/inventory/pages/inventory-page"
 import { ItemsPage } from "@/features/business/items/pages/items-page"
+import { ItemsCatalogPage } from "@/features/business/items/pages/items-catalog-page"
 import { PeoplePage } from "@/features/business/people/pages/people-page"
 import { ReportsPage } from "@/features/business/reports/pages/reports-page"
 import { SettingsPage } from "@/features/business/settings/pages/settings-page"
@@ -52,6 +53,7 @@ function AppRoutesContent() {
         <Route element={<AppLayout />}>
           <Route path="/business/dashboard" element={<BusinessDashboardPage />} />
           <Route path="/business/items" element={<ItemsPage />} />
+          <Route path="/business/items/catalog" element={<ItemsCatalogPage />} />
           <Route path="/business/inventory" element={<InventoryPage />} />
           <Route path="/business/people" element={<PeoplePage />} />
           <Route path="/business/reports" element={<ReportsPage />} />

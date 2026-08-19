@@ -10,6 +10,7 @@ export type ItemCardLink = {
   label: string
   icon: LucideIcon
   disabled?: boolean
+  onClick?: () => void
 }
 
 export function ItemCard({ item }: { item: ItemCardLink }) {
@@ -24,6 +25,7 @@ export function ItemCard({ item }: { item: ItemCardLink }) {
           ? "cursor-default opacity-60"
           : "cursor-pointer hover:border-primary/80 hover:bg-primary hover:shadow-lg hover:shadow-primary/20"
       )}
+      onClick={isDisabled ? undefined : item.onClick}
     >
       <CardContent className="flex items-center p-4">
         <div

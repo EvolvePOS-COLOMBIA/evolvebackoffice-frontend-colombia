@@ -27,36 +27,43 @@ export function SettingsPage() {
       name: t("main_db"),
       label: t("main_db_desc"),
       icon: Server,
+      disabled: true,
     },
     {
       name: t("registers"),
       label: t("registers_desc"),
       icon: MonitorCog,
+      disabled: true,
     },
     {
       name: t("evolve_keyboard"),
       label: t("evolve_keyboard_desc"),
       icon: Keyboard,
+      disabled: true,
     },
     {
       name: t("pole_display"),
       label: t("pole_display_desc"),
       icon: Tv,
+      disabled: true,
     },
     {
       name: t("printers"),
       label: t("printers_desc"),
       icon: Printer,
+      disabled: true,
     },
     {
       name: t("printer_group"),
       label: t("printer_group_desc"),
       icon: ListOrdered,
+      disabled: true,
     },
     {
       name: t("resource_config_group"),
       label: t("resource_config_group_desc"),
       icon: Layers,
+      disabled: true,
     },
   ]
 
@@ -65,36 +72,43 @@ export function SettingsPage() {
       name: t("store_information"),
       label: t("store_information_desc"),
       icon: Store,
+      disabled: true,
     },
     {
       name: t("tenders"),
       label: t("tenders_desc"),
       icon: CreditCard,
+      disabled: true,
     },
     {
       name: t("pos_options"),
       label: t("pos_options_desc"),
       icon: Settings,
+      disabled: true,
     },
     {
       name: t("woocommerce_integration"),
       label: t("woocommerce_integration_desc"),
       icon: ArrowLeftRight,
+      disabled: true,
     },
     {
       name: t("delete_transactions"),
       label: t("delete_transactions_desc"),
       icon: ArchiveX,
+      disabled: true,
     },
     {
       name: t("gift_card"),
       label: t("gift_card_desc"),
       icon: CreditCard,
+      disabled: true,
     },
     {
       name: t("media_resource"),
       label: t("media_resource_desc"),
       icon: Image,
+      disabled: true,
     },
   ]
 

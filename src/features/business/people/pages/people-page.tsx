@@ -12,21 +12,25 @@ export function PeoplePage() {
       name: t("customers"),
       label: t("customers_desc"),
       icon: Users,
+      disabled: true,
     },
     {
       name: t("users"),
       label: t("users_desc"),
       icon: CircleUser,
+      disabled: true,
     },
     {
       name: t("roles"),
       label: t("roles_desc"),
       icon: Key,
+      disabled: true,
     },
     {
       name: t("time_clock"),
       label: t("time_clock_desc"),
       icon: CalendarClock,
+      disabled: true,
     },
   ]
 

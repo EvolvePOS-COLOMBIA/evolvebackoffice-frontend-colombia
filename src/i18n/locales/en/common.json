@@ -47,5 +47,6 @@
   "backoffice_colombia": "Backoffice Colombia",
   "current_business": "Current business",
   "no_business_selected": "No business selected",
-  "placeholder_desc": "This placeholder is already tenant-aware, so the future implementation can plug into the active business context directly."
+  "placeholder_desc": "This placeholder is already tenant-aware, so the future implementation can plug into the active business context directly.",
+  "coming_soon": "Coming Soon"
 }

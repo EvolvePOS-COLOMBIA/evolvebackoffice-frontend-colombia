@@ -26,6 +26,8 @@ import businessReportsEs from "@/features/business/reports/i18n/es.json"
 import businessReportsEn from "@/features/business/reports/i18n/en.json"
 import businessSettingsEs from "@/features/business/settings/i18n/es.json"
 import businessSettingsEn from "@/features/business/settings/i18n/en.json"
+import businessUsersCatalogEs from "@/features/business/people/users/i18n/es.json"
+import businessUsersCatalogEn from "@/features/business/people/users/i18n/en.json"
 
 const resources = {
   es: {
@@ -41,6 +43,7 @@ const resources = {
     "business-people": businessPeopleEs,
     "business-reports": businessReportsEs,
     "business-settings": businessSettingsEs,
+    "business-users-catalog": businessUsersCatalogEs,
   },
   en: {
     common: commonEn,
@@ -55,6 +58,7 @@ const resources = {
     "business-people": businessPeopleEn,
     "business-reports": businessReportsEn,
     "business-settings": businessSettingsEn,
+    "business-users-catalog": businessUsersCatalogEn,
   },
 }
 

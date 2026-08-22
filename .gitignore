@@ -38,3 +38,6 @@ testsprite_tests\tmp\config.json
 .agents/*
 # opencode config (contains API keys)
 opencode.json
+
+.playwright/*
+.playwright-mcp/*

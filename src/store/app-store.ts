@@ -2,8 +2,6 @@ import { create } from "zustand"
 import { persist } from "zustand/middleware"
 import i18n from "i18next"
 
-import { defaultTenantClients } from "@/features/platform/clients/data/default-clients"
-import type { TenantClient } from "@/features/platform/clients/types"
 import type { AuthSession } from "@/features/auth/types"
 
 type ThemeMode = "light" | "dark" | "system"
@@ -13,23 +11,19 @@ type AppState = {
   session: AuthSession | null
   theme: ThemeMode
   locale: Locale
-  platformClients: TenantClient[]
   setSession: (session: AuthSession | null) => void
   setTheme: (theme: ThemeMode) => void
   setLocale: (locale: Locale) => void
   setAppLocale: (lang: Locale) => void
-  savePlatformClient: (client: TenantClient) => void
-  deletePlatformClient: (clientId: string) => void
   logout: () => void
 }
 
 export const useAppStore = create<AppState>()(
   persist(
-    (set, get) => ({
+    (set) => ({
       session: null,
       theme: "system",
       locale: "es",
-      platformClients: defaultTenantClients,
 
       setSession: (session) => {
         set({ session })
@@ -44,25 +38,6 @@ export const useAppStore = create<AppState>()(
         i18n.changeLanguage(lang)
       },
 
-      savePlatformClient: (client) => {
-        const platformClients = get().platformClients
-        const existingIndex = platformClients.findIndex((item) => item.id === client.id)
-
-        if (existingIndex === -1) {
-          set({ platformClients: [client, ...platformClients] })
-          return
-        }
-
-        const updatedClients = [...platformClients]
-        updatedClients[existingIndex] = client
-        set({ platformClients: updatedClients })
-      },
-
-      deletePlatformClient: (clientId) => {
-        const filteredClients = get().platformClients.filter((client) => client.id !== clientId)
-        set({ platformClients: filteredClients })
-      },
-
       logout: () => {
         set({ session: null })
       },
@@ -73,7 +48,6 @@ export const useAppStore = create<AppState>()(
         session: state.session,
         theme: state.theme,
         locale: state.locale,
-        platformClients: state.platformClients,
       }),
     }
   )

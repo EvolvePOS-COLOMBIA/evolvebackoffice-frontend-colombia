@@ -24,7 +24,7 @@ import { useTranslation } from "@/i18n/use-i18n"
 
 const platformNavigationItems = [
   { to: "/platform/dashboard", labelKey: "dashboard", icon: LayoutDashboard },
-  { to: "/platform/clients", labelKey: "clients", icon: Building2 },
+  { to: "/platform/tenants", labelKey: "tenants", icon: Building2 },
 ]
 
 const businessNavigationItems = [
@@ -82,7 +82,7 @@ export function SidebarContent({ isMobile = false, onNavigate }: { isMobile?: bo
               )}
             >
               <Icon className={cn("size-5", isActive ? "text-primary" : "text-muted-foreground")} />
-              {t(item.labelKey as "dashboard" | "clients" | "items" | "inventory" | "people" | "reports" | "settings")}
+              {t(item.labelKey as "dashboard" | "tenants" | "items" | "inventory" | "people" | "reports" | "settings")}
             </NavLink>
           )
         })}

@@ -10,8 +10,8 @@ import marketingEs from "@/features/marketing/i18n/es.json"
 import marketingEn from "@/features/marketing/i18n/en.json"
 import platformDashboardEs from "@/features/platform/dashboard/i18n/es.json"
 import platformDashboardEn from "@/features/platform/dashboard/i18n/en.json"
-import platformClientsEs from "@/features/platform/clients/i18n/es.json"
-import platformClientsEn from "@/features/platform/clients/i18n/en.json"
+import platformTenantsEs from "@/features/platform/tenants/i18n/es.json"
+import platformTenantsEn from "@/features/platform/tenants/i18n/en.json"
 import businessDashboardEs from "@/features/business/dashboard/i18n/es.json"
 import businessDashboardEn from "@/features/business/dashboard/i18n/en.json"
 import businessItemsEs from "@/features/business/items/i18n/es.json"
@@ -31,7 +31,7 @@ const resources = {
     auth: authEs,
     marketing: marketingEs,
     "platform-dashboard": platformDashboardEs,
-    "platform-clients": platformClientsEs,
+    "platform-tenants": platformTenantsEs,
     "business-dashboard": businessDashboardEs,
     "business-items": businessItemsEs,
     "business-inventory": businessInventoryEs,
@@ -44,7 +44,7 @@ const resources = {
     auth: authEn,
     marketing: marketingEn,
     "platform-dashboard": platformDashboardEn,
-    "platform-clients": platformClientsEn,
+    "platform-tenants": platformTenantsEn,
     "business-dashboard": businessDashboardEn,
     "business-items": businessItemsEn,
     "business-inventory": businessInventoryEn,

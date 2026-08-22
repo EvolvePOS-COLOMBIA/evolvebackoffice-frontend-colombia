@@ -1,4 +1,5 @@
 import { CalendarClock, CircleUser, Key, Users } from "lucide-react"
+import { useNavigate } from "react-router-dom"
 
 import { useTranslation } from "@/i18n/use-i18n"
 import { HubPageLayout } from "@/features/business/components/hub-page-layout"
@@ -6,6 +7,7 @@ import { ItemCard, type ItemCardLink } from "@/features/business/components/item
 
 export function PeoplePage() {
   const { t } = useTranslation("business-people")
+  const navigate = useNavigate()
 
   const peopleLinks: ItemCardLink[] = [
     {
@@ -18,7 +20,8 @@ export function PeoplePage() {
       name: t("users"),
       label: t("users_desc"),
       icon: CircleUser,
-      disabled: true,
+      disabled: false,
+      onClick: () => navigate("/business/people/users"),
     },
     {
       name: t("roles"),

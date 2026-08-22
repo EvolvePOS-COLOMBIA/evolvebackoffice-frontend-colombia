@@ -12,21 +12,25 @@ export function ReportsPage() {
       name: t("standard_dynamic_custom"),
       label: t("standard_dynamic_custom_desc"),
       icon: ClipboardList,
+      disabled: true,
     },
     {
       name: t("journal"),
       label: t("journal_desc"),
       icon: BookOpen,
+      disabled: true,
     },
     {
       name: t("update_batch_info"),
       label: t("update_batch_info_desc"),
       icon: CurlyBraces,
+      disabled: true,
     },
     {
       name: t("woocommerce_orders"),
       label: t("woocommerce_orders_desc"),
       icon: Logs,
+      disabled: true,
     },
   ]
 

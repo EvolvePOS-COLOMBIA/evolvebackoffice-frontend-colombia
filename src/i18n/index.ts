@@ -16,6 +16,8 @@ import businessDashboardEs from "@/features/business/dashboard/i18n/es.json"
 import businessDashboardEn from "@/features/business/dashboard/i18n/en.json"
 import businessItemsEs from "@/features/business/items/i18n/es.json"
 import businessItemsEn from "@/features/business/items/i18n/en.json"
+import businessItemsCatalogEs from "@/features/business/items/catalog/i18n/es.json"
+import businessItemsCatalogEn from "@/features/business/items/catalog/i18n/en.json"
 import businessInventoryEs from "@/features/business/inventory/i18n/es.json"
 import businessInventoryEn from "@/features/business/inventory/i18n/en.json"
 import businessPeopleEs from "@/features/business/people/i18n/es.json"
@@ -24,6 +26,8 @@ import businessReportsEs from "@/features/business/reports/i18n/es.json"
 import businessReportsEn from "@/features/business/reports/i18n/en.json"
 import businessSettingsEs from "@/features/business/settings/i18n/es.json"
 import businessSettingsEn from "@/features/business/settings/i18n/en.json"
+import businessUsersCatalogEs from "@/features/business/people/users/i18n/es.json"
+import businessUsersCatalogEn from "@/features/business/people/users/i18n/en.json"
 
 const resources = {
   es: {
@@ -34,10 +38,12 @@ const resources = {
     "platform-tenants": platformTenantsEs,
     "business-dashboard": businessDashboardEs,
     "business-items": businessItemsEs,
+    "business-items-catalog": businessItemsCatalogEs,
     "business-inventory": businessInventoryEs,
     "business-people": businessPeopleEs,
     "business-reports": businessReportsEs,
     "business-settings": businessSettingsEs,
+    "business-users-catalog": businessUsersCatalogEs,
   },
   en: {
     common: commonEn,
@@ -47,10 +53,12 @@ const resources = {
     "platform-tenants": platformTenantsEn,
     "business-dashboard": businessDashboardEn,
     "business-items": businessItemsEn,
+    "business-items-catalog": businessItemsCatalogEn,
     "business-inventory": businessInventoryEn,
     "business-people": businessPeopleEn,
     "business-reports": businessReportsEn,
     "business-settings": businessSettingsEn,
+    "business-users-catalog": businessUsersCatalogEn,
   },
 }
 

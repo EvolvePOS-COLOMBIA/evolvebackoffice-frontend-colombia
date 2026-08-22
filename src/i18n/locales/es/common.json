@@ -48,5 +48,6 @@
   "backoffice_colombia": "Backoffice Colombia",
   "current_business": "Negocio actual",
   "no_business_selected": "Sin negocio seleccionado",
-  "placeholder_desc": "Este placeholder ya está consciente del tenant, por lo que la implementación futura puede conectarse directamente al contexto del negocio activo."
+  "placeholder_desc": "Este placeholder ya está consciente del tenant, por lo que la implementación futura puede conectarse directamente al contexto del negocio activo.",
+  "coming_soon": "Próximamente"
 }

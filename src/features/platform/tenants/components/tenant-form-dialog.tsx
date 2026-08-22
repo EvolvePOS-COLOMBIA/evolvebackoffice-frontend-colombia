@@ -1,7 +1,7 @@
 import { zodResolver } from "@hookform/resolvers/zod"
 import { Sparkles, SquarePen } from "lucide-react"
 import { useEffect } from "react"
-import { useForm } from "react-hook-form"
+import { useForm, type Resolver } from "react-hook-form"
 
 import Spinner from "@/components/Spinner"
 import { Button } from "@/components/ui/button"
@@ -15,39 +15,38 @@ import {
 } from "@/components/ui/dialog"
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form"
 import { Input } from "@/components/ui/input"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { clientSchema } from "@/features/platform/clients/schemas/client-schema"
-import type { TenantClient, TenantClientFormValues } from "@/features/platform/clients/types"
+import { tenantSchema } from "@/features/platform/tenants/schemas/tenant-schema"
+import type { Tenant, TenantFormValues } from "@/features/platform/tenants/types"
 import { useTranslation } from "@/i18n/use-i18n"
 
-type ClientFormDialogProps = {
+type TenantFormDialogProps = {
   open: boolean
   onOpenChange: (open: boolean) => void
-  clientToEdit?: TenantClient | null
-  onSubmit: (values: TenantClientFormValues) => void
+  tenantToEdit?: Tenant | null
+  onSubmit: (values: TenantFormValues) => void
   isSubmitting?: boolean
 }
 
-const defaultValues: TenantClientFormValues = {
-  businessName: "",
-  slug: "",
-  adminEmail: "",
+const defaultValues: TenantFormValues = {
+  name: "",
+  contactEmail: "",
   phone: "",
-  status: "active",
+  address: "",
+  maxRegisters: 1,
 }
 
-export function ClientFormDialog({
+export function TenantFormDialog({
   open,
   onOpenChange,
-  clientToEdit,
+  tenantToEdit,
   onSubmit,
   isSubmitting = false,
-}: ClientFormDialogProps) {
-  const isEditMode = Boolean(clientToEdit)
-  const { t } = useTranslation("platform-clients")
+}: TenantFormDialogProps) {
+  const isEditMode = Boolean(tenantToEdit)
+  const { t } = useTranslation("platform-tenants")
 
-  const form = useForm<TenantClientFormValues>({
-    resolver: zodResolver(clientSchema(t)),
+  const form = useForm<TenantFormValues>({
+    resolver: zodResolver(tenantSchema(t)) as Resolver<TenantFormValues>,
     defaultValues,
   })
 
@@ -56,25 +55,25 @@ export function ClientFormDialog({
       return
     }
 
-    if (clientToEdit) {
+    if (tenantToEdit) {
       form.reset({
-        businessName: clientToEdit.businessName,
-        slug: clientToEdit.slug,
-        adminEmail: clientToEdit.adminEmail,
-        phone: clientToEdit.phone,
-        status: clientToEdit.status,
+        name: tenantToEdit.name,
+        contactEmail: tenantToEdit.contactEmail,
+        phone: tenantToEdit.phone,
+        address: tenantToEdit.address,
+        maxRegisters: tenantToEdit.maxRegisters,
       })
       return
     }
 
     form.reset(defaultValues)
-  }, [clientToEdit, form, open])
+  }, [tenantToEdit, form, open])
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="w-[calc(100%-2rem)] lg:w-[760px]">
         <DialogHeader>
-          <DialogTitle>{isEditMode ? t("edit_tenant_client") : t("create_tenant_client")}</DialogTitle>
+          <DialogTitle>{isEditMode ? t("edit_tenant") : t("create_tenant")}</DialogTitle>
           <DialogDescription>{t("fill_metadata")}</DialogDescription>
         </DialogHeader>
 
@@ -83,12 +82,12 @@ export function ClientFormDialog({
             <div className="grid gap-4 sm:grid-cols-2">
               <FormField
                 control={form.control}
-                name="businessName"
+                name="name"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>{t("business_name")}</FormLabel>
+                    <FormLabel>{t("name")}</FormLabel>
                     <FormControl>
-                      <Input placeholder={t("business_name_placeholder")} {...field} />
+                      <Input placeholder={t("name_placeholder")} {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -97,12 +96,12 @@ export function ClientFormDialog({
 
               <FormField
                 control={form.control}
-                name="slug"
+                name="contactEmail"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>{t("slug")}</FormLabel>
+                    <FormLabel>{t("contact_email")}</FormLabel>
                     <FormControl>
-                      <Input placeholder={t("slug_placeholder")} {...field} />
+                      <Input placeholder={t("email_placeholder")} type="email" {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -111,20 +110,6 @@ export function ClientFormDialog({
             </div>
 
             <div className="grid gap-4 sm:grid-cols-2">
-              <FormField
-                control={form.control}
-                name="adminEmail"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>{t("administrator_email")}</FormLabel>
-                    <FormControl>
-                      <Input placeholder={t("email_placeholder")} type="email" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
               <FormField
                 control={form.control}
                 name="phone"
@@ -138,25 +123,31 @@ export function ClientFormDialog({
                   </FormItem>
                 )}
               />
+
+              <FormField
+                control={form.control}
+                name="address"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>{t("address")}</FormLabel>
+                    <FormControl>
+                      <Input placeholder={t("address_placeholder")} {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
             </div>
 
             <FormField
               control={form.control}
-              name="status"
+              name="maxRegisters"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>{t("status")}</FormLabel>
-                  <Select value={field.value} onValueChange={field.onChange}>
-                    <FormControl>
-                      <SelectTrigger>
-                        <SelectValue placeholder={t("select_status")} />
-                      </SelectTrigger>
-                    </FormControl>
-                    <SelectContent>
-                      <SelectItem value="active">{t("active")}</SelectItem>
-                      <SelectItem value="inactive">{t("inactive")}</SelectItem>
-                    </SelectContent>
-                  </Select>
+                  <FormLabel>{t("max_registers")}</FormLabel>
+                  <FormControl>
+                    <Input type="number" min={1} placeholder={t("max_registers_placeholder")} {...field} />
+                  </FormControl>
                   <FormMessage />
                 </FormItem>
               )}
@@ -173,7 +164,7 @@ export function ClientFormDialog({
               <Button type="submit" disabled={isSubmitting}>
                 {isSubmitting && <Spinner IsButton />}
                 {!isSubmitting && (isEditMode ? <SquarePen className="size-4" /> : <Sparkles className="size-4" />)}
-                {isEditMode ? t("update_client") : t("save_client")}
+                {isEditMode ? t("update_tenant") : t("save_tenant")}
               </Button>
             </DialogFooter>
           </form>

@@ -1,12 +1,14 @@
 {
   "platform_overview": "Platform overview",
   "platform_overview_desc": "Operate the tenant portfolio with confidence.",
-  "platform_overview_subtitle": "Track client growth, monitor inactive businesses, and keep the platform ready for onboarding.",
-  "total_clients": "Total clients",
-  "active_clients": "Active clients",
-  "inactive_clients": "Inactive clients",
-  "recent_activity": "Recent client activity",
+  "platform_overview_subtitle": "Track tenant growth, monitor inactive businesses, and keep the platform ready for onboarding.",
+  "total_tenants": "Total tenants",
+  "active_tenants": "Active tenants",
+  "inactive_tenants": "Inactive tenants",
+  "active": "Active",
+  "inactive": "Inactive",
+  "recent_activity": "Recent tenant activity",
   "recent_activity_desc": "Newest tenants created in the platform workspace.",
   "next_step": "Next step",
-  "next_step_desc": "Open the Clients module to create or update tenant records, including slug and administrator email."
+  "next_step_desc": "Open the Tenants module to create or update tenant records, including name and contact email."
 }

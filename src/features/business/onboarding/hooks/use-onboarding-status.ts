@@ -23,7 +23,10 @@ export function useOnboardingStatus(): OnboardingStatus {
   const { session, tenantId } = useAuth()
   const completedMap = useAppStore((state) => state.onboardingCompleted)
 
-  const localCompleted = tenantId ? Boolean(completedMap[tenantId]) : false
+  // Si tenantId es null, verificamos también la clave de respaldo "__no_tenant__"
+  // que useOnboarding usa cuando no hay tenant disponible.
+  const completedKey = tenantId ?? "__no_tenant__"
+  const localCompleted = Boolean(completedMap[completedKey])
   const forcePasswordChange = session?.forcePasswordChange ?? false
   const forcedByDev = isOnboardingForced()
 

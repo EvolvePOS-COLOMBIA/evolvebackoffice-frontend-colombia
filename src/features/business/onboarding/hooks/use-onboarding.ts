@@ -89,15 +89,15 @@ export function useOnboarding() {
 
   /** Cierra el onboarding: marca el tenant como configurado y limpia el borrador. */
   const finish = useCallback(() => {
-    if (tenantId) {
-      markOnboardingCompleted(tenantId)
-      clearOnboardingDraft(tenantId)
-    }
+    // Usamos draftKey (que ya cae en "__no_tenant__" cuando tenantId es null)
+    // para que la marca de completado persista siempre, incluso sin tenant.
+    markOnboardingCompleted(draftKey)
+    clearOnboardingDraft(draftKey)
     // Si se estaba probando con el override de desarrollo, apagarlo aquí evita
     // que el gate rebote al usuario de vuelta al wizard.
     clearOnboardingForce()
     queryClient.invalidateQueries({ queryKey: branchesKeys.all })
-  }, [clearOnboardingDraft, markOnboardingCompleted, queryClient, tenantId])
+  }, [clearOnboardingDraft, draftKey, markOnboardingCompleted, queryClient])
 
   return {
     tenantId,

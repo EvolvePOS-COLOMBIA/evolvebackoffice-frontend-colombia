@@ -1,12 +1,20 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 
-import { createUser, getUsers, updateUser } from "../services/users.service"
+import { createUser, getUserById, getUsers, updateUser } from "../services/users.service"
 import type { CreateUserDto, UpdateUserDto } from "../types"
 
 export function useUsers() {
   return useQuery({
     queryKey: ["users"],
     queryFn: () => getUsers(),
+  })
+}
+
+export function useUser(id: string | null) {
+  return useQuery({
+    queryKey: ["users", id],
+    queryFn: () => getUserById(id!),
+    enabled: !!id,
   })
 }
 

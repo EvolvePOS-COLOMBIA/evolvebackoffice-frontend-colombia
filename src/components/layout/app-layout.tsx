@@ -1,9 +1,21 @@
+import { useState } from "react"
 import { Outlet } from "react-router-dom"
 
 import { Navbar } from "@/components/layout/navbar"
 import { Sidebar } from "@/components/layout/sidebar"
+import { useAuth } from "@/features/auth/hooks/use-auth"
+import { ChangePasswordDialog } from "@/features/auth/components/change-password-dialog"
 
 export function AppLayout() {
+  const { session } = useAuth()
+  const [passwordChanged, setPasswordChanged] = useState(false)
+
+  // Mostrar modal solo para BusinessAdmin cuando forcePasswordChange es true
+  const mustChangePassword =
+    session?.user.role === "BusinessAdmin" &&
+    session?.forcePasswordChange === true &&
+    !passwordChanged
+
   return (
     <div className="relative h-svh overflow-hidden bg-background text-foreground">
       <div className="pointer-events-none absolute inset-0">
@@ -23,6 +35,11 @@ export function AppLayout() {
           </div>
         </section>
       </div>
+
+      <ChangePasswordDialog
+        open={mustChangePassword}
+        onPasswordChanged={() => setPasswordChanged(true)}
+      />
     </div>
   )
 }

@@ -36,5 +36,20 @@
   "email_validation": "Enter a valid email address.",
   "password_validation": "Password must have at least 6 characters.",
   "tenant_public_id_validation": "Enter a valid tenant GUID.",
-  "session_expired": "Your session has expired. Please sign in again."
+  "session_expired": "Your session has expired. Please sign in again.",
+  "change_password_title": "Change your password",
+  "change_password_description": "For security, you must change your temporary password before continuing.",
+  "current_password_placeholder": "Enter your current password",
+  "confirm_password": "Confirm password",
+  "confirm_password_placeholder": "Confirm your new password",
+  "current_password_required": "Current password is required.",
+  "password_min_length": "Password must have at least 8 characters.",
+  "password_policy": "Password must contain at least one uppercase, one lowercase, one digit and one symbol.",
+  "confirm_password_required": "Confirm your new password.",
+  "password_mismatch": "Passwords do not match.",
+  "password_changed_success": "Password changed successfully.",
+  "password_change_error": "Error changing password. Verify your current password.",
+  "logout": "Log out",
+  "save_password": "Save password",
+  "saving": "Saving..."
 }

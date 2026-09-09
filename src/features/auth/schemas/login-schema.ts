@@ -9,7 +9,7 @@ export const platformLoginSchema = (t: TFunction) =>
 
 export const businessLoginSchema = (t: TFunction) =>
   z.object({
-    tenantPublicId: z.string().min(1, t("tenant_public_id_validation")),
+    tenantPublicId: z.string().min(0, t("tenant_public_id_validation")),
     email: z.string().email(t("email_validation")),
     password: z.string().min(6, t("password_validation")),
   })

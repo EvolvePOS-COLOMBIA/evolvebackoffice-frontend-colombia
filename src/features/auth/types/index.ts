@@ -1,6 +1,6 @@
 export type AppRole = "PlatformAdmin" | "BusinessAdmin"
 
-export type { AuthResponseDto, UserResponseDto } from "./api"
+export type { AuthResponseDto, ChangePasswordDto, UserResponseDto } from "./api"
 
 export interface SessionUser {
   id: string

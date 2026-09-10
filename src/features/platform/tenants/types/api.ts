@@ -12,15 +12,24 @@ export interface CreateTenantDto {
   phone: string | null
   address: string | null
   maxRegisters: number | null
-  adminDocumentType?: DocumentType
-  adminDocumentNumber?: string | null
+  adminIdentification: string | null
+  subdomain: string | null
+  identificationNumber: string | null
+  identificationTypeId: number
+  maxBranches: number | null
+  maxUsers: number | null
 }
 
 export interface UpdateTenantDto {
-  name: string
-  contactEmail: string
+  name: string | null
+  contactEmail: string | null
   phone: string | null
   address: string | null
+  subdomain: string | null
+  identificationNumber: string | null
+  identificationTypeId: number | null
+  maxBranches: number | null
+  maxUsers: number | null
 }
 
 export interface PosSerialCodeResponseDto {
@@ -41,8 +50,13 @@ export interface TenantResponseDto {
   contactEmail: string | null
   phone: string | null
   address: string | null
+  identificationNumber: string | null
+  identificationTypeId: number
+  subdomain: string | null
   isActive: boolean
   maxRegisters: number
+  maxBranches: number | null
+  maxUsers: number | null
   currentRegisterCount: number
   serialCodes: PosSerialCodeResponseDto[] | null
   createdAt: string
@@ -64,4 +78,29 @@ export interface PagedTenantListResponse {
   pageSize: number
   totalCount: number
   totalPages: number
+}
+
+export interface TenantModuleDto {
+  id: string
+  moduleId: string
+  moduleCode: string
+  moduleName: string
+  moduleDescription?: string | null
+  isEnabled: boolean
+  quantity: number
+  createdAt: string
+}
+
+export interface UpdateTenantModuleDto {
+  isEnabled?: boolean
+  quantity?: number
+}
+
+export interface ModuleResponseDto {
+  id: string
+  code: string
+  name: string
+  description?: string | null
+  isActive: boolean
+  createdAt: string
 }

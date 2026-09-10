@@ -18,6 +18,11 @@ function mapTenantResponseToTenant(dto: TenantResponseDto): Tenant {
     isActive: dto.isActive,
     maxRegisters: dto.maxRegisters,
     currentRegisterCount: dto.currentRegisterCount,
+    subdomain: dto.subdomain ?? "",
+    identificationNumber: dto.identificationNumber ?? "",
+    identificationTypeId: dto.identificationTypeId ?? 0,
+    maxBranches: dto.maxBranches ?? 0,
+    maxUsers: dto.maxUsers ?? 0,
     createdAt: dto.createdAt,
   }
 }
@@ -34,6 +39,11 @@ function mapListResponseToPagedTenants(dto: PagedTenantListResponse): PagedTenan
       isActive: item.isActive,
       maxRegisters: item.maxRegisters,
       currentRegisterCount: 0,
+      subdomain: "",
+      identificationNumber: "",
+      identificationTypeId: 0,
+      maxBranches: 0,
+      maxUsers: 0,
       createdAt: item.createdAt,
     })),
     pageNumber: dto.pageNumber,

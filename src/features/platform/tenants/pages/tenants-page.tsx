@@ -1,5 +1,6 @@
 import { useMemo, useState } from "react"
-import { Building2, Plus, SquarePen } from "lucide-react"
+import { Building2, Eye, Plus, SquarePen } from "lucide-react"
+import { useNavigate } from "react-router-dom"
 
 import { AlertDeleteDialog } from "@/components/alert-delete-dialog"
 import { Badge } from "@/components/ui/badge"
@@ -16,7 +17,10 @@ import {
   useDeactivateTenant,
   useDeleteTenant,
 } from "@/features/platform/tenants/hooks/use-tenants"
+import { updateTenantModule } from "@/features/platform/tenants/services/tenant-modules.service"
 import type { Tenant, TenantFormValues } from "@/features/platform/tenants/types"
+import type { UpdateTenantModuleDto } from "@/features/platform/tenants/types/api"
+import { useAuth } from "@/features/auth/hooks/use-auth"
 import { notify } from "@/hooks/use-notify"
 import { formatDateTime } from "@/utils/format"
 import { useTranslation } from "@/i18n/use-i18n"
@@ -28,7 +32,11 @@ export function TenantsPage() {
   const [query, setQuery] = useState("")
   const [isDialogOpen, setIsDialogOpen] = useState(false)
   const [selectedTenant, setSelectedTenant] = useState<Tenant | null>(null)
+  const [isAssigningModules, setIsAssigningModules] = useState(false)
+  const navigate = useNavigate()
   const { t } = useTranslation("platform-tenants")
+  const { session } = useAuth()
+  const token = session?.accessToken
 
   const { data: pagedData, isLoading } = useTenants(page, PAGE_SIZE)
   const createTenantMutation = useCreateTenant()
@@ -60,15 +68,68 @@ export function TenantsPage() {
 
   const activeTenants = tenants.filter((tenant) => tenant.isActive).length
 
-  const isMutating = createTenantMutation.isPending || updateTenantMutation.isPending
+  const isMutating =
+    createTenantMutation.isPending ||
+    updateTenantMutation.isPending ||
+    isAssigningModules
+
+  const assignModules = async (
+    tenantIdentifier: string,
+    values: TenantFormValues
+  ): Promise<string[]> => {
+    const assignments = values.modules.filter(
+      (m) => m.isEnabled || m.quantity > 0
+    )
+
+    const errors: string[] = []
+
+    for (const assignment of assignments) {
+      try {
+        const body: UpdateTenantModuleDto = {
+          isEnabled: assignment.isEnabled,
+          quantity: assignment.quantity,
+        }
+        await updateTenantModule(
+          token!,
+          tenantIdentifier,
+          assignment.moduleId,
+          body
+        )
+      } catch (err) {
+        const msg =
+          err instanceof Error ? err.message : String(err)
+        errors.push(`${assignment.moduleId}: ${msg}`)
+      }
+    }
+
+    return errors
+  }
 
   const handleSubmit = (values: TenantFormValues) => {
     if (selectedTenant) {
       updateTenantMutation.mutate(
         { id: selectedTenant.id, values },
         {
-          onSuccess: () => {
-            notify.success(t("tenant_updated"))
+          onSuccess: async () => {
+            if (!token) {
+              notify.success(t("tenant_updated"))
+              setIsDialogOpen(false)
+              setSelectedTenant(null)
+              return
+            }
+
+            setIsAssigningModules(true)
+            const errors = await assignModules(selectedTenant.tenantId, values)
+            setIsAssigningModules(false)
+
+            if (errors.length === 0) {
+              notify.success(t("tenant_updated"))
+              notify.success(t("modules_assign_success"))
+            } else {
+              notify.warning(
+                t("modules_assign_partial_error", { errors: errors.join(", ") })
+              )
+            }
             setIsDialogOpen(false)
             setSelectedTenant(null)
           },
@@ -79,8 +140,26 @@ export function TenantsPage() {
       )
     } else {
       createTenantMutation.mutate(values, {
-        onSuccess: () => {
-          notify.success(t("tenant_created"))
+        onSuccess: async (tenantResponse) => {
+          if (!token) {
+            notify.success(t("tenant_created"))
+            setIsDialogOpen(false)
+            setSelectedTenant(null)
+            return
+          }
+
+          setIsAssigningModules(true)
+          const errors = await assignModules(tenantResponse.tenantId, values)
+          setIsAssigningModules(false)
+
+          if (errors.length === 0) {
+            notify.success(t("tenant_created"))
+            notify.success(t("modules_assign_success"))
+          } else {
+            notify.warning(
+              t("modules_assign_partial_error", { errors: errors.join(", ") })
+            )
+          }
           setIsDialogOpen(false)
           setSelectedTenant(null)
         },
@@ -202,6 +281,15 @@ export function TenantsPage() {
                               type="button"
                               variant="outline"
                               size="sm"
+                              onClick={() => navigate(`/platform/tenants/${tenant.id}`)}
+                            >
+                              <Eye className="size-4" />
+                              {t("view_detail")}
+                            </Button>
+                            <Button
+                              type="button"
+                              variant="outline"
+                              size="sm"
                               onClick={() => {
                                 setSelectedTenant(tenant)
                                 setIsDialogOpen(true)
@@ -247,6 +335,15 @@ export function TenantsPage() {
                           <p className="text-sm text-muted-foreground">{tenant.tenantId}</p>
                         </div>
                         <div className="flex flex-wrap gap-2">
+                          <Button
+                            type="button"
+                            variant="outline"
+                            size="sm"
+                            onClick={() => navigate(`/platform/tenants/${tenant.id}`)}
+                          >
+                            <Eye className="size-4" />
+                            {t("view_detail")}
+                          </Button>
                           <Button
                             type="button"
                             variant="outline"
@@ -358,7 +455,7 @@ function CompactMeta({ label, value }: { label: string; value: string }) {
   return (
     <div className="rounded-2xl border border-border/70 bg-card/60 px-4 py-3">
       <p className="text-[11px] font-semibold tracking-[0.22em] text-muted-foreground uppercase">{label}</p>
-      <p className="mt-2 text-sm font-medium break-words text-foreground">{value}</p>
+      <p className="mt-2 text-sm font-medium text-foreground">{value}</p>
     </div>
   )
 }

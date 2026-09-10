@@ -8,15 +8,12 @@ export interface Tenant {
   isActive: boolean
   maxRegisters: number
   currentRegisterCount: number
+  subdomain: string
+  identificationNumber: string
+  identificationTypeId: number
+  maxBranches: number
+  maxUsers: number
   createdAt: string
-}
-
-export interface TenantFormValues {
-  name: string
-  contactEmail: string
-  phone: string
-  address: string
-  maxRegisters: number
 }
 
 export interface PagedTenantsResponse {
@@ -25,4 +22,45 @@ export interface PagedTenantsResponse {
   pageSize: number
   totalCount: number
   totalPages: number
+}
+
+export interface TenantModule {
+  id: string
+  moduleId: string
+  moduleCode: string
+  moduleName: string
+  moduleDescription?: string | null
+  isEnabled: boolean
+  quantity: number
+  createdAt: string
+}
+
+export interface CatalogModule {
+  id: string
+  code: string
+  name: string
+  description?: string | null
+  isActive: boolean
+  createdAt: string
+}
+
+export interface TenantModuleAssignment {
+  moduleId: string
+  isEnabled: boolean
+  quantity: number
+}
+
+export interface TenantFormValues {
+  name: string
+  contactEmail: string
+  phone: string
+  address: string
+  maxRegisters: number
+  adminIdentification: string
+  subdomain: string
+  identificationNumber: string
+  identificationTypeId: number
+  maxBranches: number
+  maxUsers: number
+  modules: TenantModuleAssignment[]
 }

@@ -18,6 +18,12 @@ function toCreateDto(values: TenantFormValues): CreateTenantDto {
     phone: values.phone || null,
     address: values.address || null,
     maxRegisters: values.maxRegisters,
+    adminIdentification: values.adminIdentification || null,
+    subdomain: values.subdomain || null,
+    identificationNumber: values.identificationNumber || null,
+    identificationTypeId: values.identificationTypeId,
+    maxBranches: values.maxBranches || null,
+    maxUsers: values.maxUsers || null,
   }
 }
 
@@ -27,6 +33,11 @@ function toUpdateDto(values: TenantFormValues): UpdateTenantDto {
     contactEmail: values.contactEmail,
     phone: values.phone || null,
     address: values.address || null,
+    subdomain: values.subdomain || null,
+    identificationNumber: values.identificationNumber || null,
+    identificationTypeId: values.identificationTypeId || null,
+    maxBranches: values.maxBranches || null,
+    maxUsers: values.maxUsers || null,
   }
 }
 

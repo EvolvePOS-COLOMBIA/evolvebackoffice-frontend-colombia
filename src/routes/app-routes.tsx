@@ -15,6 +15,7 @@ import { ReportsPage } from "@/features/business/reports/pages/reports-page"
 import { SettingsPage } from "@/features/business/settings/pages/settings-page"
 import { MarketingPage } from "@/features/marketing/pages/marketing-page"
 import { TenantsPage } from "@/features/platform/tenants/pages/tenants-page"
+import { TenantDetailPage } from "@/features/platform/tenants/pages/tenant-detail-page"
 import { PlatformDashboardPage } from "@/features/platform/dashboard/pages/platform-dashboard-page"
 import { OnboardingGate } from "@/routes/onboarding-gate"
 import { ProtectedRoute } from "@/routes/protected-route"
@@ -49,6 +50,7 @@ function AppRoutesContent() {
         <Route element={<AppLayout />}>
           <Route path="/platform/dashboard" element={<PlatformDashboardPage />} />
           <Route path="/platform/tenants" element={<TenantsPage />} />
+          <Route path="/platform/tenants/:id" element={<TenantDetailPage />} />
         </Route>
       </Route>
 

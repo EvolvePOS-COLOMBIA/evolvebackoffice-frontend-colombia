@@ -48,9 +48,19 @@
   "sales_by_hour": "Sales by hour",
   "sales_by_day": "Sales by day",
   "sales_by_date": "Sales by date",
-  "sales_by_hour_description": "Sales distribution across the <span className=\"font-medium text-emerald-500\">current day</span>, grouped by hour. Peak hours are highlighted with deeper intensity.",
-  "sales_by_day_description": "Sales distribution across the <span className=\"font-medium text-emerald-500\">current week</span>, grouped by day of the week. Weekend performance is compared against weekdays.",
-  "sales_by_date_description": "Sales distribution across the <span className=\"font-medium text-emerald-500\">current month</span>, grouped by day of the month. Track daily performance trends.",
+  "sales_by_hour_description": "Sales distribution across the <span className=\"font-medium text-primary\">current day</span>, grouped by hour. Peak hours are highlighted with deeper intensity.",
+  "sales_by_day_description": "Sales distribution across the <span className=\"font-medium text-primary\">current week</span>, grouped by day of the week. Weekend performance is compared against weekdays.",
+  "sales_by_date_description": "Sales distribution across the <span className=\"font-medium text-primary\">current month</span>, grouped by day of the month. Track daily performance trends.",
   "total_sales": "Total",
-  "total_transactions": "Transactions"
+  "total_transactions": "Transactions",
+  "active_orders": "Active Orders",
+  "order_pending": "Pending",
+  "order_preparing": "Preparing",
+  "order_ready": "Ready",
+  "order_on_the_way": "On the way",
+  "order_delivered": "Delivered",
+  "order_active": "active",
+  "order_done": "done",
+  "order_items": "items",
+  "view_all": "View all"
 }

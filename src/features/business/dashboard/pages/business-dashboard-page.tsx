@@ -15,6 +15,7 @@ import { useLocaleFormat } from "@/hooks/use-locale-format"
 import { dashboardData, type Period } from "../mock/dashboard-data"
 import { PeriodFilter } from "../components/period-filter"
 import { SalesByPeriodChart } from "../components/sales-by-period-chart"
+import { ActiveOrdersCard } from "../components/active-orders-card"
 import { StatsGrid } from "../components/stats-grid"
 import { DepartmentSalesChart } from "../components/department-sales-chart"
 import { TenderReportCard } from "../components/tender-report-card"
@@ -139,6 +140,11 @@ export function BusinessDashboardPage() {
             RIGHT COLUMN: Tender Report → Vs. Previous Month
            ═══════════════════════════════════════════ */}
         <div className="space-y-4">
+          {/* Active Orders */}
+          <div>
+            <ActiveOrdersCard orders={dashboardData.activeOrders} />
+          </div>
+
           {/* Tender Report */}
           <div>
             <TenderReportCard

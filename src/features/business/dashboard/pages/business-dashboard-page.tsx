@@ -1,4 +1,4 @@
-import { useState, useCallback } from "react"
+import { useState, useCallback, useMemo } from "react"
 import { Printer, Save, Settings } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import {
@@ -14,6 +14,7 @@ import { useTranslation } from "@/i18n/use-i18n"
 import { useLocaleFormat } from "@/hooks/use-locale-format"
 import { dashboardData, type Period } from "../mock/dashboard-data"
 import { PeriodFilter } from "../components/period-filter"
+import { SalesByPeriodChart } from "../components/sales-by-period-chart"
 import { StatsGrid } from "../components/stats-grid"
 import { DepartmentSalesChart } from "../components/department-sales-chart"
 import { TenderReportCard } from "../components/tender-report-card"
@@ -66,6 +67,16 @@ export function BusinessDashboardPage() {
 
   const dateRange = getDateRange(period, t, locale)
 
+  const salesByPeriodData = useMemo(() => {
+    const map = { day: "hourly", week: "weekly", month: "monthly" } as const
+    const points = dashboardData.salesByPeriod[map[period]]
+    return {
+      points,
+      totalSales: points.reduce((sum, p) => sum + p.sales, 0),
+      totalTransactions: points.reduce((sum, p) => sum + p.transactions, 0),
+    }
+  }, [period])
+
   return (
     <div>
       <div className="dashboard grid grid-cols-1 gap-4 lg:grid-cols-[1fr_440px]">
@@ -90,8 +101,16 @@ export function BusinessDashboardPage() {
           </div>
 
           {/* Stats Grid */}
-          <div>
+          <div className="space-y-6">
             <StatsGrid stats={dashboardData.stats[period]} />
+            <SalesByPeriodChart
+              data={salesByPeriodData.points}
+              period={period}
+              totalSales={salesByPeriodData.totalSales}
+              totalTransactions={salesByPeriodData.totalTransactions}
+              onPrint={handlePrint}
+              onSave={handleSave}
+            />
           </div>
 
           {/* Department Sales */}

@@ -44,5 +44,13 @@
   "month": "Mes",
   "today": "Hoy, {{day}} de {{month}} de {{year}}",
   "this_week": "Esta semana ({{start}}–{{end}} de {{month}})",
-  "this_month": "Este mes ({{month}} de {{year}})"
+  "this_month": "Este mes ({{month}} de {{year}})",
+  "sales_by_hour": "Ventas por hora",
+  "sales_by_day": "Ventas por día",
+  "sales_by_date": "Ventas por fecha",
+  "sales_by_hour_description": "Distribución de ventas durante el <span className=\"font-medium text-emerald-500\">día actual</span>, agrupadas por hora. Las horas pico se muestran con mayor intensidad.",
+  "sales_by_day_description": "Distribución de ventas durante la <span className=\"font-medium text-emerald-500\">semana actual</span>, agrupadas por día de la semana. Se compara el rendimiento entre días laborales y fin de semana.",
+  "sales_by_date_description": "Distribución de ventas durante el <span className=\"font-medium text-emerald-500\">mes actual</span>, agrupadas por día del mes. Seguimiento de tendencias diarias.",
+  "total_sales": "Total",
+  "total_transactions": "Transacciones"
 }

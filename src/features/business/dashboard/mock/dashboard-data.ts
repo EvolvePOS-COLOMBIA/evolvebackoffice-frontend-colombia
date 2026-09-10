@@ -33,6 +33,18 @@ export interface YearOnYearMonth {
   year2026: number
 }
 
+export interface SalesByPeriodPoint {
+  label: string
+  sales: number
+  transactions: number
+}
+
+export interface SalesByPeriodData {
+  hourly: SalesByPeriodPoint[]
+  weekly: SalesByPeriodPoint[]
+  monthly: SalesByPeriodPoint[]
+}
+
 export interface VsPreviousMonthWeek {
   label: string
   sublabel: string
@@ -44,6 +56,7 @@ export interface DashboardData {
   stats: Record<Period, StatsData>
   departmentSales: Record<Period, DepartmentSale[]>
   tenderReport: Record<Period, TenderEntry[]>
+  salesByPeriod: SalesByPeriodData
   yearOnYear: {
     total2025: number
     total2026: number
@@ -148,6 +161,68 @@ export const dashboardData: DashboardData = {
       { description: "Debit", quantity: 32, sales: 387.60, color: "#8b5cf6" },
       { description: "Gift Card", quantity: 8, sales: 95.00, color: "#ec4899" },
       { description: "EBT", quantity: 15, sales: 178.45, color: "#06b6d4" },
+    ],
+  },
+
+  salesByPeriod: {
+    hourly: [
+      { label: "6 AM", sales: 0, transactions: 0 },
+      { label: "7 AM", sales: 12.5, transactions: 2 },
+      { label: "8 AM", sales: 28.75, transactions: 5 },
+      { label: "9 AM", sales: 45.3, transactions: 8 },
+      { label: "10 AM", sales: 38.2, transactions: 6 },
+      { label: "11 AM", sales: 52.8, transactions: 9 },
+      { label: "12 PM", sales: 67.45, transactions: 12 },
+      { label: "1 PM", sales: 58.9, transactions: 10 },
+      { label: "2 PM", sales: 42.15, transactions: 7 },
+      { label: "3 PM", sales: 35.6, transactions: 6 },
+      { label: "4 PM", sales: 48.3, transactions: 8 },
+      { label: "5 PM", sales: 62.7, transactions: 11 },
+      { label: "6 PM", sales: 55.4, transactions: 9 },
+      { label: "7 PM", sales: 31.25, transactions: 5 },
+      { label: "8 PM", sales: 18.9, transactions: 3 },
+      { label: "9 PM", sales: 8.5, transactions: 1 },
+    ],
+    weekly: [
+      { label: "Lun", sales: 52.8, transactions: 9 },
+      { label: "Mar", sales: 48.3, transactions: 8 },
+      { label: "Mié", sales: 61.45, transactions: 10 },
+      { label: "Jue", sales: 55.2, transactions: 9 },
+      { label: "Vie", sales: 78.9, transactions: 14 },
+      { label: "Sáb", sales: 92.5, transactions: 16 },
+      { label: "Dom", sales: 34.7, transactions: 6 },
+    ],
+    monthly: [
+      { label: "1", sales: 18.5, transactions: 3 },
+      { label: "2", sales: 42.3, transactions: 7 },
+      { label: "3", sales: 35.8, transactions: 6 },
+      { label: "4", sales: 51.2, transactions: 9 },
+      { label: "5", sales: 28.9, transactions: 5 },
+      { label: "6", sales: 62.4, transactions: 11 },
+      { label: "7", sales: 55.7, transactions: 9 },
+      { label: "8", sales: 48.3, transactions: 8 },
+      { label: "9", sales: 38.6, transactions: 6 },
+      { label: "10", sales: 72.1, transactions: 12 },
+      { label: "11", sales: 65.4, transactions: 11 },
+      { label: "12", sales: 58.9, transactions: 10 },
+      { label: "13", sales: 44.2, transactions: 7 },
+      { label: "14", sales: 39.8, transactions: 6 },
+      { label: "15", sales: 56.3, transactions: 9 },
+      { label: "16", sales: 68.7, transactions: 12 },
+      { label: "17", sales: 75.4, transactions: 13 },
+      { label: "18", sales: 82.1, transactions: 14 },
+      { label: "19", sales: 63.5, transactions: 11 },
+      { label: "20", sales: 47.8, transactions: 8 },
+      { label: "21", sales: 53.2, transactions: 9 },
+      { label: "22", sales: 41.6, transactions: 7 },
+      { label: "23", sales: 36.9, transactions: 6 },
+      { label: "24", sales: 29.4, transactions: 5 },
+      { label: "25", sales: 52.8, transactions: 9 },
+      { label: "26", sales: 61.3, transactions: 10 },
+      { label: "27", sales: 45.7, transactions: 8 },
+      { label: "28", sales: 38.2, transactions: 6 },
+      { label: "29", sales: 57.6, transactions: 10 },
+      { label: "30", sales: 69.4, transactions: 12 },
     ],
   },
 

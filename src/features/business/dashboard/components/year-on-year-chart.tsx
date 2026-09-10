@@ -6,6 +6,7 @@ import { ChartContainer, type ChartConfig } from "@/components/ui/chart"
 import { useTranslation } from "@/i18n/use-i18n"
 import { useLocaleFormat } from "@/hooks/use-locale-format"
 import type { YearOnYearMonth } from "../mock/dashboard-data"
+import { CHART_PRIMARY, CHART_SECONDARY } from "../constants"
 
 interface YearOnYearChartProps {
   data: YearOnYearMonth[]
@@ -16,14 +17,8 @@ interface YearOnYearChartProps {
 }
 
 const chartConfig = {
-  year2025: {
-    label: "2025",
-    color: "#a855f7",
-  },
-  year2026: {
-    label: "2026",
-    color: "#06b6d4",
-  },
+  year2025: { label: "2025", color: CHART_SECONDARY },
+  year2026: { label: "2026", color: CHART_PRIMARY },
 } satisfies ChartConfig
 
 function CustomTooltip({
@@ -45,9 +40,7 @@ function CustomTooltip({
         <div key={entry.name} className="flex items-center gap-2">
           <div className="h-2 w-2 rounded-full" style={{ backgroundColor: entry.color }} />
           <span className="text-muted-foreground">{entry.name}:</span>
-          <span className="font-mono font-medium tabular-nums">
-            {formatCurrency(entry.value)}
-          </span>
+          <span className="font-mono font-medium tabular-nums">{formatCurrency(entry.value)}</span>
         </div>
       ))}
     </div>
@@ -74,35 +67,28 @@ export function YearOnYearChart({ data, total2025, total2026, onPrint, onSave }:
         </div>
         <div className="flex items-center gap-4 text-xs">
           <div className="flex items-center gap-1.5">
-            <div className="h-2.5 w-2.5 rounded-full bg-purple-500" />
+            <div className="h-2.5 w-2.5 rounded-full" style={{ backgroundColor: CHART_SECONDARY }} />
             <span className="text-muted-foreground">2025</span>
-            <span className="font-mono font-medium tabular-nums">
-              {formatCurrency(total2025)}
-            </span>
+            <span className="font-mono font-medium tabular-nums">{formatCurrency(total2025)}</span>
           </div>
           <div className="flex items-center gap-1.5">
-            <div className="h-2.5 w-2.5 rounded-full bg-cyan-500" />
+            <div className="h-2.5 w-2.5 rounded-full" style={{ backgroundColor: CHART_PRIMARY }} />
             <span className="text-muted-foreground">2026</span>
-            <span className="font-mono font-medium tabular-nums">
-              {formatCurrency(total2026)}
-            </span>
+            <span className="font-mono font-medium tabular-nums">{formatCurrency(total2026)}</span>
           </div>
         </div>
       </CardHeader>
       <CardContent>
-        <ChartContainer config={chartConfig} className="h-[300px] w-full">
-          <AreaChart
-            data={data}
-            margin={{ top: 10, right: 10, left: -10, bottom: 0 }}
-          >
+        <ChartContainer config={chartConfig} className="h-75 w-full">
+          <AreaChart data={data} margin={{ top: 10, right: 10, left: -10, bottom: 0 }}>
             <defs>
               <linearGradient id="gradient2025" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="5%" stopColor="#a855f7" stopOpacity={0.3} />
-                <stop offset="95%" stopColor="#a855f7" stopOpacity={0.05} />
+                <stop offset="5%" stopColor={CHART_SECONDARY} stopOpacity={0.9} />
+                <stop offset="95%" stopColor={CHART_SECONDARY} stopOpacity={0.1} />
               </linearGradient>
               <linearGradient id="gradient2026" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="5%" stopColor="#06b6d4" stopOpacity={0.3} />
-                <stop offset="95%" stopColor="#06b6d4" stopOpacity={0.05} />
+                <stop offset="5%" stopColor={CHART_PRIMARY} stopOpacity={0.99} />
+                <stop offset="95%" stopColor={CHART_PRIMARY} stopOpacity={0.1} />
               </linearGradient>
             </defs>
             <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="hsl(var(--border))" />
@@ -119,13 +105,13 @@ export function YearOnYearChart({ data, total2025, total2026, onPrint, onSave }:
               axisLine={false}
               tickMargin={4}
               fontSize={10}
-              tickFormatter={(value) => value >= 1000 ? `${(value / 1000).toFixed(0)}k` : `${value}`}
+              tickFormatter={(value) => (value >= 1000 ? `${(value / 1000).toFixed(0)}k` : `${value}`)}
             />
-            <Tooltip content={<CustomTooltip formatCurrency={formatCurrency} />} />
+            <Tooltip active content={<CustomTooltip formatCurrency={formatCurrency} />} />
             <Area
               type="monotone"
               dataKey="year2025"
-              stroke="#a855f7"
+              stroke={CHART_SECONDARY}
               fill="url(#gradient2025)"
               strokeWidth={2}
               isAnimationActive={true}
@@ -135,7 +121,7 @@ export function YearOnYearChart({ data, total2025, total2026, onPrint, onSave }:
             <Area
               type="monotone"
               dataKey="year2026"
-              stroke="#06b6d4"
+              stroke={CHART_PRIMARY}
               fill="url(#gradient2026)"
               strokeWidth={2}
               isAnimationActive={true}

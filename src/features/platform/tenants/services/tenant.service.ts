@@ -1,9 +1,14 @@
 import { api } from "@/config/axios-client"
 import type {
   CreateTenantDto,
+  CreateTenantResponseDto,
   UpdateTenantDto,
   TenantResponseDto,
   PagedTenantListResponse,
+  PosSerialCodeResponseDto,
+  DecommissionSerialDto,
+  ResetAdminCredentialsResponseDto,
+  CanCreateRegisterResponseDto,
 } from "@/features/platform/tenants/types/api"
 import type { Tenant, PagedTenantsResponse } from "@/features/platform/tenants/types"
 
@@ -23,6 +28,7 @@ function mapTenantResponseToTenant(dto: TenantResponseDto): Tenant {
     identificationTypeId: dto.identificationTypeId ?? 0,
     maxBranches: dto.maxBranches ?? 0,
     maxUsers: dto.maxUsers ?? 0,
+    serialCodes: dto.serialCodes ?? [],
     createdAt: dto.createdAt,
   }
 }
@@ -44,6 +50,7 @@ function mapListResponseToPagedTenants(dto: PagedTenantListResponse): PagedTenan
       identificationTypeId: 0,
       maxBranches: 0,
       maxUsers: 0,
+      serialCodes: [],
       createdAt: item.createdAt,
     })),
     pageNumber: dto.pageNumber,
@@ -60,9 +67,9 @@ export async function getTenants(page: number, pageSize: number): Promise<PagedT
   return mapListResponseToPagedTenants(response.data)
 }
 
-export async function createTenant(data: CreateTenantDto): Promise<Tenant> {
-  const response = await api.post<TenantResponseDto>("/api/Tenants", data)
-  return mapTenantResponseToTenant(response.data)
+export async function createTenant(data: CreateTenantDto): Promise<CreateTenantResponseDto> {
+  const response = await api.post<CreateTenantResponseDto>("/api/Tenants", data)
+  return response.data
 }
 
 export async function getTenant(id: string): Promise<Tenant> {
@@ -85,4 +92,40 @@ export async function deactivateTenant(id: string): Promise<void> {
 
 export async function deleteTenant(id: string): Promise<void> {
   await api.delete(`/api/Tenants/${id}`)
+}
+
+export async function getSerialCodes(tenantId: string): Promise<PosSerialCodeResponseDto[]> {
+  const response = await api.get<PosSerialCodeResponseDto[]>(`/api/Tenants/${tenantId}/serial-codes`)
+  return response.data
+}
+
+export async function decommissionSerial(
+  tenantId: string,
+  serialId: string,
+  reason?: string
+): Promise<PosSerialCodeResponseDto> {
+  const body: DecommissionSerialDto = { reason: reason || null }
+  const response = await api.post<PosSerialCodeResponseDto>(
+    `/api/Tenants/${tenantId}/serial-codes/${serialId}/decommission`,
+    body
+  )
+  return response.data
+}
+
+export async function resetAdminCredentials(
+  tenantId: string
+): Promise<ResetAdminCredentialsResponseDto> {
+  const response = await api.post<ResetAdminCredentialsResponseDto>(
+    `/api/Tenants/${tenantId}/reset-admin`
+  )
+  return response.data
+}
+
+export async function canCreateRegister(
+  tenantId: string
+): Promise<CanCreateRegisterResponseDto> {
+  const response = await api.get<CanCreateRegisterResponseDto>(
+    `/api/Tenants/${tenantId}/can-create-register`
+  )
+  return response.data
 }

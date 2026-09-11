@@ -4,6 +4,7 @@ import { appConfig } from "@/config/env"
 import type {
   TenantModuleDto,
   UpdateTenantModuleDto,
+  BulkUpdateTenantModuleItemDto,
 } from "@/features/platform/tenants/types/api"
 import type { TenantModule } from "@/features/platform/tenants/types"
 
@@ -68,4 +69,21 @@ export async function updateTenantModule(
     body
   )
   return mapDtoToTenantModule(data)
+}
+
+export async function bulkUpdateTenantModules(
+  token: string,
+  tenantId: string,
+  modules: BulkUpdateTenantModuleItemDto[]
+): Promise<TenantModule[]> {
+  const client = createPlatformClient(token, tenantId)
+  const results = await Promise.all(
+    modules.map((mod) =>
+      client.put<TenantModuleDto>(`/api/tenant-modules/${mod.modulePublicId}`, {
+        isEnabled: mod.isEnabled,
+        quantity: mod.quantity,
+      })
+    )
+  )
+  return results.map((r) => mapDtoToTenantModule(r.data))
 }

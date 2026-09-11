@@ -21,7 +21,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Separator } from "@/components/ui/separator"
 import { Skeleton } from "@/components/ui/skeleton"
 import { Switch } from "@/components/ui/switch"
-import { tenantSchema } from "@/features/platform/tenants/schemas/tenant-schema"
+import { tenantEditSchema as tenantSchema } from "@/features/platform/tenants/schemas/tenant-schema"
 import type { CatalogModule, Tenant, TenantFormValues, TenantModuleAssignment } from "@/features/platform/tenants/types"
 import { DocumentType } from "@/features/platform/tenants/types/api"
 import { useModulesCatalog } from "@/features/platform/tenants/hooks/use-modules-catalog"
@@ -152,17 +152,22 @@ export function TenantFormDialog({
   }, [open, catalogModules, isEditMode, tenantToEdit, token])
 
   const handleToggleModule = (moduleId: string, checked: boolean) => {
-    setModulesState((prev) => ({
-      ...prev,
-      [moduleId]: {
-        ...(prev[moduleId] ?? { isEnabled: false, quantity: 1 }),
-        isEnabled: checked,
-      },
-    }))
+    setModulesState((prev) => {
+      const current = prev[moduleId] ?? { isEnabled: false, quantity: 1 }
+      return {
+        ...prev,
+        [moduleId]: {
+          isEnabled: checked,
+          quantity: checked && current.quantity < 1 ? 1 : current.quantity,
+        },
+      }
+    })
   }
 
   const handleQuantityChange = (moduleId: string, value: number) => {
-    const clamped = Math.max(0, value)
+    const current = modulesState[moduleId]
+    const minAllowed = current?.isEnabled ? 1 : 0
+    const clamped = Math.max(minAllowed, value)
     setModulesState((prev) => ({
       ...prev,
       [moduleId]: {
@@ -187,12 +192,13 @@ export function TenantFormDialog({
 
   const handleQuantityDecrement = (moduleId: string) => {
     setModulesState((prev) => {
-      const current = prev[moduleId]?.quantity ?? 1
+      const current = prev[moduleId] ?? { isEnabled: false, quantity: 1 }
+      const minAllowed = current.isEnabled ? 1 : 0
       return {
         ...prev,
         [moduleId]: {
-          ...(prev[moduleId] ?? { isEnabled: false, quantity: 1 }),
-          quantity: Math.max(0, current - 1),
+          ...current,
+          quantity: Math.max(minAllowed, current.quantity - 1),
         },
       }
     })

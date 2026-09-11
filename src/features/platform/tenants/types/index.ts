@@ -1,3 +1,5 @@
+import type { PosSerialCodeResponseDto } from "./api"
+
 export interface Tenant {
   id: string
   name: string
@@ -13,6 +15,7 @@ export interface Tenant {
   identificationTypeId: number
   maxBranches: number
   maxUsers: number
+  serialCodes: PosSerialCodeResponseDto[]
   createdAt: string
 }
 

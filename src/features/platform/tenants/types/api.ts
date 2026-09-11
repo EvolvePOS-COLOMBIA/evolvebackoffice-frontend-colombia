@@ -20,6 +20,27 @@ export interface CreateTenantDto {
   maxUsers: number | null
 }
 
+export interface CreateTenantResponseDto {
+  id: string
+  name: string | null
+  tenantId: string | null
+  contactEmail: string | null
+  phone: string | null
+  address: string | null
+  identificationNumber: string | null
+  identificationTypeId: number
+  subdomain: string | null
+  isActive: boolean
+  maxRegisters: number
+  maxBranches: number | null
+  maxUsers: number | null
+  serialCodes: PosSerialCodeResponseDto[] | null
+  createdAt: string
+  adminUsername: string | null
+  adminTemporaryPassword: string | null
+  adminTemporaryPin: string | null
+}
+
 export interface UpdateTenantDto {
   name: string | null
   contactEmail: string | null
@@ -34,8 +55,8 @@ export interface UpdateTenantDto {
 
 export interface PosSerialCodeResponseDto {
   id: string
-  serialCode: string
-  status: string
+  serialCode: string | null
+  status: string | null
   machineIdentifier: string | null
   deviceName: string | null
   activatedAt: string | null
@@ -96,6 +117,16 @@ export interface UpdateTenantModuleDto {
   quantity?: number
 }
 
+export interface BulkUpdateTenantModuleItemDto {
+  modulePublicId: string
+  isEnabled: boolean
+  quantity: number
+}
+
+export interface BulkUpdateTenantModulesDto {
+  modules: BulkUpdateTenantModuleItemDto[]
+}
+
 export interface ModuleResponseDto {
   id: string
   code: string
@@ -103,4 +134,19 @@ export interface ModuleResponseDto {
   description?: string | null
   isActive: boolean
   createdAt: string
+}
+
+export interface DecommissionSerialDto {
+  reason?: string | null
+}
+
+export interface ResetAdminCredentialsResponseDto {
+  username: string | null
+  temporaryPassword: string | null
+  resetAt: string
+}
+
+export interface CanCreateRegisterResponseDto {
+  tenantId: string
+  canCreateRegister: boolean
 }

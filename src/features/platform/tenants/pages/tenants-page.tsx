@@ -9,17 +9,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Input } from "@/components/ui/input"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { TenantFormDialog } from "@/features/platform/tenants/components/tenant-form-dialog"
-import {
-  useTenants,
-  useCreateTenant,
-  useUpdateTenant,
-  useActivateTenant,
-  useDeactivateTenant,
-  useDeleteTenant,
-} from "@/features/platform/tenants/hooks/use-tenants"
-import { updateTenantModule } from "@/features/platform/tenants/services/tenant-modules.service"
+import { useTenants, useUpdateTenant, useActivateTenant, useDeactivateTenant, useDeleteTenant, } from "@/features/platform/tenants/hooks/use-tenants"
 import type { Tenant, TenantFormValues } from "@/features/platform/tenants/types"
-import type { UpdateTenantModuleDto } from "@/features/platform/tenants/types/api"
 import { useAuth } from "@/features/auth/hooks/use-auth"
 import { notify } from "@/hooks/use-notify"
 import { formatDateTime } from "@/utils/format"
@@ -32,14 +23,12 @@ export function TenantsPage() {
   const [query, setQuery] = useState("")
   const [isDialogOpen, setIsDialogOpen] = useState(false)
   const [selectedTenant, setSelectedTenant] = useState<Tenant | null>(null)
-  const [isAssigningModules, setIsAssigningModules] = useState(false)
   const navigate = useNavigate()
   const { t } = useTranslation("platform-tenants")
   const { session } = useAuth()
   const token = session?.accessToken
 
   const { data: pagedData, isLoading } = useTenants(page, PAGE_SIZE)
-  const createTenantMutation = useCreateTenant()
   const updateTenantMutation = useUpdateTenant()
   const activateTenantMutation = useActivateTenant()
   const deactivateTenantMutation = useDeactivateTenant()
@@ -68,68 +57,13 @@ export function TenantsPage() {
 
   const activeTenants = tenants.filter((tenant) => tenant.isActive).length
 
-  const isMutating =
-    createTenantMutation.isPending ||
-    updateTenantMutation.isPending ||
-    isAssigningModules
-
-  const assignModules = async (
-    tenantIdentifier: string,
-    values: TenantFormValues
-  ): Promise<string[]> => {
-    const assignments = values.modules.filter(
-      (m) => m.isEnabled || m.quantity > 0
-    )
-
-    const errors: string[] = []
-
-    for (const assignment of assignments) {
-      try {
-        const body: UpdateTenantModuleDto = {
-          isEnabled: assignment.isEnabled,
-          quantity: assignment.quantity,
-        }
-        await updateTenantModule(
-          token!,
-          tenantIdentifier,
-          assignment.moduleId,
-          body
-        )
-      } catch (err) {
-        const msg =
-          err instanceof Error ? err.message : String(err)
-        errors.push(`${assignment.moduleId}: ${msg}`)
-      }
-    }
-
-    return errors
-  }
-
   const handleSubmit = (values: TenantFormValues) => {
-    if (selectedTenant) {
+    if (selectedTenant && token) {
       updateTenantMutation.mutate(
-        { id: selectedTenant.id, values },
+        { id: selectedTenant.id, values, token },
         {
-          onSuccess: async () => {
-            if (!token) {
-              notify.success(t("tenant_updated"))
-              setIsDialogOpen(false)
-              setSelectedTenant(null)
-              return
-            }
-
-            setIsAssigningModules(true)
-            const errors = await assignModules(selectedTenant.tenantId, values)
-            setIsAssigningModules(false)
-
-            if (errors.length === 0) {
-              notify.success(t("tenant_updated"))
-              notify.success(t("modules_assign_success"))
-            } else {
-              notify.warning(
-                t("modules_assign_partial_error", { errors: errors.join(", ") })
-              )
-            }
+          onSuccess: () => {
+            notify.success(t("tenant_updated"))
             setIsDialogOpen(false)
             setSelectedTenant(null)
           },
@@ -138,35 +72,6 @@ export function TenantsPage() {
           },
         }
       )
-    } else {
-      createTenantMutation.mutate(values, {
-        onSuccess: async (tenantResponse) => {
-          if (!token) {
-            notify.success(t("tenant_created"))
-            setIsDialogOpen(false)
-            setSelectedTenant(null)
-            return
-          }
-
-          setIsAssigningModules(true)
-          const errors = await assignModules(tenantResponse.tenantId, values)
-          setIsAssigningModules(false)
-
-          if (errors.length === 0) {
-            notify.success(t("tenant_created"))
-            notify.success(t("modules_assign_success"))
-          } else {
-            notify.warning(
-              t("modules_assign_partial_error", { errors: errors.join(", ") })
-            )
-          }
-          setIsDialogOpen(false)
-          setSelectedTenant(null)
-        },
-        onError: (error) => {
-          notify.error(error instanceof Error ? error.message : t("unable_to_save"))
-        },
-      })
     }
   }
 
@@ -219,8 +124,7 @@ export function TenantsPage() {
             </div>
             <Button
               onClick={() => {
-                setSelectedTenant(null)
-                setIsDialogOpen(true)
+                navigate("/platform/tenants/create")
               }}
             >
               <Plus className="size-4" />
@@ -434,7 +338,7 @@ export function TenantsPage() {
         }}
         tenantToEdit={selectedTenant}
         onSubmit={handleSubmit}
-        isSubmitting={isMutating}
+        isSubmitting={updateTenantMutation.isPending}
       />
     </div>
   )

@@ -1,7 +1,23 @@
 import { useMemo, useState } from "react"
 import { useQuery } from "@tanstack/react-query"
 import { useNavigate, useParams } from "react-router-dom"
-import { ArrowLeft, Building2, Eye, Mail, Phone, MapPin, Calendar, Save, Minus, Plus } from "lucide-react"
+import {
+  ArrowLeft,
+  Building2,
+  Eye,
+  Mail,
+  Phone,
+  MapPin,
+  Calendar,
+  Save,
+  Minus,
+  Plus,
+  Key,
+  Hash,
+  Shield,
+  AlertTriangle,
+  SquarePen,
+} from "lucide-react"
 
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
@@ -16,11 +32,18 @@ import {
   useTenantModules,
   useUpdateTenantModule,
 } from "@/features/platform/tenants/hooks/use-tenant-modules"
+import {
+  useUpdateTenant,
+  useSerialCodes,
+  useDecommissionSerial,
+  useResetAdminCredentials,
+} from "@/features/platform/tenants/hooks/use-tenants"
+import { TenantFormDialog } from "@/features/platform/tenants/components/tenant-form-dialog"
 import { useAuth } from "@/features/auth/hooks/use-auth"
 import { notify } from "@/hooks/use-notify"
 import { formatDateTime } from "@/utils/format"
 import { useTranslation } from "@/i18n/use-i18n"
-import type { TenantModule } from "../types"
+import type { TenantModule, TenantFormValues } from "../types"
 import type { UpdateTenantModuleDto } from "../types/api"
 
 export function TenantDetailPage() {
@@ -31,6 +54,8 @@ export function TenantDetailPage() {
   const token = session?.accessToken
 
   const [quantities, setQuantities] = useState<Record<string, number>>({})
+  const [decommissionReason, setDecommissionReason] = useState<Record<string, string>>({})
+  const [editDialogOpen, setEditDialogOpen] = useState(false)
 
   const {
     data: tenant,
@@ -50,10 +75,22 @@ export function TenantDetailPage() {
     isError: modulesError,
   } = useTenantModules(token, tenantIdForModules)
 
+  const {
+    data: serialCodes = [],
+    isLoading: serialLoading,
+  } = useSerialCodes(id)
+
   const updateModuleMutation = useUpdateTenantModule(token, tenantIdForModules)
+  const decommissionMutation = useDecommissionSerial()
+  const resetAdminMutation = useResetAdminCredentials()
+  const updateTenantMutation = useUpdateTenant()
 
   const handleToggleEnabled = (moduleItem: TenantModule) => {
-    const body: UpdateTenantModuleDto = { isEnabled: !moduleItem.isEnabled }
+    const newEnabled = !moduleItem.isEnabled
+    const body: UpdateTenantModuleDto = {
+      isEnabled: newEnabled,
+      ...(newEnabled && moduleItem.quantity < 1 ? { quantity: 1 } : {}),
+    }
     updateModuleMutation.mutate(
       { modulePublicId: moduleItem.id, body },
       {
@@ -64,17 +101,19 @@ export function TenantDetailPage() {
     )
   }
 
-  const handleQuantityChange = (moduleId: string, value: number) => {
-    const clamped = Math.max(0, value)
+  const handleQuantityChange = (moduleId: string, value: number, isEnabled: boolean) => {
+    const minAllowed = isEnabled ? 1 : 0
+    const clamped = Math.max(minAllowed, value)
     setQuantities((prev) => ({ ...prev, [moduleId]: clamped }))
   }
 
   const handleQuantityIncrement = (moduleId: string, current: number) => {
-    handleQuantityChange(moduleId, (quantities[moduleId] ?? current) + 1)
+    handleQuantityChange(moduleId, (quantities[moduleId] ?? current) + 1, true)
   }
 
-  const handleQuantityDecrement = (moduleId: string, current: number) => {
-    handleQuantityChange(moduleId, Math.max(0, (quantities[moduleId] ?? current) - 1))
+  const handleQuantityDecrement = (moduleId: string, current: number, isEnabled: boolean) => {
+    const minAllowed = isEnabled ? 1 : 0
+    handleQuantityChange(moduleId, Math.max(minAllowed, (quantities[moduleId] ?? current) - 1), isEnabled)
   }
 
   const handleSaveQuantity = (moduleItem: TenantModule) => {
@@ -97,11 +136,69 @@ export function TenantDetailPage() {
     )
   }
 
-  const isAnyMutating = updateModuleMutation.isPending
+  const handleDecommission = (serialId: string) => {
+    if (!id) return
+    const reason = decommissionReason[serialId] || undefined
+    decommissionMutation.mutate(
+      { tenantId: id, serialId, reason },
+      {
+        onSuccess: () => {
+          notify.success(t("decommission_success"))
+          setDecommissionReason((prev) => {
+            const next = { ...prev }
+            delete next[serialId]
+            return next
+          })
+        },
+        onError: (error) =>
+          notify.error(error instanceof Error ? error.message : t("decommission_error")),
+      }
+    )
+  }
+
+  const handleResetAdmin = () => {
+    if (!id) return
+    if (!window.confirm(t("reset_admin_confirm"))) return
+    resetAdminMutation.mutate(id, {
+      onSuccess: (data) => {
+        notify.success(`${t("reset_admin_success")} ${data.temporaryPassword}`)
+      },
+      onError: (error) =>
+        notify.error(error instanceof Error ? error.message : t("reset_admin_error")),
+    })
+  }
+
+  const handleUpdateTenant = (values: TenantFormValues) => {
+    if (!id || !token) return
+    updateTenantMutation.mutate(
+      { id, values, token },
+      {
+        onSuccess: () => {
+          notify.success(t("tenant_updated"))
+          setEditDialogOpen(false)
+        },
+        onError: (error) =>
+          notify.error(error instanceof Error ? error.message : t("unable_to_save")),
+      }
+    )
+  }
+
+  const isAnyMutating =
+    updateModuleMutation.isPending ||
+    decommissionMutation.isPending ||
+    resetAdminMutation.isPending ||
+    updateTenantMutation.isPending
+
   const summaryTiles = useMemo(() => {
     const enabled = modules.filter((m) => m.isEnabled).length
-    return { total: modules.length, enabled }
-  }, [modules])
+    const activeSerials = serialCodes.filter((s) => s.status === "Active").length
+    return {
+      total: modules.length,
+      enabled,
+      serialTotal: serialCodes.length,
+      serialActive: activeSerials,
+    }
+  }, [modules, serialCodes])
 
   if (tenantError) {
     return (
@@ -127,11 +224,29 @@ export function TenantDetailPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center gap-3">
+      <div className="flex items-center justify-between">
         <Button variant="ghost" onClick={() => navigate(-1)}>
           <ArrowLeft className="size-4" />
           {t("back_to_tenants")}
         </Button>
+        <div className="flex items-center gap-2">
+          <Button
+            variant="outline"
+            onClick={() => setEditDialogOpen(true)}
+            disabled={isAnyMutating}
+          >
+            <SquarePen className="size-4" />
+            {t("edit")}
+          </Button>
+          <Button
+            variant="outline"
+            onClick={handleResetAdmin}
+            disabled={isAnyMutating}
+          >
+            <Key className="size-4" />
+            {t("reset_admin")}
+          </Button>
+        </div>
       </div>
 
       <Card className="overflow-hidden">
@@ -172,6 +287,19 @@ export function TenantDetailPage() {
               value={modulesLoading ? 0 : summaryTiles.enabled}
               loading={modulesLoading}
             />
+            <SummaryTile
+              label={t("serial_codes")}
+              value={serialLoading ? 0 : summaryTiles.serialTotal}
+              loading={serialLoading}
+            />
+            <SummaryTile
+              label={t("max_registers_info", {
+                current: tenant?.currentRegisterCount ?? 0,
+                max: tenant?.maxRegisters ?? 0,
+              })}
+              value={tenant?.currentRegisterCount ?? 0}
+              loading={tenantLoading}
+            />
           </div>
         </CardContent>
       </Card>
@@ -189,12 +317,15 @@ export function TenantDetailPage() {
               ))}
             </div>
           ) : (
-            <div className="grid gap-4 sm:grid-cols-2">
+            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
               <InfoTile icon={Building2} label={t("name")} value={tenant?.name ?? ""} />
               <InfoTile icon={Eye} label={t("tenant_id")} value={tenant?.tenantId ?? ""} />
               <InfoTile icon={Mail} label={t("contact_email")} value={tenant?.contactEmail ?? ""} />
               <InfoTile icon={Phone} label={t("phone")} value={tenant?.phone ?? ""} />
               <InfoTile icon={MapPin} label={t("address")} value={tenant?.address ?? ""} />
+              <InfoTile icon={Hash} label={t("subdomain")} value={tenant?.subdomain ?? ""} />
+              <InfoTile icon={Shield} label={t("max_branches")} value={String(tenant?.maxBranches ?? 0)} />
+              <InfoTile icon={Shield} label={t("max_users")} value={String(tenant?.maxUsers ?? 0)} />
               <InfoTile
                 icon={Calendar}
                 label={t("created")}
@@ -277,7 +408,7 @@ export function TenantDetailPage() {
                                 variant="outline"
                                 size="icon"
                                 onClick={() =>
-                                  handleQuantityDecrement(moduleItem.id, moduleItem.quantity)
+                                  handleQuantityDecrement(moduleItem.id, moduleItem.quantity, moduleItem.isEnabled)
                                 }
                                 disabled={isAnyMutating}
                               >
@@ -286,10 +417,10 @@ export function TenantDetailPage() {
                               <Input
                                 type="number"
                                 className="w-24 text-center"
-                                min={0}
+                                min={moduleItem.isEnabled ? 1 : 0}
                                 value={displayQuantity}
                                 onChange={(e) =>
-                                  handleQuantityChange(moduleItem.id, Number(e.target.value))
+                                  handleQuantityChange(moduleItem.id, Number(e.target.value), moduleItem.isEnabled)
                                 }
                               />
                               <Button
@@ -369,7 +500,7 @@ export function TenantDetailPage() {
                               variant="outline"
                               size="icon"
                               onClick={() =>
-                                handleQuantityDecrement(moduleItem.id, moduleItem.quantity)
+                                handleQuantityDecrement(moduleItem.id, moduleItem.quantity, moduleItem.isEnabled)
                               }
                               disabled={isAnyMutating}
                             >
@@ -378,10 +509,10 @@ export function TenantDetailPage() {
                             <Input
                               type="number"
                               className="w-24 text-center"
-                              min={0}
+                              min={moduleItem.isEnabled ? 1 : 0}
                               value={displayQuantity}
                               onChange={(e) =>
-                                handleQuantityChange(moduleItem.id, Number(e.target.value))
+                                handleQuantityChange(moduleItem.id, Number(e.target.value), moduleItem.isEnabled)
                               }
                             />
                             <Button
@@ -413,6 +544,196 @@ export function TenantDetailPage() {
           )}
         </CardContent>
       </Card>
+
+      <Card>
+        <CardHeader className="pb-0">
+          <CardTitle>{t("serial_codes")}</CardTitle>
+          <CardDescription>{t("serial_codes_desc")}</CardDescription>
+        </CardHeader>
+        <CardContent className="pt-6 space-y-4">
+          {serialLoading ? (
+            <div className="space-y-3">
+              {Array.from({ length: 3 }).map((_, i) => (
+                <Skeleton key={i} className="h-16 w-full" />
+              ))}
+            </div>
+          ) : serialCodes.length === 0 ? (
+            <Card className="p-8 text-center">
+              <div className="mx-auto flex size-14 items-center justify-center rounded-3xl border border-border/70 bg-accent/60 text-muted-foreground">
+                <Key className="size-6" />
+              </div>
+              <h2 className="mt-4 text-lg font-semibold text-foreground">
+                {t("no_serial_codes")}
+              </h2>
+              <p className="mt-2 text-sm text-muted-foreground">{t("no_serial_codes_desc")}</p>
+            </Card>
+          ) : (
+            <>
+              <div className="hidden xl:block">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>{t("serial_code")}</TableHead>
+                      <TableHead>{t("serial_status")}</TableHead>
+                      <TableHead>{t("serial_machine")}</TableHead>
+                      <TableHead>{t("serial_device")}</TableHead>
+                      <TableHead>{t("serial_activated")}</TableHead>
+                      <TableHead>{t("serial_last_seen")}</TableHead>
+                      <TableHead className="text-right">{t("actions")}</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {serialCodes.map((serial) => (
+                      <TableRow key={serial.id}>
+                        <TableCell>
+                          <span className="font-mono text-sm">{serial.serialCode}</span>
+                        </TableCell>
+                        <TableCell>
+                          <Badge
+                            tone={
+                              serial.status === "Active"
+                                ? "success"
+                                : serial.status === "Inactive"
+                                ? "warning"
+                                : "neutral"
+                            }
+                          >
+                            {serial.status === "Active"
+                              ? t("serial_status_active")
+                              : serial.status === "Inactive"
+                              ? t("serial_status_inactive")
+                              : t("serial_status_decommissioned")}
+                          </Badge>
+                        </TableCell>
+                        <TableCell className="text-sm text-muted-foreground">
+                          {serial.machineIdentifier || "—"}
+                        </TableCell>
+                        <TableCell className="text-sm text-muted-foreground">
+                          {serial.deviceName || "—"}
+                        </TableCell>
+                        <TableCell className="text-sm text-muted-foreground">
+                          {serial.activatedAt ? formatDateTime(serial.activatedAt) : "—"}
+                        </TableCell>
+                        <TableCell className="text-sm text-muted-foreground">
+                          {serial.lastSeenAt ? formatDateTime(serial.lastSeenAt) : "—"}
+                        </TableCell>
+                        <TableCell className="text-right">
+                          {serial.status === "Active" && (
+                            <div className="flex items-center justify-end gap-2">
+                              <Input
+                                type="text"
+                                className="w-32 text-xs"
+                                placeholder={t("decommission_reason")}
+                                value={decommissionReason[serial.id] ?? ""}
+                                onChange={(e) =>
+                                  setDecommissionReason((prev) => ({
+                                    ...prev,
+                                    [serial.id]: e.target.value,
+                                  }))
+                                }
+                                disabled={isAnyMutating}
+                              />
+                              <Button
+                                size="sm"
+                                variant="destructive"
+                                disabled={isAnyMutating}
+                                onClick={() => handleDecommission(serial.id)}
+                              >
+                                <AlertTriangle className="size-4" />
+                                {t("decommission_serial")}
+                              </Button>
+                            </div>
+                          )}
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
+
+              <div className="grid gap-4 xl:hidden">
+                {serialCodes.map((serial) => (
+                  <Card
+                    key={serial.id}
+                    className="rounded-[24px] border-border/70 bg-background/45 shadow-none"
+                  >
+                    <CardContent className="space-y-3 p-4">
+                      <div className="flex items-center justify-between">
+                        <span className="font-mono text-sm font-medium">{serial.serialCode}</span>
+                        <Badge
+                          tone={
+                            serial.status === "Active"
+                              ? "success"
+                              : serial.status === "Inactive"
+                              ? "warning"
+                              : "neutral"
+                          }
+                        >
+                          {serial.status === "Active"
+                            ? t("serial_status_active")
+                            : serial.status === "Inactive"
+                            ? t("serial_status_inactive")
+                            : t("serial_status_decommissioned")}
+                        </Badge>
+                      </div>
+                      <div className="grid grid-cols-2 gap-2 text-xs text-muted-foreground">
+                        <div>
+                          <span className="font-medium">{t("serial_machine")}:</span>{" "}
+                          {serial.machineIdentifier || "—"}
+                        </div>
+                        <div>
+                          <span className="font-medium">{t("serial_device")}:</span>{" "}
+                          {serial.deviceName || "—"}
+                        </div>
+                        <div>
+                          <span className="font-medium">{t("serial_activated")}:</span>{" "}
+                          {serial.activatedAt ? formatDateTime(serial.activatedAt) : "—"}
+                        </div>
+                        <div>
+                          <span className="font-medium">{t("serial_last_seen")}:</span>{" "}
+                          {serial.lastSeenAt ? formatDateTime(serial.lastSeenAt) : "—"}
+                        </div>
+                      </div>
+                      {serial.status === "Active" && (
+                        <div className="flex items-center gap-2 pt-2 border-t">
+                          <Input
+                            type="text"
+                            className="flex-1 text-xs"
+                            placeholder={t("decommission_reason")}
+                            value={decommissionReason[serial.id] ?? ""}
+                            onChange={(e) =>
+                              setDecommissionReason((prev) => ({
+                                ...prev,
+                                [serial.id]: e.target.value,
+                              }))
+                            }
+                            disabled={isAnyMutating}
+                          />
+                          <Button
+                            size="sm"
+                            variant="destructive"
+                            disabled={isAnyMutating}
+                            onClick={() => handleDecommission(serial.id)}
+                          >
+                            <AlertTriangle className="size-4" />
+                          </Button>
+                        </div>
+                      )}
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            </>
+          )}
+        </CardContent>
+      </Card>
+      <TenantFormDialog
+        open={editDialogOpen}
+        onOpenChange={setEditDialogOpen}
+        tenantToEdit={tenant}
+        onSubmit={handleUpdateTenant}
+        isSubmitting={updateTenantMutation.isPending}
+      />
     </div>
   )
 }
@@ -423,7 +744,7 @@ function SummaryTile({
   loading = false,
 }: {
   label: string
-  value: number
+  value: number | string
   loading?: boolean
 }) {
   return (

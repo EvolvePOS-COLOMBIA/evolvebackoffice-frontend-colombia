@@ -7,8 +7,13 @@ import {
   activateTenant,
   deactivateTenant,
   deleteTenant,
+  getSerialCodes,
+  decommissionSerial,
+  resetAdminCredentials,
+  canCreateRegister,
 } from "@/features/platform/tenants/services/tenant.service"
-import type { CreateTenantDto, UpdateTenantDto } from "@/features/platform/tenants/types/api"
+import { bulkUpdateTenantModules } from "@/features/platform/tenants/services/tenant-modules.service"
+import type { CreateTenantDto, UpdateTenantDto, BulkUpdateTenantModuleItemDto } from "@/features/platform/tenants/types/api"
 import type { TenantFormValues } from "@/features/platform/tenants/types"
 
 function toCreateDto(values: TenantFormValues): CreateTenantDto {
@@ -41,6 +46,16 @@ function toUpdateDto(values: TenantFormValues): UpdateTenantDto {
   }
 }
 
+function toBulkModuleItems(
+  modules: TenantFormValues["modules"]
+): BulkUpdateTenantModuleItemDto[] {
+  return modules.map((m) => ({
+    modulePublicId: m.moduleId,
+    isEnabled: m.isEnabled,
+    quantity: m.quantity,
+  }))
+}
+
 export function useTenants(page: number, pageSize: number) {
   return useQuery({
     queryKey: ["tenants", page, pageSize],
@@ -52,7 +67,19 @@ export function useCreateTenant() {
   const queryClient = useQueryClient()
 
   return useMutation({
-    mutationFn: (values: TenantFormValues) => createTenant(toCreateDto(values)),
+    mutationFn: ({
+      values,
+      token,
+    }: {
+      values: TenantFormValues
+      token: string
+    }) =>
+      createTenant(toCreateDto(values)).then(async (result) => {
+        if (values.modules.length > 0) {
+          await bulkUpdateTenantModules(token, result.id, toBulkModuleItems(values.modules))
+        }
+        return result
+      }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["tenants"] })
     },
@@ -63,8 +90,21 @@ export function useUpdateTenant() {
   const queryClient = useQueryClient()
 
   return useMutation({
-    mutationFn: ({ id, values }: { id: string; values: TenantFormValues }) =>
-      updateTenant(id, toUpdateDto(values)),
+    mutationFn: ({
+      id,
+      values,
+      token,
+    }: {
+      id: string
+      values: TenantFormValues
+      token: string
+    }) =>
+      updateTenant(id, toUpdateDto(values)).then(async (result) => {
+        if (values.modules.length > 0) {
+          await bulkUpdateTenantModules(token, id, toBulkModuleItems(values.modules))
+        }
+        return result
+      }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["tenants"] })
     },
@@ -101,5 +141,52 @@ export function useDeleteTenant() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["tenants"] })
     },
+  })
+}
+
+export function useSerialCodes(tenantId: string | undefined) {
+  return useQuery({
+    queryKey: ["tenant-serial-codes", tenantId],
+    queryFn: () => getSerialCodes(tenantId!),
+    enabled: Boolean(tenantId),
+  })
+}
+
+export function useDecommissionSerial() {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: ({
+      tenantId,
+      serialId,
+      reason,
+    }: {
+      tenantId: string
+      serialId: string
+      reason?: string
+    }) => decommissionSerial(tenantId, serialId, reason),
+    onSuccess: (_data, variables) => {
+      queryClient.invalidateQueries({ queryKey: ["tenant-serial-codes", variables.tenantId] })
+      queryClient.invalidateQueries({ queryKey: ["tenant", variables.tenantId] })
+    },
+  })
+}
+
+export function useResetAdminCredentials() {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: (tenantId: string) => resetAdminCredentials(tenantId),
+    onSuccess: (_data, tenantId) => {
+      queryClient.invalidateQueries({ queryKey: ["tenant", tenantId] })
+    },
+  })
+}
+
+export function useCanCreateRegister(tenantId: string | undefined) {
+  return useQuery({
+    queryKey: ["tenant-can-create-register", tenantId],
+    queryFn: () => canCreateRegister(tenantId!),
+    enabled: Boolean(tenantId),
   })
 }

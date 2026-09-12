@@ -17,8 +17,8 @@ export function AppLayout() {
   return (
     <div className="relative h-svh overflow-hidden bg-background text-foreground">
       <div className="pointer-events-none absolute inset-0">
-        <div className="absolute inset-x-0 top-0 h-72 bg-[radial-gradient(circle_at_top,_rgba(41,161,255,0.18),_transparent_40%)] dark:bg-[radial-gradient(circle_at_top,_rgba(41,161,255,0.22),_transparent_36%)]" />
-        <div className="absolute right-0 bottom-0 h-80 w-80 bg-[radial-gradient(circle,_rgba(41,161,255,0.12),_transparent_55%)] dark:bg-[radial-gradient(circle,_rgba(41,161,255,0.16),_transparent_55%)]" />
+        <div className="absolute inset-x-0 top-0 h-72 bg-[radial-gradient(circle_at_top,rgba(41,161,255,0.18),transparent_40%)] dark:bg-[radial-gradient(circle_at_top,rgba(41,161,255,0.22),transparent_36%)]" />
+        <div className="absolute right-0 bottom-0 h-80 w-80 bg-[radial-gradient(circle,rgba(41,161,255,0.12),transparent_55%)] dark:bg-[radial-gradient(circle,rgba(41,161,255,0.16),transparent_55%)]" />
       </div>
 
       <div className="relative flex h-full">

@@ -120,7 +120,7 @@ export function GlobalCatalogView({ onAssignToBranch }: GlobalCatalogViewProps) 
         </div>
       ) : (
         <div className="min-h-0 flex-1">
-          <Table containerClassName="h-full" className="min-w-[700px]">
+          <Table containerClassName="h-full" className="min-w-175">
             <TableHeader>
               <TableRow>
                 <TableHead className="bg sticky top-0 z-10 w-10">
@@ -132,14 +132,12 @@ export function GlobalCatalogView({ onAssignToBranch }: GlobalCatalogViewProps) 
                     )}
                   </button>
                 </TableHead>
-                <TableHead className="sticky top-0 z-10 min-w-[150px]">{t("name")}</TableHead>
-                <TableHead className="sticky top-0 z-10 hidden min-w-[100px] sm:table-cell">{t("sku")}</TableHead>
-                <TableHead className="sticky top-0 z-10 hidden min-w-[80px] md:table-cell">{t("plu")}</TableHead>
-                <TableHead className="sticky top-0 z-10 hidden min-w-[120px] md:table-cell">
-                  {t("department")}
-                </TableHead>
-                <TableHead className="sticky top-0 z-10 hidden min-w-[100px] lg:table-cell">{t("item_type")}</TableHead>
-                <TableHead className="sticky top-0 z-10 hidden min-w-[80px] lg:table-cell">{t("status")}</TableHead>
+                <TableHead className="sticky top-0 z-10 min-w-37.5">{t("name")}</TableHead>
+                <TableHead className="sticky top-0 z-10 hidden min-w-25 sm:table-cell">{t("sku")}</TableHead>
+                <TableHead className="sticky top-0 z-10 hidden min-w-20 md:table-cell">{t("plu")}</TableHead>
+                <TableHead className="sticky top-0 z-10 hidden min-w-30 md:table-cell">{t("department")}</TableHead>
+                <TableHead className="sticky top-0 z-10 hidden min-w-25 lg:table-cell">{t("item_type")}</TableHead>
+                <TableHead className="sticky top-0 z-10 hidden min-w-20 lg:table-cell">{t("status")}</TableHead>
                 <TableHead className="sticky top-0 z-10 w-24 text-right">{t("actions")}</TableHead>
               </TableRow>
             </TableHeader>

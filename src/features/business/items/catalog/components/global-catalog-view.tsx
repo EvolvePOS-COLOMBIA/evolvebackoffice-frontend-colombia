@@ -119,7 +119,7 @@ export function GlobalCatalogView({ onAssignToBranch }: GlobalCatalogViewProps) 
           <p className="text-sm">{t("no_items")}</p>
         </div>
       ) : (
-        <div className="min-h-0 flex-1 rounded-lg border">
+        <div className="min-h-0 flex-1">
           <Table containerClassName="h-full" className="min-w-[700px]">
             <TableHeader>
               <TableRow>

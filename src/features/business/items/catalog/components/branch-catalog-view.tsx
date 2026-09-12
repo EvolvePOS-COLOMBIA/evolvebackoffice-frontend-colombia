@@ -75,20 +75,20 @@ export function BranchCatalogView({ branchId, onAssignClick }: BranchCatalogView
         </div>
       ) : (
         <div className="min-h-0 flex-1 rounded-lg border">
-          <Table containerClassName="h-full" className="min-w-[800px]">
+          <Table containerClassName="h-full" className="min-w-200">
             <TableHeader>
               <TableRow>
-                <TableHead className="sticky top-0 z-10 min-w-[150px]">{t("name")}</TableHead>
-                <TableHead className="sticky top-0 z-10 hidden min-w-[100px] sm:table-cell">{t("sku")}</TableHead>
-                <TableHead className="sticky top-0 z-10 min-w-[100px] text-right">{t("price")}</TableHead>
-                <TableHead className="sticky top-0 z-10 hidden min-w-[100px] text-right md:table-cell">
+                <TableHead className="sticky top-0 z-10 min-w-37.5">{t("name")}</TableHead>
+                <TableHead className="sticky top-0 z-10 hidden min-w-25 sm:table-cell">{t("sku")}</TableHead>
+                <TableHead className="sticky top-0 z-10 min-w-25 text-right">{t("price")}</TableHead>
+                <TableHead className="sticky top-0 z-10 hidden min-w-25 text-right md:table-cell">
                   {t("sale_price")}
                 </TableHead>
-                <TableHead className="sticky top-0 z-10 hidden min-w-[100px] text-right md:table-cell">
+                <TableHead className="sticky top-0 z-10 hidden min-w-25 text-right md:table-cell">
                   {t("cost")}
                 </TableHead>
-                <TableHead className="sticky top-0 z-10 min-w-[80px] text-right">{t("stock")}</TableHead>
-                <TableHead className="sticky top-0 z-10 hidden min-w-[80px] lg:table-cell">{t("status")}</TableHead>
+                <TableHead className="sticky top-0 z-10 min-w-20 text-right">{t("stock")}</TableHead>
+                <TableHead className="sticky top-0 z-10 hidden min-w-20 lg:table-cell">{t("status")}</TableHead>
                 <TableHead className="sticky top-0 z-10 w-28 text-right">{t("actions")}</TableHead>
               </TableRow>
             </TableHeader>

@@ -11,14 +11,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog"
 import { Input } from "@/components/ui/input"
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table"
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { useTranslation } from "@/i18n/use-i18n"
 import type { ItemResponseDto } from "../types"
 
@@ -97,23 +90,18 @@ export function AssignItemDialog({
     }
   }
 
-  const filteredBranches = branches.filter((branch) =>
-    branch.name?.toLowerCase().includes(searchQuery.toLowerCase())
-  )
+  const filteredBranches = branches.filter((branch) => branch.name?.toLowerCase().includes(searchQuery.toLowerCase()))
 
-  const filteredItems = targetItems?.filter(
-    (item) =>
-      item.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      item.sku?.toLowerCase().includes(searchQuery.toLowerCase())
-  ) ?? []
+  const filteredItems =
+    targetItems?.filter(
+      (item) =>
+        item.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        item.sku?.toLowerCase().includes(searchQuery.toLowerCase())
+    ) ?? []
 
-  const isConfirmDisabled =
-    mode === "select-branch"
-      ? selectedBranchIds.size === 0
-      : selectedItemIds.size === 0
+  const isConfirmDisabled = mode === "select-branch" ? selectedBranchIds.size === 0 : selectedItemIds.size === 0
 
-  const title =
-    mode === "select-branch" ? t("assign_to_branch") : t("assign_product")
+  const title = mode === "select-branch" ? t("assign_to_branch") : t("assign_product")
 
   const description =
     mode === "select-branch"
@@ -127,7 +115,7 @@ export function AssignItemDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="w-[calc(100%-2rem)] max-h-[calc(100vh-8rem)] overflow-hidden lg:w-[800px] flex flex-col">
+      <DialogContent className="flex max-h-[calc(100vh-8rem)] w-[calc(100%-2rem)] flex-col overflow-hidden lg:w-200">
         <DialogHeader className="shrink-0 pb-3">
           <DialogTitle>{title}</DialogTitle>
           <DialogDescription className="text-sm">{description}</DialogDescription>
@@ -135,7 +123,7 @@ export function AssignItemDialog({
 
         {/* Search - shrink-0 to prevent it from being scrollable */}
         <div className="relative shrink-0 pb-3">
-          <Search className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
+          <Search className="absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground" />
           <Input
             placeholder={mode === "select-branch" ? t("search_branches") : t("search_items")}
             value={searchQuery}
@@ -149,9 +137,7 @@ export function AssignItemDialog({
           {mode === "select-branch" ? (
             // Show branches as cards with multi-select
             filteredBranches.length === 0 ? (
-              <div className="py-8 text-center text-muted-foreground">
-                {t("no_branches")}
-              </div>
+              <div className="py-8 text-center text-muted-foreground">{t("no_branches")}</div>
             ) : (
               <div className="grid gap-3 sm:grid-cols-2">
                 {filteredBranches.map((branch) => {
@@ -160,20 +146,15 @@ export function AssignItemDialog({
                     <button
                       key={branch.id}
                       onClick={() => toggleBranch(branch.id)}
-                      className={`
-                        flex items-start gap-3 rounded-xl border p-4 text-left transition-all
-                        ${isSelected
+                      className={`flex items-start gap-3 rounded-xl border p-4 text-left transition-all ${
+                        isSelected
                           ? "border-primary bg-primary/5 ring-1 ring-primary"
                           : "border-border/50 bg-card hover:border-border hover:bg-accent/50"
-                        }
-                      `}
+                      } `}
                     >
                       {/* Icon */}
                       <div
-                        className={`
-                          flex size-10 shrink-0 items-center justify-center rounded-lg
-                          ${isSelected ? "bg-primary/10 text-primary" : "bg-muted text-muted-foreground"}
-                        `}
+                        className={`flex size-10 shrink-0 items-center justify-center rounded-lg ${isSelected ? "bg-primary/10 text-primary" : "bg-muted text-muted-foreground"} `}
                       >
                         <Store className="size-5" />
                       </div>
@@ -181,17 +162,11 @@ export function AssignItemDialog({
                       {/* Info */}
                       <div className="min-w-0 flex-1">
                         <div className="flex items-center gap-2">
-                          <p className="truncate font-medium text-foreground">
-                            {branch.name ?? "—"}
-                          </p>
-                          {isSelected && (
-                            <CheckSquare className="size-4 shrink-0 text-primary" />
-                          )}
+                          <p className="truncate font-medium text-foreground">{branch.name ?? "—"}</p>
+                          {isSelected && <CheckSquare className="size-4 shrink-0 text-primary" />}
                         </div>
                         {branch.address && (
-                          <p className="mt-0.5 line-clamp-1 text-sm text-muted-foreground">
-                            {branch.address}
-                          </p>
+                          <p className="mt-0.5 line-clamp-1 text-sm text-muted-foreground">{branch.address}</p>
                         )}
                         <div className="mt-1.5 flex flex-wrap gap-x-3 gap-y-1 text-xs text-muted-foreground">
                           {branch.phone && (
@@ -213,54 +188,38 @@ export function AssignItemDialog({
                 })}
               </div>
             )
+          ) : // Show items as table
+          filteredItems.length === 0 ? (
+            <div className="py-8 text-center text-muted-foreground">{t("no_items")}</div>
           ) : (
-            // Show items as table
-            filteredItems.length === 0 ? (
-              <div className="py-8 text-center text-muted-foreground">
-                {t("no_items")}
-              </div>
-            ) : (
-              <Table className="min-w-[400px]">
-                <TableHeader>
-                  <TableRow>
-                    <TableHead className="w-10"></TableHead>
-                    <TableHead>{t("name")}</TableHead>
-                    <TableHead className="hidden sm:table-cell">{t("sku")}</TableHead>
-                    <TableHead className="hidden md:table-cell">{t("plu")}</TableHead>
+            <Table className="min-w-100">
+              <TableHeader>
+                <TableRow>
+                  <TableHead className="w-10"></TableHead>
+                  <TableHead>{t("name")}</TableHead>
+                  <TableHead className="hidden sm:table-cell">{t("sku")}</TableHead>
+                  <TableHead className="hidden md:table-cell">{t("plu")}</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {filteredItems.map((item) => (
+                  <TableRow key={item.id} className={selectedItemIds.has(item.id) ? "bg-primary/5" : undefined}>
+                    <TableCell>
+                      <button onClick={() => toggleItem(item.id)} className="flex items-center">
+                        {selectedItemIds.has(item.id) ? (
+                          <CheckSquare className="size-4 text-primary" />
+                        ) : (
+                          <Square className="size-4 text-muted-foreground" />
+                        )}
+                      </button>
+                    </TableCell>
+                    <TableCell className="font-medium">{item.name ?? "—"}</TableCell>
+                    <TableCell className="hidden text-muted-foreground sm:table-cell">{item.sku ?? "—"}</TableCell>
+                    <TableCell className="hidden text-muted-foreground md:table-cell">{item.plu}</TableCell>
                   </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {filteredItems.map((item) => (
-                    <TableRow
-                      key={item.id}
-                      className={
-                        selectedItemIds.has(item.id) ? "bg-primary/5" : undefined
-                      }
-                    >
-                      <TableCell>
-                        <button
-                          onClick={() => toggleItem(item.id)}
-                          className="flex items-center"
-                        >
-                          {selectedItemIds.has(item.id) ? (
-                            <CheckSquare className="size-4 text-primary" />
-                          ) : (
-                            <Square className="size-4 text-muted-foreground" />
-                          )}
-                        </button>
-                      </TableCell>
-                      <TableCell className="font-medium">{item.name ?? "—"}</TableCell>
-                      <TableCell className="hidden text-muted-foreground sm:table-cell">
-                        {item.sku ?? "—"}
-                      </TableCell>
-                      <TableCell className="hidden text-muted-foreground md:table-cell">
-                        {item.plu}
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            )
+                ))}
+              </TableBody>
+            </Table>
           )}
         </div>
 
@@ -268,13 +227,8 @@ export function AssignItemDialog({
           <Button variant="outline" onClick={() => onOpenChange(false)}>
             {t("cancel")}
           </Button>
-          <Button
-            onClick={handleConfirm}
-            disabled={isConfirmDisabled || isSubmitting}
-          >
-            {isSubmitting
-              ? t("saving")
-              : confirmLabel}
+          <Button onClick={handleConfirm} disabled={isConfirmDisabled || isSubmitting}>
+            {isSubmitting ? t("saving") : confirmLabel}
           </Button>
         </DialogFooter>
       </DialogContent>

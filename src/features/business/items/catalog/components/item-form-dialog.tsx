@@ -45,11 +45,7 @@ const defaultValues: CreateItemFormValues = {
   askQuantity: 0,
 }
 
-export function ItemFormDialog({
-  open,
-  onOpenChange,
-  itemToEdit,
-}: ItemFormDialogProps) {
+export function ItemFormDialog({ open, onOpenChange, itemToEdit }: ItemFormDialogProps) {
   const isEditMode = Boolean(itemToEdit)
   const { t } = useTranslation("business-items-catalog")
   const createItem = useCreateItem()
@@ -116,7 +112,7 @@ export function ItemFormDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="w-[calc(100%-2rem)] max-h-[85vh] overflow-y-auto lg:w-[760px]">
+      <DialogContent className="max-h-[85vh] w-[calc(100%-2rem)] overflow-y-auto lg:w-190">
         <DialogHeader>
           <DialogTitle>{isEditMode ? t("edit_item") : t("create_item")}</DialogTitle>
           <DialogDescription>{t("item_form_desc")}</DialogDescription>
@@ -313,9 +309,7 @@ export function ItemFormDialog({
             </div>
 
             {form.formState.errors.root ? (
-              <p className="text-sm font-medium text-destructive">
-                {form.formState.errors.root.message}
-              </p>
+              <p className="text-sm font-medium text-destructive">{form.formState.errors.root.message}</p>
             ) : null}
 
             <DialogFooter>

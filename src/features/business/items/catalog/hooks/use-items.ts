@@ -1,8 +1,8 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 
 import {
-  adjustStock,
   createItem,
+  deleteItem,
   getItems,
   updateItem,
 } from "../services/items.service"
@@ -38,12 +38,11 @@ export function useUpdateItem() {
   })
 }
 
-export function useAdjustStock() {
+export function useDeleteItem() {
   const queryClient = useQueryClient()
 
   return useMutation({
-    mutationFn: ({ id, delta }: { id: string; delta: number }) =>
-      adjustStock(id, delta),
+    mutationFn: (id: string) => deleteItem(id),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["items"] })
     },

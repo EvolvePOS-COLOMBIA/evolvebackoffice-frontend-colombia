@@ -1,15 +1,19 @@
 import { api } from "@/config/axios-client"
 import type {
-  AdjustStockBody,
   CreateItemDto,
   ItemListParams,
   ItemResponseDto,
-  PaginatedItemsResponse,
+  PaginatedResponse,
   UpdateItemDto,
 } from "../types"
 
-export async function getItems(params: ItemListParams = {}): Promise<PaginatedItemsResponse> {
-  const { data } = await api.get<PaginatedItemsResponse>("/api/Items", {
+/**
+ * Global catalog endpoints: /api/Items
+ * These manage the product definitions (no prices/stock — those live in branch-items).
+ */
+
+export async function getItems(params: ItemListParams = {}): Promise<PaginatedResponse<ItemResponseDto>> {
+  const { data } = await api.get<PaginatedResponse<ItemResponseDto>>("/api/Items", {
     params: {
       pageNumber: params.pageNumber ?? 1,
       pageSize: params.pageSize ?? 20,
@@ -33,6 +37,6 @@ export async function updateItem(id: string, payload: UpdateItemDto): Promise<It
   return data
 }
 
-export async function adjustStock(id: string, delta: AdjustStockBody): Promise<void> {
-  await api.post(`/api/Items/${id}/stock`, delta)
+export async function deleteItem(id: string): Promise<void> {
+  await api.delete(`/api/Items/${id}`)
 }

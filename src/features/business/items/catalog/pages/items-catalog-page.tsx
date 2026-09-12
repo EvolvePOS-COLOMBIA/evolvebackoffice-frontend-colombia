@@ -101,9 +101,6 @@ export function ItemsCatalogPage() {
       {/* Header - fixed, not scrollable */}
       <header className="relative flex shrink-0 flex-row items-end justify-between gap-2 pb-4">
         <div>
-          <Badge className="max-w-fit" tone="primary">
-            {t("items")}
-          </Badge>
           <h1 className="text-xl font-semibold text-foreground sm:text-2xl">
             {selectedBranch ? t("product_catalog_in_branch", { name: selectedBranch.name }) : t("product_catalog")}
           </h1>

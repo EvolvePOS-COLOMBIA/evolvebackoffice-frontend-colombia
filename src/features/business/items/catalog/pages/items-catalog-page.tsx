@@ -1,163 +1,145 @@
 import { useState } from "react"
-import { Package, Plus, Search } from "lucide-react"
+import { useMutation, useQueryClient } from "@tanstack/react-query"
+import { Package } from "lucide-react"
 
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Card, CardContent } from "@/components/ui/card"
+import { Card } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { useTranslation } from "@/i18n/use-i18n"
-import { useItems, useCreateItem, useUpdateItem, useAdjustStock } from "../hooks/use-items"
-import type { ItemResponseDto } from "../types"
-import { ItemFormDialog } from "../components/item-form-dialog"
-import { AdjustStockDialog } from "../components/adjust-stock-dialog"
-import type { CreateItemFormValues } from "../schemas/item-schema"
+import { useBranches } from "@/features/business/branches/hooks/use-branches"
+import { useItems } from "../hooks/use-items"
+import { createBranchItem } from "../services/branch-items.service"
+import { BranchSelector, type BranchSelectorOption } from "../components/branch-selector"
+import { GlobalCatalogView } from "../components/global-catalog-view"
+import { BranchCatalogView } from "../components/branch-catalog-view"
+import { AssignItemDialog } from "../components/assign-item-dialog"
+import type { ItemResponseDto, CreateBranchItemDto } from "../types"
 
 export function ItemsCatalogPage() {
   const { t } = useTranslation("business-items-catalog")
-  const [search, setSearch] = useState("")
-  const [page, setPage] = useState(1)
-  const [formOpen, setFormOpen] = useState(false)
-  const [stockDialogOpen, setStockDialogOpen] = useState(false)
-  const [selectedItem, setSelectedItem] = useState<ItemResponseDto | null>(null)
+  const queryClient = useQueryClient()
+  const [selectedBranchId, setSelectedBranchId] = useState<string | null>(null)
+  const [assignDialogOpen, setAssignDialogOpen] = useState(false)
+  const [assignMode, setAssignMode] = useState<"select-branch" | "select-items">("select-branch")
+  const [itemsToAssign, setItemsToAssign] = useState<ItemResponseDto[]>([])
 
-  const { data, isLoading } = useItems({ pageNumber: page, pageSize: 20 })
-  const createItem = useCreateItem()
-  const updateItem = useUpdateItem()
-  const adjustStock = useAdjustStock()
+  // Fetch branches for the selector
+  const { data: branchesData } = useBranches(1, 100)
+  const branches = branchesData?.data ?? []
 
-  const items = data?.data ?? []
+  // Fetch all global items (for assign-from-branch flow)
+  const { data: globalItemsData } = useItems({ pageNumber: 1, pageSize: 200 })
+  const allGlobalItems = globalItemsData?.data ?? []
 
-  const lowStockCount = items.filter((item) => item.stock <= item.minStockLevel).length
+  // Build selector options: Global + all branches
+  const selectorOptions: BranchSelectorOption[] = [
+    { id: null, name: t("global_catalog") },
+    ...branches.map((b) => ({ id: b.id, name: b.name })),
+  ]
 
-  const handleCreate = (values: CreateItemFormValues) => {
-    createItem.mutate(values, {
-      onSuccess: () => setFormOpen(false),
-    })
+  const selectedBranch = branches.find((b) => b.id === selectedBranchId)
+  const isGlobalView = selectedBranchId === null
+
+  // Mutation for creating branch items — dynamic branchId
+  const createBranchItemMutation = useMutation({
+    mutationFn: ({ branchId, payload }: { branchId: string; payload: CreateBranchItemDto }) =>
+      createBranchItem(branchId, payload),
+    onSuccess: (_data, variables) => {
+      queryClient.invalidateQueries({ queryKey: ["branch-items", variables.branchId] })
+    },
+  })
+
+  // From Global view: select items → pick branch
+  const handleAssignToBranch = (items: ItemResponseDto[]) => {
+    setItemsToAssign(items)
+    setAssignMode("select-branch")
+    setAssignDialogOpen(true)
   }
 
-  const handleEdit = (values: CreateItemFormValues) => {
-    if (!selectedItem) return
-    updateItem.mutate(
-      { id: selectedItem.id, payload: values },
-      {
-        onSuccess: () => {
-          setFormOpen(false)
-          setSelectedItem(null)
-        },
+  // From Branch view: pick items from global → assign to this branch
+  const handleAssignFromBranch = () => {
+    setItemsToAssign(allGlobalItems)
+    setAssignMode("select-items")
+    setAssignDialogOpen(true)
+  }
+
+  const handleAssignConfirm = async (data: { items: ItemResponseDto[]; branchIds: string[] }) => {
+    const { items, branchIds } = data
+
+    // Create branch items for each selected item and each selected branch
+    for (const branchId of branchIds) {
+      for (const item of items) {
+        createBranchItemMutation.mutate({
+          branchId,
+          payload: {
+            branchPublicId: branchId,
+            itemPublicId: item.id,
+            price: 0,
+            priceA: 0,
+            priceB: 0,
+            priceC: 0,
+            salePrice: 0,
+            cost: 0,
+            quantity: 0,
+            reorderPoint: 0,
+            restockLevel: 0,
+            binLocation: null,
+          },
+        })
       }
-    )
+    }
+
+    setAssignDialogOpen(false)
+    setItemsToAssign([])
   }
 
-  const handleAdjustStock = (delta: number) => {
-    if (!selectedItem) return
-    adjustStock.mutate(
-      { id: selectedItem.id, delta },
-      {
-        onSuccess: () => {
-          setStockDialogOpen(false)
-          setSelectedItem(null)
-        },
-      }
-    )
-  }
-
-  const handleDialogClose = () => {
-    setFormOpen(false)
-    setSelectedItem(null)
-  }
-
-  const handleStockDialogClose = () => {
-    setStockDialogOpen(false)
-    setSelectedItem(null)
+  const handleBranchSelect = (branchId: string | null) => {
+    setSelectedBranchId(branchId)
   }
 
   return (
-    <Card className="overflow-hidden shadow-none">
-      <CardContent className="p-4 sm:p-6 lg:p-8">
-        <div className="relative flex flex-col gap-2">
+    <Card className="flex h-[calc(100vh-8rem)] flex-col gap-4 overflow-hidden p-4 shadow-none sm:p-6 lg:p-8">
+      {/* Header - fixed, not scrollable */}
+      <header className="relative flex shrink-0 flex-row items-end justify-between gap-2 pb-4">
+        <div>
           <Badge className="max-w-fit" tone="primary">
             {t("items")}
           </Badge>
-          <h1 className="text-xl font-semibold text-foreground sm:text-2xl">{t("product_catalog")}</h1>
+          <h1 className="text-xl font-semibold text-foreground sm:text-2xl">
+            {selectedBranch ? t("product_catalog_in_branch", { name: selectedBranch.name }) : t("product_catalog")}
+          </h1>
           <p className="max-w-4xl text-sm leading-5 text-muted-foreground">{t("product_catalog_desc")}</p>
-          <Package
-            color="#58626b"
-            className="absolute -top-10 -right-20 -z-10 size-50 shrink-0 animate-float opacity-5 md:-top-10 md:-right-10 md:size-70 lg:-top-20 lg:-right-30 lg:size-100"
-          />
         </div>
 
-        {lowStockCount > 0 && (
-          <div className="mt-4 rounded-lg border border-destructive/30 bg-destructive/5 p-3">
-            <p className="text-sm text-destructive">{t("low_stock_alert", { count: lowStockCount })}</p>
-          </div>
-        )}
+        {/* Branch Selector */}
+        <BranchSelector options={selectorOptions} selectedId={selectedBranchId} onSelect={handleBranchSelect} />
 
-        <div className="mt-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-          <div className="relative flex-1 sm:max-w-sm">
-            <Search className="absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground" />
-            <Input
-              placeholder={t("search_items")}
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              className="pl-9"
-            />
-          </div>
-          <Button onClick={() => setFormOpen(true)} className="w-full sm:w-auto">
-            <Plus className="mr-2 size-4" />
-            {t("new_item")}
-          </Button>
-        </div>
-
-        <div className="mt-4">
-          {isLoading ? (
-            <div className="flex items-center justify-center py-12">
-              <p className="text-sm text-muted-foreground">{t("loading")}</p>
-            </div>
-          ) : (
-            <h1>hola aqui va la tabla</h1>
-            // <ItemsTable
-            //   items={filteredItems}
-            //   onEdit={openEditDialog}
-            //   onAdjustStock={openStockDialog}
-            // />
-          )}
-        </div>
-
-        {data && data.totalPages > 1 && (
-          <div className="mt-4 flex flex-col items-center justify-between gap-3 sm:flex-row">
-            <p className="text-sm text-muted-foreground">{t("page_info", { current: page, total: data.totalPages })}</p>
-            <div className="flex gap-2">
-              <Button variant="outline" size="sm" disabled={page <= 1} onClick={() => setPage((p) => p - 1)}>
-                {t("previous")}
-              </Button>
-              <Button
-                variant="outline"
-                size="sm"
-                disabled={page >= data.totalPages}
-                onClick={() => setPage((p) => p + 1)}
-              >
-                {t("next")}
-              </Button>
-            </div>
-          </div>
-        )}
-
-        <ItemFormDialog
-          open={formOpen}
-          onOpenChange={handleDialogClose}
-          itemToEdit={selectedItem}
-          onSubmit={selectedItem ? handleEdit : handleCreate}
-          isSubmitting={createItem.isPending || updateItem.isPending}
+        <Package
+          color="#58626b"
+          className="absolute -top-10 -right-20 -z-10 size-50 shrink-0 animate-float opacity-5 md:-top-10 md:-right-10 md:size-70 lg:-top-20 lg:-right-30 lg:size-100"
         />
+      </header>
 
-        <AdjustStockDialog
-          open={stockDialogOpen}
-          onOpenChange={handleStockDialogClose}
-          item={selectedItem}
-          onSubmit={handleAdjustStock}
-          isSubmitting={adjustStock.isPending}
-        />
-      </CardContent>
+      {/* Content - children handle their own scroll */}
+      <div className="min-h-0 flex-1">
+        {isGlobalView ? (
+          <GlobalCatalogView onAssignToBranch={handleAssignToBranch} />
+        ) : selectedBranchId ? (
+          <BranchCatalogView branchId={selectedBranchId} onAssignClick={handleAssignFromBranch} />
+        ) : null}
+      </div>
+
+      {/* Assign Dialog */}
+      <AssignItemDialog
+        open={assignDialogOpen}
+        onOpenChange={setAssignDialogOpen}
+        mode={assignMode}
+        items={assignMode === "select-branch" ? itemsToAssign : undefined}
+        branches={assignMode === "select-branch" ? branches : undefined}
+        availableBranches={assignMode === "select-items" ? branches : undefined}
+        targetItems={assignMode === "select-items" ? itemsToAssign : undefined}
+        onConfirm={handleAssignConfirm}
+        isSubmitting={createBranchItemMutation.isPending}
+      />
     </Card>
   )
 }

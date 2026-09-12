@@ -12,9 +12,7 @@ export function AppLayout() {
 
   // Mostrar modal solo para BusinessAdmin cuando forcePasswordChange es true
   const mustChangePassword =
-    session?.user.role === "BusinessAdmin" &&
-    session?.forcePasswordChange === true &&
-    !passwordChanged
+    session?.user.role === "BusinessAdmin" && session?.forcePasswordChange === true && !passwordChanged
 
   return (
     <div className="relative h-svh overflow-hidden bg-background text-foreground">
@@ -29,17 +27,14 @@ export function AppLayout() {
         <section className="flex min-w-0 flex-1 flex-col overflow-hidden">
           <Navbar />
           <div className="min-h-0 flex-1 overflow-y-auto">
-            <div className="w-full px-3 py-4 sm:px-4 sm:py-5 lg:px-8 lg:py-8">
+            <div className="w-full px-3 py-4 sm:px-4 sm:py-4 lg:px-6 lg:py-6">
               <Outlet />
             </div>
           </div>
         </section>
       </div>
 
-      <ChangePasswordDialog
-        open={mustChangePassword}
-        onPasswordChanged={() => setPasswordChanged(true)}
-      />
+      <ChangePasswordDialog open={mustChangePassword} onPasswordChanged={() => setPasswordChanged(true)} />
     </div>
   )
 }

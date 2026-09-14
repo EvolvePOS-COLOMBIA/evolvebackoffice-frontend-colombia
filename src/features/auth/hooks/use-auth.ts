@@ -21,6 +21,9 @@ export function useAuth() {
   const token = session?.accessToken
   const role = session?.user.role
   const isPlatformAdmin = role === "PlatformAdmin"
+  const isPlatformSubAdmin = role === "PlatformSubAdmin"
+  const isPlatformSupervisor = role === "PlatformSupervisor"
+  const isPlatformUser = isPlatformAdmin || isPlatformSubAdmin || isPlatformSupervisor
   const isBusinessAdmin = role === "BusinessAdmin"
   const platformLoginMutation = useMutation({
     mutationFn: (payload: PlatformLoginFormValues) => loginPlatformAdmin(payload),
@@ -74,6 +77,9 @@ export function useAuth() {
     tenantId: session?.tenantId ?? null,
     isAuthenticated: Boolean(token && session),
     isPlatformAdmin,
+    isPlatformSubAdmin,
+    isPlatformSupervisor,
+    isPlatformUser,
     isBusinessAdmin,
     defaultRoute,
     hasRole: (allowedRoles: AppRole[]) => (role ? allowedRoles.includes(role) : false),
@@ -85,7 +91,7 @@ export function useAuth() {
 }
 
 function getDefaultRoute(role?: AppRole) {
-  if (role === "PlatformAdmin") {
+  if (role === "PlatformAdmin" || role === "PlatformSubAdmin" || role === "PlatformSupervisor") {
     return "/platform/dashboard"
   }
 

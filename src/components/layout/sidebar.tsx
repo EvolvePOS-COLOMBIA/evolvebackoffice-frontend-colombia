@@ -3,7 +3,7 @@ import {
   Building2,
   LayoutDashboard,
   LogOut,
-  Package,
+  Mail, Package,
   Settings,
   Users,
   ChevronsUpDown,
@@ -43,6 +43,8 @@ import {
 const platformNavigationItems = [
   { to: "/platform/dashboard", labelKey: "dashboard", icon: LayoutDashboard },
   { to: "/platform/tenants", labelKey: "tenants", icon: Building2 },
+  { to: "/platform/users", labelKey: "users", icon: Users },
+  { to: "/platform/email-settings", labelKey: "email_settings", icon: Mail },
 ]
 
 const businessNavigationItems = [
@@ -130,14 +132,8 @@ export function SidebarContent({
                   : "border-transparent text-muted-foreground hover:border-border/70 hover:bg-accent/70 hover:text-foreground"
               )}
             >
-              <Icon className={cn("size-5 shrink-0", isActive ? "text-primary" : "text-muted-foreground")} />
-              {(!isCollapsed || isMobile) && (
-                <span className="truncate">
-                  {t(
-                    item.labelKey as "dashboard" | "tenants" | "items" | "inventory" | "people" | "reports" | "settings"
-                  )}
-                </span>
-              )}
+              <Icon className={cn("size-5", isActive ? "text-primary" : "text-muted-foreground")} />
+              {t(item.labelKey as "dashboard" | "tenants" | "items" | "inventory" | "people" | "reports" | "settings")}
             </NavLink>
           )
         })}

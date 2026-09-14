@@ -13,9 +13,16 @@ import { PeoplePage } from "@/features/business/people/pages/people-page"
 import { UsersCatalogPage } from "@/features/business/people/users/pages/users-catalog-page"
 import { ReportsPage } from "@/features/business/reports/pages/reports-page"
 import { SettingsPage } from "@/features/business/settings/pages/settings-page"
+import { RegistersPage } from "@/features/business/registers/pages/registers-page"
+import { BranchTerminalSettingsPage } from "@/features/business/branches/terminals/pages/branch-terminal-settings-page"
+import { BranchConfigPage } from "@/features/business/branches/config/pages/branch-config-page"
 import { MarketingPage } from "@/features/marketing/pages/marketing-page"
 import { TenantsPage } from "@/features/platform/tenants/pages/tenants-page"
+import { TenantDetailPage } from "@/features/platform/tenants/pages/tenant-detail-page"
+import { TenantCreatePage } from "@/features/platform/tenants/pages/tenant-create-page"
 import { PlatformDashboardPage } from "@/features/platform/dashboard/pages/platform-dashboard-page"
+import { PlatformUsersPage } from "@/features/platform/users/pages/platform-users-page"
+import { EmailSettingsPage } from "@/features/platform/email/pages/email-settings-page"
 import { OnboardingGate } from "@/routes/onboarding-gate"
 import { ProtectedRoute } from "@/routes/protected-route"
 import { PublicRoute } from "@/routes/public-route"
@@ -45,10 +52,14 @@ function AppRoutesContent() {
         <Route path="/unauthorized" element={<UnauthorizedPage />} />
       </Route>
 
-      <Route element={<ProtectedRoute allowedRoles={["PlatformAdmin"]} />}>
+      <Route element={<ProtectedRoute allowedRoles={["PlatformAdmin", "PlatformSubAdmin", "PlatformSupervisor"]} />}>
         <Route element={<AppLayout />}>
           <Route path="/platform/dashboard" element={<PlatformDashboardPage />} />
           <Route path="/platform/tenants" element={<TenantsPage />} />
+          <Route path="/platform/tenants/create" element={<TenantCreatePage />} />
+          <Route path="/platform/tenants/:id" element={<TenantDetailPage />} />
+          <Route path="/platform/users" element={<PlatformUsersPage />} />
+          <Route path="/platform/email-settings" element={<EmailSettingsPage />} />
         </Route>
       </Route>
 
@@ -66,6 +77,15 @@ function AppRoutesContent() {
             <Route path="/business/people/users" element={<UsersCatalogPage />} />
             <Route path="/business/reports" element={<ReportsPage />} />
             <Route path="/business/settings" element={<SettingsPage />} />
+            <Route path="/business/settings/registers" element={<RegistersPage />} />
+            <Route
+              path="/business/branches/:branchId/settings/terminals"
+              element={<BranchTerminalSettingsPage />}
+            />
+            <Route
+              path="/business/branches/:branchId/config"
+              element={<BranchConfigPage />}
+            />
           </Route>
         </Route>
       </Route>

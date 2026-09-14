@@ -75,6 +75,9 @@
   "global_catalog": "Global",
   "assign_to_branch": "Assign to branch",
   "assign_product": "Assign product",
+  "assign_products": "Assign products",
+  "assign": "Assign",
+  "new": "New",
   "assigning": "Assigning...",
   "confirm_assign": "Assign ({{count}})",
   "assign_items_to_branch_desc": "Select the branch where you want to assign the selected products.",
@@ -111,5 +114,5 @@
   "toast_error_stock": "Error adjusting stock",
   "toast_item_removed_from_branch": "\"{{name}}\" removed from branch",
   "toast_error_remove": "Error removing product",
-  "assign_products": "Assign products"
+  "pagination_total": "{{count}} product(s)"
 }

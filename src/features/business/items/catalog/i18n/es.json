@@ -75,6 +75,9 @@
   "global_catalog": "Global",
   "assign_to_branch": "Asignar a sucursal",
   "assign_product": "Asignar producto",
+  "assign_products": "Asignar productos",
+  "assign": "Asignar",
+  "new": "Nuevo",
   "assigning": "Asignando...",
   "confirm_assign": "Asignar ({{count}})",
   "assign_items_to_branch_desc": "Selecciona la sucursal donde quieres asignar los productos seleccionados.",
@@ -111,5 +114,6 @@
   "toast_error_stock": "Error al ajustar el stock",
   "toast_item_removed_from_branch": "\"{{name}}\" removido de la sucursal",
   "toast_error_remove": "Error al remover el producto",
-  "assign_products": "Asignar productos"
+  "assign_products": "Asignar productos",
+  "pagination_total": "{{count}} producto(s)"
 }

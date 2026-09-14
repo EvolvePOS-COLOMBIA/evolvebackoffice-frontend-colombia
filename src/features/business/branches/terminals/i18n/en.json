@@ -39,5 +39,6 @@
   "branch_not_found_desc": "Could not load the branch information. Check the URL or go back to the list.",
   "go_registers": "Go to Registers",
   "switch_on": "YES",
-  "switch_off": "NO"
+  "switch_off": "NO",
+  "breadcrumb_config": "Configuration"
 }

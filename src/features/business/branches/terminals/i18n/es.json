@@ -39,5 +39,6 @@
   "branch_not_found_desc": "No se pudo cargar la información de esta sucursal. Verifica la URL o vuelve al listado.",
   "go_registers": "Ir a Registers",
   "switch_on": "SÍ",
-  "switch_off": "NO"
+  "switch_off": "NO",
+  "breadcrumb_config": "Configuración"
 }

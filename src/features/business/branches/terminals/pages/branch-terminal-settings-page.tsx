@@ -7,6 +7,7 @@ import {
   Lock,
   MonitorCog,
   Save,
+  Settings,
   Unlock,
 } from "lucide-react"
 
@@ -216,10 +217,19 @@ export function BranchTerminalSettingsPage() {
 
   return (
     <div className="space-y-6">
-      <Button variant="ghost" onClick={() => navigate(-1)}>
-        <ArrowLeft className="size-4" />
-        {t("back_to_branches")}
-      </Button>
+      <div className="flex items-center justify-between">
+        <Button variant="ghost" onClick={() => navigate(-1)}>
+          <ArrowLeft className="size-4" />
+          {t("back_to_branches")}
+        </Button>
+        <Button
+          variant="outline"
+          onClick={() => navigate(`/business/branches/${branchId}/config`)}
+        >
+          <Settings className="size-4" />
+          {t("breadcrumb_config")}
+        </Button>
+      </div>
 
       <div className="flex flex-wrap items-center gap-2 text-sm text-muted-foreground">
         <Button

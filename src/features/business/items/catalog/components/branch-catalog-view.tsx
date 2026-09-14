@@ -3,6 +3,7 @@ import { Pencil, Trash2, Package, Settings } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
+import { Skeleton } from "@/components/ui/skeleton"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { useTranslation } from "@/i18n/use-i18n"
 import { useBranchItems, useDeleteBranchItem } from "../hooks/use-branch-items"
@@ -39,7 +40,7 @@ export function BranchCatalogView({ branchId, onAssignClick }: BranchCatalogView
 
   const handleDelete = (item: BranchItemResponseDto) => {
     if (confirm(t("confirm_remove_from_branch", { name: item.itemName }))) {
-      deleteBranchItem.mutate(item.id)
+      deleteBranchItem.mutate({ id: item.id, name: item.itemName ?? "" })
     }
   }
 
@@ -65,14 +66,7 @@ export function BranchCatalogView({ branchId, onAssignClick }: BranchCatalogView
 
       {/* Table */}
       {isLoading ? (
-        <div className="flex items-center justify-center py-12">
-          <p className="text-sm text-muted-foreground">{t("loading")}</p>
-        </div>
-      ) : items.length === 0 ? (
-        <div className="flex flex-col items-center justify-center py-12 text-muted-foreground">
-          <Package className="mb-3 size-10 opacity-40" />
-          <p className="text-sm">{t("no_branch_items")}</p>
-        </div>
+        <BranchTableSkeleton />
       ) : (
         <div className="min-h-0 flex-1 rounded-lg border">
           <Table containerClassName="h-full" className="min-w-200">
@@ -93,67 +87,81 @@ export function BranchCatalogView({ branchId, onAssignClick }: BranchCatalogView
               </TableRow>
             </TableHeader>
             <TableBody>
-              {items.map((item) => (
-                <TableRow key={item.id}>
-                  <TableCell>
-                    <div>
-                      <p className="font-medium text-foreground">{item.itemName}</p>
-                      {item.binLocation && (
-                        <p className="text-xs text-muted-foreground">
-                          {t("bin")}: {item.binLocation}
-                        </p>
-                      )}
-                    </div>
-                  </TableCell>
-                  <TableCell className="hidden text-muted-foreground sm:table-cell">{item.itemSku ?? "—"}</TableCell>
-                  <TableCell className="text-right font-medium">${item.price.toLocaleString("es-CO")}</TableCell>
-                  <TableCell className="hidden text-right md:table-cell">
-                    ${item.salePrice.toLocaleString("es-CO")}
-                  </TableCell>
-                  <TableCell className="hidden text-right text-muted-foreground md:table-cell">
-                    ${item.cost.toLocaleString("es-CO")}
-                  </TableCell>
-                  <TableCell className="text-right">
-                    <StockBadge quantity={item.quantity} reorderPoint={item.reorderPoint} />
-                  </TableCell>
-                  <TableCell className="hidden lg:table-cell">
-                    <Badge tone={item.inactive ? "neutral" : "success"}>
-                      {item.inactive ? t("inactive") : t("active")}
-                    </Badge>
-                  </TableCell>
-                  <TableCell className="text-right">
-                    <div className="flex justify-end gap-1">
-                      <Button
-                        variant="secondary"
-                        size="icon"
-                        className="size-8"
-                        onClick={() => handleEditPricing(item)}
-                        aria-label={t("edit_pricing")}
-                      >
-                        <Settings className="size-4" />
-                      </Button>
-                      <Button
-                        variant="secondary"
-                        size="icon"
-                        className="size-8"
-                        onClick={() => handleAdjustStock(item)}
-                        aria-label={t("adjust_stock")}
-                      >
-                        <Pencil className="size-4" />
-                      </Button>
-                      <Button
-                        variant="destructive"
-                        size="icon"
-                        className="size-8 text-destructive"
-                        onClick={() => handleDelete(item)}
-                        aria-label={t("remove_from_branch")}
-                      >
-                        <Trash2 className="size-4" />
+              {items.length === 0 ? (
+                <TableRow>
+                  <TableCell colSpan={8}>
+                    <div className="flex flex-col items-center justify-center py-12 text-muted-foreground">
+                      <Package className="mb-3 size-10 opacity-40" />
+                      <p className="text-sm">{t("no_branch_items")}</p>
+                      <Button variant="outline" size="sm" className="mt-4" onClick={onAssignClick}>
+                        {t("assign_products")}
                       </Button>
                     </div>
                   </TableCell>
                 </TableRow>
-              ))}
+              ) : (
+                items.map((item) => (
+                  <TableRow key={item.id}>
+                    <TableCell>
+                      <div>
+                        <p className="font-medium text-foreground">{item.itemName}</p>
+                        {item.binLocation && (
+                          <p className="text-xs text-muted-foreground">
+                            {t("bin")}: {item.binLocation}
+                          </p>
+                        )}
+                      </div>
+                    </TableCell>
+                    <TableCell className="hidden text-muted-foreground sm:table-cell">{item.itemSku ?? "—"}</TableCell>
+                    <TableCell className="text-right font-medium">${item.price.toLocaleString("es-CO")}</TableCell>
+                    <TableCell className="hidden text-right md:table-cell">
+                      ${item.salePrice.toLocaleString("es-CO")}
+                    </TableCell>
+                    <TableCell className="hidden text-right text-muted-foreground md:table-cell">
+                      ${item.cost.toLocaleString("es-CO")}
+                    </TableCell>
+                    <TableCell className="text-right">
+                      <StockBadge quantity={item.quantity} reorderPoint={item.reorderPoint} />
+                    </TableCell>
+                    <TableCell className="hidden lg:table-cell">
+                      <Badge tone={item.inactive ? "neutral" : "success"}>
+                        {item.inactive ? t("inactive") : t("active")}
+                      </Badge>
+                    </TableCell>
+                    <TableCell className="text-right">
+                      <div className="flex justify-end gap-1">
+                        <Button
+                          variant="secondary"
+                          size="icon"
+                          className="size-8"
+                          onClick={() => handleEditPricing(item)}
+                          aria-label={t("edit_pricing")}
+                        >
+                          <Settings className="size-4" />
+                        </Button>
+                        <Button
+                          variant="secondary"
+                          size="icon"
+                          className="size-8"
+                          onClick={() => handleAdjustStock(item)}
+                          aria-label={t("adjust_stock")}
+                        >
+                          <Pencil className="size-4" />
+                        </Button>
+                        <Button
+                          variant="destructive"
+                          size="icon"
+                          className="size-8 text-destructive"
+                          onClick={() => handleDelete(item)}
+                          aria-label={t("remove_from_branch")}
+                        >
+                          <Trash2 className="size-4" />
+                        </Button>
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                ))
+              )}
             </TableBody>
           </Table>
         </div>
@@ -204,5 +212,74 @@ function StockBadge({ quantity, reorderPoint }: { quantity: number; reorderPoint
     <Badge tone={isLow ? "danger" : "neutral"} className="font-mono text-xs">
       {quantity}
     </Badge>
+  )
+}
+
+function BranchTableSkeleton() {
+  const { t } = useTranslation("business-items-catalog")
+  return (
+    <div className="space-y-0 rounded-lg border">
+      {/* Header — columnas reales */}
+      <div className="flex items-center border-b border-border/70 bg-muted/50 px-3 py-3">
+        <div className="flex-1 text-xs font-semibold tracking-[0.22em] text-muted-foreground uppercase">
+          {t("name")}
+        </div>
+        <div className="hidden w-25 text-xs font-semibold tracking-[0.22em] text-muted-foreground uppercase sm:block">
+          {t("sku")}
+        </div>
+        <div className="w-25 text-right text-xs font-semibold tracking-[0.22em] text-muted-foreground uppercase">
+          {t("price")}
+        </div>
+        <div className="hidden w-25 text-right text-xs font-semibold tracking-[0.22em] text-muted-foreground uppercase md:block">
+          {t("sale_price")}
+        </div>
+        <div className="hidden w-25 text-right text-xs font-semibold tracking-[0.22em] text-muted-foreground uppercase md:block">
+          {t("cost")}
+        </div>
+        <div className="w-20 text-right text-xs font-semibold tracking-[0.22em] text-muted-foreground uppercase">
+          {t("stock")}
+        </div>
+        <div className="hidden w-20 text-xs font-semibold tracking-[0.22em] text-muted-foreground uppercase lg:block">
+          {t("status")}
+        </div>
+        <div className="w-28 text-right text-xs font-semibold tracking-[0.22em] text-muted-foreground uppercase">
+          {t("actions")}
+        </div>
+      </div>
+      {/* Row skeletons */}
+      {Array.from({ length: 8 }).map((_, i) => (
+        <div key={i} className="flex items-center border-b border-border/60 px-3 py-3 last:border-b-0">
+          <div className="flex-1">
+            <Skeleton className="mb-1 h-4 w-32" />
+            <Skeleton className="h-3 w-20" />
+          </div>
+          <div className="hidden w-25 sm:block">
+            <Skeleton className="h-4 w-16" />
+          </div>
+          <div className="w-25 text-right">
+            <Skeleton className="ml-auto h-4 w-16" />
+          </div>
+          <div className="hidden w-25 text-right md:block">
+            <Skeleton className="ml-auto h-4 w-16" />
+          </div>
+          <div className="hidden w-25 text-right md:block">
+            <Skeleton className="ml-auto h-4 w-16" />
+          </div>
+          <div className="w-20 text-right">
+            <Skeleton className="ml-auto h-5 w-10 rounded-full" />
+          </div>
+          <div className="hidden w-20 lg:block">
+            <Skeleton className="h-5 w-14 rounded-full" />
+          </div>
+          <div className="w-28 text-right">
+            <div className="flex justify-end gap-1">
+              <Skeleton className="size-8 rounded" />
+              <Skeleton className="size-8 rounded" />
+              <Skeleton className="size-8 rounded" />
+            </div>
+          </div>
+        </div>
+      ))}
+    </div>
   )
 }

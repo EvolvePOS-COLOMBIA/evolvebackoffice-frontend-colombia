@@ -69,12 +69,7 @@ export function EditRegisterDialog({
   }, [open, registerToEdit, form])
 
   const handleSubmit = (values: RegisterFormValues) => {
-    const payload: RegisterFormValues = {
-      ...values,
-      deviceIdentifier: values.deviceIdentifier || undefined as unknown as string,
-      serialCode: values.serialCode || undefined as unknown as string,
-    }
-    onSubmit(payload)
+    onSubmit(values)
   }
 
   return (

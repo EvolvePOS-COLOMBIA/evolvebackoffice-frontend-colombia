@@ -49,7 +49,8 @@ export async function getBranchTerminalSettings(branchPublicId: string): Promise
       `/api/branches/${branchPublicId}/terminals/settings`
     )
     return withDefaults(branchPublicId, data)
-  } catch {
+  } catch (error) {
+    console.error(`[branch-terminals] Failed to fetch terminal settings for branch ${branchPublicId}:`, error)
     return withDefaults(branchPublicId, null)
   }
 }

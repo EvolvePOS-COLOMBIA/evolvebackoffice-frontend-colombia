@@ -4,6 +4,15 @@ import { Pencil, Trash2, CheckSquare, Square, Package, SearchX } from "lucide-re
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Input } from "@/components/ui/input"
+import {
+  Pagination,
+  PaginationContent,
+  PaginationEllipsis,
+  PaginationItem,
+  PaginationLink,
+  PaginationNext,
+  PaginationPrevious,
+} from "@/components/ui/pagination"
 import { Skeleton } from "@/components/ui/skeleton"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { useTranslation } from "@/i18n/use-i18n"
@@ -88,29 +97,31 @@ export function GlobalCatalogView({ onAssignToBranch }: GlobalCatalogViewProps) 
   return (
     <div className="flex h-full flex-col gap-4">
       {/* Toolbar */}
-      <div className="flex shrink-0 flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+      <div className="flex shrink-0 flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
         <div className="flex flex-1 items-center gap-2">
           <Input
             type="text"
             placeholder={t("search_items")}
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="h-9 w-full max-w-sm px-3 text-sm"
+            className="h-8 w-full max-w-sm px-3 text-sm sm:h-9"
           />
-          {isMultiSelectMode && (
-            <Badge tone="info" className="shrink-0">
-              {selectedIds.size} {t("selected")}
-            </Badge>
-          )}
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-1.5 sm:gap-2">
           {isMultiSelectMode && (
-            <Button variant="outline" size="sm" onClick={handleAssign}>
-              {t("assign_to_branch")}
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleAssign}
+              className="h-8 px-2 text-xs sm:h-9 sm:px-3 sm:text-sm"
+            >
+              <span className="sm:hidden">{t("assign")}</span>
+              <span className="hidden sm:inline">{t("assign_to_branch")}</span>
             </Button>
           )}
-          <Button size="sm" onClick={() => setFormOpen(true)}>
-            {t("new_item")}
+          <Button size="sm" onClick={() => setFormOpen(true)} className="h-8 px-2 text-xs sm:h-9 sm:px-3 sm:text-sm">
+            <span className="sm:hidden">{t("new")}</span>
+            <span className="hidden sm:inline">{t("new_item")}</span>
           </Button>
         </div>
       </div>
@@ -132,11 +143,15 @@ export function GlobalCatalogView({ onAssignToBranch }: GlobalCatalogViewProps) 
                     )}
                   </button>
                 </TableHead>
-                <TableHead className="sticky top-0 z-10 min-w-37.5">{t("name")}</TableHead>
-                <TableHead className="sticky top-0 z-10 hidden min-w-25 sm:table-cell">{t("sku")}</TableHead>
-                <TableHead className="sticky top-0 z-10 hidden min-w-20 md:table-cell">{t("plu")}</TableHead>
-                <TableHead className="sticky top-0 z-10 hidden min-w-30 md:table-cell">{t("department")}</TableHead>
-                <TableHead className="sticky top-0 z-10 hidden min-w-25 lg:table-cell">{t("item_type")}</TableHead>
+                <TableHead className="sticky top-0 z-10 min-w-0 sm:min-w-37.5 sm:px-4">{t("name")}</TableHead>
+                <TableHead className="sticky top-0 z-10 hidden min-w-25 sm:table-cell sm:px-4">{t("sku")}</TableHead>
+                <TableHead className="sticky top-0 z-10 hidden min-w-20 sm:px-4 md:table-cell">{t("plu")}</TableHead>
+                <TableHead className="sticky top-0 z-10 hidden min-w-30 sm:px-4 md:table-cell">
+                  {t("department")}
+                </TableHead>
+                <TableHead className="sticky top-0 z-10 hidden min-w-25 sm:px-4 lg:table-cell">
+                  {t("item_type")}
+                </TableHead>
                 <TableHead className="sticky top-0 z-10 hidden min-w-20 lg:table-cell">{t("status")}</TableHead>
                 <TableHead className="sticky top-0 z-10 w-24 text-right">{t("actions")}</TableHead>
               </TableRow>
@@ -183,38 +198,38 @@ export function GlobalCatalogView({ onAssignToBranch }: GlobalCatalogViewProps) 
                         )}
                       </div>
                     </TableCell>
-                    <TableCell className="hidden text-muted-foreground sm:table-cell">{item.sku ?? "—"}</TableCell>
-                    <TableCell className="hidden text-muted-foreground md:table-cell">{item.plu}</TableCell>
-                    <TableCell className="hidden text-muted-foreground md:table-cell">
+                    <TableCell className="hidden px-4 text-muted-foreground sm:table-cell">{item.sku ?? "—"}</TableCell>
+                    <TableCell className="hidden px-4 text-muted-foreground md:table-cell">{item.plu}</TableCell>
+                    <TableCell className="hidden px-4 text-muted-foreground md:table-cell">
                       {item.departmentName ?? "—"}
                     </TableCell>
-                    <TableCell className="hidden text-muted-foreground lg:table-cell">
+                    <TableCell className="hidden px-4 text-muted-foreground lg:table-cell">
                       {item.itemTypeName ?? "—"}
                     </TableCell>
-                    <TableCell className="hidden lg:table-cell">
+                    <TableCell className="hidden px-4 lg:table-cell">
                       <Badge tone={item.isActive ? "success" : "neutral"}>
                         {item.isActive ? t("active") : t("inactive")}
                       </Badge>
                     </TableCell>
-                    <TableCell className="text-right">
-                      <div className="flex justify-end gap-2">
+                    <TableCell className="px-1 text-right sm:px-4">
+                      <div className="flex justify-end gap-1 sm:gap-2">
                         <Button
                           variant="secondary"
                           size="icon"
-                          className="size-8"
+                          className="size-7 sm:size-8"
                           onClick={() => handleEdit(item)}
                           aria-label={t("edit_item")}
                         >
-                          <Pencil className="size-4" />
+                          <Pencil className="size-3.5 sm:size-4" />
                         </Button>
                         <Button
                           variant="destructive"
                           size="icon"
-                          className="size-8 text-destructive"
+                          className="size-7 text-destructive sm:size-8"
                           onClick={() => handleDelete(item)}
                           aria-label={t("delete_item")}
                         >
-                          <Trash2 className="size-4" />
+                          <Trash2 className="size-3.5 sm:size-4" />
                         </Button>
                       </div>
                     </TableCell>
@@ -226,30 +241,89 @@ export function GlobalCatalogView({ onAssignToBranch }: GlobalCatalogViewProps) 
         </div>
       )}
 
-      {/* Pagination */}
-      {data && data.totalPages > 1 && (
-        <div className="flex shrink-0 items-center justify-between">
-          <p className="text-sm text-muted-foreground">{t("page_info", { current: page, total: data.totalPages })}</p>
-          <div className="flex gap-2">
-            <Button variant="outline" size="sm" disabled={page <= 1} onClick={() => setPage((p) => p - 1)}>
-              {t("previous")}
-            </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              disabled={page >= data.totalPages}
-              onClick={() => setPage((p) => p + 1)}
-            >
-              {t("next")}
-            </Button>
-          </div>
-        </div>
-      )}
+      {/* Pagination Footer */}
+      <div className="flex w-full shrink-0 items-center justify-between">
+        <p className="min-w-fit text-xs text-muted-foreground">
+          {t("pagination_total", { count: data?.totalCount ?? 0 })}
+          {isMultiSelectMode && (
+            <span className="ml-2 text-primary">
+              · {selectedIds.size} {t("selected")}
+            </span>
+          )}
+        </p>
+        {data && data.totalPages > 1 && (
+          <Pagination>
+            <PaginationContent>
+              <PaginationItem>
+                <PaginationPrevious
+                  text={t("previous")}
+                  onClick={() => setPage((p) => Math.max(1, p - 1))}
+                  disabled={page <= 1}
+                />
+              </PaginationItem>
+              {generatePageNumbers(page, data.totalPages).map((pageNum, i) =>
+                pageNum === "..." ? (
+                  <PaginationItem key={`ellipsis-${i}`}>
+                    <PaginationEllipsis />
+                  </PaginationItem>
+                ) : (
+                  <PaginationItem key={pageNum}>
+                    <PaginationLink isActive={pageNum === page} onClick={() => setPage(pageNum)}>
+                      {pageNum}
+                    </PaginationLink>
+                  </PaginationItem>
+                )
+              )}
+              <PaginationItem>
+                <PaginationNext
+                  text={t("next")}
+                  onClick={() => setPage((p) => Math.min(data.totalPages, p + 1))}
+                  disabled={page >= data.totalPages}
+                />
+              </PaginationItem>
+            </PaginationContent>
+          </Pagination>
+        )}
+      </div>
 
       {/* Form Dialog */}
       <ItemFormDialog open={formOpen} onOpenChange={handleDialogClose} itemToEdit={itemToEdit} />
     </div>
   )
+}
+
+function generatePageNumbers(current: number, total: number): (number | "...")[] {
+  if (total <= 7) {
+    return Array.from({ length: total }, (_, i) => i + 1)
+  }
+
+  const pages: (number | "...")[] = []
+
+  // Always show first page
+  pages.push(1)
+
+  if (current > 3) {
+    pages.push("...")
+  }
+
+  // Show pages around current
+  const start = Math.max(2, current - 1)
+  const end = Math.min(total - 1, current + 1)
+
+  for (let i = start; i <= end; i++) {
+    pages.push(i)
+  }
+
+  if (current < total - 2) {
+    pages.push("...")
+  }
+
+  // Always show last page
+  if (total > 1) {
+    pages.push(total)
+  }
+
+  return pages
 }
 
 function TableSkeleton() {

@@ -3,6 +3,15 @@ import { Pencil, Trash2, Package, Settings } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
+import {
+  Pagination,
+  PaginationContent,
+  PaginationEllipsis,
+  PaginationItem,
+  PaginationLink,
+  PaginationNext,
+  PaginationPrevious,
+} from "@/components/ui/pagination"
 import { Skeleton } from "@/components/ui/skeleton"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { useTranslation } from "@/i18n/use-i18n"
@@ -57,10 +66,10 @@ export function BranchCatalogView({ branchId, onAssignClick }: BranchCatalogView
   return (
     <div className="flex h-full flex-col gap-4">
       {/* Toolbar */}
-      <div className="flex shrink-0 items-center justify-between">
-        <p className="text-sm text-muted-foreground">{t("branch_items_count", { count: data?.totalCount ?? 0 })}</p>
-        <Button size="sm" onClick={onAssignClick}>
-          {t("assign_product")}
+      <div className="flex shrink-0 items-center justify-end">
+        <Button size="sm" onClick={onAssignClick} className="h-8 px-2 text-xs sm:h-9 sm:px-3 sm:text-sm">
+          <span className="sm:hidden">{t("assign")}</span>
+          <span className="hidden sm:inline">{t("assign_products")}</span>
         </Button>
       </div>
 
@@ -69,32 +78,42 @@ export function BranchCatalogView({ branchId, onAssignClick }: BranchCatalogView
         <BranchTableSkeleton />
       ) : (
         <div className="min-h-0 flex-1 rounded-lg border">
-          <Table containerClassName="h-full" className="min-w-200">
+          <Table containerClassName="h-full" className="min-w-0 sm:min-w-200">
             <TableHeader>
               <TableRow>
-                <TableHead className="sticky top-0 z-10 min-w-37.5">{t("name")}</TableHead>
-                <TableHead className="sticky top-0 z-10 hidden min-w-25 sm:table-cell">{t("sku")}</TableHead>
-                <TableHead className="sticky top-0 z-10 min-w-25 text-right">{t("price")}</TableHead>
-                <TableHead className="sticky top-0 z-10 hidden min-w-25 text-right md:table-cell">
+                <TableHead className="sticky top-0 z-10 min-w-0 sm:min-w-37.5 sm:px-4">{t("name")}</TableHead>
+                <TableHead className="sticky top-0 z-10 hidden min-w-25 sm:table-cell sm:px-4">{t("sku")}</TableHead>
+                <TableHead className="sticky top-0 z-10 min-w-20 text-right sm:min-w-25 sm:px-4">
+                  {t("price")}
+                </TableHead>
+                <TableHead className="sticky top-0 z-10 hidden min-w-25 text-right sm:px-4 md:table-cell">
                   {t("sale_price")}
                 </TableHead>
                 <TableHead className="sticky top-0 z-10 hidden min-w-25 text-right md:table-cell">
                   {t("cost")}
                 </TableHead>
-                <TableHead className="sticky top-0 z-10 min-w-20 text-right">{t("stock")}</TableHead>
-                <TableHead className="sticky top-0 z-10 hidden min-w-20 lg:table-cell">{t("status")}</TableHead>
-                <TableHead className="sticky top-0 z-10 w-28 text-right">{t("actions")}</TableHead>
+                <TableHead className="sticky top-0 z-10 min-w-16 text-right sm:min-w-20 sm:px-4">
+                  {t("stock")}
+                </TableHead>
+                <TableHead className="sticky top-0 z-10 hidden min-w-20 sm:px-4 lg:table-cell">{t("status")}</TableHead>
+                <TableHead className="sticky top-0 z-10 w-20 text-right sm:w-28 sm:px-4">{t("actions")}</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {items.length === 0 ? (
                 <TableRow>
                   <TableCell colSpan={8}>
-                    <div className="flex flex-col items-center justify-center py-12 text-muted-foreground">
-                      <Package className="mb-3 size-10 opacity-40" />
-                      <p className="text-sm">{t("no_branch_items")}</p>
-                      <Button variant="outline" size="sm" className="mt-4" onClick={onAssignClick}>
-                        {t("assign_products")}
+                    <div className="flex flex-col items-center justify-center py-8 text-muted-foreground sm:py-12">
+                      <Package className="mb-2 size-8 opacity-40 sm:mb-3 sm:size-10" />
+                      <p className="text-xs sm:text-sm">{t("no_branch_items")}</p>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="mt-3 h-8 px-2 text-xs sm:mt-4"
+                        onClick={onAssignClick}
+                      >
+                        <span className="sm:hidden">{t("assign")}</span>
+                        <span className="hidden sm:inline">{t("assign_products")}</span>
                       </Button>
                     </div>
                   </TableCell>
@@ -102,9 +121,9 @@ export function BranchCatalogView({ branchId, onAssignClick }: BranchCatalogView
               ) : (
                 items.map((item) => (
                   <TableRow key={item.id}>
-                    <TableCell>
-                      <div>
-                        <p className="font-medium text-foreground">{item.itemName}</p>
+                    <TableCell className="px-4">
+                      <div className="min-w-0">
+                        <p className="truncate font-medium text-foreground">{item.itemName}</p>
                         {item.binLocation && (
                           <p className="text-xs text-muted-foreground">
                             {t("bin")}: {item.binLocation}
@@ -112,50 +131,54 @@ export function BranchCatalogView({ branchId, onAssignClick }: BranchCatalogView
                         )}
                       </div>
                     </TableCell>
-                    <TableCell className="hidden text-muted-foreground sm:table-cell">{item.itemSku ?? "—"}</TableCell>
-                    <TableCell className="text-right font-medium">${item.price.toLocaleString("es-CO")}</TableCell>
-                    <TableCell className="hidden text-right md:table-cell">
+                    <TableCell className="hidden px-4 text-muted-foreground sm:table-cell">
+                      {item.itemSku ?? "—"}
+                    </TableCell>
+                    <TableCell className="px-1 text-right font-medium sm:px-4">
+                      ${item.price.toLocaleString("es-CO")}
+                    </TableCell>
+                    <TableCell className="hidden px-4 text-right md:table-cell">
                       ${item.salePrice.toLocaleString("es-CO")}
                     </TableCell>
-                    <TableCell className="hidden text-right text-muted-foreground md:table-cell">
+                    <TableCell className="hidden px-4 text-right text-muted-foreground md:table-cell">
                       ${item.cost.toLocaleString("es-CO")}
                     </TableCell>
-                    <TableCell className="text-right">
+                    <TableCell className="px-1 text-right sm:px-4">
                       <StockBadge quantity={item.quantity} reorderPoint={item.reorderPoint} />
                     </TableCell>
-                    <TableCell className="hidden lg:table-cell">
+                    <TableCell className="hidden px-4 lg:table-cell">
                       <Badge tone={item.inactive ? "neutral" : "success"}>
                         {item.inactive ? t("inactive") : t("active")}
                       </Badge>
                     </TableCell>
-                    <TableCell className="text-right">
-                      <div className="flex justify-end gap-1">
+                    <TableCell className="px-1 text-right sm:px-4">
+                      <div className="flex justify-end gap-1 sm:gap-1">
                         <Button
                           variant="secondary"
                           size="icon"
-                          className="size-8"
+                          className="size-7 sm:size-8"
                           onClick={() => handleEditPricing(item)}
                           aria-label={t("edit_pricing")}
                         >
-                          <Settings className="size-4" />
+                          <Settings className="size-3.5 sm:size-4" />
                         </Button>
                         <Button
                           variant="secondary"
                           size="icon"
-                          className="size-8"
+                          className="size-7 sm:size-8"
                           onClick={() => handleAdjustStock(item)}
                           aria-label={t("adjust_stock")}
                         >
-                          <Pencil className="size-4" />
+                          <Pencil className="size-3.5 sm:size-4" />
                         </Button>
                         <Button
                           variant="destructive"
                           size="icon"
-                          className="size-8 text-destructive"
+                          className="size-7 text-destructive sm:size-8"
                           onClick={() => handleDelete(item)}
                           aria-label={t("remove_from_branch")}
                         >
-                          <Trash2 className="size-4" />
+                          <Trash2 className="size-3.5 sm:size-4" />
                         </Button>
                       </div>
                     </TableCell>
@@ -167,25 +190,45 @@ export function BranchCatalogView({ branchId, onAssignClick }: BranchCatalogView
         </div>
       )}
 
-      {/* Pagination */}
-      {data && data.totalPages > 1 && (
-        <div className="flex shrink-0 items-center justify-between">
-          <p className="text-sm text-muted-foreground">{t("page_info", { current: page, total: data.totalPages })}</p>
-          <div className="flex gap-2">
-            <Button variant="outline" size="sm" disabled={page <= 1} onClick={() => setPage((p) => p - 1)}>
-              {t("previous")}
-            </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              disabled={page >= data.totalPages}
-              onClick={() => setPage((p) => p + 1)}
-            >
-              {t("next")}
-            </Button>
-          </div>
-        </div>
-      )}
+      {/* Pagination Footer */}
+      <div className="flex shrink-0 items-center justify-between">
+        <p className="min-w-0 text-xs text-muted-foreground">
+          {t("branch_items_count", { count: data?.totalCount ?? 0 })}
+        </p>
+        {data && data.totalPages > 1 && (
+          <Pagination className="w-fit">
+            <PaginationContent>
+              <PaginationItem>
+                <PaginationPrevious
+                  text={t("previous")}
+                  onClick={() => setPage((p) => Math.max(1, p - 1))}
+                  disabled={page <= 1}
+                />
+              </PaginationItem>
+              {generatePageNumbers(page, data.totalPages).map((pageNum, i) =>
+                pageNum === "..." ? (
+                  <PaginationItem key={`ellipsis-${i}`}>
+                    <PaginationEllipsis />
+                  </PaginationItem>
+                ) : (
+                  <PaginationItem key={pageNum}>
+                    <PaginationLink isActive={pageNum === page} onClick={() => setPage(pageNum)}>
+                      {pageNum}
+                    </PaginationLink>
+                  </PaginationItem>
+                )
+              )}
+              <PaginationItem>
+                <PaginationNext
+                  text={t("next")}
+                  onClick={() => setPage((p) => Math.min(data.totalPages, p + 1))}
+                  disabled={page >= data.totalPages}
+                />
+              </PaginationItem>
+            </PaginationContent>
+          </Pagination>
+        )}
+      </div>
 
       {/* Pricing Dialog */}
       {selectedItem && (
@@ -203,6 +246,40 @@ export function BranchCatalogView({ branchId, onAssignClick }: BranchCatalogView
       )}
     </div>
   )
+}
+
+function generatePageNumbers(current: number, total: number): (number | "...")[] {
+  if (total <= 7) {
+    return Array.from({ length: total }, (_, i) => i + 1)
+  }
+
+  const pages: (number | "...")[] = []
+
+  // Always show first page
+  pages.push(1)
+
+  if (current > 3) {
+    pages.push("...")
+  }
+
+  // Show pages around current
+  const start = Math.max(2, current - 1)
+  const end = Math.min(total - 1, current + 1)
+
+  for (let i = start; i <= end; i++) {
+    pages.push(i)
+  }
+
+  if (current < total - 2) {
+    pages.push("...")
+  }
+
+  // Always show last page
+  if (total > 1) {
+    pages.push(total)
+  }
+
+  return pages
 }
 
 function StockBadge({ quantity, reorderPoint }: { quantity: number; reorderPoint: number }) {

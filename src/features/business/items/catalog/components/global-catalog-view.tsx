@@ -97,24 +97,26 @@ export function GlobalCatalogView({ onAssignToBranch }: GlobalCatalogViewProps) 
   return (
     <div className="flex h-full flex-col gap-4">
       {/* Toolbar */}
-      <div className="flex shrink-0 flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+      <div className="flex shrink-0 flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
         <div className="flex flex-1 items-center gap-2">
           <Input
             type="text"
             placeholder={t("search_items")}
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="h-9 w-full max-w-sm px-3 text-sm"
+            className="h-8 w-full max-w-sm px-3 text-sm sm:h-9"
           />
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-1.5 sm:gap-2">
           {isMultiSelectMode && (
-            <Button variant="outline" size="sm" onClick={handleAssign}>
-              {t("assign_to_branch")}
+            <Button variant="outline" size="sm" onClick={handleAssign} className="h-8 px-2 text-xs sm:h-9 sm:px-3 sm:text-sm">
+              <span className="sm:hidden">{t("assign")}</span>
+              <span className="hidden sm:inline">{t("assign_to_branch")}</span>
             </Button>
           )}
-          <Button size="sm" onClick={() => setFormOpen(true)}>
-            {t("new_item")}
+          <Button size="sm" onClick={() => setFormOpen(true)} className="h-8 px-2 text-xs sm:h-9 sm:px-3 sm:text-sm">
+            <span className="sm:hidden">{t("new")}</span>
+            <span className="hidden sm:inline">{t("new_item")}</span>
           </Button>
         </div>
       </div>
@@ -124,43 +126,44 @@ export function GlobalCatalogView({ onAssignToBranch }: GlobalCatalogViewProps) 
         <TableSkeleton />
       ) : (
         <div className="min-h-0 flex-1">
-          <Table containerClassName="h-full" className="min-w-175">
+          <Table containerClassName="h-full" className="min-w-0 sm:min-w-175">
             <TableHeader>
               <TableRow>
-                <TableHead className="sticky top-0 z-10 w-10">
+                <TableHead className="sticky top-0 z-10 w-8 sm:w-10">
                   <button onClick={toggleSelectAll} className="flex cursor-pointer items-center">
                     {selectedIds.size === filteredItems.length && filteredItems.length > 0 ? (
-                      <CheckSquare className="size-5 text-primary" />
+                      <CheckSquare className="size-4 text-primary sm:size-5" />
                     ) : (
-                      <Square className="size-5 text-muted-foreground" />
+                      <Square className="size-4 text-muted-foreground sm:size-5" />
                     )}
                   </button>
                 </TableHead>
-                <TableHead className="sticky top-0 z-10 min-w-37.5">{t("name")}</TableHead>
+                <TableHead className="sticky top-0 z-10 min-w-0 sm:min-w-37.5">{t("name")}</TableHead>
                 <TableHead className="sticky top-0 z-10 hidden min-w-25 sm:table-cell">{t("sku")}</TableHead>
                 <TableHead className="sticky top-0 z-10 hidden min-w-20 md:table-cell">{t("plu")}</TableHead>
                 <TableHead className="sticky top-0 z-10 hidden min-w-30 md:table-cell">{t("department")}</TableHead>
                 <TableHead className="sticky top-0 z-10 hidden min-w-25 lg:table-cell">{t("item_type")}</TableHead>
                 <TableHead className="sticky top-0 z-10 hidden min-w-20 lg:table-cell">{t("status")}</TableHead>
-                <TableHead className="sticky top-0 z-10 w-24 text-right">{t("actions")}</TableHead>
+                <TableHead className="sticky top-0 z-10 w-16 text-right sm:w-24">{t("actions")}</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {filteredItems.length === 0 ? (
                 <TableRow>
                   <TableCell colSpan={8}>
-                    <div className="flex flex-col items-center justify-center py-12 text-muted-foreground">
+                    <div className="flex flex-col items-center justify-center py-8 text-muted-foreground sm:py-12">
                       {hasSearch ? (
                         <>
-                          <SearchX className="mb-3 size-10 opacity-40" />
-                          <p className="text-sm">{t("no_results_for_search", { search })}</p>
+                          <SearchX className="mb-2 size-8 opacity-40 sm:mb-3 sm:size-10" />
+                          <p className="text-xs sm:text-sm">{t("no_results_for_search", { search })}</p>
                         </>
                       ) : (
                         <>
-                          <Package className="mb-3 size-10 opacity-40" />
-                          <p className="text-sm">{t("no_items")}</p>
-                          <Button variant="outline" size="sm" className="mt-4" onClick={() => setFormOpen(true)}>
-                            {t("new_item")}
+                          <Package className="mb-2 size-8 opacity-40 sm:mb-3 sm:size-10" />
+                          <p className="text-xs sm:text-sm">{t("no_items")}</p>
+                          <Button variant="outline" size="sm" className="mt-3 h-8 px-2 text-xs sm:mt-4" onClick={() => setFormOpen(true)}>
+                            <span className="sm:hidden">{t("new")}</span>
+                            <span className="hidden sm:inline">{t("new_item")}</span>
                           </Button>
                         </>
                       )}
@@ -170,55 +173,55 @@ export function GlobalCatalogView({ onAssignToBranch }: GlobalCatalogViewProps) 
               ) : (
                 filteredItems.map((item) => (
                   <TableRow key={item.id} className={selectedIds.has(item.id) ? "bg-primary/8" : undefined}>
-                    <TableCell>
+                    <TableCell className="px-1 sm:px-4">
                       <button onClick={() => toggleSelect(item.id)} className="flex cursor-pointer items-center">
                         {selectedIds.has(item.id) ? (
-                          <CheckSquare className="size-5 text-primary" />
+                          <CheckSquare className="size-4 text-primary sm:size-5" />
                         ) : (
-                          <Square className="size-5 text-muted-foreground" />
+                          <Square className="size-4 text-muted-foreground sm:size-5" />
                         )}
                       </button>
                     </TableCell>
-                    <TableCell>
-                      <div>
-                        <p className="font-medium text-foreground">{item.name}</p>
+                    <TableCell className="px-1 sm:px-4">
+                      <div className="min-w-0">
+                        <p className="truncate font-medium text-foreground">{item.name}</p>
                         {item.description && (
                           <p className="line-clamp-1 text-xs text-muted-foreground">{item.description}</p>
                         )}
                       </div>
                     </TableCell>
-                    <TableCell className="hidden text-muted-foreground sm:table-cell">{item.sku ?? "—"}</TableCell>
-                    <TableCell className="hidden text-muted-foreground md:table-cell">{item.plu}</TableCell>
-                    <TableCell className="hidden text-muted-foreground md:table-cell">
+                    <TableCell className="hidden px-4 text-muted-foreground sm:table-cell">{item.sku ?? "—"}</TableCell>
+                    <TableCell className="hidden px-4 text-muted-foreground md:table-cell">{item.plu}</TableCell>
+                    <TableCell className="hidden px-4 text-muted-foreground md:table-cell">
                       {item.departmentName ?? "—"}
                     </TableCell>
-                    <TableCell className="hidden text-muted-foreground lg:table-cell">
+                    <TableCell className="hidden px-4 text-muted-foreground lg:table-cell">
                       {item.itemTypeName ?? "—"}
                     </TableCell>
-                    <TableCell className="hidden lg:table-cell">
+                    <TableCell className="hidden px-4 lg:table-cell">
                       <Badge tone={item.isActive ? "success" : "neutral"}>
                         {item.isActive ? t("active") : t("inactive")}
                       </Badge>
                     </TableCell>
-                    <TableCell className="text-right">
-                      <div className="flex justify-end gap-2">
+                    <TableCell className="px-1 text-right sm:px-4">
+                      <div className="flex justify-end gap-1 sm:gap-2">
                         <Button
                           variant="secondary"
                           size="icon"
-                          className="size-8"
+                          className="size-7 sm:size-8"
                           onClick={() => handleEdit(item)}
                           aria-label={t("edit_item")}
                         >
-                          <Pencil className="size-4" />
+                          <Pencil className="size-3.5 sm:size-4" />
                         </Button>
                         <Button
                           variant="destructive"
                           size="icon"
-                          className="size-8 text-destructive"
+                          className="size-7 text-destructive sm:size-8"
                           onClick={() => handleDelete(item)}
                           aria-label={t("delete_item")}
                         >
-                          <Trash2 className="size-4" />
+                          <Trash2 className="size-3.5 sm:size-4" />
                         </Button>
                       </div>
                     </TableCell>

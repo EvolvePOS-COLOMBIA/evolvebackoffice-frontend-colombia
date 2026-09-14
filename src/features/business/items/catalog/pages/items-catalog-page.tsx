@@ -104,14 +104,14 @@ export function ItemsCatalogPage() {
   }
 
   return (
-    <Card className="flex h-[calc(100vh-8rem)] flex-col gap-4 overflow-hidden px-4 py-4 pb-2 shadow-none sm:px-6 sm:pb-4">
+    <Card className="flex h-[calc(100vh-5.5rem)] flex-col gap-4 overflow-hidden px-4 py-4 pb-2 shadow-none sm:px-6 sm:pb-4 md:h-[calc(100vh-6.5rem)]">
       {/* Header - fixed, not scrollable */}
-      <header className="relative flex shrink-0 flex-row items-end justify-between gap-2 pb-4">
-        <div>
-          <h1 className="text-xl font-semibold text-foreground sm:text-2xl">
+      <header className="relative flex shrink-0 flex-row items-end justify-between gap-2 pb-2 sm:pb-4">
+        <div className="min-w-0">
+          <h1 className="truncate text-lg font-semibold text-foreground sm:text-2xl">
             {selectedBranch ? t("product_catalog_in_branch", { name: selectedBranch.name }) : t("product_catalog")}
           </h1>
-          <p className="max-w-4xl text-sm leading-5 text-muted-foreground">{t("product_catalog_desc")}</p>
+          <p className="hidden text-sm leading-5 text-muted-foreground sm:block">{t("product_catalog_desc")}</p>
         </div>
 
         {/* Branch Selector */}

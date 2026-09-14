@@ -67,8 +67,9 @@ export function BranchCatalogView({ branchId, onAssignClick }: BranchCatalogView
     <div className="flex h-full flex-col gap-4">
       {/* Toolbar */}
       <div className="flex shrink-0 items-center justify-end">
-        <Button size="sm" onClick={onAssignClick}>
-          {t("assign_product")}
+        <Button size="sm" onClick={onAssignClick} className="h-8 px-2 text-xs sm:h-9 sm:px-3 sm:text-sm">
+          <span className="sm:hidden">{t("assign")}</span>
+          <span className="hidden sm:inline">{t("assign_products")}</span>
         </Button>
       </div>
 
@@ -77,32 +78,33 @@ export function BranchCatalogView({ branchId, onAssignClick }: BranchCatalogView
         <BranchTableSkeleton />
       ) : (
         <div className="min-h-0 flex-1 rounded-lg border">
-          <Table containerClassName="h-full" className="min-w-200">
+          <Table containerClassName="h-full" className="min-w-0 sm:min-w-200">
             <TableHeader>
               <TableRow>
-                <TableHead className="sticky top-0 z-10 min-w-37.5">{t("name")}</TableHead>
+                <TableHead className="sticky top-0 z-10 min-w-0 sm:min-w-37.5">{t("name")}</TableHead>
                 <TableHead className="sticky top-0 z-10 hidden min-w-25 sm:table-cell">{t("sku")}</TableHead>
-                <TableHead className="sticky top-0 z-10 min-w-25 text-right">{t("price")}</TableHead>
+                <TableHead className="sticky top-0 z-10 min-w-20 text-right sm:min-w-25">{t("price")}</TableHead>
                 <TableHead className="sticky top-0 z-10 hidden min-w-25 text-right md:table-cell">
                   {t("sale_price")}
                 </TableHead>
                 <TableHead className="sticky top-0 z-10 hidden min-w-25 text-right md:table-cell">
                   {t("cost")}
                 </TableHead>
-                <TableHead className="sticky top-0 z-10 min-w-20 text-right">{t("stock")}</TableHead>
+                <TableHead className="sticky top-0 z-10 min-w-16 text-right sm:min-w-20">{t("stock")}</TableHead>
                 <TableHead className="sticky top-0 z-10 hidden min-w-20 lg:table-cell">{t("status")}</TableHead>
-                <TableHead className="sticky top-0 z-10 w-28 text-right">{t("actions")}</TableHead>
+                <TableHead className="sticky top-0 z-10 w-20 text-right sm:w-28">{t("actions")}</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {items.length === 0 ? (
                 <TableRow>
                   <TableCell colSpan={8}>
-                    <div className="flex flex-col items-center justify-center py-12 text-muted-foreground">
-                      <Package className="mb-3 size-10 opacity-40" />
-                      <p className="text-sm">{t("no_branch_items")}</p>
-                      <Button variant="outline" size="sm" className="mt-4" onClick={onAssignClick}>
-                        {t("assign_products")}
+                    <div className="flex flex-col items-center justify-center py-8 text-muted-foreground sm:py-12">
+                      <Package className="mb-2 size-8 opacity-40 sm:mb-3 sm:size-10" />
+                      <p className="text-xs sm:text-sm">{t("no_branch_items")}</p>
+                      <Button variant="outline" size="sm" className="mt-3 h-8 px-2 text-xs sm:mt-4" onClick={onAssignClick}>
+                        <span className="sm:hidden">{t("assign")}</span>
+                        <span className="hidden sm:inline">{t("assign_products")}</span>
                       </Button>
                     </div>
                   </TableCell>
@@ -110,9 +112,9 @@ export function BranchCatalogView({ branchId, onAssignClick }: BranchCatalogView
               ) : (
                 items.map((item) => (
                   <TableRow key={item.id}>
-                    <TableCell>
-                      <div>
-                        <p className="font-medium text-foreground">{item.itemName}</p>
+                    <TableCell className="px-1 sm:px-4">
+                      <div className="min-w-0">
+                        <p className="truncate font-medium text-foreground">{item.itemName}</p>
                         {item.binLocation && (
                           <p className="text-xs text-muted-foreground">
                             {t("bin")}: {item.binLocation}
@@ -120,50 +122,50 @@ export function BranchCatalogView({ branchId, onAssignClick }: BranchCatalogView
                         )}
                       </div>
                     </TableCell>
-                    <TableCell className="hidden text-muted-foreground sm:table-cell">{item.itemSku ?? "—"}</TableCell>
-                    <TableCell className="text-right font-medium">${item.price.toLocaleString("es-CO")}</TableCell>
-                    <TableCell className="hidden text-right md:table-cell">
+                    <TableCell className="hidden px-4 text-muted-foreground sm:table-cell">{item.itemSku ?? "—"}</TableCell>
+                    <TableCell className="px-1 text-right font-medium sm:px-4">${item.price.toLocaleString("es-CO")}</TableCell>
+                    <TableCell className="hidden px-4 text-right md:table-cell">
                       ${item.salePrice.toLocaleString("es-CO")}
                     </TableCell>
-                    <TableCell className="hidden text-right text-muted-foreground md:table-cell">
+                    <TableCell className="hidden px-4 text-right text-muted-foreground md:table-cell">
                       ${item.cost.toLocaleString("es-CO")}
                     </TableCell>
-                    <TableCell className="text-right">
+                    <TableCell className="px-1 text-right sm:px-4">
                       <StockBadge quantity={item.quantity} reorderPoint={item.reorderPoint} />
                     </TableCell>
-                    <TableCell className="hidden lg:table-cell">
+                    <TableCell className="hidden px-4 lg:table-cell">
                       <Badge tone={item.inactive ? "neutral" : "success"}>
                         {item.inactive ? t("inactive") : t("active")}
                       </Badge>
                     </TableCell>
-                    <TableCell className="text-right">
-                      <div className="flex justify-end gap-1">
+                    <TableCell className="px-1 text-right sm:px-4">
+                      <div className="flex justify-end gap-1 sm:gap-1">
                         <Button
                           variant="secondary"
                           size="icon"
-                          className="size-8"
+                          className="size-7 sm:size-8"
                           onClick={() => handleEditPricing(item)}
                           aria-label={t("edit_pricing")}
                         >
-                          <Settings className="size-4" />
+                          <Settings className="size-3.5 sm:size-4" />
                         </Button>
                         <Button
                           variant="secondary"
                           size="icon"
-                          className="size-8"
+                          className="size-7 sm:size-8"
                           onClick={() => handleAdjustStock(item)}
                           aria-label={t("adjust_stock")}
                         >
-                          <Pencil className="size-4" />
+                          <Pencil className="size-3.5 sm:size-4" />
                         </Button>
                         <Button
                           variant="destructive"
                           size="icon"
-                          className="size-8 text-destructive"
+                          className="size-7 sm:size-8 text-destructive"
                           onClick={() => handleDelete(item)}
                           aria-label={t("remove_from_branch")}
                         >
-                          <Trash2 className="size-4" />
+                          <Trash2 className="size-3.5 sm:size-4" />
                         </Button>
                       </div>
                     </TableCell>

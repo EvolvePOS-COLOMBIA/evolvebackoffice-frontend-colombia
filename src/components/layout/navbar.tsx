@@ -6,13 +6,11 @@ import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet"
-import { useAuth } from "@/features/auth/hooks/use-auth"
 import { useAppStore } from "@/store/app-store"
 import i18n from "@/i18n"
 import { useTranslation } from "@/i18n/use-i18n"
 
 export function Navbar() {
-  const { isBusinessAdmin, tenantId } = useAuth()
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
   const { t } = useTranslation()
 
@@ -32,7 +30,7 @@ export function Navbar() {
 
   return (
     <Card className="sticky top-0 z-20 rounded-none border-x-0 border-t-0 bg-sidebar shadow-none backdrop-blur-xl">
-      <div className="flex justify-between gap-4 px-4 py-4 sm:px-6 lg:flex-row lg:items-end lg:justify-between lg:px-8">
+      <div className="flex justify-between gap-4 px-4 py-2 sm:px-6 lg:flex-row lg:items-end lg:justify-between lg:px-8">
         <div className="flex min-w-0 items-center gap-3">
           <Sheet open={isMobileMenuOpen} onOpenChange={setIsMobileMenuOpen}>
             <SheetTrigger asChild>
@@ -48,15 +46,9 @@ export function Navbar() {
               <SidebarContent isMobile onNavigate={() => setIsMobileMenuOpen(false)} />
             </SheetContent>
           </Sheet>
-
-          {isBusinessAdmin && tenantId ? (
-            <div className="max-w-[280px] truncate rounded-md border border-border/70 bg-background/55 px-3 py-2 text-sm text-muted-foreground">
-              {tenantId}
-            </div>
-          ) : null}
         </div>
 
-        <div className="flex flex-wrap items-center gap-2 overflow-x-auto pb-1 sm:pb-0">
+        <div className="flex flex-wrap items-center gap-2 overflow-x-auto">
           <Select value={locale} onValueChange={handleLocaleChange}>
             <SelectTrigger className="w-max bg-background/55">
               <Globe className="mr-1 size-4" />

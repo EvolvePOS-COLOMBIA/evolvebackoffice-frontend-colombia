@@ -22,13 +22,26 @@ const APP_ROLE_BY_BACKEND_ROLE: Record<BackendPlatformRole, AppRole> = {
 }
 
 export function toBackendRole(role: AppRole): BackendPlatformRole {
-  const mapped = BACKEND_ROLE_BY_APP_ROLE[role as Exclude<AppRole, "BusinessAdmin">]
-  return mapped ?? (role.toUpperCase() as BackendPlatformRole)
+  if (role === "BusinessAdmin") {
+    throw new Error(`Role "${role}" is not supported for platform users.`)
+  }
+
+  const mapped = BACKEND_ROLE_BY_APP_ROLE[role]
+  if (!mapped) {
+    throw new Error(`Unsupported platform role: "${role}".`)
+  }
+
+  return mapped
 }
 
 export function toAppRole(role: string | null | undefined): AppRole {
   const normalized = (role ?? "").trim().toUpperCase()
-  return APP_ROLE_BY_BACKEND_ROLE[normalized as BackendPlatformRole] ?? (normalized as AppRole)
+  const mapped = APP_ROLE_BY_BACKEND_ROLE[normalized as BackendPlatformRole]
+  if (!mapped) {
+    throw new Error(`Unsupported backend platform role: "${normalized}".`)
+  }
+
+  return mapped
 }
 
 function mapPlatformUser(raw: PlatformUserListResponse | PlatformUserResponse): PlatformUser {

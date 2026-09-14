@@ -2,11 +2,13 @@ import type { PlatformUser, AppRole } from "./index"
 
 export type { PlatformUser }
 
+export type BackendPlatformRole = "ADMIN" | "SUBADMIN" | "SUPERVISOR"
+
 export interface PlatformUserListResponse {
   id: string
   email: string
   fullName: string
-  role: AppRole
+  role: BackendPlatformRole
   isActive: boolean
   createdAt: string
   lastLoginAt: string | null
@@ -32,7 +34,7 @@ export interface PlatformUserResponse {
   id: string
   email: string
   fullName: string
-  role: AppRole
+  role: BackendPlatformRole
   isActive: boolean
   createdAt: string
   lastLoginAt: string | null

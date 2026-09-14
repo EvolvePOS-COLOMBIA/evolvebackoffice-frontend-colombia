@@ -1,9 +1,9 @@
 import { useState } from "react"
 import { useMutation, useQueryClient } from "@tanstack/react-query"
 import { Package } from "lucide-react"
+import toast from "react-hot-toast"
 
 import { Card } from "@/components/ui/card"
-import { Badge } from "@/components/ui/badge"
 import { useTranslation } from "@/i18n/use-i18n"
 import { useBranches } from "@/features/business/branches/hooks/use-branches"
 import { useItems } from "../hooks/use-items"
@@ -90,6 +90,13 @@ export function ItemsCatalogPage() {
 
     setAssignDialogOpen(false)
     setItemsToAssign([])
+
+    const totalCreated = branchIds.length * items.length
+    if (totalCreated > 0) {
+      toast.success(
+        totalCreated === 1 ? t("toast_item_assigned") : t("toast_items_assigned_count", { count: totalCreated })
+      )
+    }
   }
 
   const handleBranchSelect = (branchId: string | null) => {

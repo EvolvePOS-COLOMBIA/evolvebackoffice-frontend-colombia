@@ -94,5 +94,22 @@
   "branch_name": "Branch name",
   "no_branches": "No branches available.",
   "branch_phone": "Phone",
-  "branch_email": "Email"
+  "branch_email": "Email",
+  "no_results_for_search": "No results found for \"{{search}}\".",
+  "toast_item_created": "\"{{name}}\" created successfully",
+  "toast_item_updated": "\"{{name}}\" updated successfully",
+  "toast_item_deleted": "\"{{name}}\" deleted successfully",
+  "toast_error_create": "Error creating product",
+  "toast_error_update": "Error updating product",
+  "toast_error_delete": "Error deleting product",
+  "toast_item_assigned": "Product assigned successfully",
+  "toast_items_assigned_count": "{{count}} products assigned successfully",
+  "toast_error_assign": "Error assigning product",
+  "toast_pricing_updated": "Pricing updated successfully",
+  "toast_error_pricing": "Error updating pricing",
+  "toast_stock_adjusted": "Stock adjusted successfully",
+  "toast_error_stock": "Error adjusting stock",
+  "toast_item_removed_from_branch": "\"{{name}}\" removed from branch",
+  "toast_error_remove": "Error removing product",
+  "assign_products": "Assign products"
 }

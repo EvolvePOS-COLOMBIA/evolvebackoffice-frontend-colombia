@@ -9,8 +9,8 @@ import { ChangePasswordDialog } from "@/features/auth/components/change-password
 export function AppLayout() {
   const { session } = useAuth()
   const [passwordChanged, setPasswordChanged] = useState(false)
+  const [isCollapsed, setIsCollapsed] = useState(false)
 
-  // Mostrar modal solo para BusinessAdmin cuando forcePasswordChange es true
   const mustChangePassword =
     session?.user.role === "BusinessAdmin" && session?.forcePasswordChange === true && !passwordChanged
 
@@ -22,10 +22,13 @@ export function AppLayout() {
       </div>
 
       <div className="relative flex h-full">
-        <Sidebar />
+        {/* Pasamos el estado de colapsado al Sidebar */}
+        <Sidebar isCollapsed={isCollapsed} />
 
         <section className="flex min-w-0 flex-1 flex-col overflow-hidden">
-          <Navbar />
+          {/* Pasamos la función para alternar al Navbar */}
+          <Navbar isCollapsed={isCollapsed} onToggleCollapse={() => setIsCollapsed(!isCollapsed)} />
+
           <div className="min-h-0 flex-1 overflow-y-auto">
             <div className="w-full p-3 sm:p-4 lg:p-5">
               <Outlet />

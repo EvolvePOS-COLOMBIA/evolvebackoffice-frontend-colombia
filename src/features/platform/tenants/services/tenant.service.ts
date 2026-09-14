@@ -23,6 +23,11 @@ function mapTenantResponseToTenant(dto: TenantResponseDto): Tenant {
     phone: dto.phone ?? "",
     address: dto.address ?? "",
     isActive: dto.isActive,
+    status: dto.status ?? "Active",
+    createdById: dto.createdById ?? null,
+    rejectionReason: dto.rejectionReason ?? null,
+    approvedAt: dto.approvedAt ?? null,
+    rejectedAt: dto.rejectedAt ?? null,
     maxRegisters: dto.maxRegisters,
     currentRegisterCount: dto.currentRegisterCount,
     subdomain: dto.subdomain ?? "",
@@ -45,6 +50,11 @@ function mapListResponseToPagedTenants(dto: PagedTenantListResponse): PagedTenan
       phone: "",
       address: "",
       isActive: item.isActive,
+      status: item.status ?? "Active",
+      createdById: item.createdById ?? null,
+      rejectionReason: item.rejectionReason ?? null,
+      approvedAt: null,
+      rejectedAt: null,
       maxRegisters: item.maxRegisters,
       currentRegisterCount: 0,
       subdomain: "",
@@ -141,4 +151,33 @@ export async function adjustSerialCodes(
     data
   )
   return response.data
+}
+
+export interface ApproveTenantResponseDto {
+  tenantId: string
+  tenantName: string
+  status: string
+  approvedAt: string
+  adminUsername: string
+  adminTemporaryPassword: string
+  adminTemporaryPin: string
+}
+
+export async function approveTenant(tenantId: string): Promise<ApproveTenantResponseDto> {
+  const response = await api.post<ApproveTenantResponseDto>(`/api/Tenants/${tenantId}/approve`)
+  return response.data
+}
+
+export async function rejectTenant(tenantId: string, reason: string): Promise<void> {
+  await api.post(`/api/Tenants/${tenantId}/reject`, { reason })
+}
+
+export async function getPendingTenants(
+  page: number,
+  pageSize: number
+): Promise<PagedTenantsResponse> {
+  const response = await api.get<PagedTenantListResponse>("/api/Tenants/pending", {
+    params: { pageNumber: page, pageSize },
+  })
+  return mapListResponseToPagedTenants(response.data)
 }

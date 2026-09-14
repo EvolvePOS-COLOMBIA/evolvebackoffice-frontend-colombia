@@ -21,6 +21,8 @@ import { TenantsPage } from "@/features/platform/tenants/pages/tenants-page"
 import { TenantDetailPage } from "@/features/platform/tenants/pages/tenant-detail-page"
 import { TenantCreatePage } from "@/features/platform/tenants/pages/tenant-create-page"
 import { PlatformDashboardPage } from "@/features/platform/dashboard/pages/platform-dashboard-page"
+import { PlatformUsersPage } from "@/features/platform/users/pages/platform-users-page"
+import { EmailSettingsPage } from "@/features/platform/email/pages/email-settings-page"
 import { OnboardingGate } from "@/routes/onboarding-gate"
 import { ProtectedRoute } from "@/routes/protected-route"
 import { PublicRoute } from "@/routes/public-route"
@@ -50,12 +52,14 @@ function AppRoutesContent() {
         <Route path="/unauthorized" element={<UnauthorizedPage />} />
       </Route>
 
-      <Route element={<ProtectedRoute allowedRoles={["PlatformAdmin"]} />}>
+      <Route element={<ProtectedRoute allowedRoles={["PlatformAdmin", "PlatformSubAdmin", "PlatformSupervisor"]} />}>
         <Route element={<AppLayout />}>
           <Route path="/platform/dashboard" element={<PlatformDashboardPage />} />
           <Route path="/platform/tenants" element={<TenantsPage />} />
           <Route path="/platform/tenants/create" element={<TenantCreatePage />} />
           <Route path="/platform/tenants/:id" element={<TenantDetailPage />} />
+          <Route path="/platform/users" element={<PlatformUsersPage />} />
+          <Route path="/platform/email-settings" element={<EmailSettingsPage />} />
         </Route>
       </Route>
 

@@ -12,6 +12,8 @@ import {
   resetAdminCredentials,
   canCreateRegister,
   adjustSerialCodes,
+  approveTenant,
+  rejectTenant,
 } from "@/features/platform/tenants/services/tenant.service"
 import { bulkUpdateTenantModules } from "@/features/platform/tenants/services/tenant-modules.service"
 import type {
@@ -212,6 +214,29 @@ export function useAdjustSerialCodes() {
     onSuccess: (_data, variables) => {
       queryClient.invalidateQueries({ queryKey: ["tenant-serial-codes", variables.tenantId] })
       queryClient.invalidateQueries({ queryKey: ["tenant", variables.tenantId] })
+      queryClient.invalidateQueries({ queryKey: ["tenants"] })
+    },
+  })
+}
+
+export function useApproveTenant() {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: (tenantId: string) => approveTenant(tenantId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["tenants"] })
+    },
+  })
+}
+
+export function useRejectTenant() {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: ({ tenantId, reason }: { tenantId: string; reason: string }) =>
+      rejectTenant(tenantId, reason),
+    onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["tenants"] })
     },
   })

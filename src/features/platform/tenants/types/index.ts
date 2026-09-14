@@ -8,6 +8,11 @@ export interface Tenant {
   phone: string
   address: string
   isActive: boolean
+  status: string
+  createdById: string | null
+  rejectionReason: string | null
+  approvedAt: string | null
+  rejectedAt: string | null
   maxRegisters: number
   currentRegisterCount: number
   subdomain: string

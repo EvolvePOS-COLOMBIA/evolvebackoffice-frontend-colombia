@@ -76,6 +76,11 @@ export interface TenantResponseDto {
   identificationTypeId: number
   subdomain: string | null
   isActive: boolean
+  status: string
+  createdById: string | null
+  rejectionReason: string | null
+  approvedAt: string | null
+  rejectedAt: string | null
   maxRegisters: number
   maxBranches: number | null
   maxUsers: number | null
@@ -90,6 +95,9 @@ export interface TenantListResponseDto {
   tenantId: string | null
   contactEmail: string | null
   isActive: boolean
+  status: string
+  createdById: string | null
+  rejectionReason: string | null
   maxRegisters: number
   createdAt: string
 }

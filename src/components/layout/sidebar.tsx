@@ -1,4 +1,4 @@
-import { BarChart3, Building2, LayoutDashboard, LogOut, Package, Settings, Users } from "lucide-react"
+import { BarChart3, Building2, LayoutDashboard, LogOut, Mail, Package, Settings, Users } from "lucide-react"
 import { Link, NavLink, useLocation } from "react-router-dom"
 import { useState } from "react"
 
@@ -25,6 +25,8 @@ import { useTranslation } from "@/i18n/use-i18n"
 const platformNavigationItems = [
   { to: "/platform/dashboard", labelKey: "dashboard", icon: LayoutDashboard },
   { to: "/platform/tenants", labelKey: "tenants", icon: Building2 },
+  { to: "/platform/users", labelKey: "users", icon: Users },
+  { to: "/platform/email-settings", labelKey: "email_settings", icon: Mail },
 ]
 
 const businessNavigationItems = [
@@ -82,7 +84,7 @@ export function SidebarContent({ isMobile = false, onNavigate }: { isMobile?: bo
               )}
             >
               <Icon className={cn("size-5", isActive ? "text-primary" : "text-muted-foreground")} />
-              {t(item.labelKey as "dashboard" | "tenants" | "items" | "inventory" | "people" | "reports" | "settings")}
+              {t(item.labelKey as "dashboard" | "tenants" | "items" | "inventory" | "people" | "reports" | "settings" | "users" | "email_settings")}
             </NavLink>
           )
         })}

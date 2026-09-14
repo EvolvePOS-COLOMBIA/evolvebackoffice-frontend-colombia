@@ -4,6 +4,15 @@ import { Pencil, Trash2, CheckSquare, Square, Package, SearchX } from "lucide-re
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Input } from "@/components/ui/input"
+import {
+  Pagination,
+  PaginationContent,
+  PaginationEllipsis,
+  PaginationItem,
+  PaginationLink,
+  PaginationNext,
+  PaginationPrevious,
+} from "@/components/ui/pagination"
 import { Skeleton } from "@/components/ui/skeleton"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { useTranslation } from "@/i18n/use-i18n"
@@ -97,11 +106,6 @@ export function GlobalCatalogView({ onAssignToBranch }: GlobalCatalogViewProps) 
             onChange={(e) => setSearch(e.target.value)}
             className="h-9 w-full max-w-sm px-3 text-sm"
           />
-          {isMultiSelectMode && (
-            <Badge tone="info" className="shrink-0">
-              {selectedIds.size} {t("selected")}
-            </Badge>
-          )}
         </div>
         <div className="flex items-center gap-2">
           {isMultiSelectMode && (
@@ -226,30 +230,89 @@ export function GlobalCatalogView({ onAssignToBranch }: GlobalCatalogViewProps) 
         </div>
       )}
 
-      {/* Pagination */}
-      {data && data.totalPages > 1 && (
-        <div className="flex shrink-0 items-center justify-between">
-          <p className="text-sm text-muted-foreground">{t("page_info", { current: page, total: data.totalPages })}</p>
-          <div className="flex gap-2">
-            <Button variant="outline" size="sm" disabled={page <= 1} onClick={() => setPage((p) => p - 1)}>
-              {t("previous")}
-            </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              disabled={page >= data.totalPages}
-              onClick={() => setPage((p) => p + 1)}
-            >
-              {t("next")}
-            </Button>
-          </div>
-        </div>
-      )}
+      {/* Pagination Footer */}
+      <div className="flex w-full shrink-0 items-center justify-between">
+        <p className="min-w-fit text-xs text-muted-foreground">
+          {t("pagination_total", { count: data?.totalCount ?? 0 })}
+          {isMultiSelectMode && (
+            <span className="ml-2 text-primary">
+              · {selectedIds.size} {t("selected")}
+            </span>
+          )}
+        </p>
+        {data && data.totalPages > 1 && (
+          <Pagination>
+            <PaginationContent>
+              <PaginationItem>
+                <PaginationPrevious
+                  text={t("previous")}
+                  onClick={() => setPage((p) => Math.max(1, p - 1))}
+                  disabled={page <= 1}
+                />
+              </PaginationItem>
+              {generatePageNumbers(page, data.totalPages).map((pageNum, i) =>
+                pageNum === "..." ? (
+                  <PaginationItem key={`ellipsis-${i}`}>
+                    <PaginationEllipsis />
+                  </PaginationItem>
+                ) : (
+                  <PaginationItem key={pageNum}>
+                    <PaginationLink isActive={pageNum === page} onClick={() => setPage(pageNum)}>
+                      {pageNum}
+                    </PaginationLink>
+                  </PaginationItem>
+                )
+              )}
+              <PaginationItem>
+                <PaginationNext
+                  text={t("next")}
+                  onClick={() => setPage((p) => Math.min(data.totalPages, p + 1))}
+                  disabled={page >= data.totalPages}
+                />
+              </PaginationItem>
+            </PaginationContent>
+          </Pagination>
+        )}
+      </div>
 
       {/* Form Dialog */}
       <ItemFormDialog open={formOpen} onOpenChange={handleDialogClose} itemToEdit={itemToEdit} />
     </div>
   )
+}
+
+function generatePageNumbers(current: number, total: number): (number | "...")[] {
+  if (total <= 7) {
+    return Array.from({ length: total }, (_, i) => i + 1)
+  }
+
+  const pages: (number | "...")[] = []
+
+  // Always show first page
+  pages.push(1)
+
+  if (current > 3) {
+    pages.push("...")
+  }
+
+  // Show pages around current
+  const start = Math.max(2, current - 1)
+  const end = Math.min(total - 1, current + 1)
+
+  for (let i = start; i <= end; i++) {
+    pages.push(i)
+  }
+
+  if (current < total - 2) {
+    pages.push("...")
+  }
+
+  // Always show last page
+  if (total > 1) {
+    pages.push(total)
+  }
+
+  return pages
 }
 
 function TableSkeleton() {

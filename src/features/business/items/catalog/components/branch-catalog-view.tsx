@@ -3,6 +3,15 @@ import { Pencil, Trash2, Package, Settings } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
+import {
+  Pagination,
+  PaginationContent,
+  PaginationEllipsis,
+  PaginationItem,
+  PaginationLink,
+  PaginationNext,
+  PaginationPrevious,
+} from "@/components/ui/pagination"
 import { Skeleton } from "@/components/ui/skeleton"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { useTranslation } from "@/i18n/use-i18n"
@@ -57,8 +66,7 @@ export function BranchCatalogView({ branchId, onAssignClick }: BranchCatalogView
   return (
     <div className="flex h-full flex-col gap-4">
       {/* Toolbar */}
-      <div className="flex shrink-0 items-center justify-between">
-        <p className="text-sm text-muted-foreground">{t("branch_items_count", { count: data?.totalCount ?? 0 })}</p>
+      <div className="flex shrink-0 items-center justify-end">
         <Button size="sm" onClick={onAssignClick}>
           {t("assign_product")}
         </Button>
@@ -167,25 +175,45 @@ export function BranchCatalogView({ branchId, onAssignClick }: BranchCatalogView
         </div>
       )}
 
-      {/* Pagination */}
-      {data && data.totalPages > 1 && (
-        <div className="flex shrink-0 items-center justify-between">
-          <p className="text-sm text-muted-foreground">{t("page_info", { current: page, total: data.totalPages })}</p>
-          <div className="flex gap-2">
-            <Button variant="outline" size="sm" disabled={page <= 1} onClick={() => setPage((p) => p - 1)}>
-              {t("previous")}
-            </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              disabled={page >= data.totalPages}
-              onClick={() => setPage((p) => p + 1)}
-            >
-              {t("next")}
-            </Button>
-          </div>
-        </div>
-      )}
+      {/* Pagination Footer */}
+      <div className="flex shrink-0 items-center justify-between">
+        <p className="min-w-0 text-xs text-muted-foreground">
+          {t("branch_items_count", { count: data?.totalCount ?? 0 })}
+        </p>
+        {data && data.totalPages > 1 && (
+          <Pagination className="w-fit">
+            <PaginationContent>
+              <PaginationItem>
+                <PaginationPrevious
+                  text={t("previous")}
+                  onClick={() => setPage((p) => Math.max(1, p - 1))}
+                  disabled={page <= 1}
+                />
+              </PaginationItem>
+              {generatePageNumbers(page, data.totalPages).map((pageNum, i) =>
+                pageNum === "..." ? (
+                  <PaginationItem key={`ellipsis-${i}`}>
+                    <PaginationEllipsis />
+                  </PaginationItem>
+                ) : (
+                  <PaginationItem key={pageNum}>
+                    <PaginationLink isActive={pageNum === page} onClick={() => setPage(pageNum)}>
+                      {pageNum}
+                    </PaginationLink>
+                  </PaginationItem>
+                )
+              )}
+              <PaginationItem>
+                <PaginationNext
+                  text={t("next")}
+                  onClick={() => setPage((p) => Math.min(data.totalPages, p + 1))}
+                  disabled={page >= data.totalPages}
+                />
+              </PaginationItem>
+            </PaginationContent>
+          </Pagination>
+        )}
+      </div>
 
       {/* Pricing Dialog */}
       {selectedItem && (
@@ -203,6 +231,40 @@ export function BranchCatalogView({ branchId, onAssignClick }: BranchCatalogView
       )}
     </div>
   )
+}
+
+function generatePageNumbers(current: number, total: number): (number | "...")[] {
+  if (total <= 7) {
+    return Array.from({ length: total }, (_, i) => i + 1)
+  }
+
+  const pages: (number | "...")[] = []
+
+  // Always show first page
+  pages.push(1)
+
+  if (current > 3) {
+    pages.push("...")
+  }
+
+  // Show pages around current
+  const start = Math.max(2, current - 1)
+  const end = Math.min(total - 1, current + 1)
+
+  for (let i = start; i <= end; i++) {
+    pages.push(i)
+  }
+
+  if (current < total - 2) {
+    pages.push("...")
+  }
+
+  // Always show last page
+  if (total > 1) {
+    pages.push(total)
+  }
+
+  return pages
 }
 
 function StockBadge({ quantity, reorderPoint }: { quantity: number; reorderPoint: number }) {

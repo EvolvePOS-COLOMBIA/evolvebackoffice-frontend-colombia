@@ -111,5 +111,6 @@
   "toast_error_stock": "Error adjusting stock",
   "toast_item_removed_from_branch": "\"{{name}}\" removed from branch",
   "toast_error_remove": "Error removing product",
-  "assign_products": "Assign products"
+  "assign_products": "Assign products",
+  "pagination_total": "{{count}} product(s)"
 }

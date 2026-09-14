@@ -27,7 +27,7 @@ export function AppLayout() {
         <section className="flex min-w-0 flex-1 flex-col overflow-hidden">
           <Navbar />
           <div className="min-h-0 flex-1 overflow-y-auto">
-            <div className="w-full px-3 py-4 sm:px-4 sm:py-4 lg:px-6 lg:py-6">
+            <div className="w-full p-3 sm:p-4 lg:p-5">
               <Outlet />
             </div>
           </div>

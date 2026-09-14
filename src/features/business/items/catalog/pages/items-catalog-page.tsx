@@ -104,7 +104,7 @@ export function ItemsCatalogPage() {
   }
 
   return (
-    <Card className="flex h-[calc(100vh-8rem)] flex-col gap-4 overflow-hidden p-4 shadow-none sm:p-6 lg:p-8">
+    <Card className="flex h-[calc(100vh-8rem)] flex-col gap-4 overflow-hidden px-4 py-4 pb-2 shadow-none sm:px-6 sm:pb-4">
       {/* Header - fixed, not scrollable */}
       <header className="relative flex shrink-0 flex-row items-end justify-between gap-2 pb-4">
         <div>

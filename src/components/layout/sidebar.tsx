@@ -3,7 +3,8 @@ import {
   Building2,
   LayoutDashboard,
   LogOut,
-  Mail, Package,
+  Mail,
+  Package,
   Settings,
   Users,
   ChevronsUpDown,
@@ -132,8 +133,23 @@ export function SidebarContent({
                   : "border-transparent text-muted-foreground hover:border-border/70 hover:bg-accent/70 hover:text-foreground"
               )}
             >
-              <Icon className={cn("size-5", isActive ? "text-primary" : "text-muted-foreground")} />
-              {t(item.labelKey as "dashboard" | "tenants" | "items" | "inventory" | "people" | "reports" | "settings")}
+              <Icon className={cn("size-5 shrink-0", isActive ? "text-primary" : "text-muted-foreground")} />
+              {(!isCollapsed || isMobile) && (
+                <span className="truncate">
+                  {t(
+                    item.labelKey as
+                      | "dashboard"
+                      | "tenants"
+                      | "items"
+                      | "inventory"
+                      | "people"
+                      | "reports"
+                      | "settings"
+                      | "users"
+                      | "email_settings"
+                  )}
+                </span>
+              )}
             </NavLink>
           )
         })}

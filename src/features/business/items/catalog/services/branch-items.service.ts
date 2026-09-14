@@ -17,16 +17,21 @@ export async function getBranchItems(
   branchId: string,
   params: ItemListParams = {}
 ): Promise<PaginatedResponse<BranchItemResponseDto>> {
-  const { data } = await api.get<PaginatedResponse<BranchItemResponseDto>>(
+  const pageNumber = params.pageNumber ?? 1
+  const pageSize = params.pageSize ?? 20
+  const { data } = await api.get<{ data: BranchItemResponseDto[]; totalCount: number }>(
     `/api/branches/${branchId}/items`,
     {
-      params: {
-        pageNumber: params.pageNumber ?? 1,
-        pageSize: params.pageSize ?? 20,
-      },
+      params: { pageNumber, pageSize },
     }
   )
-  return data
+  return {
+    data: data.data,
+    pageNumber,
+    pageSize,
+    totalCount: data.totalCount,
+    totalPages: Math.ceil(data.totalCount / pageSize),
+  }
 }
 
 export async function getBranchItemById(

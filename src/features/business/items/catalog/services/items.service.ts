@@ -13,13 +13,18 @@ import type {
  */
 
 export async function getItems(params: ItemListParams = {}): Promise<PaginatedResponse<ItemResponseDto>> {
-  const { data } = await api.get<PaginatedResponse<ItemResponseDto>>("/api/Items", {
-    params: {
-      pageNumber: params.pageNumber ?? 1,
-      pageSize: params.pageSize ?? 20,
-    },
+  const pageNumber = params.pageNumber ?? 1
+  const pageSize = params.pageSize ?? 20
+  const { data } = await api.get<{ data: ItemResponseDto[]; totalCount: number }>("/api/Items", {
+    params: { pageNumber, pageSize },
   })
-  return data
+  return {
+    data: data.data,
+    pageNumber,
+    pageSize,
+    totalCount: data.totalCount,
+    totalPages: Math.ceil(data.totalCount / pageSize),
+  }
 }
 
 export async function getItemById(id: string): Promise<ItemResponseDto> {

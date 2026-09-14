@@ -8,6 +8,7 @@ import type {
   ChangePasswordDto,
   TenantLoginFormValues,
   PlatformLoginFormValues,
+  AppRole,
 } from "@/features/auth/types"
 
 /**

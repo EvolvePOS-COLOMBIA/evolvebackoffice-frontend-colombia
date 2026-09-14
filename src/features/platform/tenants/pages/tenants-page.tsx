@@ -145,7 +145,7 @@ export function TenantsPage() {
       case "Pending":
         return <Badge tone="warning">{t("status_pending")}</Badge>
       case "Rejected":
-        return <Badge tone="error">{t("status_rejected")}</Badge>
+        return <Badge tone="danger">{t("status_rejected")}</Badge>
       case "Inactive":
         return <Badge tone="neutral">{t("status_inactive")}</Badge>
       default:

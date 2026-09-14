@@ -9,6 +9,8 @@ import type {
   DecommissionSerialDto,
   ResetAdminCredentialsResponseDto,
   CanCreateRegisterResponseDto,
+  AdjustSerialCodesDto,
+  SerialCodeAdjustmentResultDto,
 } from "@/features/platform/tenants/types/api"
 import type { Tenant, PagedTenantsResponse } from "@/features/platform/tenants/types"
 
@@ -126,6 +128,17 @@ export async function canCreateRegister(
 ): Promise<CanCreateRegisterResponseDto> {
   const response = await api.get<CanCreateRegisterResponseDto>(
     `/api/Tenants/${tenantId}/can-create-register`
+  )
+  return response.data
+}
+
+export async function adjustSerialCodes(
+  tenantId: string,
+  data: AdjustSerialCodesDto
+): Promise<SerialCodeAdjustmentResultDto> {
+  const response = await api.post<SerialCodeAdjustmentResultDto>(
+    `/api/Tenants/${tenantId}/adjust-serial-codes`,
+    data
   )
   return response.data
 }

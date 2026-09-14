@@ -37,8 +37,10 @@ import {
   useSerialCodes,
   useDecommissionSerial,
   useResetAdminCredentials,
+  useAdjustSerialCodes,
 } from "@/features/platform/tenants/hooks/use-tenants"
 import { TenantFormDialog } from "@/features/platform/tenants/components/tenant-form-dialog"
+import { AdjustRegistersDialog } from "@/features/platform/tenants/components/adjust-registers-dialog"
 import { useAuth } from "@/features/auth/hooks/use-auth"
 import { notify } from "@/hooks/use-notify"
 import { formatDateTime } from "@/utils/format"
@@ -56,6 +58,8 @@ export function TenantDetailPage() {
   const [quantities, setQuantities] = useState<Record<string, number>>({})
   const [decommissionReason, setDecommissionReason] = useState<Record<string, string>>({})
   const [editDialogOpen, setEditDialogOpen] = useState(false)
+  const [adjustDialogOpen, setAdjustDialogOpen] = useState(false)
+  const [pendingValues, setPendingValues] = useState<TenantFormValues | null>(null)
 
   const {
     data: tenant,
@@ -84,6 +88,7 @@ export function TenantDetailPage() {
   const decommissionMutation = useDecommissionSerial()
   const resetAdminMutation = useResetAdminCredentials()
   const updateTenantMutation = useUpdateTenant()
+  const adjustSerialsMutation = useAdjustSerialCodes()
 
   const handleToggleEnabled = (moduleItem: TenantModule) => {
     const newEnabled = !moduleItem.isEnabled
@@ -170,6 +175,13 @@ export function TenantDetailPage() {
 
   const handleUpdateTenant = (values: TenantFormValues) => {
     if (!id || !token) return
+
+    if (tenant && values.maxRegisters !== tenant.maxRegisters) {
+      setPendingValues(values)
+      setAdjustDialogOpen(true)
+      return
+    }
+
     updateTenantMutation.mutate(
       { id, values, token },
       {
@@ -183,11 +195,52 @@ export function TenantDetailPage() {
     )
   }
 
+  const handleAdjustConfirm = (serialsToDecommission: string[]) => {
+    if (!id || !token || !pendingValues) return
+
+    updateTenantMutation.mutate(
+      { id, values: pendingValues, token },
+      {
+        onSuccess: () => {
+          if (serialsToDecommission.length > 0) {
+            adjustSerialsMutation.mutate(
+              { tenantId: id, data: { newMaxRegisters: pendingValues.maxRegisters, serialsToDecommission } },
+              {
+                onSuccess: () => {
+                  notify.success(t("tenant_updated"))
+                  setAdjustDialogOpen(false)
+                  setPendingValues(null)
+                  setEditDialogOpen(false)
+                },
+                onError: (error) => {
+                  notify.error(error instanceof Error ? error.message : t("unable_to_save"))
+                  setAdjustDialogOpen(false)
+                  setPendingValues(null)
+                },
+              }
+            )
+          } else {
+            notify.success(t("tenant_updated"))
+            setAdjustDialogOpen(false)
+            setPendingValues(null)
+            setEditDialogOpen(false)
+          }
+        },
+        onError: (error) => {
+          notify.error(error instanceof Error ? error.message : t("unable_to_save"))
+          setAdjustDialogOpen(false)
+          setPendingValues(null)
+        },
+      }
+    )
+  }
+
   const isAnyMutating =
     updateModuleMutation.isPending ||
     decommissionMutation.isPending ||
     resetAdminMutation.isPending ||
-    updateTenantMutation.isPending
+    updateTenantMutation.isPending ||
+    adjustSerialsMutation.isPending
 
   const summaryTiles = useMemo(() => {
     const enabled = modules.filter((m) => m.isEnabled).length
@@ -733,6 +786,15 @@ export function TenantDetailPage() {
         tenantToEdit={tenant}
         onSubmit={handleUpdateTenant}
         isSubmitting={updateTenantMutation.isPending}
+      />
+      <AdjustRegistersDialog
+        open={adjustDialogOpen}
+        onOpenChange={setAdjustDialogOpen}
+        previousMax={tenant?.maxRegisters ?? 0}
+        newMax={pendingValues?.maxRegisters ?? 0}
+        serialCodes={serialCodes}
+        onConfirm={handleAdjustConfirm}
+        isPending={adjustSerialsMutation.isPending}
       />
     </div>
   )

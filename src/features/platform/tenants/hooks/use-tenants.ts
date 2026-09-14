@@ -11,9 +11,15 @@ import {
   decommissionSerial,
   resetAdminCredentials,
   canCreateRegister,
+  adjustSerialCodes,
 } from "@/features/platform/tenants/services/tenant.service"
 import { bulkUpdateTenantModules } from "@/features/platform/tenants/services/tenant-modules.service"
-import type { CreateTenantDto, UpdateTenantDto, BulkUpdateTenantModuleItemDto } from "@/features/platform/tenants/types/api"
+import type {
+  CreateTenantDto,
+  UpdateTenantDto,
+  BulkUpdateTenantModuleItemDto,
+  AdjustSerialCodesDto,
+} from "@/features/platform/tenants/types/api"
 import type { TenantFormValues } from "@/features/platform/tenants/types"
 
 function toCreateDto(values: TenantFormValues): CreateTenantDto {
@@ -41,6 +47,7 @@ function toUpdateDto(values: TenantFormValues): UpdateTenantDto {
     subdomain: values.subdomain || null,
     identificationNumber: values.identificationNumber || null,
     identificationTypeId: values.identificationTypeId || null,
+    maxRegisters: values.maxRegisters || null,
     maxBranches: values.maxBranches || null,
     maxUsers: values.maxUsers || null,
   }
@@ -188,5 +195,24 @@ export function useCanCreateRegister(tenantId: string | undefined) {
     queryKey: ["tenant-can-create-register", tenantId],
     queryFn: () => canCreateRegister(tenantId!),
     enabled: Boolean(tenantId),
+  })
+}
+
+export function useAdjustSerialCodes() {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: ({
+      tenantId,
+      data,
+    }: {
+      tenantId: string
+      data: AdjustSerialCodesDto
+    }) => adjustSerialCodes(tenantId, data),
+    onSuccess: (_data, variables) => {
+      queryClient.invalidateQueries({ queryKey: ["tenant-serial-codes", variables.tenantId] })
+      queryClient.invalidateQueries({ queryKey: ["tenant", variables.tenantId] })
+      queryClient.invalidateQueries({ queryKey: ["tenants"] })
+    },
   })
 }

@@ -13,6 +13,8 @@ import { PeoplePage } from "@/features/business/people/pages/people-page"
 import { UsersCatalogPage } from "@/features/business/people/users/pages/users-catalog-page"
 import { ReportsPage } from "@/features/business/reports/pages/reports-page"
 import { SettingsPage } from "@/features/business/settings/pages/settings-page"
+import { RegistersPage } from "@/features/business/registers/pages/registers-page"
+import { BranchTerminalSettingsPage } from "@/features/business/branches/terminals/pages/branch-terminal-settings-page"
 import { MarketingPage } from "@/features/marketing/pages/marketing-page"
 import { TenantsPage } from "@/features/platform/tenants/pages/tenants-page"
 import { TenantDetailPage } from "@/features/platform/tenants/pages/tenant-detail-page"
@@ -70,6 +72,11 @@ function AppRoutesContent() {
             <Route path="/business/people/users" element={<UsersCatalogPage />} />
             <Route path="/business/reports" element={<ReportsPage />} />
             <Route path="/business/settings" element={<SettingsPage />} />
+            <Route path="/business/settings/registers" element={<RegistersPage />} />
+            <Route
+              path="/business/branches/:branchId/settings/terminals"
+              element={<BranchTerminalSettingsPage />}
+            />
           </Route>
         </Route>
       </Route>

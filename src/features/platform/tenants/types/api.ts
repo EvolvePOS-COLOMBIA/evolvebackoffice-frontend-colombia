@@ -49,6 +49,7 @@ export interface UpdateTenantDto {
   subdomain: string | null
   identificationNumber: string | null
   identificationTypeId: number | null
+  maxRegisters: number | null
   maxBranches: number | null
   maxUsers: number | null
 }
@@ -149,4 +150,18 @@ export interface ResetAdminCredentialsResponseDto {
 export interface CanCreateRegisterResponseDto {
   tenantId: string
   canCreateRegister: boolean
+}
+
+export interface AdjustSerialCodesDto {
+  newMaxRegisters: number
+  serialsToDecommission?: string[] | null
+}
+
+export interface SerialCodeAdjustmentResultDto {
+  previousMax: number
+  newMax: number
+  serialsGenerated: number
+  serialsDecommissioned: number
+  generatedSerials: PosSerialCodeResponseDto[]
+  decommissionedSerials: PosSerialCodeResponseDto[]
 }

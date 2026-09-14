@@ -14,7 +14,7 @@ import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { useCreatePlatformUser, useUpdatePlatformUser } from "@/features/platform/users/hooks/use-platform-users"
 import { notify } from "@/hooks/use-notify"
-import type { PlatformUser } from "@/features/platform/users/types"
+import type { PlatformUser, AppRole } from "@/features/platform/users/types"
 import { useTranslation } from "@/i18n/use-i18n"
 
 interface PlatformUserFormDialogProps {
@@ -31,7 +31,7 @@ export function PlatformUserFormDialog({ open, onOpenChange, userToEdit }: Platf
   const [email, setEmail] = useState("")
   const [fullName, setFullName] = useState("")
   const [password, setPassword] = useState("")
-  const [role, setRole] = useState<"ADMIN" | "SUBADMIN" | "SUPERVISOR">("SUPERVISOR")
+  const [role, setRole] = useState<AppRole>("PlatformSupervisor")
 
   useEffect(() => {
     if (userToEdit) {
@@ -43,7 +43,7 @@ export function PlatformUserFormDialog({ open, onOpenChange, userToEdit }: Platf
       setEmail("")
       setFullName("")
       setPassword("")
-      setRole("SUPERVISOR")
+      setRole("PlatformSupervisor")
     }
   }, [userToEdit, open])
 
@@ -137,14 +137,14 @@ export function PlatformUserFormDialog({ open, onOpenChange, userToEdit }: Platf
           )}
           <div className="space-y-2">
             <Label htmlFor="role">{t("role")}</Label>
-            <Select value={role} onValueChange={(v) => setRole(v as "ADMIN" | "SUBADMIN" | "SUPERVISOR")}>
+            <Select value={role} onValueChange={(v) => setRole(v as AppRole)}>
               <SelectTrigger>
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="ADMIN">{t("role_admin")}</SelectItem>
-                <SelectItem value="SUBADMIN">{t("role_subadmin")}</SelectItem>
-                <SelectItem value="SUPERVISOR">{t("role_supervisor")}</SelectItem>
+                <SelectItem value="PlatformAdmin">{t("role_admin")}</SelectItem>
+                <SelectItem value="PlatformSubAdmin">{t("role_subadmin")}</SelectItem>
+                <SelectItem value="PlatformSupervisor">{t("role_supervisor")}</SelectItem>
               </SelectContent>
             </Select>
           </div>

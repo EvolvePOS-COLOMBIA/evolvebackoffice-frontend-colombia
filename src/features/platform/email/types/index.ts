@@ -1,3 +1,5 @@
+import type { AppRole } from "@/features/auth/types"
+
 export interface EmailSetting {
   id: string
   smtpServer: string

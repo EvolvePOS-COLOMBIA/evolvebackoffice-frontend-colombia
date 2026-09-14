@@ -11,7 +11,7 @@ import { useAuth } from "@/features/auth/hooks/use-auth"
 import { notify } from "@/hooks/use-notify"
 import { formatDateTime } from "@/utils/format"
 import { useTranslation } from "@/i18n/use-i18n"
-import type { PlatformUser } from "@/features/platform/users/types"
+import type { PlatformUser, AppRole } from "@/features/platform/users/types"
 
 export function PlatformUsersPage() {
   const [isDialogOpen, setIsDialogOpen] = useState(false)
@@ -37,13 +37,13 @@ export function PlatformUsersPage() {
     }
   }
 
-  const getRoleBadge = (role: string) => {
+  const getRoleBadge = (role: AppRole) => {
     switch (role) {
-      case "ADMIN":
+      case "PlatformAdmin":
         return <Badge tone="primary">{t("role_admin")}</Badge>
-      case "SUBADMIN":
+      case "PlatformSubAdmin":
         return <Badge tone="warning">{t("role_subadmin")}</Badge>
-      case "SUPERVISOR":
+      case "PlatformSupervisor":
         return <Badge tone="neutral">{t("role_supervisor")}</Badge>
       default:
         return <Badge tone="neutral">{role}</Badge>
@@ -64,7 +64,7 @@ export function PlatformUsersPage() {
           <div className="grid grid-cols-3 gap-3">
             <SummaryTile label={t("total_users")} value={users?.length ?? 0} />
             <SummaryTile label={t("active_users")} value={users?.filter((u) => u.isActive).length ?? 0} />
-            <SummaryTile label={t("admins")} value={users?.filter((u) => u.role === "ADMIN").length ?? 0} />
+            <SummaryTile label={t("admins")} value={users?.filter((u) => u.role === "PlatformAdmin").length ?? 0} />
           </div>
         </CardContent>
       </Card>

@@ -8,7 +8,7 @@ import {
   activatePlatformUser,
   deactivatePlatformUser,
 } from "../services/platform-user.service"
-import type { CreatePlatformUserRequest, UpdatePlatformUserRequest } from "../types/api"
+import type { CreatePlatformUserRequest, UpdatePlatformUserRequest } from "../types"
 
 export function usePlatformUsers() {
   return useQuery({

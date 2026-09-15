@@ -44,5 +44,8 @@
   "document_required": "El numero de documento es requerido.",
   "toast_created": "Cliente creado exitosamente.",
   "toast_updated": "Cliente actualizado exitosamente.",
-  "toast_deleted": "Cliente eliminado exitosamente."
+  "toast_deleted": "Cliente eliminado exitosamente.",
+  "page": "Pagina",
+  "previous": "Anterior",
+  "next": "Siguiente"
 }

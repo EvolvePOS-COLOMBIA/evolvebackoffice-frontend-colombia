@@ -14,7 +14,8 @@ export function PeoplePage() {
       name: t("customers"),
       label: t("customers_desc"),
       icon: Users,
-      disabled: true,
+      disabled: false,
+      onClick: () => navigate("/business/people/customers"),
     },
     {
       name: t("users"),

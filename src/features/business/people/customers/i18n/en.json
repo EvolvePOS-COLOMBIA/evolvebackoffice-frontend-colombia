@@ -44,5 +44,8 @@
   "document_required": "Document number is required.",
   "toast_created": "Customer created successfully.",
   "toast_updated": "Customer updated successfully.",
-  "toast_deleted": "Customer deleted successfully."
+  "toast_deleted": "Customer deleted successfully.",
+  "page": "Page",
+  "previous": "Previous",
+  "next": "Next"
 }

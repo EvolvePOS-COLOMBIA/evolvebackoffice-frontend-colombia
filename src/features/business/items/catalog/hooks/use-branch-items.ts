@@ -82,7 +82,7 @@ export function useDeleteBranchItem(branchId: string) {
   const { t } = useTranslation("business-items-catalog")
 
   return useMutation({
-    mutationFn: ({ id, name }: { id: string; name: string }) => deleteBranchItem(branchId, id),
+    mutationFn: ({ id }: { id: string; name: string }) => deleteBranchItem(branchId, id),
     onSuccess: (_data, variables) => {
       queryClient.invalidateQueries({ queryKey: ["branch-items", branchId] })
       toast.success(t("toast_item_removed_from_branch", { name: variables.name }))

@@ -55,7 +55,7 @@ export function useDeleteItem() {
   const { t } = useTranslation("business-items-catalog")
 
   return useMutation({
-    mutationFn: ({ id, name }: { id: string; name: string }) => deleteItem(id),
+    mutationFn: ({ id }: { id: string; name: string }) => deleteItem(id),
     onSuccess: (_data, variables) => {
       queryClient.invalidateQueries({ queryKey: ["items"] })
       toast.success(t("toast_item_deleted", { name: variables.name }))

@@ -5,13 +5,24 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Card, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog"
 import { useTranslation } from "@/i18n/use-i18n"
-import { useUsers, useCreateUser, useUpdateUser } from "../hooks/use-users"
+import { useUsers, useCreateUser, useUpdateUser, useToggleUserStatus } from "../hooks/use-users"
 import { getUserDisplayName, type UserResponseDto } from "../types"
 import { UsersTable } from "../components/users-table"
 import { UserFormDialog } from "../components/user-form-dialog"
 import { CredentialsDialog } from "../components/credentials-dialog"
-import type { CreateUserFormValues } from "../schemas/user-schema"
+import { useAuth } from "@/features/auth/hooks/use-auth"
+import type { CreateUserFormValues, UpdateUserFormValues } from "../schemas/user-schema"
 
 export function UsersCatalogPage() {
   const { t } = useTranslation("business-users-catalog")
@@ -20,10 +31,16 @@ export function UsersCatalogPage() {
   const [credentialsOpen, setCredentialsOpen] = useState(false)
   const [selectedUser, setSelectedUser] = useState<UserResponseDto | null>(null)
   const [createdUser, setCreatedUser] = useState<UserResponseDto | null>(null)
+  const [userToToggle, setUserToToggle] = useState<UserResponseDto | null>(null)
+  const [confirmingToggle, setConfirmingToggle] = useState(false)
+
+  const { session } = useAuth()
+  const userId = session?.user.id ?? null
 
   const { data: users, isLoading } = useUsers()
   const createUserMutation = useCreateUser()
   const updateUserMutation = useUpdateUser()
+  const toggleUserStatusMutation = useToggleUserStatus()
 
   const userList = users ?? []
   const filteredUsers = search
@@ -46,6 +63,8 @@ export function UsersCatalogPage() {
         identificationNumber: values.identificationNumber,
         phoneNumber: values.phoneNumber ?? null,
         email: values.email ?? null,
+        emailAddress: values.emailAddress ?? null,
+        address: values.address ?? null,
         role: values.role,
       },
       {
@@ -58,7 +77,7 @@ export function UsersCatalogPage() {
     )
   }
 
-  const handleEdit = (values: CreateUserFormValues) => {
+  const handleEdit = (values: UpdateUserFormValues) => {
     if (!selectedUser) return
     updateUserMutation.mutate(
       {
@@ -67,12 +86,62 @@ export function UsersCatalogPage() {
           firstName: values.firstName,
           lastName: values.lastName,
           phoneNumber: values.phoneNumber ?? null,
+          address: values.address ?? null,
+          emailAddress: values.emailAddress ?? null,
+          email: values.email ?? null,
+          role: values.role ?? null,
+          isActive: values.isActive,
         },
       },
       {
         onSuccess: () => {
           setFormOpen(false)
           setSelectedUser(null)
+        },
+      }
+    )
+  }
+
+  // For self-edit case, we need to handle role differently
+  const handleSelfEdit = (values: UpdateUserFormValues) => {
+    if (!selectedUser) return
+    // Role must be sent as null when user edits their own profile
+    updateUserMutation.mutate(
+      {
+        id: selectedUser.id,
+        payload: {
+          firstName: values.firstName,
+          lastName: values.lastName,
+          phoneNumber: values.phoneNumber ?? null,
+          address: values.address ?? null,
+          emailAddress: values.emailAddress ?? null,
+          email: values.email ?? null,
+          role: null, // Always null for self-edit
+          isActive: values.isActive,
+        },
+      },
+      {
+        onSuccess: () => {
+          setFormOpen(false)
+          setSelectedUser(null)
+        },
+      }
+    )
+  }
+
+  const handleToggleStatus = (user: UserResponseDto) => {
+    setUserToToggle(user)
+    setConfirmingToggle(true)
+  }
+
+  const confirmToggleStatus = () => {
+    if (!userToToggle) return
+    toggleUserStatusMutation.mutate(
+      { id: userToToggle.id, isActive: !userToToggle.isActive },
+      {
+        onSuccess: () => {
+          setUserToToggle(null)
+          setConfirmingToggle(false)
         },
       }
     )
@@ -130,7 +199,7 @@ export function UsersCatalogPage() {
               <p className="text-sm text-muted-foreground">{t("loading")}</p>
             </div>
           ) : (
-            <UsersTable users={filteredUsers} onEdit={openEditDialog} />
+            <UsersTable users={filteredUsers} onEdit={openEditDialog} onToggleStatus={handleToggleStatus} />
           )}
         </div>
 
@@ -138,8 +207,10 @@ export function UsersCatalogPage() {
           open={formOpen}
           onOpenChange={handleDialogClose}
           userToEdit={selectedUser}
-          onSubmit={selectedUser ? handleEdit : handleCreate}
+          onCreate={handleCreate}
+          onUpdate={selectedUser?.id === userId ? handleSelfEdit : handleEdit}
           isSubmitting={createUserMutation.isPending || updateUserMutation.isPending}
+          isSelfEdit={selectedUser?.id === userId}
         />
 
         <CredentialsDialog
@@ -148,6 +219,27 @@ export function UsersCatalogPage() {
           user={createdUser}
           onGoToList={handleCredentialsClose}
         />
+
+        <AlertDialog open={confirmingToggle} onOpenChange={setConfirmingToggle}>
+          {userToToggle && (
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle>{t(userToToggle.isActive ? "disable_user" : "enable_user")}</AlertDialogTitle>
+                <AlertDialogDescription>
+                  {userToToggle.isActive
+                    ? t("disable_user_confirm_description", { name: getUserDisplayName(userToToggle) })
+                    : t("enable_user_confirm_description", { name: getUserDisplayName(userToToggle) })}
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel>{t("cancel")}</AlertDialogCancel>
+                <AlertDialogAction variant="destructive" onClick={confirmToggleStatus}>
+                  {userToToggle.isActive ? t("disable_user") : t("enable_user")}
+                </AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          )}
+        </AlertDialog>
       </CardContent>
     </Card>
   )

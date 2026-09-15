@@ -1,15 +1,8 @@
-import { Pencil } from "lucide-react"
+import { Pencil, PowerOff } from "lucide-react"
 
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table"
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { useTranslation } from "@/i18n/use-i18n"
 import type { UserResponseDto } from "../types"
 import { IDENTIFICATION_TYPE_LABELS, IdentificationType, getUserDisplayName } from "../types"
@@ -17,9 +10,10 @@ import { IDENTIFICATION_TYPE_LABELS, IdentificationType, getUserDisplayName } fr
 type UsersTableProps = {
   users: UserResponseDto[]
   onEdit: (user: UserResponseDto) => void
+  onToggleStatus: (user: UserResponseDto) => void
 }
 
-export function UsersTable({ users, onEdit }: UsersTableProps) {
+export function UsersTable({ users, onEdit, onToggleStatus }: UsersTableProps) {
   const { t } = useTranslation("business-users-catalog")
 
   if (users.length === 0) {
@@ -32,16 +26,16 @@ export function UsersTable({ users, onEdit }: UsersTableProps) {
 
   return (
     <div className="w-full overflow-x-auto">
-      <Table className="min-w-[640px]">
+      <Table className="min-w-160">
         <TableHeader>
           <TableRow>
-            <TableHead className="min-w-[180px]">{t("full_name")}</TableHead>
-            <TableHead className="hidden min-w-[140px] sm:table-cell">{t("email")}</TableHead>
-            <TableHead className="hidden min-w-[100px] md:table-cell">{t("document_type")}</TableHead>
-            <TableHead className="hidden min-w-[120px] md:table-cell">{t("document_number")}</TableHead>
-            <TableHead className="min-w-[100px]">{t("role")}</TableHead>
-            <TableHead className="hidden min-w-[80px] lg:table-cell">{t("status")}</TableHead>
-            <TableHead className="min-w-[80px] text-right">{t("actions")}</TableHead>
+            <TableHead className="min-w-45">{t("full_name")}</TableHead>
+            <TableHead className="hidden min-w-35 sm:table-cell">{t("email")}</TableHead>
+            <TableHead className="hidden min-w-25 md:table-cell">{t("document_type")}</TableHead>
+            <TableHead className="hidden min-w-30 md:table-cell">{t("document_number")}</TableHead>
+            <TableHead className="min-w-25">{t("role")}</TableHead>
+            <TableHead className="hidden min-w-20 lg:table-cell">{t("status")}</TableHead>
+            <TableHead className="min-w-30 text-right">{t("actions")}</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
@@ -50,24 +44,18 @@ export function UsersTable({ users, onEdit }: UsersTableProps) {
               <TableCell>
                 <div>
                   <p className="font-medium text-foreground">{getUserDisplayName(user)}</p>
-                  {user.username && (
-                    <p className="text-xs text-muted-foreground">@{user.username}</p>
-                  )}
+                  {user.username && <p className="text-xs text-muted-foreground">@{user.username}</p>}
                 </div>
               </TableCell>
-              <TableCell className="hidden sm:table-cell text-muted-foreground">
-                {user.email ?? "—"}
-              </TableCell>
-              <TableCell className="hidden md:table-cell text-muted-foreground">
+              <TableCell className="hidden text-muted-foreground sm:table-cell">{user.email ?? "—"}</TableCell>
+              <TableCell className="hidden text-muted-foreground md:table-cell">
                 {IDENTIFICATION_TYPE_LABELS[user.identificationTypeId as IdentificationType] ?? "—"}
               </TableCell>
-              <TableCell className="hidden md:table-cell text-muted-foreground">
+              <TableCell className="hidden text-muted-foreground md:table-cell">
                 {user.identificationNumber ?? "—"}
               </TableCell>
               <TableCell>
-                <Badge tone={getRoleTone(user.role)}>
-                  {getRoleLabel(user.role, t)}
-                </Badge>
+                <Badge tone={getRoleTone(user.role)}>{getRoleLabel(user.role, t)}</Badge>
               </TableCell>
               <TableCell className="hidden lg:table-cell">
                 <Badge tone={user.isActive ? "success" : "neutral"}>
@@ -75,15 +63,26 @@ export function UsersTable({ users, onEdit }: UsersTableProps) {
                 </Badge>
               </TableCell>
               <TableCell className="text-right">
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="size-8"
-                  onClick={() => onEdit(user)}
-                  aria-label={t("edit_user")}
-                >
-                  <Pencil className="size-4" />
-                </Button>
+                <div className="flex justify-end gap-2">
+                  <Button
+                    variant="secondary"
+                    size="icon"
+                    className="size-7 sm:size-8"
+                    onClick={() => onEdit(user)}
+                    aria-label={t("edit_user")}
+                  >
+                    <Pencil className="size-3.5 sm:size-4" />
+                  </Button>
+                  <Button
+                    variant="destructive"
+                    size="icon"
+                    className="size-7 sm:size-8"
+                    onClick={() => onToggleStatus(user)}
+                    aria-label={user.isActive ? t("disable_user") : t("enable_user")}
+                  >
+                    <PowerOff className="size-3.5 sm:size-4" />
+                  </Button>
+                </div>
               </TableCell>
             </TableRow>
           ))}

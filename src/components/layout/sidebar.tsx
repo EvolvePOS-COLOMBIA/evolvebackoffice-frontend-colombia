@@ -2,7 +2,7 @@ import {
   BarChart3,
   Building2,
   LayoutDashboard,
-  LogOut,
+  LogOut, Mail,
   Package,
   Settings,
   Users,
@@ -43,6 +43,8 @@ import {
 const platformNavigationItems = [
   { to: "/platform/dashboard", labelKey: "dashboard", icon: LayoutDashboard },
   { to: "/platform/tenants", labelKey: "tenants", icon: Building2 },
+  { to: "/platform/users", labelKey: "users", icon: Users },
+  { to: "/platform/email-settings", labelKey: "email_settings", icon: Mail },
 ]
 
 const businessNavigationItems = [
@@ -134,7 +136,7 @@ export function SidebarContent({
               {(!isCollapsed || isMobile) && (
                 <span className="truncate">
                   {t(
-                    item.labelKey as "dashboard" | "tenants" | "items" | "inventory" | "people" | "reports" | "settings"
+                    item.labelKey as "dashboard" | "tenants" | "items" | "inventory" | "people" | "reports" | "settings" | "users" | "email_settings"
                   )}
                 </span>
               )}

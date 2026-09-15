@@ -1,22 +1,26 @@
 import { useMemo, useState } from "react"
-import { Building2, Plus, SquarePen } from "lucide-react"
+import { Building2, Eye, Plus, SquarePen, CheckCircle, XCircle } from "lucide-react"
+import { useNavigate } from "react-router-dom"
 
 import { AlertDeleteDialog } from "@/components/alert-delete-dialog"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog"
 import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { TenantFormDialog } from "@/features/platform/tenants/components/tenant-form-dialog"
-import {
-  useTenants,
-  useCreateTenant,
-  useUpdateTenant,
-  useActivateTenant,
-  useDeactivateTenant,
-  useDeleteTenant,
-} from "@/features/platform/tenants/hooks/use-tenants"
+import { useTenants, useUpdateTenant, useActivateTenant, useDeactivateTenant, useDeleteTenant, useApproveTenant, useRejectTenant } from "@/features/platform/tenants/hooks/use-tenants"
 import type { Tenant, TenantFormValues } from "@/features/platform/tenants/types"
+import { useAuth } from "@/features/auth/hooks/use-auth"
 import { notify } from "@/hooks/use-notify"
 import { formatDateTime } from "@/utils/format"
 import { useTranslation } from "@/i18n/use-i18n"
@@ -28,14 +32,21 @@ export function TenantsPage() {
   const [query, setQuery] = useState("")
   const [isDialogOpen, setIsDialogOpen] = useState(false)
   const [selectedTenant, setSelectedTenant] = useState<Tenant | null>(null)
+  const [rejectDialogOpen, setRejectDialogOpen] = useState(false)
+  const [rejectReason, setRejectReason] = useState("")
+  const [tenantToReject, setTenantToReject] = useState<Tenant | null>(null)
+  const navigate = useNavigate()
   const { t } = useTranslation("platform-tenants")
+  const { session, isPlatformAdmin, isPlatformSupervisor } = useAuth()
+  const token = session?.accessToken
 
   const { data: pagedData, isLoading } = useTenants(page, PAGE_SIZE)
-  const createTenantMutation = useCreateTenant()
   const updateTenantMutation = useUpdateTenant()
   const activateTenantMutation = useActivateTenant()
   const deactivateTenantMutation = useDeactivateTenant()
   const deleteTenantMutation = useDeleteTenant()
+  const approveTenantMutation = useApproveTenant()
+  const rejectTenantMutation = useRejectTenant()
 
   const tenants = pagedData?.data ?? []
   const totalCount = pagedData?.totalCount ?? 0
@@ -60,12 +71,10 @@ export function TenantsPage() {
 
   const activeTenants = tenants.filter((tenant) => tenant.isActive).length
 
-  const isMutating = createTenantMutation.isPending || updateTenantMutation.isPending
-
   const handleSubmit = (values: TenantFormValues) => {
-    if (selectedTenant) {
+    if (selectedTenant && token) {
       updateTenantMutation.mutate(
-        { id: selectedTenant.id, values },
+        { id: selectedTenant.id, values, token },
         {
           onSuccess: () => {
             notify.success(t("tenant_updated"))
@@ -77,17 +86,6 @@ export function TenantsPage() {
           },
         }
       )
-    } else {
-      createTenantMutation.mutate(values, {
-        onSuccess: () => {
-          notify.success(t("tenant_created"))
-          setIsDialogOpen(false)
-          setSelectedTenant(null)
-        },
-        onError: (error) => {
-          notify.error(error instanceof Error ? error.message : t("unable_to_save"))
-        },
-      })
     }
   }
 
@@ -111,6 +109,51 @@ export function TenantsPage() {
       onError: (error) => notify.error(error instanceof Error ? error.message : t("unable_to_delete")),
     })
   }
+
+  const handleApprove = (tenant: Tenant) => {
+    approveTenantMutation.mutate(tenant.id, {
+      onSuccess: (result) => {
+        notify.success(t("tenant_approved"))
+        if (result.adminTemporaryPassword) {
+          notify.info(`${t("admin_credentials")}: ${result.adminUsername} / ${result.adminTemporaryPassword}`)
+        }
+      },
+      onError: (error) => notify.error(error instanceof Error ? error.message : t("unable_to_save")),
+    })
+  }
+
+  const handleReject = () => {
+    if (!tenantToReject || !rejectReason) return
+    rejectTenantMutation.mutate(
+      { tenantId: tenantToReject.id, reason: rejectReason },
+      {
+        onSuccess: () => {
+          notify.success(t("tenant_rejected"))
+          setRejectDialogOpen(false)
+          setRejectReason("")
+          setTenantToReject(null)
+        },
+        onError: (error) => notify.error(error instanceof Error ? error.message : t("unable_to_save")),
+      }
+    )
+  }
+
+  const getStatusBadge = (status: string) => {
+    switch (status) {
+      case "Active":
+        return <Badge tone="success">{t("status_active")}</Badge>
+      case "Pending":
+        return <Badge tone="warning">{t("status_pending")}</Badge>
+      case "Rejected":
+        return <Badge tone="danger">{t("status_rejected")}</Badge>
+      case "Inactive":
+        return <Badge tone="neutral">{t("status_inactive")}</Badge>
+      default:
+        return <Badge tone="neutral">{status}</Badge>
+    }
+  }
+
+  const canWrite = isPlatformAdmin && !isPlatformSupervisor
 
   return (
     <div className="space-y-6">
@@ -140,8 +183,7 @@ export function TenantsPage() {
             </div>
             <Button
               onClick={() => {
-                setSelectedTenant(null)
-                setIsDialogOpen(true)
+                navigate("/platform/tenants/create")
               }}
             >
               <Plus className="size-4" />
@@ -191,39 +233,76 @@ export function TenantsPage() {
                         <TableCell className="text-muted-foreground">{tenant.contactEmail}</TableCell>
                         <TableCell className="text-muted-foreground">{tenant.phone}</TableCell>
                         <TableCell>
-                          <Badge tone={tenant.isActive ? "success" : "warning"}>
-                            {tenant.isActive ? t("active") : t("inactive")}
-                          </Badge>
+                          {getStatusBadge(tenant.status)}
                         </TableCell>
                         <TableCell className="text-muted-foreground">{formatDateTime(tenant.createdAt)}</TableCell>
                         <TableCell className="text-right">
                           <div className="flex justify-end gap-2">
+                            {tenant.status === "Pending" && isPlatformAdmin && (
+                              <>
+                                <Button
+                                  type="button"
+                                  variant="default"
+                                  size="sm"
+                                  onClick={() => handleApprove(tenant)}
+                                  disabled={approveTenantMutation.isPending}
+                                >
+                                  <CheckCircle className="size-4" />
+                                  {t("approve")}
+                                </Button>
+                                <Button
+                                  type="button"
+                                  variant="destructive"
+                                  size="sm"
+                                  onClick={() => {
+                                    setTenantToReject(tenant)
+                                    setRejectDialogOpen(true)
+                                  }}
+                                >
+                                  <XCircle className="size-4" />
+                                  {t("reject")}
+                                </Button>
+                              </>
+                            )}
                             <Button
                               type="button"
                               variant="outline"
                               size="sm"
-                              onClick={() => {
-                                setSelectedTenant(tenant)
-                                setIsDialogOpen(true)
-                              }}
+                              onClick={() => navigate(`/platform/tenants/${tenant.id}`)}
                             >
-                              <SquarePen className="size-4" />
-                              {t("edit")}
+                              <Eye className="size-4" />
+                              {t("view_detail")}
                             </Button>
-                            <Button
-                              type="button"
-                              variant={tenant.isActive ? "outline" : "default"}
-                              size="sm"
-                              onClick={() => handleToggleActive(tenant)}
-                              disabled={activateTenantMutation.isPending || deactivateTenantMutation.isPending}
-                            >
-                              {tenant.isActive ? t("deactivate") : t("activate")}
-                            </Button>
-                            <AlertDeleteDialog
-                              title={t("delete_tenant")}
-                              selectedLabel={tenant.name}
-                              onDelete={() => handleDelete(tenant)}
-                            />
+                            {canWrite && tenant.status !== "Pending" && (
+                              <>
+                                <Button
+                                  type="button"
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={() => {
+                                    setSelectedTenant(tenant)
+                                    setIsDialogOpen(true)
+                                  }}
+                                >
+                                  <SquarePen className="size-4" />
+                                  {t("edit")}
+                                </Button>
+                                <Button
+                                  type="button"
+                                  variant={tenant.isActive ? "outline" : "default"}
+                                  size="sm"
+                                  onClick={() => handleToggleActive(tenant)}
+                                  disabled={activateTenantMutation.isPending || deactivateTenantMutation.isPending}
+                                >
+                                  {tenant.isActive ? t("deactivate") : t("activate")}
+                                </Button>
+                                <AlertDeleteDialog
+                                  title={t("delete_tenant")}
+                                  selectedLabel={tenant.name}
+                                  onDelete={() => handleDelete(tenant)}
+                                />
+                              </>
+                            )}
                           </div>
                         </TableCell>
                       </TableRow>
@@ -247,6 +326,15 @@ export function TenantsPage() {
                           <p className="text-sm text-muted-foreground">{tenant.tenantId}</p>
                         </div>
                         <div className="flex flex-wrap gap-2">
+                          <Button
+                            type="button"
+                            variant="outline"
+                            size="sm"
+                            onClick={() => navigate(`/platform/tenants/${tenant.id}`)}
+                          >
+                            <Eye className="size-4" />
+                            {t("view_detail")}
+                          </Button>
                           <Button
                             type="button"
                             variant="outline"
@@ -337,8 +425,46 @@ export function TenantsPage() {
         }}
         tenantToEdit={selectedTenant}
         onSubmit={handleSubmit}
-        isSubmitting={isMutating}
+        isSubmitting={updateTenantMutation.isPending}
       />
+
+      {/* Reject Tenant Dialog */}
+      <Dialog open={rejectDialogOpen} onOpenChange={setRejectDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>{t("reject_tenant")}</DialogTitle>
+            <DialogDescription>
+              {t("reject_tenant_desc", { name: tenantToReject?.name ?? "" })}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="rejectReason">{t("rejection_reason")}</Label>
+              <textarea
+                id="rejectReason"
+                value={rejectReason}
+                onChange={(e) => setRejectReason(e.target.value)}
+                className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+                rows={4}
+                placeholder={t("rejection_reason_placeholder")}
+                required
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setRejectDialogOpen(false)}>
+              {t("cancel")}
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={handleReject}
+              disabled={!rejectReason || rejectTenantMutation.isPending}
+            >
+              {rejectTenantMutation.isPending ? t("rejecting") : t("reject")}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }
@@ -358,7 +484,7 @@ function CompactMeta({ label, value }: { label: string; value: string }) {
   return (
     <div className="rounded-2xl border border-border/70 bg-card/60 px-4 py-3">
       <p className="text-[11px] font-semibold tracking-[0.22em] text-muted-foreground uppercase">{label}</p>
-      <p className="mt-2 text-sm font-medium break-words text-foreground">{value}</p>
+      <p className="mt-2 text-sm font-medium text-foreground">{value}</p>
     </div>
   )
 }

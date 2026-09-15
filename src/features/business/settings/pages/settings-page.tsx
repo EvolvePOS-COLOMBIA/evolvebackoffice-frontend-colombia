@@ -13,6 +13,7 @@ import {
   Tv,
   CreditCard,
 } from "lucide-react"
+import { useNavigate } from "react-router-dom"
 
 import { Card, CardContent } from "@/components/ui/card"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
@@ -21,6 +22,7 @@ import { ItemCard, type ItemCardLink } from "@/features/business/components/item
 
 export function SettingsPage() {
   const { t } = useTranslation("business-settings")
+  const navigate = useNavigate()
 
   const globalLinks: ItemCardLink[] = [
     {
@@ -33,7 +35,8 @@ export function SettingsPage() {
       name: t("registers"),
       label: t("registers_desc"),
       icon: MonitorCog,
-      disabled: true,
+      disabled: false,
+      onClick: () => navigate("/business/settings/registers"),
     },
     {
       name: t("evolve_keyboard"),

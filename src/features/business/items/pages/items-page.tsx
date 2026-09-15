@@ -1,14 +1,4 @@
-import {
-  Building2,
-  ClipboardList,
-  Clock,
-  Package,
-  Pencil,
-  Receipt,
-  SwatchBook,
-  Tag,
-  Wrench,
-} from "lucide-react"
+import { Building2, ClipboardList, Clock, Package, Pencil, Receipt, SwatchBook, Tag, Wrench } from "lucide-react"
 import { useNavigate } from "react-router-dom"
 
 import { useTranslation } from "@/i18n/use-i18n"
@@ -72,12 +62,7 @@ export function ItemsPage() {
   ]
 
   return (
-    <HubPageLayout
-      badge={t("items")}
-      title={t("product_hub")}
-      description={t("product_hub_desc")}
-      icon={Package}
-    >
+    <HubPageLayout badge={t("items")} title={t("product_hub")} description={t("product_hub_desc")} icon={Package}>
       {itemLinks.map((item) => (
         <ItemCard key={item.name} item={item} />
       ))}

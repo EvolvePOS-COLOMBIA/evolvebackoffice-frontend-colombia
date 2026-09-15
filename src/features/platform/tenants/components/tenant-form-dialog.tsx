@@ -57,10 +57,7 @@ const defaultValues: TenantFormValues = {
   modules: [],
 }
 
-function buildModulesArray(
-  catalog: CatalogModule[],
-  state: Record<string, ModuleState>
-): TenantModuleAssignment[] {
+function buildModulesArray(catalog: CatalogModule[], state: Record<string, ModuleState>): TenantModuleAssignment[] {
   return catalog.map((m) => ({
     moduleId: m.id,
     isEnabled: state[m.id]?.isEnabled ?? false,
@@ -213,7 +210,7 @@ export function TenantFormDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="w-[calc(100%-2rem)] lg:w-[820px] max-h-[90vh] overflow-y-auto">
+      <DialogContent className="max-h-[90vh] w-[calc(100%-2rem)] overflow-y-auto lg:w-[820px]">
         <DialogHeader>
           <DialogTitle>{isEditMode ? t("edit_tenant") : t("create_tenant")}</DialogTitle>
           <DialogDescription>{t("fill_metadata")}</DialogDescription>
@@ -332,31 +329,18 @@ export function TenantFormDialog({
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>{t("identification_type")}</FormLabel>
-                    <Select
-                      value={String(field.value)}
-                      onValueChange={(value) => field.onChange(Number(value))}
-                    >
+                    <Select value={String(field.value)} onValueChange={(value) => field.onChange(Number(value))}>
                       <FormControl>
                         <SelectTrigger>
                           <SelectValue placeholder={t("identification_type_placeholder")} />
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
-                        <SelectItem value={String(DocumentType.CedulaCiudadania)}>
-                          {t("doc_type_cc")}
-                        </SelectItem>
-                        <SelectItem value={String(DocumentType.CedulaExtranjeria)}>
-                          {t("doc_type_ce")}
-                        </SelectItem>
-                        <SelectItem value={String(DocumentType.NIT)}>
-                          {t("doc_type_nit")}
-                        </SelectItem>
-                        <SelectItem value={String(DocumentType.TarjetaIdentidad)}>
-                          {t("doc_type_ti")}
-                        </SelectItem>
-                        <SelectItem value={String(DocumentType.Pasaporte)}>
-                          {t("doc_type_pa")}
-                        </SelectItem>
+                        <SelectItem value={String(DocumentType.CedulaCiudadania)}>{t("doc_type_cc")}</SelectItem>
+                        <SelectItem value={String(DocumentType.CedulaExtranjeria)}>{t("doc_type_ce")}</SelectItem>
+                        <SelectItem value={String(DocumentType.NIT)}>{t("doc_type_nit")}</SelectItem>
+                        <SelectItem value={String(DocumentType.TarjetaIdentidad)}>{t("doc_type_ti")}</SelectItem>
+                        <SelectItem value={String(DocumentType.Pasaporte)}>{t("doc_type_pa")}</SelectItem>
                       </SelectContent>
                     </Select>
                     <FormMessage />
@@ -413,12 +397,8 @@ export function TenantFormDialog({
 
             <div className="space-y-3">
               <div>
-                <h3 className="text-base font-semibold text-foreground">
-                  {t("assigned_modules_section")}
-                </h3>
-                <p className="text-sm text-muted-foreground">
-                  {t("assigned_modules_section_desc")}
-                </p>
+                <h3 className="text-base font-semibold text-foreground">{t("assigned_modules_section")}</h3>
+                <p className="text-sm text-muted-foreground">{t("assigned_modules_section_desc")}</p>
               </div>
 
               {modulesLoading ? (
@@ -441,21 +421,16 @@ export function TenantFormDialog({
                       quantity: 1,
                     }
                     return (
-                      <Card
-                        key={module.id}
-                        className="rounded-2xl border-border/70 bg-background/45 shadow-none"
-                      >
+                      <Card key={module.id} className="rounded-2xl border-border/70 bg-background/45 shadow-none">
                         <CardContent className="p-4">
                           <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-                            <div className="flex items-center gap-3 sm:gap-4 flex-1 min-w-0">
+                            <div className="flex min-w-0 flex-1 items-center gap-3 sm:gap-4">
                               <Switch
                                 checked={state.isEnabled}
-                                onCheckedChange={(checked) =>
-                                  handleToggleModule(module.id, checked)
-                                }
+                                onCheckedChange={(checked) => handleToggleModule(module.id, checked)}
                                 disabled={isSubmitting}
                               />
-                              <div className="space-y-1 min-w-0">
+                              <div className="min-w-0 space-y-1">
                                 <div className="flex flex-wrap items-center gap-2">
                                   <span className="font-medium">{module.name}</span>
                                   <Badge tone="neutral" className="text-[10px]">
@@ -463,19 +438,17 @@ export function TenantFormDialog({
                                   </Badge>
                                 </div>
                                 {module.description ? (
-                                  <p className="text-xs text-muted-foreground line-clamp-1">
-                                    {module.description}
-                                  </p>
+                                  <p className="line-clamp-1 text-xs text-muted-foreground">{module.description}</p>
                                 ) : null}
                               </div>
                             </div>
 
-                            <div className="flex items-center gap-3 sm:gap-4 sm:justify-end">
-                              <div className="hidden sm:block text-sm text-muted-foreground">
+                            <div className="flex items-center gap-3 sm:justify-end sm:gap-4">
+                              <div className="hidden text-sm text-muted-foreground sm:block">
                                 {t("module_enabled_label")}
                               </div>
                               <div className="flex items-center gap-2">
-                                <span className="sm:hidden text-xs text-muted-foreground">
+                                <span className="text-xs text-muted-foreground sm:hidden">
                                   {t("module_quantity_label")}:
                                 </span>
                                 <Button
@@ -491,9 +464,7 @@ export function TenantFormDialog({
                                   className="w-20 text-center"
                                   min={0}
                                   value={state.quantity}
-                                  onChange={(e) =>
-                                    handleQuantityChange(module.id, Number(e.target.value))
-                                  }
+                                  onChange={(e) => handleQuantityChange(module.id, Number(e.target.value))}
                                   disabled={isSubmitting}
                                 />
                                 <Button
@@ -506,9 +477,7 @@ export function TenantFormDialog({
                                 </Button>
                               </div>
                               <div className="hidden sm:block">
-                                <span className="text-xs text-muted-foreground">
-                                  {t("module_quantity_label")}
-                                </span>
+                                <span className="text-xs text-muted-foreground">{t("module_quantity_label")}</span>
                               </div>
                             </div>
                           </div>
@@ -520,16 +489,12 @@ export function TenantFormDialog({
               )}
 
               {!isEditMode && !modulesLoading && catalogModules.length > 0 ? (
-                <p className="text-xs text-muted-foreground italic">
-                  {t("modules_save_info")}
-                </p>
+                <p className="text-xs text-muted-foreground italic">{t("modules_save_info")}</p>
               ) : null}
             </div>
 
             {form.formState.errors.root ? (
-              <p className="text-sm font-medium text-destructive">
-                {form.formState.errors.root.message}
-              </p>
+              <p className="text-sm font-medium text-destructive">{form.formState.errors.root.message}</p>
             ) : null}
 
             <DialogFooter>
@@ -538,8 +503,7 @@ export function TenantFormDialog({
               </Button>
               <Button type="submit" disabled={isSubmitting}>
                 {isSubmitting && <Spinner IsButton />}
-                {!isSubmitting &&
-                  (isEditMode ? <SquarePen className="size-4" /> : <Sparkles className="size-4" />)}
+                {!isSubmitting && (isEditMode ? <SquarePen className="size-4" /> : <Sparkles className="size-4" />)}
                 {isEditMode ? t("update_tenant") : t("save_tenant")}
               </Button>
             </DialogFooter>

@@ -1,10 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from "vitest"
 import axios from "axios"
 
-import {
-  getTenantModules,
-  updateTenantModule,
-} from "@/features/platform/tenants/services/tenant-modules.service"
+import { getTenantModules, updateTenantModule } from "@/features/platform/tenants/services/tenant-modules.service"
 import type { TenantModuleDto } from "@/features/platform/tenants/types/api"
 import type { TenantModule } from "@/features/platform/tenants/types"
 
@@ -132,17 +129,9 @@ describe("tenant-modules.service", () => {
       mockPut.mockResolvedValue({ data: updatedDto })
 
       const body = { isEnabled: false, quantity: 10 }
-      const result = await updateTenantModule(
-        FAKE_TOKEN,
-        FAKE_TENANT_ID,
-        FAKE_MODULE_ID,
-        body
-      )
+      const result = await updateTenantModule(FAKE_TOKEN, FAKE_TENANT_ID, FAKE_MODULE_ID, body)
 
-      expect(mockPut).toHaveBeenCalledWith(
-        `/api/tenant-modules/${FAKE_MODULE_ID}`,
-        body
-      )
+      expect(mockPut).toHaveBeenCalledWith(`/api/tenant-modules/${FAKE_MODULE_ID}`, body)
       expect(result.isEnabled).toBe(false)
       expect(result.quantity).toBe(10)
       expect(result.id).toBe(FAKE_MODULE_ID)

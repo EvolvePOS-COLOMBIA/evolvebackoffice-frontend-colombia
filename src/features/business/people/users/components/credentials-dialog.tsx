@@ -72,15 +72,7 @@ export function CredentialsDialog({ open, onOpenChange, user, onGoToList }: Cred
   )
 }
 
-function CredentialRow({
-  label,
-  value,
-  highlight,
-}: {
-  label: string
-  value: string
-  highlight?: "red" | "blue"
-}) {
+function CredentialRow({ label, value, highlight }: { label: string; value: string; highlight?: "red" | "blue" }) {
   const [copied, setCopied] = useState(false)
 
   const handleCopy = async () => {
@@ -95,11 +87,7 @@ function CredentialRow({
       <div className="flex items-center gap-1">
         <span
           className={`font-mono text-sm font-medium ${
-            highlight === "red"
-              ? "text-destructive"
-              : highlight === "blue"
-                ? "text-primary"
-                : "text-foreground"
+            highlight === "red" ? "text-destructive" : highlight === "blue" ? "text-primary" : "text-foreground"
           }`}
         >
           {value}

@@ -62,13 +62,7 @@ export function SetStatusDialog({
   }, [open, registerToUpdate, form])
 
   const toneFor = (s: RegisterStatus) =>
-    s === "Active"
-      ? "success"
-      : s === "Locked"
-        ? "danger"
-        : s === "Maintenance"
-          ? "warning"
-          : "neutral"
+    s === "Active" ? "success" : s === "Locked" ? "danger" : s === "Maintenance" ? "warning" : "neutral"
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -82,8 +76,7 @@ export function SetStatusDialog({
           <div className="space-y-1 rounded-2xl border border-border/70 bg-card/60 px-4 py-3">
             <p className="text-sm font-medium text-foreground">{registerToUpdate.name}</p>
             <p className="text-xs text-muted-foreground">
-              {t("code_label")}: {registerToUpdate.code} · {t("branch_label")}:{" "}
-              {registerToUpdate.branchName || "—"}
+              {t("code_label")}: {registerToUpdate.code} · {t("branch_label")}: {registerToUpdate.branchName || "—"}
             </p>
           </div>
         ) : null}
@@ -131,9 +124,7 @@ export function SetStatusDialog({
             />
 
             {form.formState.errors.root ? (
-              <p className="text-sm font-medium text-destructive">
-                {form.formState.errors.root.message}
-              </p>
+              <p className="text-sm font-medium text-destructive">{form.formState.errors.root.message}</p>
             ) : null}
 
             <DialogFooter>

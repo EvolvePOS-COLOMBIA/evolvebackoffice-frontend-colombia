@@ -38,8 +38,7 @@ export function useCreatePlatformUser() {
 export function useUpdatePlatformUser() {
   const queryClient = useQueryClient()
   return useMutation({
-    mutationFn: ({ id, data }: { id: string; data: UpdatePlatformUserRequest }) =>
-      updatePlatformUser(id, data),
+    mutationFn: ({ id, data }: { id: string; data: UpdatePlatformUserRequest }) => updatePlatformUser(id, data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["platformUsers"] })
     },

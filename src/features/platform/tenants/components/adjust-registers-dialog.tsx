@@ -41,14 +41,10 @@ export function AdjustRegistersDialog({
   const isDecreasing = newMax < previousMax
   const difference = Math.abs(newMax - previousMax)
 
-  const availableForDecommission = serialCodes.filter(
-    (s) => s.status === "Unassigned" || s.status === "Activated"
-  )
+  const availableForDecommission = serialCodes.filter((s) => s.status === "Unassigned" || s.status === "Activated")
 
   const handleToggleSerial = (serialId: string) => {
-    setSelectedSerials((prev) =>
-      prev.includes(serialId) ? prev.filter((id) => id !== serialId) : [...prev, serialId]
-    )
+    setSelectedSerials((prev) => (prev.includes(serialId) ? prev.filter((id) => id !== serialId) : [...prev, serialId]))
   }
 
   const handleConfirm = () => {
@@ -67,14 +63,10 @@ export function AdjustRegistersDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="w-[calc(100%-2rem)] lg:w-[500px] max-h-[90vh] overflow-y-auto">
+      <DialogContent className="max-h-[90vh] w-[calc(100%-2rem)] overflow-y-auto lg:w-[500px]">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
-            {isIncreasing ? (
-              <Plus className="size-5 text-green-500" />
-            ) : (
-              <Minus className="size-5 text-orange-500" />
-            )}
+            {isIncreasing ? <Plus className="size-5 text-green-500" /> : <Minus className="size-5 text-orange-500" />}
             {t("adjust_registers_title")}
           </DialogTitle>
           <DialogDescription>{t("adjust_registers_description")}</DialogDescription>
@@ -120,14 +112,12 @@ export function AdjustRegistersDialog({
               {availableForDecommission.length === 0 ? (
                 <p className="text-sm text-muted-foreground">{t("no_serials_available")}</p>
               ) : (
-                <div className="space-y-2 max-h-60 overflow-y-auto">
+                <div className="max-h-60 space-y-2 overflow-y-auto">
                   {availableForDecommission.map((serial) => (
                     <div
                       key={serial.id}
-                      className={`flex items-center justify-between rounded-lg border p-3 cursor-pointer transition-colors ${
-                        selectedSerials.includes(serial.id)
-                          ? "border-orange-500 bg-orange-50"
-                          : "hover:bg-muted/50"
+                      className={`flex cursor-pointer items-center justify-between rounded-lg border p-3 transition-colors ${
+                        selectedSerials.includes(serial.id) ? "border-orange-500 bg-orange-50" : "hover:bg-muted/50"
                       }`}
                       onClick={() => handleToggleSerial(serial.id)}
                     >
@@ -139,9 +129,7 @@ export function AdjustRegistersDialog({
                               : "border-muted-foreground"
                           }`}
                         >
-                          {selectedSerials.includes(serial.id) && (
-                            <Check className="size-3" />
-                          )}
+                          {selectedSerials.includes(serial.id) && <Check className="size-3" />}
                         </div>
                         <div>
                           <p className="font-mono text-sm">{serial.serialCode}</p>

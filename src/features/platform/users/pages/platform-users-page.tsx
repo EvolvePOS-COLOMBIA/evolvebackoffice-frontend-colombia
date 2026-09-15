@@ -6,7 +6,11 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { PlatformUserFormDialog } from "@/features/platform/users/components/platform-user-form-dialog"
-import { usePlatformUsers, useActivatePlatformUser, useDeactivatePlatformUser } from "@/features/platform/users/hooks/use-platform-users"
+import {
+  usePlatformUsers,
+  useActivatePlatformUser,
+  useDeactivatePlatformUser,
+} from "@/features/platform/users/hooks/use-platform-users"
 import { useAuth } from "@/features/auth/hooks/use-auth"
 import { notify } from "@/hooks/use-notify"
 import { formatDateTime } from "@/utils/format"

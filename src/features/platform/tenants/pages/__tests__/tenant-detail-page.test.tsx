@@ -8,10 +8,7 @@ import { MemoryRouter, Routes, Route } from "react-router-dom"
 
 import { TenantDetailPage } from "@/features/platform/tenants/pages/tenant-detail-page"
 import i18n from "@/i18n/index"
-import type {
-  TenantResponseDto,
-  TenantModuleDto,
-} from "@/features/platform/tenants/types/api"
+import type { TenantResponseDto, TenantModuleDto } from "@/features/platform/tenants/types/api"
 
 vi.mock("@/config/axios-client", () => ({
   api: {
@@ -129,10 +126,7 @@ function renderWithProviders(initialEntries = [`/platform/tenants/${TENANT_PUBLI
       <I18nextProvider i18n={i18n}>
         <MemoryRouter initialEntries={initialEntries}>
           <Routes>
-            <Route
-              path="/platform/tenants/:id"
-              element={children as React.ReactElement}
-            />
+            <Route path="/platform/tenants/:id" element={children as React.ReactElement} />
           </Routes>
         </MemoryRouter>
       </I18nextProvider>
@@ -278,10 +272,7 @@ describe("TenantDetailPage", () => {
     fireEvent.click(firstSave)
 
     await waitFor(() => {
-      expect(modulesClient.put).toHaveBeenCalledWith(
-        `/api/tenant-modules/${fakeModulesDto[0]!.id}`,
-        { quantity: 7 }
-      )
+      expect(modulesClient.put).toHaveBeenCalledWith(`/api/tenant-modules/${fakeModulesDto[0]!.id}`, { quantity: 7 })
       expect(notify.success).toHaveBeenCalledTimes(1)
     })
 
@@ -300,10 +291,9 @@ describe("TenantDetailPage", () => {
     fireEvent.click(inventorySwitch)
 
     await waitFor(() => {
-      expect(modulesClient.put).toHaveBeenCalledWith(
-        `/api/tenant-modules/${fakeModulesDto[1]!.id}`,
-        { isEnabled: true }
-      )
+      expect(modulesClient.put).toHaveBeenCalledWith(`/api/tenant-modules/${fakeModulesDto[1]!.id}`, {
+        isEnabled: true,
+      })
       expect(notify.success).toHaveBeenCalledTimes(1)
     })
   })
@@ -326,9 +316,7 @@ describe("TenantDetailPage", () => {
     const errorTitle = await screen.findByText(/no se pudo cargar el tenant/i)
     expect(errorTitle).toBeInTheDocument()
 
-    expect(
-      screen.getByText(/el tenant solicitado no existe/i)
-    ).toBeInTheDocument()
+    expect(screen.getByText(/el tenant solicitado no existe/i)).toBeInTheDocument()
 
     const backButtons = screen.getAllByRole("button", {
       name: /volver a tenants/i,

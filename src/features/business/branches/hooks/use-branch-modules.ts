@@ -39,13 +39,8 @@ export function useAssignModuleToBranch() {
   const qc = useQueryClient()
 
   return useMutation({
-    mutationFn: ({
-      branchId,
-      tenantModulePublicId,
-    }: {
-      branchId: string
-      tenantModulePublicId: string
-    }) => assignModuleToBranch(branchId, tenantModulePublicId),
+    mutationFn: ({ branchId, tenantModulePublicId }: { branchId: string; tenantModulePublicId: string }) =>
+      assignModuleToBranch(branchId, tenantModulePublicId),
     onSuccess: (_data, variables) => {
       qc.invalidateQueries({ queryKey: branchModulesKeys.list(variables.branchId) })
     },
@@ -57,13 +52,8 @@ export function useRemoveModuleFromBranch() {
   const qc = useQueryClient()
 
   return useMutation({
-    mutationFn: ({
-      branchId,
-      modulePublicId,
-    }: {
-      branchId: string
-      modulePublicId: string
-    }) => removeModuleFromBranch(branchId, modulePublicId),
+    mutationFn: ({ branchId, modulePublicId }: { branchId: string; modulePublicId: string }) =>
+      removeModuleFromBranch(branchId, modulePublicId),
     onSuccess: (_data, variables) => {
       qc.invalidateQueries({ queryKey: branchModulesKeys.list(variables.branchId) })
     },

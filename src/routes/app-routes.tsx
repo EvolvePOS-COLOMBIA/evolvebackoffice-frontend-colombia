@@ -85,14 +85,8 @@ function AppRoutesContent() {
             <Route path="/business/reports" element={<ReportsPage />} />
             <Route path="/business/settings" element={<SettingsPage />} />
             <Route path="/business/settings/registers" element={<RegistersPage />} />
-            <Route
-              path="/business/branches/:branchId/settings/terminals"
-              element={<BranchTerminalSettingsPage />}
-            />
-            <Route
-              path="/business/branches/:branchId/config"
-              element={<BranchConfigPage />}
-            />
+            <Route path="/business/branches/:branchId/settings/terminals" element={<BranchTerminalSettingsPage />} />
+            <Route path="/business/branches/:branchId/config" element={<BranchConfigPage />} />
           </Route>
         </Route>
       </Route>

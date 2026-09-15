@@ -13,12 +13,7 @@ type StepBranchSummaryProps = {
   onBack: () => void
 }
 
-export function StepBranchSummary({
-  branch,
-  adminUserName,
-  onContinue,
-  onBack,
-}: StepBranchSummaryProps) {
+export function StepBranchSummary({ branch, adminUserName, onContinue, onBack }: StepBranchSummaryProps) {
   const { t } = useTranslation("business-onboarding")
 
   const fields = [
@@ -54,11 +49,7 @@ export function StepBranchSummary({
         </Card>
       </StepCard>
 
-      <StepFooter
-        onBack={onBack}
-        backLabel={t("back")}
-        submitLabel={t("save_and_continue")}
-      />
+      <StepFooter onBack={onBack} backLabel={t("back")} submitLabel={t("save_and_continue")} />
     </form>
   )
 }

@@ -94,7 +94,9 @@ export function EmailSettingsPage() {
           <div className="grid grid-cols-1 gap-3">
             <Card className="max-h-min rounded-3xl">
               <CardContent className="p-5">
-                <p className="text-[11px] font-semibold tracking-[0.24em] text-muted-foreground uppercase">{t("status")}</p>
+                <p className="text-[11px] font-semibold tracking-[0.24em] text-muted-foreground uppercase">
+                  {t("status")}
+                </p>
                 <p className="mt-3 text-lg font-semibold text-foreground">
                   {setting ? (
                     <span className="text-green-600">{t("configured")}</span>
@@ -231,9 +233,7 @@ export function EmailSettingsPage() {
                 <Send className="size-4" />
                 {testMutation.isPending ? t("sending") : t("send_test")}
               </Button>
-              {!setting && (
-                <p className="text-sm text-muted-foreground">{t("configure_smtp_first")}</p>
-              )}
+              {!setting && <p className="text-sm text-muted-foreground">{t("configure_smtp_first")}</p>}
             </form>
           </CardContent>
         </Card>

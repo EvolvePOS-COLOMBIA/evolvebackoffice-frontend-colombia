@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react"
+import { useState } from "react"
 import { Pencil, Trash2, CheckSquare, Square, Package, SearchX } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
@@ -35,10 +35,10 @@ export function GlobalCatalogView({ onAssignToBranch }: GlobalCatalogViewProps) 
   const { data, isLoading } = useItems({ pageNumber: page, pageSize: 20 })
   const deleteItem = useDeleteItem()
 
-  // Reset page when search changes
-  useEffect(() => {
+  const handleSearchChange = (value: string) => {
+    setSearch(value)
     setPage(1)
-  }, [search])
+  }
 
   const items = data?.data ?? []
   const filteredItems = search
@@ -103,7 +103,7 @@ export function GlobalCatalogView({ onAssignToBranch }: GlobalCatalogViewProps) 
             type="text"
             placeholder={t("search_items")}
             value={search}
-            onChange={(e) => setSearch(e.target.value)}
+            onChange={(e) => handleSearchChange(e.target.value)}
             className="h-8 w-full max-w-sm px-3 text-sm sm:h-9"
           />
         </div>

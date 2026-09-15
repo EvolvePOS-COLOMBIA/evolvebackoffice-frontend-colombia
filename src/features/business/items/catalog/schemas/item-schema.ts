@@ -85,7 +85,5 @@ export const adjustStockSchema = (t: TFunction) =>
 export type CreateItemFormValues = z.infer<ReturnType<typeof createItemSchema>>
 export type UpdateItemFormValues = z.infer<ReturnType<typeof updateItemSchema>>
 export type CreateBranchItemFormValues = z.infer<ReturnType<typeof createBranchItemSchema>>
-export type UpdateBranchItemPricingFormValues = z.infer<
-  ReturnType<typeof updateBranchItemPricingSchema>
->
+export type UpdateBranchItemPricingFormValues = z.infer<ReturnType<typeof updateBranchItemPricingSchema>>
 export type AdjustStockFormValues = z.infer<ReturnType<typeof adjustStockSchema>>

@@ -151,62 +151,44 @@ export function CustomerFormDialog({
                 )}
               />
             </div>
+            <div className="grid gap-4 sm:grid-cols-2">
+              <FormField
+                control={form.control}
+                name="phoneNumber"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>{t("phone")}</FormLabel>
+                    <FormControl>
+                      <Input
+                        placeholder={t("phone_placeholder")}
+                        value={field.value ?? ""}
+                        onChange={(e) => field.onChange(e.target.value || null)}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
 
-            <FormField
-              control={form.control}
-              name="phoneNumber"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>{t("phone")}</FormLabel>
-                  <FormControl>
-                    <Input
-                      placeholder={t("phone_placeholder")}
-                      value={field.value ?? ""}
-                      onChange={(e) => field.onChange(e.target.value || null)}
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            <FormField
-              control={form.control}
-              name="emailAddress"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>{t("email")}</FormLabel>
-                  <FormControl>
-                    <Input
-                      type="email"
-                      placeholder={t("email_placeholder")}
-                      value={field.value ?? ""}
-                      onChange={(e) => field.onChange(e.target.value || null)}
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            <FormField
-              control={form.control}
-              name="address"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>{t("address")}</FormLabel>
-                  <FormControl>
-                    <Input
-                      placeholder={t("address_placeholder")}
-                      value={field.value ?? ""}
-                      onChange={(e) => field.onChange(e.target.value || null)}
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
+              <FormField
+                control={form.control}
+                name="emailAddress"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>{t("email")}</FormLabel>
+                    <FormControl>
+                      <Input
+                        type="email"
+                        placeholder={t("email_placeholder")}
+                        value={field.value ?? ""}
+                        onChange={(e) => field.onChange(e.target.value || null)}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
             <div className="grid gap-4 sm:grid-cols-2">
               <FormField
                 control={form.control}
@@ -244,6 +226,23 @@ export function CustomerFormDialog({
                 )}
               />
             </div>
+            <FormField
+              control={form.control}
+              name="address"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>{t("address")}</FormLabel>
+                  <FormControl>
+                    <Input
+                      placeholder={t("address_placeholder")}
+                      value={field.value ?? ""}
+                      onChange={(e) => field.onChange(e.target.value || null)}
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
 
             {form.formState.errors.root ? (
               <p className="text-sm font-medium text-destructive">{form.formState.errors.root.message}</p>

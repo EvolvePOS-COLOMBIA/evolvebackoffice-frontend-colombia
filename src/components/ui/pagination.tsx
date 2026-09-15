@@ -35,6 +35,7 @@ type PaginationLinkProps = {
   onClick?: () => void
   disabled?: boolean
   className?: string
+  children?: React.ReactNode
 } & Pick<React.ComponentProps<typeof Button>, "size">
 
 function PaginationLink({
@@ -45,7 +46,7 @@ function PaginationLink({
   disabled,
   children,
   ...props
-}: PaginationLinkProps & React.PropsWithChildren<{}>) {
+}: PaginationLinkProps) {
   return (
     <Button
       variant={isActive ? "default" : "outline"}

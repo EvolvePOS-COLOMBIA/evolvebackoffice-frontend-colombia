@@ -10,6 +10,8 @@ export const createUserSchema = (t: TFunction) =>
     identificationNumber: z.string().min(1, t("document_required")),
     phoneNumber: z.string().nullable().optional(),
     role: z.string().min(1, t("role_required")),
+    address: z.string().nullable().optional(),
+    emailAddress: z.string().email(t("email_invalid")).nullable().optional(),
   })
 
 export const updateUserSchema = (t: TFunction) =>
@@ -17,6 +19,11 @@ export const updateUserSchema = (t: TFunction) =>
     firstName: z.string().min(1, t("first_name_required")),
     lastName: z.string().min(1, t("last_name_required")),
     phoneNumber: z.string().nullable().optional(),
+    address: z.string().nullable().optional(),
+    emailAddress: z.string().email(t("email_invalid")).nullable().optional(),
+    email: z.string().email(t("email_invalid")).nullable().optional(),
+    role: z.string().nullable().optional(),
+    isActive: z.boolean().optional(),
   })
 
 export type CreateUserFormValues = z.infer<ReturnType<typeof createUserSchema>>

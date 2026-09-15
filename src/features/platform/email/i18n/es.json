@@ -30,5 +30,7 @@
   "settings_saved": "Configuración guardada correctamente",
   "test_email_sent": "Email de prueba enviado",
   "test_email_failed": "Error al enviar email de prueba",
-  "unable_to_save": "No se pudo guardar"
+  "unable_to_save": "No se pudo guardar",
+  "validation_required": "es requerido",
+  "validation_email_invalid": "Email inválido"
 }

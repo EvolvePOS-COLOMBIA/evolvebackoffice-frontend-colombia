@@ -33,19 +33,30 @@ export function PlatformUserFormDialog({ open, onOpenChange, userToEdit }: Platf
   const [password, setPassword] = useState("")
   const [role, setRole] = useState<AppRole>("PlatformSupervisor")
 
+  // Sincronizar form con userToEdit sin setState en useEffect
   useEffect(() => {
     if (userToEdit) {
       setEmail(userToEdit.email)
       setFullName(userToEdit.fullName)
       setPassword("")
       setRole(userToEdit.role)
-    } else {
+    } else if (open) {
       setEmail("")
       setFullName("")
       setPassword("")
       setRole("PlatformSupervisor")
     }
   }, [userToEdit, open])
+
+  // Resetear form cuando se cierra el dialog
+  useEffect(() => {
+    if (!open) {
+      setEmail("")
+      setFullName("")
+      setPassword("")
+      setRole("PlatformSupervisor")
+    }
+  }, [open])
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()

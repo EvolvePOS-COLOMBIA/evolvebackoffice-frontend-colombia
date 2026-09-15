@@ -26,7 +26,7 @@ export type Namespace =
 
 export function useTranslation(ns: Namespace = "common") {
   const translation = useI18NextTranslation(ns)
-  const [isLoaded, setIsLoaded] = useState(false)
+  const [isLoaded, setIsLoaded] = useState(ns === "common")
 
   useEffect(() => {
     // Cargar el namespace si no es "common"
@@ -34,9 +34,6 @@ export function useTranslation(ns: Namespace = "common") {
       loadFeatureNamespace(ns).then(() => {
         setIsLoaded(true)
       })
-    } else {
-      // "common" ya está cargado en la inicialización
-      setIsLoaded(true)
     }
   }, [ns])
 

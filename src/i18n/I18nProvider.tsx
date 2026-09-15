@@ -5,25 +5,25 @@ import { I18nLoading } from "./I18nLoading"
 
 // Componente para esperar la inicialización de i18n
 export function I18nProvider({ children }: { children: React.ReactNode }) {
-  const [isInitialized, setIsInitialized] = useState(false)
+  const [isInitialized, setIsInitialized] = useState(i18n.isInitialized)
 
   useEffect(() => {
-    // i18next.init() es síncrono en la mayoría de los casos, pero verificamos
-    // que el lenguaje esté listo para usar
-    if (i18n.language && i18n.isInitialized) {
+    // Si ya está inicializado, no hacer nada
+    if (i18n.isInitialized) {
       setIsInitialized(true)
-    } else {
-      // Esperamos a que se inicialice (en casos donde init sea asíncrono)
-      const handleInitialized = () => {
-        setIsInitialized(true)
-      }
+      return
+    }
 
-      i18n.on("initialized", handleInitialized)
+    // Esperamos a que se inicialice (en casos donde init sea asíncrono)
+    const handleInitialized = () => {
+      setIsInitialized(true)
+    }
 
-      // Cleanup listener
-      return () => {
-        i18n.off("initialized", handleInitialized)
-      }
+    i18n.on("initialized", handleInitialized)
+
+    // Cleanup listener
+    return () => {
+      i18n.off("initialized", handleInitialized)
     }
   }, [])
 

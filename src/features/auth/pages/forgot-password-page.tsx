@@ -49,7 +49,7 @@ export function ForgotPasswordPage() {
       await requestPasswordReset(values.email, scope, requiresTenant ? values.tenantId : undefined)
       setSubmitted(true)
     } catch {
-      notify.error(t("sign_in_error"))
+      notify.error(t("password_reset_error"))
     } finally {
       setSubmitting(false)
     }

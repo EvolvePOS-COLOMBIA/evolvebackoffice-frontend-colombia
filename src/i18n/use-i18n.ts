@@ -40,18 +40,11 @@ export function useTranslation(ns: Namespace = "common") {
     }
   }, [ns])
 
-  // Mientras no esté cargado, retornar un objeto con funciones seguras que devuelven la clave
-  // Esto evita que se rendericen claves en la UI
+  // Mientras no esté cargado, usar la función t original de i18next
+  // que ya tiene el correcto y solo devolverá la clave
   if (!isLoaded) {
     return {
-      t: (key: string, options?: Record<string, unknown>): string => {
-        // Devolver la clave con opciones si hay, o la clave tal cual
-        if (options) {
-          return key
-        }
-        return key
-      },
-      i18n: translation.i18n,
+      ...translation,
       ready: false,
     }
   }

@@ -24,7 +24,7 @@ export function LoginForm() {
   const businessForm = useForm<TenantLoginFormValues>({
     resolver: zodResolver(businessLoginSchema(t)),
     defaultValues: {
-      tenantPublicId: "",
+      tenantPublicId: "-juaco-pizza-ca474991",
       email: "joaquin@urspos.com",
       password: "Guar123!",
     },

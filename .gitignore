@@ -41,3 +41,7 @@ opencode.json
 
 .playwright/*
 .playwright-mcp/*
+
+tests/*
+
+test-results/*

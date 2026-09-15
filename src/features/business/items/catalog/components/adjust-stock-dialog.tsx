@@ -15,13 +15,13 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "
 import { Input } from "@/components/ui/input"
 import { useTranslation } from "@/i18n/use-i18n"
 import { adjustStockSchema, type AdjustStockFormValues } from "../schemas/item-schema"
-import type { ItemResponseDto } from "../types"
+import type { BranchItemResponseDto } from "../types"
 
 type AdjustStockDialogProps = {
   open: boolean
   onOpenChange: (open: boolean) => void
-  item: ItemResponseDto | null
-  onSubmit: (delta: number) => void
+  item: BranchItemResponseDto | null
+  onSubmit?: (quantity: number) => void
   isSubmitting?: boolean
 }
 
@@ -36,17 +36,17 @@ export function AdjustStockDialog({
 
   const form = useForm<AdjustStockFormValues>({
     resolver: zodResolver(adjustStockSchema(t)) as never,
-    defaultValues: { delta: 0 },
+    defaultValues: { quantity: 0 },
   })
 
   useEffect(() => {
     if (open) {
-      form.reset({ delta: 0 })
+      form.reset({ quantity: 0 })
     }
   }, [open, form])
 
   const handleSubmit = (values: AdjustStockFormValues) => {
-    onSubmit(values.delta)
+    onSubmit?.(values.quantity)
   }
 
   return (
@@ -55,7 +55,7 @@ export function AdjustStockDialog({
         <DialogHeader>
           <DialogTitle>{t("adjust_stock")}</DialogTitle>
           <DialogDescription>
-            {t("adjust_stock_desc")} <strong>{item?.name}</strong>
+            {t("adjust_stock_desc")} <strong>{item?.itemName}</strong>
           </DialogDescription>
         </DialogHeader>
 
@@ -63,19 +63,19 @@ export function AdjustStockDialog({
           <form className="space-y-4" onSubmit={form.handleSubmit(handleSubmit)}>
             <div className="rounded-lg border border-border/70 bg-accent/35 p-4">
               <p className="text-xs text-muted-foreground">{t("current_stock")}</p>
-              <p className="text-2xl font-semibold text-foreground">{item?.stock ?? 0}</p>
+              <p className="text-2xl font-semibold text-foreground">{item?.quantity ?? 0}</p>
             </div>
 
             <FormField
               control={form.control}
-              name="delta"
+              name="quantity"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>{t("stock_change")}</FormLabel>
+                  <FormLabel>{t("new_quantity")}</FormLabel>
                   <FormControl>
                     <Input type="number" {...field} />
                   </FormControl>
-                  <p className="text-xs text-muted-foreground">{t("delta_hint")}</p>
+                  <p className="text-xs text-muted-foreground">{t("quantity_hint")}</p>
                   <FormMessage />
                 </FormItem>
               )}

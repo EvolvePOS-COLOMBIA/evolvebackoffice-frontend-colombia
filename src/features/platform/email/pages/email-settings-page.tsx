@@ -1,13 +1,16 @@
-import { useEffect, useState } from "react"
+import { useEffect } from "react"
 import { Mail, Send, Save } from "lucide-react"
+import { zodResolver } from "@hookform/resolvers/zod"
+import { useForm } from "react-hook-form"
 
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form"
 import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { useEmailSetting, useUpdateEmailSetting, useSendTestEmail } from "@/features/platform/email/hooks/use-email-settings"
+import { emailSettingsSchema, sendTestEmailSchema } from "@/features/platform/email/schemas/email-schema"
 import { notify } from "@/hooks/use-notify"
 import { useTranslation } from "@/i18n/use-i18n"
 
@@ -17,38 +20,66 @@ export function EmailSettingsPage() {
   const updateMutation = useUpdateEmailSetting()
   const testMutation = useSendTestEmail()
 
-  const [smtpServer, setSmtpServer] = useState("")
-  const [smtpPort, setSmtpPort] = useState(587)
-  const [username, setUsername] = useState("")
-  const [password, setPassword] = useState("")
-  const [senderEmail, setSenderEmail] = useState("")
-  const [senderName, setSenderName] = useState("")
-  const [encryptionType, setEncryptionType] = useState("TLS")
-  const [testEmail, setTestEmail] = useState("")
+  const form = useForm<{
+    smtpServer: string
+    smtpPort: number
+    username: string
+    password: string
+    senderEmail: string
+    senderName: string
+    encryptionType: string
+  }>({
+    resolver: zodResolver(emailSettingsSchema(t)) as never,
+    defaultValues: {
+      smtpServer: "",
+      smtpPort: 587,
+      username: "",
+      password: "",
+      senderEmail: "",
+      senderName: "",
+      encryptionType: "TLS",
+    },
+  })
+
+  const testForm = useForm<{ recipientEmail: string }>({
+    resolver: zodResolver(sendTestEmailSchema(t)) as never,
+    defaultValues: {
+      recipientEmail: "",
+    },
+  })
 
   useEffect(() => {
     if (setting) {
-      setSmtpServer(setting.smtpServer)
-      setSmtpPort(setting.smtpPort)
-      setUsername(setting.username ?? "")
-      setPassword("")
-      setSenderEmail(setting.senderEmail)
-      setSenderName(setting.senderName)
-      setEncryptionType(setting.encryptionType)
+      form.reset({
+        smtpServer: setting.smtpServer,
+        smtpPort: setting.smtpPort,
+        username: setting.username ?? "",
+        password: "",
+        senderEmail: setting.senderEmail,
+        senderName: setting.senderName,
+        encryptionType: setting.encryptionType,
+      })
     }
-  }, [setting])
+  }, [setting, form])
 
-  const handleSave = (e: React.FormEvent) => {
-    e.preventDefault()
+  const handleSave = (values: {
+    smtpServer: string
+    smtpPort: number
+    username?: string
+    password?: string
+    senderEmail: string
+    senderName: string
+    encryptionType: string
+  }) => {
     updateMutation.mutate(
       {
-        smtpServer,
-        smtpPort,
-        username: username || undefined,
-        password: password || undefined,
-        senderEmail,
-        senderName,
-        encryptionType,
+        smtpServer: values.smtpServer,
+        smtpPort: values.smtpPort,
+        username: values.username || undefined,
+        password: values.password || undefined,
+        senderEmail: values.senderEmail,
+        senderName: values.senderName,
+        encryptionType: values.encryptionType,
       },
       {
         onSuccess: () => notify.success(t("settings_saved")),
@@ -57,15 +88,13 @@ export function EmailSettingsPage() {
     )
   }
 
-  const handleSendTest = (e: React.FormEvent) => {
-    e.preventDefault()
-    if (!testEmail) return
+  const handleSendTest = (values: { recipientEmail: string }) => {
     testMutation.mutate(
-      { recipientEmail: testEmail },
+      { recipientEmail: values.recipientEmail },
       {
         onSuccess: () => {
           notify.success(t("test_email_sent"))
-          setTestEmail("")
+          testForm.reset()
         },
         onError: (error) => notify.error(error instanceof Error ? error.message : t("test_email_failed")),
       }
@@ -120,91 +149,124 @@ export function EmailSettingsPage() {
             <CardDescription>{t("smtp_settings_desc")}</CardDescription>
           </CardHeader>
           <CardContent>
-            <form onSubmit={handleSave} className="space-y-4">
-              <div className="grid gap-4 sm:grid-cols-2">
-                <div className="space-y-2">
-                  <Label htmlFor="smtpServer">{t("smtp_server")}</Label>
-                  <Input
-                    id="smtpServer"
-                    value={smtpServer}
-                    onChange={(e) => setSmtpServer(e.target.value)}
-                    placeholder="smtp.gmail.com"
-                    required
+            <Form {...form}>
+              <form onSubmit={form.handleSubmit(handleSave)} className="space-y-4">
+                <div className="grid gap-4 sm:grid-cols-2">
+                  <FormField
+                    control={form.control}
+                    name="smtpServer"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>{t("smtp_server")}</FormLabel>
+                        <FormControl>
+                          <Input placeholder="smtp.gmail.com" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={form.control}
+                    name="smtpPort"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>{t("smtp_port")}</FormLabel>
+                        <FormControl>
+                          <Input type="number" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
                   />
                 </div>
-                <div className="space-y-2">
-                  <Label htmlFor="smtpPort">{t("smtp_port")}</Label>
-                  <Input
-                    id="smtpPort"
-                    type="number"
-                    value={smtpPort}
-                    onChange={(e) => setSmtpPort(Number(e.target.value))}
-                    required
+                <div className="grid gap-4 sm:grid-cols-2">
+                  <FormField
+                    control={form.control}
+                    name="username"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>{t("smtp_username")}</FormLabel>
+                        <FormControl>
+                          <Input placeholder={t("smtp_username_placeholder")} {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={form.control}
+                    name="password"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>{t("smtp_password")}</FormLabel>
+                        <FormControl>
+                          <Input
+                            type="password"
+                            placeholder={setting ? t("smtp_password_placeholder_exists") : t("smtp_password_placeholder")}
+                            {...field}
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
                   />
                 </div>
-              </div>
-              <div className="grid gap-4 sm:grid-cols-2">
-                <div className="space-y-2">
-                  <Label htmlFor="username">{t("smtp_username")}</Label>
-                  <Input
-                    id="username"
-                    value={username}
-                    onChange={(e) => setUsername(e.target.value)}
-                    placeholder={t("smtp_username_placeholder")}
+                <div className="grid gap-4 sm:grid-cols-2">
+                  <FormField
+                    control={form.control}
+                    name="senderEmail"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>{t("sender_email")}</FormLabel>
+                        <FormControl>
+                          <Input type="email" placeholder="noreply@posco.com" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={form.control}
+                    name="senderName"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>{t("sender_name")}</FormLabel>
+                        <FormControl>
+                          <Input placeholder="PosCo Platform" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
                   />
                 </div>
-                <div className="space-y-2">
-                  <Label htmlFor="password">{t("smtp_password")}</Label>
-                  <Input
-                    id="password"
-                    type="password"
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    placeholder={setting ? t("smtp_password_placeholder_exists") : t("smtp_password_placeholder")}
-                  />
-                </div>
-              </div>
-              <div className="grid gap-4 sm:grid-cols-2">
-                <div className="space-y-2">
-                  <Label htmlFor="senderEmail">{t("sender_email")}</Label>
-                  <Input
-                    id="senderEmail"
-                    type="email"
-                    value={senderEmail}
-                    onChange={(e) => setSenderEmail(e.target.value)}
-                    placeholder="noreply@posco.com"
-                    required
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="senderName">{t("sender_name")}</Label>
-                  <Input
-                    id="senderName"
-                    value={senderName}
-                    onChange={(e) => setSenderName(e.target.value)}
-                    placeholder="PosCo Platform"
-                    required
-                  />
-                </div>
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="encryption">{t("encryption")}</Label>
-                <Select value={encryptionType} onValueChange={setEncryptionType}>
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="NONE">{t("encryption_none")}</SelectItem>
-                    <SelectItem value="SSL">{t("encryption_ssl")}</SelectItem>
-                    <SelectItem value="TLS">{t("encryption_tls")}</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              <Button type="submit" disabled={updateMutation.isPending}>
-                <Save className="size-4" />
-                {updateMutation.isPending ? t("saving") : t("save")}
-              </Button>
-            </form>
+                <FormField
+                  control={form.control}
+                  name="encryptionType"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>{t("encryption")}</FormLabel>
+                      <Select value={field.value} onValueChange={field.onChange}>
+                        <FormControl>
+                          <SelectTrigger>
+                            <SelectValue />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          <SelectItem value="NONE">{t("encryption_none")}</SelectItem>
+                          <SelectItem value="SSL">{t("encryption_ssl")}</SelectItem>
+                          <SelectItem value="TLS">{t("encryption_tls")}</SelectItem>
+                        </SelectContent>
+                      </Select>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <Button type="submit" disabled={updateMutation.isPending}>
+                  <Save className="size-4" />
+                  {updateMutation.isPending ? t("saving") : t("save")}
+                </Button>
+              </form>
+            </Form>
           </CardContent>
         </Card>
 
@@ -217,24 +279,28 @@ export function EmailSettingsPage() {
             <CardDescription>{t("send_test_desc")}</CardDescription>
           </CardHeader>
           <CardContent>
-            <form onSubmit={handleSendTest} className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="testEmail">{t("recipient_email")}</Label>
-                <Input
-                  id="testEmail"
-                  type="email"
-                  value={testEmail}
-                  onChange={(e) => setTestEmail(e.target.value)}
-                  placeholder="test@example.com"
-                  required
+            <Form {...testForm}>
+              <form onSubmit={testForm.handleSubmit(handleSendTest)} className="space-y-4">
+                <FormField
+                  control={testForm.control}
+                  name="recipientEmail"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>{t("recipient_email")}</FormLabel>
+                      <FormControl>
+                        <Input type="email" placeholder="test@example.com" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
                 />
-              </div>
-              <Button type="submit" disabled={testMutation.isPending || !setting}>
-                <Send className="size-4" />
-                {testMutation.isPending ? t("sending") : t("send_test")}
-              </Button>
-              {!setting && <p className="text-sm text-muted-foreground">{t("configure_smtp_first")}</p>}
-            </form>
+                <Button type="submit" disabled={testMutation.isPending || !setting}>
+                  <Send className="size-4" />
+                  {testMutation.isPending ? t("sending") : t("send_test")}
+                </Button>
+                {!setting && <p className="text-sm text-muted-foreground">{t("configure_smtp_first")}</p>}
+              </form>
+            </Form>
           </CardContent>
         </Card>
       </div>

@@ -63,7 +63,7 @@ export function AdjustRegistersDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-h-[90vh] w-[calc(100%-2rem)] overflow-y-auto lg:w-[500px]">
+      <DialogContent className="max-h-[90vh] w-[calc(100%-2rem)] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             {isIncreasing ? <Plus className="size-5 text-green-500" /> : <Minus className="size-5 text-orange-500" />}

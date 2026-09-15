@@ -71,6 +71,7 @@ const fakeTenantDto: TenantResponseDto = {
   contactEmail: "owner@northstar.co",
   phone: "+57 300 111 2233",
   address: "Calle 123 # 45-67, Bogota",
+  countryCode: "CO",
   isActive: true,
   status: "Active",
   maxRegisters: 10,

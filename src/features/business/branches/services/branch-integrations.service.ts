@@ -10,24 +10,15 @@ const BASE = "/api/branches"
 
 /* ─── List ─── */
 
-export async function listBranchIntegrations(
-  branchId: string
-): Promise<BranchIntegrationResponseDto[]> {
-  const { data } = await api.get<BranchIntegrationResponseDto[]>(
-    `${BASE}/${branchId}/integrations`
-  )
+export async function listBranchIntegrations(branchId: string): Promise<BranchIntegrationResponseDto[]> {
+  const { data } = await api.get<BranchIntegrationResponseDto[]>(`${BASE}/${branchId}/integrations`)
   return Array.isArray(data) ? data : []
 }
 
 /* ─── Get by ID ─── */
 
-export async function getBranchIntegration(
-  branchId: string,
-  id: string
-): Promise<BranchIntegrationResponseDto> {
-  const { data } = await api.get<BranchIntegrationResponseDto>(
-    `${BASE}/${branchId}/integrations/${id}`
-  )
+export async function getBranchIntegration(branchId: string, id: string): Promise<BranchIntegrationResponseDto> {
+  const { data } = await api.get<BranchIntegrationResponseDto>(`${BASE}/${branchId}/integrations/${id}`)
   return data
 }
 
@@ -37,10 +28,7 @@ export async function createBranchIntegration(
   branchId: string,
   dto: CreateBranchIntegrationDto
 ): Promise<BranchIntegrationResponseDto> {
-  const { data } = await api.post<BranchIntegrationResponseDto>(
-    `${BASE}/${branchId}/integrations`,
-    dto
-  )
+  const { data } = await api.post<BranchIntegrationResponseDto>(`${BASE}/${branchId}/integrations`, dto)
   return data
 }
 
@@ -56,21 +44,13 @@ export async function updateBranchIntegration(
 
 /* ─── Delete (soft) ─── */
 
-export async function deleteBranchIntegration(
-  branchId: string,
-  id: string
-): Promise<void> {
+export async function deleteBranchIntegration(branchId: string, id: string): Promise<void> {
   await api.delete(`${BASE}/${branchId}/integrations/${id}`)
 }
 
 /* ─── Test connection ─── */
 
-export async function testBranchIntegrationConnection(
-  branchId: string,
-  id: string
-): Promise<TestConnectionResult> {
-  const { data } = await api.post<TestConnectionResult>(
-    `${BASE}/${branchId}/integrations/${id}/test-connection`
-  )
+export async function testBranchIntegrationConnection(branchId: string, id: string): Promise<TestConnectionResult> {
+  const { data } = await api.post<TestConnectionResult>(`${BASE}/${branchId}/integrations/${id}/test-connection`)
   return data
 }

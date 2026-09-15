@@ -18,7 +18,15 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { TenantFormDialog } from "@/features/platform/tenants/components/tenant-form-dialog"
-import { useTenants, useUpdateTenant, useActivateTenant, useDeactivateTenant, useDeleteTenant, useApproveTenant, useRejectTenant } from "@/features/platform/tenants/hooks/use-tenants"
+import {
+  useTenants,
+  useUpdateTenant,
+  useActivateTenant,
+  useDeactivateTenant,
+  useDeleteTenant,
+  useApproveTenant,
+  useRejectTenant,
+} from "@/features/platform/tenants/hooks/use-tenants"
 import type { Tenant, TenantFormValues } from "@/features/platform/tenants/types"
 import { useAuth } from "@/features/auth/hooks/use-auth"
 import { notify } from "@/hooks/use-notify"
@@ -232,9 +240,7 @@ export function TenantsPage() {
                         <TableCell className="text-muted-foreground">{tenant.tenantId}</TableCell>
                         <TableCell className="text-muted-foreground">{tenant.contactEmail}</TableCell>
                         <TableCell className="text-muted-foreground">{tenant.phone}</TableCell>
-                        <TableCell>
-                          {getStatusBadge(tenant.status)}
-                        </TableCell>
+                        <TableCell>{getStatusBadge(tenant.status)}</TableCell>
                         <TableCell className="text-muted-foreground">{formatDateTime(tenant.createdAt)}</TableCell>
                         <TableCell className="text-right">
                           <div className="flex justify-end gap-2">
@@ -398,9 +404,7 @@ export function TenantsPage() {
               >
                 {t("previous")}
               </Button>
-              <span className="text-sm text-muted-foreground">
-                {t("page_info", { page, totalPages })}
-              </span>
+              <span className="text-sm text-muted-foreground">{t("page_info", { page, totalPages })}</span>
               <Button
                 type="button"
                 variant="outline"
@@ -433,9 +437,7 @@ export function TenantsPage() {
         <DialogContent>
           <DialogHeader>
             <DialogTitle>{t("reject_tenant")}</DialogTitle>
-            <DialogDescription>
-              {t("reject_tenant_desc", { name: tenantToReject?.name ?? "" })}
-            </DialogDescription>
+            <DialogDescription>{t("reject_tenant_desc", { name: tenantToReject?.name ?? "" })}</DialogDescription>
           </DialogHeader>
           <div className="space-y-4">
             <div className="space-y-2">

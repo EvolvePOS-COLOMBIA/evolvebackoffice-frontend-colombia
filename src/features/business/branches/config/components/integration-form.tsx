@@ -4,7 +4,16 @@ import { Loader2, Plug, Trash2 } from "lucide-react"
 import { useForm } from "react-hook-form"
 import { z } from "zod"
 
-import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog"
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
@@ -63,9 +72,7 @@ export function IntegrationForm({ branchId, platformCode, integration }: Props) 
     defaultValues: {
       baseUrl: integration?.baseUrl ?? "",
       isActive: integration?.isActive ?? true,
-      ...(isWoo
-        ? { consumerKey: "", consumerSecret: "" }
-        : { apiKey: "", apiSecret: "" }),
+      ...(isWoo ? { consumerKey: "", consumerSecret: "" } : { apiKey: "", apiSecret: "" }),
     },
   })
 
@@ -75,10 +82,7 @@ export function IntegrationForm({ branchId, platformCode, integration }: Props) 
   const testMutation = useTestBranchIntegrationConnection()
 
   const isMutating =
-    createMutation.isPending ||
-    updateMutation.isPending ||
-    deleteMutation.isPending ||
-    testMutation.isPending
+    createMutation.isPending || updateMutation.isPending || deleteMutation.isPending || testMutation.isPending
 
   const onSubmit = (values: FormValues) => {
     if (isNew) {
@@ -98,9 +102,7 @@ export function IntegrationForm({ branchId, platformCode, integration }: Props) 
             form.reset({
               baseUrl: values.baseUrl,
               isActive: values.isActive,
-              ...(isWoo
-                ? { consumerKey: "", consumerSecret: "" }
-                : { apiKey: "", apiSecret: "" }),
+              ...(isWoo ? { consumerKey: "", consumerSecret: "" } : { apiKey: "", apiSecret: "" }),
             })
           },
           onError: (err) => notify.error(err instanceof Error ? err.message : t("integration_save_error")),
@@ -157,9 +159,7 @@ export function IntegrationForm({ branchId, platformCode, integration }: Props) 
           form.reset({
             baseUrl: "",
             isActive: true,
-            ...(isWoo
-              ? { consumerKey: "", consumerSecret: "" }
-              : { apiKey: "", apiSecret: "" }),
+            ...(isWoo ? { consumerKey: "", consumerSecret: "" } : { apiKey: "", apiSecret: "" }),
           })
         },
         onError: (err) => notify.error(err instanceof Error ? err.message : t("integration_save_error")),
@@ -186,23 +186,11 @@ export function IntegrationForm({ branchId, platformCode, integration }: Props) 
                       : ` ${t("integration_never_synced")}`}
                   </span>
                 </div>
-                {integration.lastError && (
-                  <p className="text-xs text-destructive">{integration.lastError}</p>
-                )}
+                {integration.lastError && <p className="text-xs text-destructive">{integration.lastError}</p>}
               </div>
               <div className="flex gap-2">
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  onClick={handleTest}
-                  disabled={isMutating}
-                >
-                  {testMutation.isPending ? (
-                    <Loader2 className="size-4 animate-spin" />
-                  ) : (
-                    <Plug className="size-4" />
-                  )}
+                <Button type="button" variant="outline" size="sm" onClick={handleTest} disabled={isMutating}>
+                  {testMutation.isPending ? <Loader2 className="size-4 animate-spin" /> : <Plug className="size-4" />}
                   {t("integration_test")}
                 </Button>
                 <Button
@@ -223,12 +211,8 @@ export function IntegrationForm({ branchId, platformCode, integration }: Props) 
       {/* Form */}
       <Card>
         <CardHeader>
-          <CardTitle>
-            {isNew ? t("integration_create") : t("integration_save")}
-          </CardTitle>
-          <CardDescription>
-            {isWoo ? t("woocommerce_help_keys") : t("cluvi_help_keys")}
-          </CardDescription>
+          <CardTitle>{isNew ? t("integration_create") : t("integration_save")}</CardTitle>
+          <CardDescription>{isWoo ? t("woocommerce_help_keys") : t("cluvi_help_keys")}</CardDescription>
         </CardHeader>
         <CardContent>
           <Form {...form}>
@@ -240,11 +224,7 @@ export function IntegrationForm({ branchId, platformCode, integration }: Props) 
                   <FormItem>
                     <FormLabel>{t("integration_form_url")}</FormLabel>
                     <FormControl>
-                      <Input
-                        placeholder={t("integration_form_url_placeholder")}
-                        {...field}
-                        disabled={isMutating}
-                      />
+                      <Input placeholder={t("integration_form_url_placeholder")} {...field} disabled={isMutating} />
                     </FormControl>
                     <p className="text-xs text-muted-foreground">
                       {isWoo ? t("woocommerce_help_url") : t("cluvi_help_url")}
@@ -339,16 +319,10 @@ export function IntegrationForm({ branchId, platformCode, integration }: Props) 
                   <FormItem className="flex flex-row items-center justify-between rounded-xl border border-border/70 bg-card/60 p-4">
                     <div className="space-y-0.5">
                       <FormLabel>{t("integration_form_is_active")}</FormLabel>
-                      <p className="text-xs text-muted-foreground">
-                        {t("integration_form_is_active_hint")}
-                      </p>
+                      <p className="text-xs text-muted-foreground">{t("integration_form_is_active_hint")}</p>
                     </div>
                     <FormControl>
-                      <Switch
-                        checked={field.value}
-                        onCheckedChange={field.onChange}
-                        disabled={isMutating}
-                      />
+                      <Switch checked={field.value} onCheckedChange={field.onChange} disabled={isMutating} />
                     </FormControl>
                   </FormItem>
                 )}

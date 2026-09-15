@@ -2,12 +2,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import toast from "react-hot-toast"
 
 import { useTranslation } from "@/i18n/use-i18n"
-import {
-  createItem,
-  deleteItem,
-  getItems,
-  updateItem,
-} from "../services/items.service"
+import { createItem, deleteItem, getItems, updateItem } from "../services/items.service"
 import type { CreateItemDto, ItemListParams, UpdateItemDto } from "../types"
 
 export function useItems(params: ItemListParams = {}) {
@@ -38,8 +33,7 @@ export function useUpdateItem() {
   const { t } = useTranslation("business-items-catalog")
 
   return useMutation({
-    mutationFn: ({ id, payload }: { id: string; payload: UpdateItemDto }) =>
-      updateItem(id, payload),
+    mutationFn: ({ id, payload }: { id: string; payload: UpdateItemDto }) => updateItem(id, payload),
     onSuccess: (_data, variables) => {
       queryClient.invalidateQueries({ queryKey: ["items"] })
       toast.success(t("toast_item_updated", { name: variables.payload.name }))
@@ -55,7 +49,7 @@ export function useDeleteItem() {
   const { t } = useTranslation("business-items-catalog")
 
   return useMutation({
-    mutationFn: ({ id, name }: { id: string; name: string }) => deleteItem(id),
+    mutationFn: ({ id }: { id: string; name: string }) => deleteItem(id),
     onSuccess: (_data, variables) => {
       queryClient.invalidateQueries({ queryKey: ["items"] })
       toast.success(t("toast_item_deleted", { name: variables.name }))

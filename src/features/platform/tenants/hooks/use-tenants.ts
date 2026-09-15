@@ -55,9 +55,7 @@ function toUpdateDto(values: TenantFormValues): UpdateTenantDto {
   }
 }
 
-function toBulkModuleItems(
-  modules: TenantFormValues["modules"]
-): BulkUpdateTenantModuleItemDto[] {
+function toBulkModuleItems(modules: TenantFormValues["modules"]): BulkUpdateTenantModuleItemDto[] {
   return modules.map((m) => ({
     modulePublicId: m.moduleId,
     isEnabled: m.isEnabled,
@@ -76,13 +74,7 @@ export function useCreateTenant() {
   const queryClient = useQueryClient()
 
   return useMutation({
-    mutationFn: ({
-      values,
-      token,
-    }: {
-      values: TenantFormValues
-      token: string
-    }) =>
+    mutationFn: ({ values, token }: { values: TenantFormValues; token: string }) =>
       createTenant(toCreateDto(values)).then(async (result) => {
         if (values.modules.length > 0) {
           await bulkUpdateTenantModules(token, result.id, toBulkModuleItems(values.modules))
@@ -99,15 +91,7 @@ export function useUpdateTenant() {
   const queryClient = useQueryClient()
 
   return useMutation({
-    mutationFn: ({
-      id,
-      values,
-      token,
-    }: {
-      id: string
-      values: TenantFormValues
-      token: string
-    }) =>
+    mutationFn: ({ id, values, token }: { id: string; values: TenantFormValues; token: string }) =>
       updateTenant(id, toUpdateDto(values)).then(async (result) => {
         if (values.modules.length > 0) {
           await bulkUpdateTenantModules(token, id, toBulkModuleItems(values.modules))
@@ -165,15 +149,8 @@ export function useDecommissionSerial() {
   const queryClient = useQueryClient()
 
   return useMutation({
-    mutationFn: ({
-      tenantId,
-      serialId,
-      reason,
-    }: {
-      tenantId: string
-      serialId: string
-      reason?: string
-    }) => decommissionSerial(tenantId, serialId, reason),
+    mutationFn: ({ tenantId, serialId, reason }: { tenantId: string; serialId: string; reason?: string }) =>
+      decommissionSerial(tenantId, serialId, reason),
     onSuccess: (_data, variables) => {
       queryClient.invalidateQueries({ queryKey: ["tenant-serial-codes", variables.tenantId] })
       queryClient.invalidateQueries({ queryKey: ["tenant", variables.tenantId] })
@@ -204,13 +181,8 @@ export function useAdjustSerialCodes() {
   const queryClient = useQueryClient()
 
   return useMutation({
-    mutationFn: ({
-      tenantId,
-      data,
-    }: {
-      tenantId: string
-      data: AdjustSerialCodesDto
-    }) => adjustSerialCodes(tenantId, data),
+    mutationFn: ({ tenantId, data }: { tenantId: string; data: AdjustSerialCodesDto }) =>
+      adjustSerialCodes(tenantId, data),
     onSuccess: (_data, variables) => {
       queryClient.invalidateQueries({ queryKey: ["tenant-serial-codes", variables.tenantId] })
       queryClient.invalidateQueries({ queryKey: ["tenant", variables.tenantId] })
@@ -234,8 +206,7 @@ export function useRejectTenant() {
   const queryClient = useQueryClient()
 
   return useMutation({
-    mutationFn: ({ tenantId, reason }: { tenantId: string; reason: string }) =>
-      rejectTenant(tenantId, reason),
+    mutationFn: ({ tenantId, reason }: { tenantId: string; reason: string }) => rejectTenant(tenantId, reason),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["tenants"] })
     },

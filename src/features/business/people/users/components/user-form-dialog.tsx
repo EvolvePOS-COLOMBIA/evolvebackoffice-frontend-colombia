@@ -13,13 +13,7 @@ import {
 } from "@/components/ui/dialog"
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form"
 import { Input } from "@/components/ui/input"
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { useTranslation } from "@/i18n/use-i18n"
 import { createUserSchema, type CreateUserFormValues } from "../schemas/user-schema"
 import { IdentificationType, type UserResponseDto } from "../types"
@@ -162,10 +156,7 @@ export function UserFormDialog({
                     render={({ field }) => (
                       <FormItem>
                         <FormLabel>{t("document_type")}</FormLabel>
-                        <Select
-                          onValueChange={(val) => field.onChange(Number(val))}
-                          value={String(field.value)}
-                        >
+                        <Select onValueChange={(val) => field.onChange(Number(val))} value={String(field.value)}>
                           <FormControl>
                             <SelectTrigger>
                               <SelectValue />

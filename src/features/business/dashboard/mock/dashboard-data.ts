@@ -369,8 +369,7 @@ export const dashboardData: DashboardData = {
       { label: "Week 3", sublabel: "Day 15–21", previousMonth: 18_800_000, currentMonth: 20_500_000 },
       { label: "Week 4", sublabel: "Day 22–31", previousMonth: 18_000_000, currentMonth: 19_000_000 },
     ],
-    description:
-      "The chart compares {{currentMonth}} (2026) with {{previousMonth}} (2026), divided by weeks.",
+    description: "The chart compares {{currentMonth}} (2026) with {{previousMonth}} (2026), divided by weeks.",
   },
 }
 

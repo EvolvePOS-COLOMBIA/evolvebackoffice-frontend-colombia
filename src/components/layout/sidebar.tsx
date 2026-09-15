@@ -54,6 +54,7 @@ const businessNavigationItems = [
   { to: "/business/inventory", labelKey: "inventory", icon: Building2 },
   { to: "/business/people", labelKey: "people", icon: Users },
   { to: "/business/reports", labelKey: "reports", icon: BarChart3 },
+  { to: "/business/settings", labelKey: "settings", icon: Settings },
 ]
 
 interface SidebarProps {
@@ -114,7 +115,10 @@ export function SidebarContent({
 
       {/* Menú de navegación */}
       <nav
-        className={cn("mt-5 flex flex-1 flex-col gap-2", isCollapsed && !isMobile ? "w-full items-center" : "w-full")}
+        className={cn(
+          "mt-1.5 flex flex-1 flex-col gap-0.5",
+          isCollapsed && !isMobile ? "w-full items-center" : "w-full"
+        )}
       >
         {navigationItems.map((item) => {
           const Icon = item.icon
@@ -124,7 +128,20 @@ export function SidebarContent({
               key={item.to}
               to={item.to}
               onClick={onNavigate}
-              title={isCollapsed && !isMobile ? t(item.labelKey as any) : undefined}
+              title={
+                isCollapsed && !isMobile
+                  ? t(
+                      item.labelKey as
+                        | "dashboard"
+                        | "tenants"
+                        | "items"
+                        | "inventory"
+                        | "people"
+                        | "reports"
+                        | "settings"
+                    )
+                  : undefined
+              }
               className={cn(
                 "flex items-center gap-3 rounded-2xl border border-l-3 py-3 text-sm font-medium transition-colors duration-300",
                 isCollapsed && !isMobile ? "h-12 w-12 justify-center px-0" : "px-4",
@@ -154,28 +171,6 @@ export function SidebarContent({
           )
         })}
       </nav>
-
-      {/* Botón de Configuración */}
-      <NavLink
-        to="/business/settings"
-        onClick={onNavigate}
-        title={isCollapsed && !isMobile ? t("settings") : undefined}
-        className={cn(
-          "flex w-full items-center gap-3 rounded-2xl border border-l-3 py-3 text-sm font-medium transition-colors duration-300",
-          isCollapsed && !isMobile ? "h-12 w-12 justify-center px-0" : "px-4",
-          pathname === "/business/settings"
-            ? "border-primary/20 border-l-primary bg-primary/5 text-sidebar-foreground"
-            : "border-transparent text-muted-foreground hover:border-border/70 hover:bg-accent/70 hover:text-foreground"
-        )}
-      >
-        <Settings
-          className={cn(
-            "size-5 shrink-0",
-            pathname === "/business/settings" ? "text-primary" : "text-muted-foreground"
-          )}
-        />
-        {(!isCollapsed || isMobile) && <span className="truncate">{t("settings")}</span>}
-      </NavLink>
 
       {/* Componente Modular de Usuario */}
       <SidebarUserMenu isCollapsed={isCollapsed && !isMobile} />

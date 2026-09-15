@@ -28,10 +28,7 @@ import { Switch } from "@/components/ui/switch"
 import { ErrorState } from "@/components/ui/error-state"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { getTenant } from "@/features/platform/tenants/services/tenant.service"
-import {
-  useTenantModules,
-  useUpdateTenantModule,
-} from "@/features/platform/tenants/hooks/use-tenant-modules"
+import { useTenantModules, useUpdateTenantModule } from "@/features/platform/tenants/hooks/use-tenant-modules"
 import {
   useUpdateTenant,
   useSerialCodes,
@@ -79,10 +76,7 @@ export function TenantDetailPage() {
     isError: modulesError,
   } = useTenantModules(token, tenantIdForModules)
 
-  const {
-    data: serialCodes = [],
-    isLoading: serialLoading,
-  } = useSerialCodes(id)
+  const { data: serialCodes = [], isLoading: serialLoading } = useSerialCodes(id)
 
   const updateModuleMutation = useUpdateTenantModule(token, tenantIdForModules)
   const decommissionMutation = useDecommissionSerial()
@@ -100,8 +94,7 @@ export function TenantDetailPage() {
       { modulePublicId: moduleItem.id, body },
       {
         onSuccess: () => notify.success(t("module_updated")),
-        onError: (error) =>
-          notify.error(error instanceof Error ? error.message : t("module_update_error")),
+        onError: (error) => notify.error(error instanceof Error ? error.message : t("module_update_error")),
       }
     )
   }
@@ -135,8 +128,7 @@ export function TenantDetailPage() {
             return next
           })
         },
-        onError: (error) =>
-          notify.error(error instanceof Error ? error.message : t("module_update_error")),
+        onError: (error) => notify.error(error instanceof Error ? error.message : t("module_update_error")),
       }
     )
   }
@@ -155,8 +147,7 @@ export function TenantDetailPage() {
             return next
           })
         },
-        onError: (error) =>
-          notify.error(error instanceof Error ? error.message : t("decommission_error")),
+        onError: (error) => notify.error(error instanceof Error ? error.message : t("decommission_error")),
       }
     )
   }
@@ -168,8 +159,7 @@ export function TenantDetailPage() {
       onSuccess: (data) => {
         notify.success(`${t("reset_admin_success")} ${data.temporaryPassword}`)
       },
-      onError: (error) =>
-        notify.error(error instanceof Error ? error.message : t("reset_admin_error")),
+      onError: (error) => notify.error(error instanceof Error ? error.message : t("reset_admin_error")),
     })
   }
 
@@ -189,8 +179,7 @@ export function TenantDetailPage() {
           notify.success(t("tenant_updated"))
           setEditDialogOpen(false)
         },
-        onError: (error) =>
-          notify.error(error instanceof Error ? error.message : t("unable_to_save")),
+        onError: (error) => notify.error(error instanceof Error ? error.message : t("unable_to_save")),
       }
     )
   }
@@ -283,19 +272,11 @@ export function TenantDetailPage() {
           {t("back_to_tenants")}
         </Button>
         <div className="flex items-center gap-2">
-          <Button
-            variant="outline"
-            onClick={() => setEditDialogOpen(true)}
-            disabled={isAnyMutating}
-          >
+          <Button variant="outline" onClick={() => setEditDialogOpen(true)} disabled={isAnyMutating}>
             <SquarePen className="size-4" />
             {t("edit")}
           </Button>
-          <Button
-            variant="outline"
-            onClick={handleResetAdmin}
-            disabled={isAnyMutating}
-          >
+          <Button variant="outline" onClick={handleResetAdmin} disabled={isAnyMutating}>
             <Key className="size-4" />
             {t("reset_admin")}
           </Button>
@@ -315,9 +296,7 @@ export function TenantDetailPage() {
             ) : (
               <div className="space-y-2">
                 <div className="flex flex-wrap items-center gap-3">
-                  <h1 className="text-3xl font-semibold text-balance text-foreground">
-                    {tenant?.name}
-                  </h1>
+                  <h1 className="text-3xl font-semibold text-balance text-foreground">{tenant?.name}</h1>
                   <Badge tone={tenant?.isActive ? "success" : "warning"}>
                     {tenant?.isActive ? t("status_active") : t("status_inactive")}
                   </Badge>
@@ -379,11 +358,7 @@ export function TenantDetailPage() {
               <InfoTile icon={Hash} label={t("subdomain")} value={tenant?.subdomain ?? ""} />
               <InfoTile icon={Shield} label={t("max_branches")} value={String(tenant?.maxBranches ?? 0)} />
               <InfoTile icon={Shield} label={t("max_users")} value={String(tenant?.maxUsers ?? 0)} />
-              <InfoTile
-                icon={Calendar}
-                label={t("created")}
-                value={tenant ? formatDateTime(tenant.createdAt) : ""}
-              />
+              <InfoTile icon={Calendar} label={t("created")} value={tenant ? formatDateTime(tenant.createdAt) : ""} />
             </div>
           )}
         </CardContent>
@@ -394,7 +369,7 @@ export function TenantDetailPage() {
           <CardTitle>{t("assigned_modules")}</CardTitle>
           <CardDescription>{t("assigned_modules_desc")}</CardDescription>
         </CardHeader>
-        <CardContent className="pt-6 space-y-4">
+        <CardContent className="space-y-4 pt-6">
           {modulesError ? (
             <ErrorState
               variant="inline"
@@ -409,9 +384,7 @@ export function TenantDetailPage() {
               <div className="mx-auto flex size-14 items-center justify-center rounded-3xl border border-border/70 bg-accent/60 text-muted-foreground">
                 <Building2 className="size-6" />
               </div>
-              <h2 className="mt-4 text-lg font-semibold text-foreground">
-                {t("no_modules_found")}
-              </h2>
+              <h2 className="mt-4 text-lg font-semibold text-foreground">{t("no_modules_found")}</h2>
               <p className="mt-2 text-sm text-muted-foreground">{t("no_modules_found_desc")}</p>
             </Card>
           ) : (
@@ -428,8 +401,7 @@ export function TenantDetailPage() {
                   </TableHeader>
                   <TableBody>
                     {modules.map((moduleItem) => {
-                      const displayQuantity =
-                        quantities[moduleItem.id] ?? moduleItem.quantity
+                      const displayQuantity = quantities[moduleItem.id] ?? moduleItem.quantity
                       const isDirty = quantities[moduleItem.id] !== undefined
                       return (
                         <TableRow key={moduleItem.id}>
@@ -442,9 +414,7 @@ export function TenantDetailPage() {
                                 </Badge>
                               </div>
                               {moduleItem.moduleDescription ? (
-                                <p className="text-sm text-muted-foreground">
-                                  {moduleItem.moduleDescription}
-                                </p>
+                                <p className="text-sm text-muted-foreground">{moduleItem.moduleDescription}</p>
                               ) : null}
                             </div>
                           </TableCell>
@@ -479,9 +449,7 @@ export function TenantDetailPage() {
                               <Button
                                 variant="outline"
                                 size="icon"
-                                onClick={() =>
-                                  handleQuantityIncrement(moduleItem.id, moduleItem.quantity)
-                                }
+                                onClick={() => handleQuantityIncrement(moduleItem.id, moduleItem.quantity)}
                                 disabled={isAnyMutating}
                               >
                                 <Plus className="size-4" />
@@ -507,35 +475,25 @@ export function TenantDetailPage() {
 
               <div className="grid gap-4 xl:hidden">
                 {modules.map((moduleItem) => {
-                  const displayQuantity =
-                    quantities[moduleItem.id] ?? moduleItem.quantity
+                  const displayQuantity = quantities[moduleItem.id] ?? moduleItem.quantity
                   const isDirty = quantities[moduleItem.id] !== undefined
                   return (
-                    <Card
-                      key={moduleItem.id}
-                      className="rounded-[24px] border-border/70 bg-background/45 shadow-none"
-                    >
+                    <Card key={moduleItem.id} className="rounded-[24px] border-border/70 bg-background/45 shadow-none">
                       <CardContent className="space-y-4 p-4 sm:p-5">
                         <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
                           <div className="space-y-2">
                             <div className="flex flex-wrap items-center gap-2">
-                              <h3 className="text-base font-semibold text-foreground">
-                                {moduleItem.moduleName}
-                              </h3>
+                              <h3 className="text-base font-semibold text-foreground">{moduleItem.moduleName}</h3>
                               <Badge tone="neutral" className="text-[10px]">
                                 {moduleItem.moduleCode}
                               </Badge>
                             </div>
                             {moduleItem.moduleDescription ? (
-                              <p className="text-sm text-muted-foreground">
-                                {moduleItem.moduleDescription}
-                              </p>
+                              <p className="text-sm text-muted-foreground">{moduleItem.moduleDescription}</p>
                             ) : null}
                           </div>
                           <div className="flex items-center gap-3">
-                            <span className="text-sm text-muted-foreground">
-                              {t("module_enabled")}
-                            </span>
+                            <span className="text-sm text-muted-foreground">{t("module_enabled")}</span>
                             <Switch
                               checked={moduleItem.isEnabled}
                               onCheckedChange={() => handleToggleEnabled(moduleItem)}
@@ -546,9 +504,7 @@ export function TenantDetailPage() {
 
                         <div className="flex flex-wrap items-center justify-between gap-3">
                           <div className="flex items-center gap-2">
-                            <span className="text-sm text-muted-foreground">
-                              {t("module_quantity")}:
-                            </span>
+                            <span className="text-sm text-muted-foreground">{t("module_quantity")}:</span>
                             <Button
                               variant="outline"
                               size="icon"
@@ -571,9 +527,7 @@ export function TenantDetailPage() {
                             <Button
                               variant="outline"
                               size="icon"
-                              onClick={() =>
-                                handleQuantityIncrement(moduleItem.id, moduleItem.quantity)
-                              }
+                              onClick={() => handleQuantityIncrement(moduleItem.id, moduleItem.quantity)}
                               disabled={isAnyMutating}
                             >
                               <Plus className="size-4" />
@@ -603,7 +557,7 @@ export function TenantDetailPage() {
           <CardTitle>{t("serial_codes")}</CardTitle>
           <CardDescription>{t("serial_codes_desc")}</CardDescription>
         </CardHeader>
-        <CardContent className="pt-6 space-y-4">
+        <CardContent className="space-y-4 pt-6">
           {serialLoading ? (
             <div className="space-y-3">
               {Array.from({ length: 3 }).map((_, i) => (
@@ -615,9 +569,7 @@ export function TenantDetailPage() {
               <div className="mx-auto flex size-14 items-center justify-center rounded-3xl border border-border/70 bg-accent/60 text-muted-foreground">
                 <Key className="size-6" />
               </div>
-              <h2 className="mt-4 text-lg font-semibold text-foreground">
-                {t("no_serial_codes")}
-              </h2>
+              <h2 className="mt-4 text-lg font-semibold text-foreground">{t("no_serial_codes")}</h2>
               <p className="mt-2 text-sm text-muted-foreground">{t("no_serial_codes_desc")}</p>
             </Card>
           ) : (
@@ -647,23 +599,21 @@ export function TenantDetailPage() {
                               serial.status === "Active"
                                 ? "success"
                                 : serial.status === "Inactive"
-                                ? "warning"
-                                : "neutral"
+                                  ? "warning"
+                                  : "neutral"
                             }
                           >
                             {serial.status === "Active"
                               ? t("serial_status_active")
                               : serial.status === "Inactive"
-                              ? t("serial_status_inactive")
-                              : t("serial_status_decommissioned")}
+                                ? t("serial_status_inactive")
+                                : t("serial_status_decommissioned")}
                           </Badge>
                         </TableCell>
                         <TableCell className="text-sm text-muted-foreground">
                           {serial.machineIdentifier || "—"}
                         </TableCell>
-                        <TableCell className="text-sm text-muted-foreground">
-                          {serial.deviceName || "—"}
-                        </TableCell>
+                        <TableCell className="text-sm text-muted-foreground">{serial.deviceName || "—"}</TableCell>
                         <TableCell className="text-sm text-muted-foreground">
                           {serial.activatedAt ? formatDateTime(serial.activatedAt) : "—"}
                         </TableCell>
@@ -706,10 +656,7 @@ export function TenantDetailPage() {
 
               <div className="grid gap-4 xl:hidden">
                 {serialCodes.map((serial) => (
-                  <Card
-                    key={serial.id}
-                    className="rounded-[24px] border-border/70 bg-background/45 shadow-none"
-                  >
+                  <Card key={serial.id} className="rounded-[24px] border-border/70 bg-background/45 shadow-none">
                     <CardContent className="space-y-3 p-4">
                       <div className="flex items-center justify-between">
                         <span className="font-mono text-sm font-medium">{serial.serialCode}</span>
@@ -718,25 +665,23 @@ export function TenantDetailPage() {
                             serial.status === "Active"
                               ? "success"
                               : serial.status === "Inactive"
-                              ? "warning"
-                              : "neutral"
+                                ? "warning"
+                                : "neutral"
                           }
                         >
                           {serial.status === "Active"
                             ? t("serial_status_active")
                             : serial.status === "Inactive"
-                            ? t("serial_status_inactive")
-                            : t("serial_status_decommissioned")}
+                              ? t("serial_status_inactive")
+                              : t("serial_status_decommissioned")}
                         </Badge>
                       </div>
                       <div className="grid grid-cols-2 gap-2 text-xs text-muted-foreground">
                         <div>
-                          <span className="font-medium">{t("serial_machine")}:</span>{" "}
-                          {serial.machineIdentifier || "—"}
+                          <span className="font-medium">{t("serial_machine")}:</span> {serial.machineIdentifier || "—"}
                         </div>
                         <div>
-                          <span className="font-medium">{t("serial_device")}:</span>{" "}
-                          {serial.deviceName || "—"}
+                          <span className="font-medium">{t("serial_device")}:</span> {serial.deviceName || "—"}
                         </div>
                         <div>
                           <span className="font-medium">{t("serial_activated")}:</span>{" "}
@@ -748,7 +693,7 @@ export function TenantDetailPage() {
                         </div>
                       </div>
                       {serial.status === "Active" && (
-                        <div className="flex items-center gap-2 pt-2 border-t">
+                        <div className="flex items-center gap-2 border-t pt-2">
                           <Input
                             type="text"
                             className="flex-1 text-xs"
@@ -800,21 +745,11 @@ export function TenantDetailPage() {
   )
 }
 
-function SummaryTile({
-  label,
-  value,
-  loading = false,
-}: {
-  label: string
-  value: number | string
-  loading?: boolean
-}) {
+function SummaryTile({ label, value, loading = false }: { label: string; value: number | string; loading?: boolean }) {
   return (
     <Card className="max-h-min rounded-3xl">
       <CardContent className="p-5">
-        <p className="text-[11px] font-semibold tracking-[0.24em] text-muted-foreground uppercase">
-          {label}
-        </p>
+        <p className="text-[11px] font-semibold tracking-[0.24em] text-muted-foreground uppercase">{label}</p>
         {loading ? (
           <Skeleton className="mt-3 h-9 w-16" />
         ) : (
@@ -838,13 +773,9 @@ function InfoTile({
     <div className="rounded-2xl border border-border/70 bg-card/60 px-4 py-3">
       <div className="flex items-center gap-2">
         <Icon className="size-4 text-muted-foreground" />
-        <p className="text-[11px] font-semibold tracking-[0.22em] text-muted-foreground uppercase">
-          {label}
-        </p>
+        <p className="text-[11px] font-semibold tracking-[0.22em] text-muted-foreground uppercase">{label}</p>
       </div>
-      <p className="mt-2 ml-6 text-sm font-medium text-foreground">
-        {value || "—"}
-      </p>
+      <p className="mt-2 ml-6 text-sm font-medium text-foreground">{value || "—"}</p>
     </div>
   )
 }

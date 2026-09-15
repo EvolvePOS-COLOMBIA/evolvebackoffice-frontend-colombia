@@ -62,7 +62,7 @@ export function CreateRegisterDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="w-[calc(100%-2rem)] max-h-[90vh] overflow-y-auto">
+      <DialogContent className="max-h-[90vh] w-[calc(100%-2rem)] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>{t("create_title")}</DialogTitle>
           <DialogDescription>{t("create_desc")}</DialogDescription>
@@ -160,9 +160,7 @@ export function CreateRegisterDialog({
             </div>
 
             {form.formState.errors.root ? (
-              <p className="text-sm font-medium text-destructive">
-                {form.formState.errors.root.message}
-              </p>
+              <p className="text-sm font-medium text-destructive">{form.formState.errors.root.message}</p>
             ) : null}
 
             <DialogFooter>

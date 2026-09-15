@@ -9,12 +9,7 @@ import {
   getBranchItems,
   updateBranchItemPricing,
 } from "../services/branch-items.service"
-import type {
-  AdjustBranchItemStockDto,
-  CreateBranchItemDto,
-  ItemListParams,
-  UpdateBranchItemDto,
-} from "../types"
+import type { AdjustBranchItemStockDto, CreateBranchItemDto, ItemListParams, UpdateBranchItemDto } from "../types"
 
 export function useBranchItems(branchId: string | null, params: ItemListParams = {}) {
   return useQuery({
@@ -82,7 +77,7 @@ export function useDeleteBranchItem(branchId: string) {
   const { t } = useTranslation("business-items-catalog")
 
   return useMutation({
-    mutationFn: ({ id, name }: { id: string; name: string }) => deleteBranchItem(branchId, id),
+    mutationFn: ({ id }: { id: string; name: string }) => deleteBranchItem(branchId, id),
     onSuccess: (_data, variables) => {
       queryClient.invalidateQueries({ queryKey: ["branch-items", branchId] })
       toast.success(t("toast_item_removed_from_branch", { name: variables.name }))

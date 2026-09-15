@@ -124,21 +124,13 @@ export async function decommissionSerial(
   return response.data
 }
 
-export async function resetAdminCredentials(
-  tenantId: string
-): Promise<ResetAdminCredentialsResponseDto> {
-  const response = await api.post<ResetAdminCredentialsResponseDto>(
-    `/api/Tenants/${tenantId}/reset-admin`
-  )
+export async function resetAdminCredentials(tenantId: string): Promise<ResetAdminCredentialsResponseDto> {
+  const response = await api.post<ResetAdminCredentialsResponseDto>(`/api/Tenants/${tenantId}/reset-admin`)
   return response.data
 }
 
-export async function canCreateRegister(
-  tenantId: string
-): Promise<CanCreateRegisterResponseDto> {
-  const response = await api.get<CanCreateRegisterResponseDto>(
-    `/api/Tenants/${tenantId}/can-create-register`
-  )
+export async function canCreateRegister(tenantId: string): Promise<CanCreateRegisterResponseDto> {
+  const response = await api.get<CanCreateRegisterResponseDto>(`/api/Tenants/${tenantId}/can-create-register`)
   return response.data
 }
 
@@ -146,10 +138,7 @@ export async function adjustSerialCodes(
   tenantId: string,
   data: AdjustSerialCodesDto
 ): Promise<SerialCodeAdjustmentResultDto> {
-  const response = await api.post<SerialCodeAdjustmentResultDto>(
-    `/api/Tenants/${tenantId}/adjust-serial-codes`,
-    data
-  )
+  const response = await api.post<SerialCodeAdjustmentResultDto>(`/api/Tenants/${tenantId}/adjust-serial-codes`, data)
   return response.data
 }
 
@@ -172,10 +161,7 @@ export async function rejectTenant(tenantId: string, reason: string): Promise<vo
   await api.post(`/api/Tenants/${tenantId}/reject`, { reason })
 }
 
-export async function getPendingTenants(
-  page: number,
-  pageSize: number
-): Promise<PagedTenantsResponse> {
+export async function getPendingTenants(page: number, pageSize: number): Promise<PagedTenantsResponse> {
   const response = await api.get<PagedTenantListResponse>("/api/Tenants/pending", {
     params: { pageNumber: page, pageSize },
   })

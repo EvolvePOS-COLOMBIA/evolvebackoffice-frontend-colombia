@@ -36,8 +36,7 @@ export function useUpdateRegister() {
   const queryClient = useQueryClient()
 
   return useMutation({
-    mutationFn: ({ id, payload }: { id: string; payload: UpdateRegisterDto }) =>
-      updateRegister(id, payload),
+    mutationFn: ({ id, payload }: { id: string; payload: UpdateRegisterDto }) => updateRegister(id, payload),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: registersKeys.all })
     },
@@ -48,8 +47,7 @@ export function useSetRegisterStatus() {
   const queryClient = useQueryClient()
 
   return useMutation({
-    mutationFn: ({ id, status }: { id: string; status: RegisterStatus }) =>
-      setRegisterStatus(id, status),
+    mutationFn: ({ id, status }: { id: string; status: RegisterStatus }) => setRegisterStatus(id, status),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: registersKeys.all })
     },

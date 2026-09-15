@@ -26,7 +26,7 @@ export function HubPageLayout({ badge, title, description, icon: Icon, iconClass
           <Icon
             color="#58626b"
             className={cn(
-              "absolute -top-10 -right-20 -z-10 size-50 shrink-0 opacity-5 animate-float md:-top-10 md:-right-10 md:size-70 lg:-top-20 lg:-right-30 lg:size-100",
+              "absolute -top-10 -right-20 -z-10 size-50 shrink-0 animate-float opacity-5 md:-top-10 md:-right-10 md:size-70 lg:-top-20 lg:-right-30 lg:size-100",
               iconClass
             )}
           />

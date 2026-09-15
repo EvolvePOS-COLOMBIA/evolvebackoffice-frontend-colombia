@@ -1,9 +1,4 @@
-export type {
-  BranchResponseDto,
-  CreateBranchDto,
-  UpdateBranchDto,
-  PagedBranchesResponse,
-} from "./api"
+export type { BranchResponseDto, CreateBranchDto, UpdateBranchDto, PagedBranchesResponse } from "./api"
 
 /** Modelo de sucursal que consume la UI (sin nulls sueltos). */
 export interface Branch {

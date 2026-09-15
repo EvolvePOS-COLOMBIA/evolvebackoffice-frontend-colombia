@@ -59,10 +59,7 @@ export function useOnboarding() {
     [patchDraft, stepIndex]
   )
 
-  const back = useCallback(
-    () => patchDraft({ stepIndex: Math.max(0, stepIndex - 1) }),
-    [patchDraft, stepIndex]
-  )
+  const back = useCallback(() => patchDraft({ stepIndex: Math.max(0, stepIndex - 1) }), [patchDraft, stepIndex])
 
   const setAccount = useCallback(
     (account: AccountStepValues, saved: boolean, passwordChanged: boolean) =>
@@ -70,20 +67,15 @@ export function useOnboarding() {
     [patchDraft]
   )
 
-  const setBusiness = useCallback(
-    (business: BusinessStepValues) => patchDraft({ business }),
-    [patchDraft]
-  )
+  const setBusiness = useCallback((business: BusinessStepValues) => patchDraft({ business }), [patchDraft])
 
   const setBranch = useCallback(
-    (branch: BranchStepValues, createdBranchId: string | null) =>
-      patchDraft({ branch, createdBranchId }),
+    (branch: BranchStepValues, createdBranchId: string | null) => patchDraft({ branch, createdBranchId }),
     [patchDraft]
   )
 
   const toggleModule = useCallback(
-    (key: ModuleKey) =>
-      patchDraft({ modules: { ...draft.modules, [key]: !draft.modules[key] } as ModuleSelection }),
+    (key: ModuleKey) => patchDraft({ modules: { ...draft.modules, [key]: !draft.modules[key] } as ModuleSelection }),
     [draft.modules, patchDraft]
   )
 

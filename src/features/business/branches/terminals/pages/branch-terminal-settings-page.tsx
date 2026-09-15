@@ -1,15 +1,7 @@
 import { useMemo, useState } from "react"
 import { useNavigate, useParams } from "react-router-dom"
 import { useQuery } from "@tanstack/react-query"
-import {
-  ArrowLeft,
-  Building2,
-  Lock,
-  MonitorCog,
-  Save,
-  Settings,
-  Unlock,
-} from "lucide-react"
+import { ArrowLeft, Building2, Lock, MonitorCog, Save, Settings, Unlock } from "lucide-react"
 
 import {
   AlertDialog,
@@ -89,34 +81,20 @@ export function BranchTerminalSettingsPage() {
     enabled: Boolean(branchId),
   })
 
-  const {
-    data: settings,
-    isLoading: settingsLoading,
-    refetch: refetchSettings,
-  } = useBranchTerminalSettings(branchId)
+  const { data: settings, isLoading: settingsLoading, refetch: refetchSettings } = useBranchTerminalSettings(branchId)
 
-  const {
-    data: registers = [],
-    isLoading: registersLoading,
-    refetch: refetchRegisters,
-  } = useBranchRegisters(branchId)
+  const { data: registers = [], isLoading: registersLoading, refetch: refetchRegisters } = useBranchRegisters(branchId)
 
   const upsertMutation = useUpsertBranchTerminalSettings()
   const deactivateMutation = useDeactivateBranchTerminals()
   const activateMutation = useActivateBranchTerminals()
 
-  const localMax = useMemo(
-    () => maxOverride ?? settings?.maxTerminals ?? 3,
-    [maxOverride, settings?.maxTerminals]
-  )
+  const localMax = useMemo(() => maxOverride ?? settings?.maxTerminals ?? 3, [maxOverride, settings?.maxTerminals])
   const localEnabled = useMemo(
     () => enabledOverride ?? settings?.areTerminalsEnabled ?? true,
     [enabledOverride, settings?.areTerminalsEnabled]
   )
-  const isDirty = useMemo(
-    () => maxOverride !== null || enabledOverride !== null,
-    [maxOverride, enabledOverride]
-  )
+  const isDirty = useMemo(() => maxOverride !== null || enabledOverride !== null, [maxOverride, enabledOverride])
 
   const branchName = branch?.name ?? ""
 
@@ -183,10 +161,7 @@ export function BranchTerminalSettingsPage() {
     })
   }
 
-  const anyMutating =
-    upsertMutation.isPending ||
-    deactivateMutation.isPending ||
-    activateMutation.isPending
+  const anyMutating = upsertMutation.isPending || deactivateMutation.isPending || activateMutation.isPending
 
   const counterLabel = useMemo(() => {
     const max = settings?.maxTerminals ?? localMax
@@ -222,10 +197,7 @@ export function BranchTerminalSettingsPage() {
           <ArrowLeft className="size-4" />
           {t("back_to_branches")}
         </Button>
-        <Button
-          variant="outline"
-          onClick={() => navigate(`/business/branches/${branchId}/config`)}
-        >
+        <Button variant="outline" onClick={() => navigate(`/business/branches/${branchId}/config`)}>
           <Settings className="size-4" />
           {t("breadcrumb_config")}
         </Button>
@@ -241,9 +213,9 @@ export function BranchTerminalSettingsPage() {
           {t("breadcrumb_branches")}
         </Button>
         <span>/</span>
-        <span>{branchLoading ? <Skeleton className="h-4 w-32 inline-block" /> : branchName}</span>
+        <span>{branchLoading ? <Skeleton className="inline-block h-4 w-32" /> : branchName}</span>
         <span>/</span>
-        <span className="text-foreground font-medium">{t("breadcrumb_settings")}</span>
+        <span className="font-medium text-foreground">{t("breadcrumb_settings")}</span>
       </div>
 
       <Card className="overflow-hidden">
@@ -258,13 +230,9 @@ export function BranchTerminalSettingsPage() {
             ) : (
               <div className="space-y-2">
                 <div className="flex flex-wrap items-center gap-3">
-                  <h1 className="text-3xl font-semibold text-balance text-foreground">
-                    {branchName}
-                  </h1>
+                  <h1 className="text-3xl font-semibold text-balance text-foreground">{branchName}</h1>
                   <Badge tone={settings?.areTerminalsEnabled ? "success" : "warning"}>
-                    {settings?.areTerminalsEnabled
-                      ? t("status_active")
-                      : t("status_inactive")}
+                    {settings?.areTerminalsEnabled ? t("status_active") : t("status_inactive")}
                   </Badge>
                 </div>
                 <p className="text-sm text-muted-foreground">{t("page_desc")}</p>
@@ -276,16 +244,17 @@ export function BranchTerminalSettingsPage() {
             <Card className="max-h-min rounded-3xl">
               <CardContent className="p-5">
                 <p className="text-[11px] font-semibold tracking-[0.24em] text-muted-foreground uppercase">
-                  {t("counter_label", { current: registersLoading ? 0 : registers.length, max: settings?.maxTerminals ?? 0 })}
+                  {t("counter_label", {
+                    current: registersLoading ? 0 : registers.length,
+                    max: settings?.maxTerminals ?? 0,
+                  })}
                 </p>
                 {registersLoading || settingsLoading ? (
                   <Skeleton className="mt-3 h-9 w-16" />
                 ) : (
                   <p className="mt-3 text-3xl font-semibold text-foreground">
                     {registers.length}
-                    <span className="ml-2 text-base text-muted-foreground">
-                      / {settings?.maxTerminals ?? 0}
-                    </span>
+                    <span className="ml-2 text-base text-muted-foreground">/ {settings?.maxTerminals ?? 0}</span>
                   </p>
                 )}
               </CardContent>
@@ -314,35 +283,27 @@ export function BranchTerminalSettingsPage() {
                 <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                   <div className="space-y-1">
                     <div className="flex items-center gap-2">
-                      <span className="text-base font-semibold text-foreground">
-                        {t("are_terminals_enabled")}
-                      </span>
+                      <span className="text-base font-semibold text-foreground">{t("are_terminals_enabled")}</span>
                       <Badge tone={localEnabled ? "success" : "warning"}>
                         {localEnabled ? t("switch_on") : t("switch_off")}
                       </Badge>
                     </div>
-                    <p className="text-xs text-muted-foreground sm:text-sm">
-                      {t("are_terminals_enabled_hint")}
-                    </p>
+                    <p className="text-xs text-muted-foreground sm:text-sm">{t("are_terminals_enabled_hint")}</p>
                   </div>
                   <Switch
                     checked={localEnabled}
                     onCheckedChange={handleEnabledChange}
                     disabled={anyMutating}
-                    className="data-[state=checked]:bg-emerald-500 data-[state=unchecked]:bg-muted scale-150 sm:scale-175"
+                    className="scale-150 data-[state=checked]:bg-emerald-500 data-[state=unchecked]:bg-muted sm:scale-175"
                   />
                 </div>
               </div>
 
               <div className="rounded-2xl border border-border/70 bg-card/60 p-5">
                 <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
-                  <div className="space-y-1 flex-1 max-w-xs">
-                    <p className="text-base font-semibold text-foreground">
-                      {t("max_terminals")}
-                    </p>
-                    <p className="text-xs text-muted-foreground sm:text-sm">
-                      {t("max_terminals_hint")}
-                    </p>
+                  <div className="max-w-xs flex-1 space-y-1">
+                    <p className="text-base font-semibold text-foreground">{t("max_terminals")}</p>
+                    <p className="text-xs text-muted-foreground sm:text-sm">{t("max_terminals_hint")}</p>
                     <Input
                       type="number"
                       min={0}
@@ -382,11 +343,7 @@ export function BranchTerminalSettingsPage() {
               </div>
 
               <div className="flex justify-end">
-                <Button
-                  type="button"
-                  onClick={handleSave}
-                  disabled={anyMutating || !isDirty}
-                >
+                <Button type="button" onClick={handleSave} disabled={anyMutating || !isDirty}>
                   <Save className="size-4" />
                   {t("save_settings")}
                 </Button>
@@ -419,15 +376,9 @@ export function BranchTerminalSettingsPage() {
               <div className="mx-auto flex size-14 items-center justify-center rounded-3xl border border-border/70 bg-accent/60 text-muted-foreground">
                 <Building2 className="size-6" />
               </div>
-              <h2 className="mt-4 text-lg font-semibold text-foreground">
-                {t("empty_title")}
-              </h2>
+              <h2 className="mt-4 text-lg font-semibold text-foreground">{t("empty_title")}</h2>
               <p className="mt-2 text-sm text-muted-foreground">{t("empty_desc")}</p>
-              <Button
-                variant="outline"
-                className="mt-5"
-                onClick={() => navigate("/business/settings/registers")}
-              >
+              <Button variant="outline" className="mt-5" onClick={() => navigate("/business/settings/registers")}>
                 <MonitorCog className="size-4" />
                 {t("go_registers")}
               </Button>
@@ -450,9 +401,7 @@ export function BranchTerminalSettingsPage() {
                         <TableCell className="font-medium">{r.name}</TableCell>
                         <TableCell className="text-muted-foreground">{r.code}</TableCell>
                         <TableCell>
-                          <Badge tone={statusBadgeTone(r.status)}>
-                            {t(statusTextKey(r.status as RegisterStatus))}
-                          </Badge>
+                          <Badge tone={statusBadgeTone(r.status)}>{t(statusTextKey(r.status as RegisterStatus))}</Badge>
                         </TableCell>
                         <TableCell className="text-muted-foreground">
                           {r.lastActivityAt ? formatDateTime(r.lastActivityAt) : "—"}
@@ -465,16 +414,11 @@ export function BranchTerminalSettingsPage() {
 
               <div className="grid gap-4 xl:hidden">
                 {registers.map((r) => (
-                  <Card
-                    key={r.id}
-                    className="rounded-[24px] border-border/70 bg-background/45 shadow-none"
-                  >
+                  <Card key={r.id} className="rounded-[24px] border-border/70 bg-background/45 shadow-none">
                     <CardContent className="space-y-3 p-4">
                       <div className="flex items-center justify-between">
                         <span className="font-medium">{r.name}</span>
-                        <Badge tone={statusBadgeTone(r.status)}>
-                          {t(statusTextKey(r.status as RegisterStatus))}
-                        </Badge>
+                        <Badge tone={statusBadgeTone(r.status)}>{t(statusTextKey(r.status as RegisterStatus))}</Badge>
                       </div>
                       <div className="grid grid-cols-2 gap-2 text-xs text-muted-foreground">
                         <div>

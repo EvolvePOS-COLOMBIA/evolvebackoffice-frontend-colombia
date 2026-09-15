@@ -20,13 +20,7 @@ const NEXT_STEPS = [
   { key: "branch", icon: Store },
 ] as const
 
-export function StepDone({
-  userFirstName,
-  businessName,
-  branchName,
-  activeModules,
-  onGoToDashboard,
-}: StepDoneProps) {
+export function StepDone({ userFirstName, businessName, branchName, activeModules, onGoToDashboard }: StepDoneProps) {
   const { t } = useTranslation("business-onboarding")
 
   const summary = [

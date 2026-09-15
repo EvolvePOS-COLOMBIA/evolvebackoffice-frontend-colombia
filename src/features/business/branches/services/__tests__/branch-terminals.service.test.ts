@@ -55,13 +55,10 @@ describe("branch-terminals.service", () => {
 
       mockApi.get.mockResolvedValue({ data: dto })
 
-      const result: BranchTerminalSettings =
-        await getBranchTerminalSettings(FAKE_BRANCH_ID)
+      const result: BranchTerminalSettings = await getBranchTerminalSettings(FAKE_BRANCH_ID)
 
       expect(mockApi.get).toHaveBeenCalledTimes(1)
-      expect(mockApi.get).toHaveBeenCalledWith(
-        `/api/branches/${FAKE_BRANCH_ID}/terminals/settings`
-      )
+      expect(mockApi.get).toHaveBeenCalledWith(`/api/branches/${FAKE_BRANCH_ID}/terminals/settings`)
 
       expect(result.id).toBe(dto.id)
       expect(result.branchId).toBe(dto.branchId)
@@ -116,10 +113,7 @@ describe("branch-terminals.service", () => {
       const result = await upsertBranchTerminalSettings(FAKE_BRANCH_ID, requestBody)
 
       expect(mockApi.post).toHaveBeenCalledTimes(1)
-      expect(mockApi.post).toHaveBeenCalledWith(
-        `/api/branches/${FAKE_BRANCH_ID}/terminals/settings`,
-        requestBody
-      )
+      expect(mockApi.post).toHaveBeenCalledWith(`/api/branches/${FAKE_BRANCH_ID}/terminals/settings`, requestBody)
 
       expect(result.id).toBe(responseDto.id)
       expect(result.maxTerminals).toBe(5)
@@ -142,10 +136,7 @@ describe("branch-terminals.service", () => {
 
       await upsertBranchTerminalSettings(FAKE_BRANCH_ID, requestBody)
 
-      expect(mockApi.post).toHaveBeenCalledWith(
-        `/api/branches/${FAKE_BRANCH_ID}/terminals/settings`,
-        requestBody
-      )
+      expect(mockApi.post).toHaveBeenCalledWith(`/api/branches/${FAKE_BRANCH_ID}/terminals/settings`, requestBody)
     })
   })
 
@@ -156,9 +147,7 @@ describe("branch-terminals.service", () => {
       const result = await deactivateBranchTerminals(FAKE_BRANCH_ID)
 
       expect(mockApi.post).toHaveBeenCalledTimes(1)
-      expect(mockApi.post).toHaveBeenCalledWith(
-        `/api/branches/${FAKE_BRANCH_ID}/terminals/deactivate`
-      )
+      expect(mockApi.post).toHaveBeenCalledWith(`/api/branches/${FAKE_BRANCH_ID}/terminals/deactivate`)
 
       expect(result).toBeUndefined()
     })
@@ -170,9 +159,7 @@ describe("branch-terminals.service", () => {
 
       const result = await activateBranchTerminals(FAKE_BRANCH_ID)
 
-      expect(mockApi.post).toHaveBeenCalledWith(
-        `/api/branches/${FAKE_BRANCH_ID}/terminals/activate`
-      )
+      expect(mockApi.post).toHaveBeenCalledWith(`/api/branches/${FAKE_BRANCH_ID}/terminals/activate`)
       expect(result).toBeUndefined()
     })
   })

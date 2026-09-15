@@ -121,7 +121,7 @@ export function SidebarContent({
               key={item.to}
               to={item.to}
               onClick={onNavigate}
-              title={isCollapsed && !isMobile ? t(item.labelKey as any) : undefined}
+              title={isCollapsed && !isMobile ? t(item.labelKey as "dashboard" | "tenants" | "items" | "inventory" | "people" | "reports" | "settings") : undefined}
               className={cn(
                 "flex items-center gap-3 rounded-2xl border border-l-3 py-3 text-sm font-medium transition-colors duration-300",
                 isCollapsed && !isMobile ? "h-12 w-12 justify-center px-0" : "px-4",

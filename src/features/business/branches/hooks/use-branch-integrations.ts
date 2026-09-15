@@ -29,10 +29,7 @@ export function useBranchIntegrations(branchId: string | null | undefined, enabl
 }
 
 /** Find integration by platform code from the list. */
-export function useBranchIntegrationByPlatform(
-  branchId: string | null | undefined,
-  platformCode: PlatformCode
-) {
+export function useBranchIntegrationByPlatform(branchId: string | null | undefined, platformCode: PlatformCode) {
   const { data: integrations, ...rest } = useBranchIntegrations(branchId)
   const integration = integrations?.find((i) => i.platformCode === platformCode) ?? null
   return { data: integration, ...rest }
@@ -43,13 +40,8 @@ export function useCreateBranchIntegration() {
   const qc = useQueryClient()
 
   return useMutation({
-    mutationFn: ({
-      branchId,
-      dto,
-    }: {
-      branchId: string
-      dto: CreateBranchIntegrationDto
-    }) => createBranchIntegration(branchId, dto),
+    mutationFn: ({ branchId, dto }: { branchId: string; dto: CreateBranchIntegrationDto }) =>
+      createBranchIntegration(branchId, dto),
     onSuccess: (_data, variables) => {
       qc.invalidateQueries({ queryKey: integrationsKeys.list(variables.branchId) })
     },
@@ -61,15 +53,8 @@ export function useUpdateBranchIntegration() {
   const qc = useQueryClient()
 
   return useMutation({
-    mutationFn: ({
-      branchId,
-      id,
-      dto,
-    }: {
-      branchId: string
-      id: string
-      dto: UpdateBranchIntegrationDto
-    }) => updateBranchIntegration(branchId, id, dto),
+    mutationFn: ({ branchId, id, dto }: { branchId: string; id: string; dto: UpdateBranchIntegrationDto }) =>
+      updateBranchIntegration(branchId, id, dto),
     onSuccess: (_data, variables) => {
       qc.invalidateQueries({ queryKey: integrationsKeys.list(variables.branchId) })
     },
@@ -81,13 +66,7 @@ export function useDeleteBranchIntegration() {
   const qc = useQueryClient()
 
   return useMutation({
-    mutationFn: ({
-      branchId,
-      id,
-    }: {
-      branchId: string
-      id: string
-    }) => deleteBranchIntegration(branchId, id),
+    mutationFn: ({ branchId, id }: { branchId: string; id: string }) => deleteBranchIntegration(branchId, id),
     onSuccess: (_data, variables) => {
       qc.invalidateQueries({ queryKey: integrationsKeys.list(variables.branchId) })
     },
@@ -97,12 +76,6 @@ export function useDeleteBranchIntegration() {
 /** Test connectivity to the external platform. */
 export function useTestBranchIntegrationConnection() {
   return useMutation({
-    mutationFn: ({
-      branchId,
-      id,
-    }: {
-      branchId: string
-      id: string
-    }) => testBranchIntegrationConnection(branchId, id),
+    mutationFn: ({ branchId, id }: { branchId: string; id: string }) => testBranchIntegrationConnection(branchId, id),
   })
 }

@@ -34,13 +34,8 @@ export async function getBranchItems(
   }
 }
 
-export async function getBranchItemById(
-  branchId: string,
-  id: string
-): Promise<BranchItemResponseDto> {
-  const { data } = await api.get<BranchItemResponseDto>(
-    `/api/branches/${branchId}/items/${id}`
-  )
+export async function getBranchItemById(branchId: string, id: string): Promise<BranchItemResponseDto> {
+  const { data } = await api.get<BranchItemResponseDto>(`/api/branches/${branchId}/items/${id}`)
   return data
 }
 
@@ -48,20 +43,12 @@ export async function getBranchItemByItemPublicId(
   branchId: string,
   itemPublicId: string
 ): Promise<BranchItemResponseDto> {
-  const { data } = await api.get<BranchItemResponseDto>(
-    `/api/branches/${branchId}/items/by-item/${itemPublicId}`
-  )
+  const { data } = await api.get<BranchItemResponseDto>(`/api/branches/${branchId}/items/by-item/${itemPublicId}`)
   return data
 }
 
-export async function createBranchItem(
-  branchId: string,
-  payload: CreateBranchItemDto
-): Promise<BranchItemResponseDto> {
-  const { data } = await api.post<BranchItemResponseDto>(
-    `/api/branches/${branchId}/items`,
-    payload
-  )
+export async function createBranchItem(branchId: string, payload: CreateBranchItemDto): Promise<BranchItemResponseDto> {
+  const { data } = await api.post<BranchItemResponseDto>(`/api/branches/${branchId}/items`, payload)
   return data
 }
 
@@ -70,10 +57,7 @@ export async function updateBranchItemPricing(
   id: string,
   payload: UpdateBranchItemDto
 ): Promise<BranchItemResponseDto> {
-  const { data } = await api.put<BranchItemResponseDto>(
-    `/api/branches/${branchId}/items/${id}/pricing`,
-    payload
-  )
+  const { data } = await api.put<BranchItemResponseDto>(`/api/branches/${branchId}/items/${id}/pricing`, payload)
   return data
 }
 
@@ -82,16 +66,10 @@ export async function adjustBranchItemStock(
   id: string,
   payload: AdjustBranchItemStockDto
 ): Promise<BranchItemResponseDto> {
-  const { data } = await api.post<BranchItemResponseDto>(
-    `/api/branches/${branchId}/items/${id}/stock`,
-    payload
-  )
+  const { data } = await api.post<BranchItemResponseDto>(`/api/branches/${branchId}/items/${id}/stock`, payload)
   return data
 }
 
-export async function deleteBranchItem(
-  branchId: string,
-  id: string
-): Promise<void> {
+export async function deleteBranchItem(branchId: string, id: string): Promise<void> {
   await api.delete(`/api/branches/${branchId}/items/${id}`)
 }

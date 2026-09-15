@@ -29,13 +29,8 @@ export function useUpsertBranchTerminalSettings() {
   const queryClient = useQueryClient()
 
   return useMutation({
-    mutationFn: ({
-      branchId,
-      payload,
-    }: {
-      branchId: string
-      payload: UpsertBranchTerminalSettingsDto
-    }) => upsertBranchTerminalSettings(branchId, payload),
+    mutationFn: ({ branchId, payload }: { branchId: string; payload: UpsertBranchTerminalSettingsDto }) =>
+      upsertBranchTerminalSettings(branchId, payload),
     onSuccess: (_data, variables) => {
       queryClient.invalidateQueries({
         queryKey: branchTerminalsKeys.settings(variables.branchId),

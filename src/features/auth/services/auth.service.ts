@@ -85,7 +85,16 @@ function isPlatformRole(role: string | null | undefined) {
     return false
   }
 
-  return ["admin", "platformadmin", "platform-admin", "superadmin", "super-admin", "subadmin", "sub-admin", "supervisor"].includes(role.toLowerCase())
+  return [
+    "admin",
+    "platformadmin",
+    "platform-admin",
+    "superadmin",
+    "super-admin",
+    "subadmin",
+    "sub-admin",
+    "supervisor",
+  ].includes(role.toLowerCase())
 }
 
 function readJwtClaims(token: string): Record<string, unknown> {
@@ -174,11 +183,7 @@ function mapBusinessLoginError(error: unknown) {
  * Solicita el enlace de restablecimiento de contraseña ("olvidé mi contraseña").
  * El backend siempre responde genéricamente para no revelar si el email existe.
  */
-export async function requestPasswordReset(
-  email: string,
-  scope: PasswordResetScope,
-  tenantId?: string
-): Promise<void> {
+export async function requestPasswordReset(email: string, scope: PasswordResetScope, tenantId?: string): Promise<void> {
   const url = scope === "platform" ? "/api/Auth/forgot-password/platform" : "/api/Auth/forgot-password"
   const headers: Record<string, string> = {}
   if (scope === "tenant" && tenantId) {

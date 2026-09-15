@@ -108,11 +108,7 @@ describe("platform-user.service", () => {
 
       expect(mockApi.get).toHaveBeenCalledWith("/api/platform-users")
       expect(result).toHaveLength(3)
-      expect(result.map((u) => u.role)).toEqual([
-        "PlatformAdmin",
-        "PlatformSubAdmin",
-        "PlatformSupervisor",
-      ])
+      expect(result.map((u) => u.role)).toEqual(["PlatformAdmin", "PlatformSubAdmin", "PlatformSupervisor"])
     })
   })
 

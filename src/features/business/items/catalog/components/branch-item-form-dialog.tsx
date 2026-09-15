@@ -14,10 +14,7 @@ import {
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form"
 import { Input } from "@/components/ui/input"
 import { useTranslation } from "@/i18n/use-i18n"
-import {
-  updateBranchItemPricingSchema,
-  type UpdateBranchItemPricingFormValues,
-} from "../schemas/item-schema"
+import { updateBranchItemPricingSchema, type UpdateBranchItemPricingFormValues } from "../schemas/item-schema"
 import { useUpdateBranchItemPricing } from "../hooks/use-branch-items"
 import type { BranchItemResponseDto } from "../types"
 
@@ -28,12 +25,7 @@ type BranchItemFormDialogProps = {
   item: BranchItemResponseDto
 }
 
-export function BranchItemFormDialog({
-  open,
-  onOpenChange,
-  branchId,
-  item,
-}: BranchItemFormDialogProps) {
+export function BranchItemFormDialog({ open, onOpenChange, branchId, item }: BranchItemFormDialogProps) {
   const { t } = useTranslation("business-items-catalog")
   const updatePricing = useUpdateBranchItemPricing(branchId)
 
@@ -93,9 +85,7 @@ export function BranchItemFormDialog({
       <DialogContent className="w-[calc(100%-2rem)] lg:w-[600px]">
         <DialogHeader>
           <DialogTitle>{t("edit_pricing")}</DialogTitle>
-          <DialogDescription>
-            {t("edit_pricing_desc", { name: item.itemName })}
-          </DialogDescription>
+          <DialogDescription>{t("edit_pricing_desc", { name: item.itemName })}</DialogDescription>
         </DialogHeader>
 
         <Form {...form}>
@@ -205,9 +195,7 @@ export function BranchItemFormDialog({
             />
 
             {form.formState.errors.root ? (
-              <p className="text-sm font-medium text-destructive">
-                {form.formState.errors.root.message}
-              </p>
+              <p className="text-sm font-medium text-destructive">{form.formState.errors.root.message}</p>
             ) : null}
 
             <DialogFooter>

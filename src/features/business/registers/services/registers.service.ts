@@ -53,10 +53,7 @@ function normalizePagedResponse(
   }
 }
 
-export async function getRegisters(
-  pageNumber = 1,
-  pageSize = PAGE_SIZE_DEFAULT
-): Promise<PagedRegisters> {
+export async function getRegisters(pageNumber = 1, pageSize = PAGE_SIZE_DEFAULT): Promise<PagedRegisters> {
   const { data } = await api.get<PagedRegistersResponse | RegisterResponseDto[]>("/api/registers", {
     params: { pageNumber, pageSize },
   })

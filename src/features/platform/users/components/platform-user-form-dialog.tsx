@@ -94,9 +94,7 @@ export function PlatformUserFormDialog({ open, onOpenChange, userToEdit }: Platf
       <DialogContent className="sm:max-w-[480px]">
         <DialogHeader>
           <DialogTitle>{userToEdit ? t("edit_user") : t("create_user")}</DialogTitle>
-          <DialogDescription>
-            {userToEdit ? t("edit_user_desc") : t("create_user_desc")}
-          </DialogDescription>
+          <DialogDescription>{userToEdit ? t("edit_user_desc") : t("create_user_desc")}</DialogDescription>
         </DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="space-y-2">

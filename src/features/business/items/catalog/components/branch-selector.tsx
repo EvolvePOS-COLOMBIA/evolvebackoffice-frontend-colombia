@@ -25,23 +25,13 @@ export function BranchSelector({ options, selectedId, onSelect }: BranchSelector
           <button
             key={option.id ?? "global"}
             onClick={() => onSelect(option.id)}
-            className={`
-              flex items-center gap-1.5 rounded-md px-3 py-1.5 text-sm font-medium transition-all
-              ${isSelected
-                ? "bg-background text-foreground shadow-sm"
-                : "text-muted-foreground hover:text-foreground"
-              }
-            `}
+            className={`flex items-center gap-1.5 rounded-md px-3 py-1.5 text-sm font-medium transition-all ${
+              isSelected ? "bg-background text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"
+            } `}
           >
-            {isGlobal ? (
-              <Globe className="size-3.5" />
-            ) : (
-              <Building2 className="size-3.5" />
-            )}
+            {isGlobal ? <Globe className="size-3.5" /> : <Building2 className="size-3.5" />}
             <span className="hidden sm:inline">{option.name}</span>
-            <span className="sm:hidden">
-              {isGlobal ? t("global_catalog") : option.name.slice(0, 2).toUpperCase()}
-            </span>
+            <span className="sm:hidden">{isGlobal ? t("global_catalog") : option.name.slice(0, 2).toUpperCase()}</span>
           </button>
         )
       })}

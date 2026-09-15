@@ -2,14 +2,7 @@ import { Pencil } from "lucide-react"
 
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table"
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { useTranslation } from "@/i18n/use-i18n"
 import type { UserResponseDto } from "../types"
 import { IDENTIFICATION_TYPE_LABELS, IdentificationType, getUserDisplayName } from "../types"
@@ -50,24 +43,18 @@ export function UsersTable({ users, onEdit }: UsersTableProps) {
               <TableCell>
                 <div>
                   <p className="font-medium text-foreground">{getUserDisplayName(user)}</p>
-                  {user.username && (
-                    <p className="text-xs text-muted-foreground">@{user.username}</p>
-                  )}
+                  {user.username && <p className="text-xs text-muted-foreground">@{user.username}</p>}
                 </div>
               </TableCell>
-              <TableCell className="hidden sm:table-cell text-muted-foreground">
-                {user.email ?? "—"}
-              </TableCell>
-              <TableCell className="hidden md:table-cell text-muted-foreground">
+              <TableCell className="hidden text-muted-foreground sm:table-cell">{user.email ?? "—"}</TableCell>
+              <TableCell className="hidden text-muted-foreground md:table-cell">
                 {IDENTIFICATION_TYPE_LABELS[user.identificationTypeId as IdentificationType] ?? "—"}
               </TableCell>
-              <TableCell className="hidden md:table-cell text-muted-foreground">
+              <TableCell className="hidden text-muted-foreground md:table-cell">
                 {user.identificationNumber ?? "—"}
               </TableCell>
               <TableCell>
-                <Badge tone={getRoleTone(user.role)}>
-                  {getRoleLabel(user.role, t)}
-                </Badge>
+                <Badge tone={getRoleTone(user.role)}>{getRoleLabel(user.role, t)}</Badge>
               </TableCell>
               <TableCell className="hidden lg:table-cell">
                 <Badge tone={user.isActive ? "success" : "neutral"}>

@@ -1,16 +1,7 @@
 import { useState } from "react"
 import { useNavigate, useParams } from "react-router-dom"
 import { useQuery } from "@tanstack/react-query"
-import {
-  ArrowLeft,
-  CheckCircle2,
-  Globe,
-  Package,
-  ShoppingCart,
-  Tag,
-  Trash2,
-  Warehouse,
-} from "lucide-react"
+import { ArrowLeft, CheckCircle2, Globe, Package, ShoppingCart, Tag, Trash2, Warehouse } from "lucide-react"
 
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
@@ -65,20 +56,11 @@ export function BranchConfigPage() {
     enabled: Boolean(branchId),
   })
 
-  const {
-    data: tenantModules = [],
-    isLoading: tenantModulesLoading,
-  } = useTenantModules()
+  const { data: tenantModules = [], isLoading: tenantModulesLoading } = useTenantModules()
 
-  const {
-    data: branchModules = [],
-    isLoading: branchModulesLoading,
-  } = useBranchModules(branchId)
+  const { data: branchModules = [], isLoading: branchModulesLoading } = useBranchModules(branchId)
 
-  const {
-    data: registers = [],
-    isLoading: registersLoading,
-  } = useBranchRegisters(branchId)
+  const { data: registers = [], isLoading: registersLoading } = useBranchRegisters(branchId)
 
   const { data: wooIntegration, isLoading: wooLoading } = useBranchIntegrationByPlatform(branchId, "WOOCOMMERCE")
   const { data: cluviIntegration, isLoading: cluviLoading } = useBranchIntegrationByPlatform(branchId, "CLUVI")
@@ -86,9 +68,7 @@ export function BranchConfigPage() {
   const assignMutation = useAssignModuleToBranch()
   const removeMutation = useRemoveModuleFromBranch()
 
-  const assignedTenantModuleIds = new Set(
-    branchModules.map((bm) => bm.tenantModuleId)
-  )
+  const assignedTenantModuleIds = new Set(branchModules.map((bm) => bm.tenantModuleId))
 
   const handleAssign = (tenantModulePublicId: string) => {
     if (!branchId) return
@@ -96,8 +76,7 @@ export function BranchConfigPage() {
       { branchId, tenantModulePublicId },
       {
         onSuccess: () => notify.success(t("modules_assign_success")),
-        onError: (err) =>
-          notify.error(err instanceof Error ? err.message : t("error_loading")),
+        onError: (err) => notify.error(err instanceof Error ? err.message : t("error_loading")),
       }
     )
   }
@@ -108,8 +87,7 @@ export function BranchConfigPage() {
       { branchId, modulePublicId },
       {
         onSuccess: () => notify.success(t("modules_remove_success")),
-        onError: (err) =>
-          notify.error(err instanceof Error ? err.message : t("error_loading")),
+        onError: (err) => notify.error(err instanceof Error ? err.message : t("error_loading")),
       }
     )
   }
@@ -125,11 +103,7 @@ export function BranchConfigPage() {
           eyebrow="Branch"
           title={t("branch_not_found")}
           description={t("branch_not_found_desc")}
-          action={
-            <Button onClick={() => navigate("/business/settings/registers")}>
-              {t("back_to_branches")}
-            </Button>
-          }
+          action={<Button onClick={() => navigate("/business/settings/registers")}>{t("back_to_branches")}</Button>}
         />
       </div>
     )
@@ -152,9 +126,9 @@ export function BranchConfigPage() {
           {t("breadcrumb_branches")}
         </Button>
         <span>/</span>
-        <span>{branchLoading ? <Skeleton className="h-4 w-32 inline-block" /> : branch?.name}</span>
+        <span>{branchLoading ? <Skeleton className="inline-block h-4 w-32" /> : branch?.name}</span>
         <span>/</span>
-        <span className="text-foreground font-medium">{t("breadcrumb_config")}</span>
+        <span className="font-medium text-foreground">{t("breadcrumb_config")}</span>
       </div>
 
       <Card className="overflow-hidden">
@@ -167,9 +141,7 @@ export function BranchConfigPage() {
           ) : (
             <div className="space-y-2">
               <div className="flex flex-wrap items-center gap-3">
-                <h1 className="text-3xl font-semibold text-balance text-foreground">
-                  {branch?.name}
-                </h1>
+                <h1 className="text-3xl font-semibold text-balance text-foreground">{branch?.name}</h1>
                 <Badge tone={branch?.isActive ? "success" : "warning"}>
                   {branch?.isActive ? t("info_active") : t("info_inactive")}
                 </Badge>
@@ -297,9 +269,7 @@ export function BranchConfigPage() {
                     ))}
                   </div>
                 ) : tenantModules.length === 0 ? (
-                  <div className="py-8 text-center text-sm text-muted-foreground">
-                    {t("modules_none_available")}
-                  </div>
+                  <div className="py-8 text-center text-sm text-muted-foreground">{t("modules_none_available")}</div>
                 ) : (
                   <div className="space-y-2">
                     {tenantModules
@@ -379,9 +349,7 @@ export function BranchConfigPage() {
                       <TableBody>
                         {registers.map((r) => (
                           <TableRow key={r.id}>
-                            <TableCell className="font-mono text-sm">
-                              {r.serialCode ?? r.code}
-                            </TableCell>
+                            <TableCell className="font-mono text-sm">{r.serialCode ?? r.code}</TableCell>
                             <TableCell>
                               <Badge tone={r.status === "Active" ? "success" : "warning"}>
                                 {r.status === "Active"
@@ -429,11 +397,7 @@ export function BranchConfigPage() {
               </CardContent>
             </Card>
           ) : (
-            <IntegrationForm
-              branchId={branchId!}
-              platformCode="WOOCOMMERCE"
-              integration={wooIntegration}
-            />
+            <IntegrationForm branchId={branchId!} platformCode="WOOCOMMERCE" integration={wooIntegration} />
           )}
         </TabsContent>
 
@@ -446,11 +410,7 @@ export function BranchConfigPage() {
               </CardContent>
             </Card>
           ) : (
-            <IntegrationForm
-              branchId={branchId!}
-              platformCode="CLUVI"
-              integration={cluviIntegration}
-            />
+            <IntegrationForm branchId={branchId!} platformCode="CLUVI" integration={cluviIntegration} />
           )}
         </TabsContent>
       </Tabs>
@@ -460,19 +420,11 @@ export function BranchConfigPage() {
 
 /* ───── Helper components ───── */
 
-function InfoRow({
-  label,
-  value,
-}: {
-  label: string
-  value: React.ReactNode
-}) {
+function InfoRow({ label, value }: { label: string; value: React.ReactNode }) {
   return (
     <div className="rounded-xl border border-border/70 bg-card/60 px-4 py-3">
       <p className="text-xs text-muted-foreground">{label}</p>
-      <p className="mt-1 text-sm font-medium text-foreground">
-        {value ?? "—"}
-      </p>
+      <p className="mt-1 text-sm font-medium text-foreground">{value ?? "—"}</p>
     </div>
   )
 }

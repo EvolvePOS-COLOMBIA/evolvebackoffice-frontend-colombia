@@ -127,10 +127,7 @@ export function RegistersPage() {
     })
   }, [registers, query])
 
-  const activeRegisters = useMemo(
-    () => registers.filter((r) => r.status === "Active").length,
-    [registers]
-  )
+  const activeRegisters = useMemo(() => registers.filter((r) => r.status === "Active").length, [registers])
 
   const uniqueBranchIds = useMemo(() => {
     const set = new Set<string>()
@@ -203,8 +200,7 @@ export function RegistersPage() {
     )
   }
 
-  const isMutating =
-    createMutation.isPending || updateMutation.isPending || setStatusMutation.isPending
+  const isMutating = createMutation.isPending || updateMutation.isPending || setStatusMutation.isPending
 
   const openEdit = (r: Register) => {
     setSelectedRegister(r)
@@ -245,22 +241,14 @@ export function RegistersPage() {
           <div className="space-y-4">
             <Badge tone="primary">{t("summary")}</Badge>
             <div>
-              <h1 className="text-3xl font-semibold text-balance text-foreground">
-                {t("page_title")}
-              </h1>
-              <p className="max-w-2xl text-sm leading-7 text-muted-foreground">
-                {t("page_desc")}
-              </p>
+              <h1 className="text-3xl font-semibold text-balance text-foreground">{t("page_title")}</h1>
+              <p className="max-w-2xl text-sm leading-7 text-muted-foreground">{t("page_desc")}</p>
             </div>
           </div>
 
           <div className="grid grid-cols-2 gap-3">
             <SummaryTile label={t("total_registers")} value={totalCount} loading={isLoading} />
-            <SummaryTile
-              label={t("active_registers")}
-              value={activeRegisters}
-              loading={isLoading}
-            />
+            <SummaryTile label={t("active_registers")} value={activeRegisters} loading={isLoading} />
           </div>
         </CardContent>
       </Card>
@@ -268,12 +256,7 @@ export function RegistersPage() {
       {hasAnyDisabledBranchWarning && uniqueBranchIds.length > 0 ? (
         <div className="space-y-3">
           {uniqueBranchIds.map((bid) => (
-            <BranchDisabledWarning
-              key={bid}
-              branchId={bid}
-              t={t}
-              onNavigate={goToBranchSettings}
-            />
+            <BranchDisabledWarning key={bid} branchId={bid} t={t} onNavigate={goToBranchSettings} />
           ))}
         </div>
       ) : null}
@@ -295,11 +278,7 @@ export function RegistersPage() {
         <CardContent className="space-y-4 pt-6">
           <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
             <div className="max-w-xl flex-1">
-              <Input
-                value={query}
-                onChange={(e) => setQuery(e.target.value)}
-                placeholder={t("search_placeholder")}
-              />
+              <Input value={query} onChange={(e) => setQuery(e.target.value)} placeholder={t("search_placeholder")} />
             </div>
             <Badge tone="neutral" className="w-fit">
               {filteredRegisters.length} {t("results")}
@@ -329,13 +308,9 @@ export function RegistersPage() {
                       <TableRow key={r.id}>
                         <TableCell className="font-medium">{r.name}</TableCell>
                         <TableCell className="text-muted-foreground">{r.code}</TableCell>
-                        <TableCell className="text-muted-foreground">
-                          {r.branchName || "—"}
-                        </TableCell>
+                        <TableCell className="text-muted-foreground">{r.branchName || "—"}</TableCell>
                         <TableCell>
-                          <Badge tone={statusBadgeTone(r.status)}>
-                            {t(statusTextKey(r.status))}
-                          </Badge>
+                          <Badge tone={statusBadgeTone(r.status)}>{t(statusTextKey(r.status))}</Badge>
                         </TableCell>
                         <TableCell className="text-muted-foreground">
                           {r.lastActivityAt ? formatDateTime(r.lastActivityAt) : "—"}
@@ -372,18 +347,13 @@ export function RegistersPage() {
 
               <div className="grid gap-4 xl:hidden">
                 {filteredRegisters.map((r) => (
-                  <Card
-                    key={r.id}
-                    className="rounded-[24px] border-border/70 bg-background/45 shadow-none"
-                  >
+                  <Card key={r.id} className="rounded-[24px] border-border/70 bg-background/45 shadow-none">
                     <CardContent className="space-y-4 p-4 sm:p-5">
                       <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
                         <div className="space-y-2">
                           <div className="flex flex-wrap items-center gap-2">
                             <h3 className="text-base font-semibold text-foreground">{r.name}</h3>
-                            <Badge tone={statusBadgeTone(r.status)}>
-                              {t(statusTextKey(r.status))}
-                            </Badge>
+                            <Badge tone={statusBadgeTone(r.status)}>{t(statusTextKey(r.status))}</Badge>
                           </div>
                           <p className="text-sm text-muted-foreground">
                             {t("code_label")}: {r.code}
@@ -422,9 +392,7 @@ export function RegistersPage() {
                         {r.deviceIdentifier ? (
                           <CompactMeta label={t("device_label")} value={r.deviceIdentifier} />
                         ) : null}
-                        {r.serialCode ? (
-                          <CompactMeta label={t("serial_label")} value={r.serialCode} />
-                        ) : null}
+                        {r.serialCode ? <CompactMeta label={t("serial_label")} value={r.serialCode} /> : null}
                       </div>
                     </CardContent>
                   </Card>
@@ -444,9 +412,7 @@ export function RegistersPage() {
               >
                 {t("previous")}
               </Button>
-              <span className="text-sm text-muted-foreground">
-                {t("page_info", { page, totalPages })}
-              </span>
+              <span className="text-sm text-muted-foreground">{t("page_info", { page, totalPages })}</span>
               <Button
                 type="button"
                 variant="outline"
@@ -493,21 +459,11 @@ export function RegistersPage() {
   )
 }
 
-function SummaryTile({
-  label,
-  value,
-  loading = false,
-}: {
-  label: string
-  value: number | string
-  loading?: boolean
-}) {
+function SummaryTile({ label, value, loading = false }: { label: string; value: number | string; loading?: boolean }) {
   return (
     <Card className="max-h-min rounded-3xl">
       <CardContent className="p-5">
-        <p className="text-[11px] font-semibold tracking-[0.24em] text-muted-foreground uppercase">
-          {label}
-        </p>
+        <p className="text-[11px] font-semibold tracking-[0.24em] text-muted-foreground uppercase">{label}</p>
         {loading ? (
           <Skeleton className="mt-3 h-9 w-16" />
         ) : (
@@ -521,9 +477,7 @@ function SummaryTile({
 function CompactMeta({ label, value }: { label: string; value: string }) {
   return (
     <div className="rounded-2xl border border-border/70 bg-card/60 px-4 py-3">
-      <p className="text-[11px] font-semibold tracking-[0.22em] text-muted-foreground uppercase">
-        {label}
-      </p>
+      <p className="text-[11px] font-semibold tracking-[0.22em] text-muted-foreground uppercase">{label}</p>
       <p className="mt-2 text-sm font-medium text-foreground">{value}</p>
     </div>
   )

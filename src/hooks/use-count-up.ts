@@ -13,7 +13,9 @@ export function useCountUp(
   { duration = 1200, decimals = 0, prefix = "", locale, formatter }: UseCountUpOptions = {}
 ) {
   const [display, setDisplay] = useState(() =>
-    formatter ? formatter(target) : `${prefix}${target.toLocaleString(locale, { minimumFractionDigits: decimals, maximumFractionDigits: decimals })}`
+    formatter
+      ? formatter(target)
+      : `${prefix}${target.toLocaleString(locale, { minimumFractionDigits: decimals, maximumFractionDigits: decimals })}`
   )
   const frameRef = useRef<number>(0)
   const startTimeRef = useRef<number | null>(null)

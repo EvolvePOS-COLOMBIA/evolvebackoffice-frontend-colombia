@@ -92,9 +92,7 @@ export const useAppStore = create<AppState>()(
         }),
 
       clearForcePasswordChange: () =>
-        set((state) =>
-          state.session ? { session: { ...state.session, forcePasswordChange: false } } : {}
-        ),
+        set((state) => (state.session ? { session: { ...state.session, forcePasswordChange: false } } : {})),
 
       logout: () => {
         set({ session: null, pendingPassword: null })

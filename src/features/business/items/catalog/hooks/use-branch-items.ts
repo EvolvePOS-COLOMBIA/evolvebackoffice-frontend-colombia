@@ -9,12 +9,7 @@ import {
   getBranchItems,
   updateBranchItemPricing,
 } from "../services/branch-items.service"
-import type {
-  AdjustBranchItemStockDto,
-  CreateBranchItemDto,
-  ItemListParams,
-  UpdateBranchItemDto,
-} from "../types"
+import type { AdjustBranchItemStockDto, CreateBranchItemDto, ItemListParams, UpdateBranchItemDto } from "../types"
 
 export function useBranchItems(branchId: string | null, params: ItemListParams = {}) {
   return useQuery({

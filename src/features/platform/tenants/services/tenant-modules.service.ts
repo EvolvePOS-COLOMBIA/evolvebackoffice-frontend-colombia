@@ -45,14 +45,9 @@ function createPlatformClient(token: string, tenantId: string) {
   })
 }
 
-export async function getTenantModules(
-  token: string,
-  tenantId: string
-): Promise<TenantModule[]> {
+export async function getTenantModules(token: string, tenantId: string): Promise<TenantModule[]> {
   const client = createPlatformClient(token, tenantId)
-  const { data } = await client.get<PagedResponse<TenantModuleDto> | TenantModuleDto[]>(
-    "/api/tenant-modules"
-  )
+  const { data } = await client.get<PagedResponse<TenantModuleDto> | TenantModuleDto[]>("/api/tenant-modules")
   const items = normalizeArray(data)
   return items.map(mapDtoToTenantModule)
 }
@@ -64,10 +59,7 @@ export async function updateTenantModule(
   body: UpdateTenantModuleDto
 ): Promise<TenantModule> {
   const client = createPlatformClient(token, tenantId)
-  const { data } = await client.put<TenantModuleDto>(
-    `/api/tenant-modules/${modulePublicId}`,
-    body
-  )
+  const { data } = await client.put<TenantModuleDto>(`/api/tenant-modules/${modulePublicId}`, body)
   return mapDtoToTenantModule(data)
 }
 

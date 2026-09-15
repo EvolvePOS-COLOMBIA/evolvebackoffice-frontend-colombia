@@ -28,27 +28,14 @@ import { tenantCreateSchema } from "@/features/platform/tenants/schemas/tenant-s
 import { useModulesCatalog } from "@/features/platform/tenants/hooks/use-modules-catalog"
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import {
-  Form,
-  FormControl,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from "@/components/ui/form"
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import { Separator } from "@/components/ui/separator"
 import { Switch } from "@/components/ui/switch"
 import { Badge } from "@/components/ui/badge"
 import { Skeleton } from "@/components/ui/skeleton"
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import Spinner from "@/components/Spinner"
 
 export function TenantCreatePage() {
@@ -60,9 +47,7 @@ export function TenantCreatePage() {
   const { data: catalogModules = [], isLoading: catalogLoading } = useModulesCatalog(token)
   const [isSubmitting, setIsSubmitting] = useState(false)
 
-  const [modulesState, setModulesState] = useState<
-    Record<string, { isEnabled: boolean; quantity: number }>
-  >({})
+  const [modulesState, setModulesState] = useState<Record<string, { isEnabled: boolean; quantity: number }>>({})
 
   const form = useForm({
     resolver: zodResolver(tenantCreateSchema(t)),
@@ -223,12 +208,7 @@ export function TenantCreatePage() {
                         {t("contact_email")}
                       </FormLabel>
                       <FormControl>
-                        <Input
-                          type="email"
-                          placeholder={t("email_placeholder")}
-                          className="h-11"
-                          {...field}
-                        />
+                        <Input type="email" placeholder={t("email_placeholder")} className="h-11" {...field} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -318,11 +298,7 @@ export function TenantCreatePage() {
                       {t("admin_identification")}
                     </FormLabel>
                     <FormControl>
-                      <Input
-                        placeholder={t("admin_identification_placeholder")}
-                        className="h-11"
-                        {...field}
-                      />
+                      <Input placeholder={t("admin_identification_placeholder")} className="h-11" {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -339,11 +315,7 @@ export function TenantCreatePage() {
                         {t("subdomain")}
                       </FormLabel>
                       <FormControl>
-                        <Input
-                          placeholder={t("subdomain_placeholder")}
-                          className="h-11"
-                          {...field}
-                        />
+                        <Input placeholder={t("subdomain_placeholder")} className="h-11" {...field} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -359,11 +331,7 @@ export function TenantCreatePage() {
                         {t("identification_number")}
                       </FormLabel>
                       <FormControl>
-                        <Input
-                          placeholder={t("identification_number_placeholder")}
-                          className="h-11"
-                          {...field}
-                        />
+                        <Input placeholder={t("identification_number_placeholder")} className="h-11" {...field} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -379,31 +347,18 @@ export function TenantCreatePage() {
                       <CreditCard className="size-4 text-muted-foreground" />
                       {t("identification_type")}
                     </FormLabel>
-                    <Select
-                      value={String(field.value)}
-                      onValueChange={(value) => field.onChange(Number(value))}
-                    >
+                    <Select value={String(field.value)} onValueChange={(value) => field.onChange(Number(value))}>
                       <FormControl>
                         <SelectTrigger className="h-11">
                           <SelectValue placeholder={t("identification_type_placeholder")} />
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
-                        <SelectItem value={String(DocumentType.CedulaCiudadania)}>
-                          {t("doc_type_cc")}
-                        </SelectItem>
-                        <SelectItem value={String(DocumentType.CedulaExtranjeria)}>
-                          {t("doc_type_ce")}
-                        </SelectItem>
-                        <SelectItem value={String(DocumentType.NIT)}>
-                          {t("doc_type_nit")}
-                        </SelectItem>
-                        <SelectItem value={String(DocumentType.TarjetaIdentidad)}>
-                          {t("doc_type_ti")}
-                        </SelectItem>
-                        <SelectItem value={String(DocumentType.Pasaporte)}>
-                          {t("doc_type_pa")}
-                        </SelectItem>
+                        <SelectItem value={String(DocumentType.CedulaCiudadania)}>{t("doc_type_cc")}</SelectItem>
+                        <SelectItem value={String(DocumentType.CedulaExtranjeria)}>{t("doc_type_ce")}</SelectItem>
+                        <SelectItem value={String(DocumentType.NIT)}>{t("doc_type_nit")}</SelectItem>
+                        <SelectItem value={String(DocumentType.TarjetaIdentidad)}>{t("doc_type_ti")}</SelectItem>
+                        <SelectItem value={String(DocumentType.Pasaporte)}>{t("doc_type_pa")}</SelectItem>
                       </SelectContent>
                     </Select>
                     <FormMessage />
@@ -468,9 +423,7 @@ export function TenantCreatePage() {
                 </div>
                 <div>
                   <CardTitle className="text-lg">{t("modules_selection_title")}</CardTitle>
-                  <CardDescription className="text-sm">
-                    {t("modules_selection_description")}
-                  </CardDescription>
+                  <CardDescription className="text-sm">{t("modules_selection_description")}</CardDescription>
                 </div>
               </div>
             </CardHeader>
@@ -494,18 +447,16 @@ export function TenantCreatePage() {
                       <div
                         key={module.id}
                         className={`flex flex-col gap-3 rounded-xl border p-4 transition-colors sm:flex-row sm:items-center sm:justify-between ${
-                          state.isEnabled
-                            ? "border-primary/30 bg-primary/5"
-                            : "border-border/50 bg-background/45"
+                          state.isEnabled ? "border-primary/30 bg-primary/5" : "border-border/50 bg-background/45"
                         }`}
                       >
-                        <div className="flex items-center gap-3 sm:gap-4 flex-1 min-w-0">
+                        <div className="flex min-w-0 flex-1 items-center gap-3 sm:gap-4">
                           <Switch
                             checked={state.isEnabled}
                             onCheckedChange={(checked) => handleToggleModule(module.id, checked)}
                             disabled={isSubmitting}
                           />
-                          <div className="space-y-1 min-w-0">
+                          <div className="min-w-0 space-y-1">
                             <div className="flex flex-wrap items-center gap-2">
                               <span className="font-medium">{module.name}</span>
                               <Badge tone="neutral" className="text-[10px]">
@@ -513,16 +464,12 @@ export function TenantCreatePage() {
                               </Badge>
                             </div>
                             {module.description ? (
-                              <p className="text-xs text-muted-foreground line-clamp-1">
-                                {module.description}
-                              </p>
+                              <p className="line-clamp-1 text-xs text-muted-foreground">{module.description}</p>
                             ) : null}
                           </div>
                         </div>
                         <div className="flex items-center gap-2 sm:justify-end">
-                          <span className="text-xs text-muted-foreground">
-                            {t("module_quantity_label")}
-                          </span>
+                          <span className="text-xs text-muted-foreground">{t("module_quantity_label")}</span>
                           <div className="flex items-center gap-1 rounded-lg border border-border/50 bg-background p-1">
                             <Button
                               variant="ghost"
@@ -538,9 +485,7 @@ export function TenantCreatePage() {
                               className="w-14 border-0 bg-transparent text-center text-sm focus-visible:ring-0"
                               min={0}
                               value={state.quantity}
-                              onChange={(e) =>
-                                handleQuantityChange(module.id, Number(e.target.value))
-                              }
+                              onChange={(e) => handleQuantityChange(module.id, Number(e.target.value))}
                               disabled={isSubmitting}
                             />
                             <Button
@@ -566,12 +511,7 @@ export function TenantCreatePage() {
 
           {/* Actions */}
           <div className="flex justify-end gap-4">
-            <Button
-              type="button"
-              variant="outline"
-              onClick={() => navigate("/platform/tenants")}
-              className="px-6"
-            >
+            <Button type="button" variant="outline" onClick={() => navigate("/platform/tenants")} className="px-6">
               {t("back")}
             </Button>
             <Button type="submit" disabled={isSubmitting} className="px-6">

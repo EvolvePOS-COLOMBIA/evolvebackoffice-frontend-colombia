@@ -112,6 +112,20 @@ const fakeModulesDto: TenantModuleDto[] = [
   },
 ]
 
+function mockTenantAndSerialCodesRequests() {
+  ;(api.get as Mock).mockImplementation((url: string) => {
+    if (url === `/api/Tenants/${TENANT_PUBLIC_ID}`) {
+      return Promise.resolve({ data: fakeTenantDto })
+    }
+
+    if (url === `/api/Tenants/${TENANT_PUBLIC_ID}/serial-codes`) {
+      return Promise.resolve({ data: [] })
+    }
+
+    return Promise.reject(new Error(`Unexpected GET request: ${url}`))
+  })
+}
+
 function renderWithProviders(initialEntries = [`/platform/tenants/${TENANT_PUBLIC_ID}`]) {
   const queryClient = new QueryClient({
     defaultOptions: {
@@ -194,7 +208,7 @@ describe("TenantDetailPage", () => {
   })
 
   it("2.4.2 - Muestra breadcrumb, nombre del tenant y campos summary cuando fetch exitoso", async () => {
-    ;(api.get as Mock).mockResolvedValue({ data: fakeTenantDto })
+    mockTenantAndSerialCodesRequests()
 
     const modulesClient = {
       get: vi.fn().mockResolvedValue({ data: fakeModulesDto }),
@@ -240,7 +254,7 @@ describe("TenantDetailPage", () => {
   })
 
   it("2.4.3 - Switch isEnabled y boton Save quantity disparan mutation y notify.success", async () => {
-    ;(api.get as Mock).mockResolvedValue({ data: fakeTenantDto })
+    mockTenantAndSerialCodesRequests()
 
     const updatedModuleDto: TenantModuleDto = {
       ...fakeModulesDto[0]!,

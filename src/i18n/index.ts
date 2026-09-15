@@ -20,6 +20,8 @@ import businessItemsCatalogEs from "@/features/business/items/catalog/i18n/es.js
 import businessItemsCatalogEn from "@/features/business/items/catalog/i18n/en.json"
 import businessInventoryEs from "@/features/business/inventory/i18n/es.json"
 import businessInventoryEn from "@/features/business/inventory/i18n/en.json"
+import businessOnboardingEs from "@/features/business/onboarding/i18n/es.json"
+import businessOnboardingEn from "@/features/business/onboarding/i18n/en.json"
 import businessPeopleEs from "@/features/business/people/i18n/es.json"
 import businessPeopleEn from "@/features/business/people/i18n/en.json"
 import businessReportsEs from "@/features/business/reports/i18n/es.json"
@@ -40,6 +42,7 @@ const resources = {
     "business-items": businessItemsEs,
     "business-items-catalog": businessItemsCatalogEs,
     "business-inventory": businessInventoryEs,
+    "business-onboarding": businessOnboardingEs,
     "business-people": businessPeopleEs,
     "business-reports": businessReportsEs,
     "business-settings": businessSettingsEs,
@@ -55,6 +58,7 @@ const resources = {
     "business-items": businessItemsEn,
     "business-items-catalog": businessItemsCatalogEn,
     "business-inventory": businessInventoryEn,
+    "business-onboarding": businessOnboardingEn,
     "business-people": businessPeopleEn,
     "business-reports": businessReportsEn,
     "business-settings": businessSettingsEn,

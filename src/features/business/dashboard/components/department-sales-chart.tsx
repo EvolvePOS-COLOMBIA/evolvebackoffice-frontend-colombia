@@ -6,6 +6,14 @@ import { ChartContainer, ChartTooltip, ChartTooltipContent, type ChartConfig } f
 import { useTranslation } from "@/i18n/use-i18n"
 import { useLocaleFormat } from "@/hooks/use-locale-format"
 import type { DepartmentSale } from "../mock/dashboard-data"
+import {
+  CHART_PRIMARY,
+  CHART_PRIMARY_LIGHT,
+  CHART_PRIMARY_DARK,
+  CHART_SECONDARY,
+  CHART_SECONDARY_LIGHT,
+  CHART_SECONDARY_DARK,
+} from "../constants"
 
 interface DepartmentSalesChartProps {
   data: DepartmentSale[]
@@ -15,33 +23,13 @@ interface DepartmentSalesChartProps {
 }
 
 const chartConfig = {
-  sales: {
-    label: "Sales",
-  },
-  grocery: {
-    label: "GROCERY",
-    color: "#f59e0b",
-  },
-  soda: {
-    label: "SODA CRV",
-    color: "#ef4444",
-  },
-  tax: {
-    label: "TAX GROCERY",
-    color: "#f97316",
-  },
-  hba: {
-    label: "HBA",
-    color: "#10b981",
-  },
-  tobacco: {
-    label: "TOBACCO",
-    color: "#8b5cf6",
-  },
-  sopa: {
-    label: "SOPA",
-    color: "#06b6d4",
-  },
+  sales: { label: "Sales" },
+  grocery: { label: "BEBIDAS", color: CHART_PRIMARY },
+  soda: { label: "PLATOS", color: CHART_PRIMARY_DARK },
+  tax: { label: "ACOMPAÑAMIENTOS", color: CHART_PRIMARY_LIGHT },
+  hba: { label: "POSTRES", color: CHART_SECONDARY },
+  tobacco: { label: "ALCOHOL", color: CHART_SECONDARY_DARK },
+  sopa: { label: "PORCIONES", color: CHART_SECONDARY_LIGHT },
 } satisfies ChartConfig
 
 export function DepartmentSalesChart({ data, dateRange, onPrint, onSave }: DepartmentSalesChartProps) {
@@ -67,12 +55,25 @@ export function DepartmentSalesChart({ data, dateRange, onPrint, onSave }: Depar
         </div>
       </CardHeader>
       <CardContent>
-        <ChartContainer config={chartConfig} className="h-[300px] w-full">
-          <BarChart data={data} margin={{ top: 10, right: 10, left: -10, bottom: 0 }}>
+        <ChartContainer config={chartConfig} className="h-75 w-full">
+          <BarChart data={data} margin={{ top: 10, right: -19, left: -10, bottom: 0 }}>
             <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="hsl(var(--border))" />
             <XAxis dataKey="department" tickLine={false} axisLine={false} tickMargin={8} fontSize={11} />
-            <YAxis tickLine={false} axisLine={false} tickMargin={4} fontSize={11} />
-            <ChartTooltip content={<ChartTooltipContent formatter={(value) => formatCurrency(Number(value))} />} />
+            <YAxis
+              tickLine={false}
+              axisLine={false}
+              tickMargin={4}
+              fontSize={10}
+              tickFormatter={(value: number) => {
+                if (value >= 1_000_000) return `$${(value / 1_000_000).toFixed(1)}M`
+                if (value >= 1_000) return `$${(value / 1_000).toFixed(0)}k`
+                return `$${value}`
+              }}
+            />
+            <ChartTooltip
+              active
+              content={<ChartTooltipContent formatter={(value) => formatCurrency(Number(value))} />}
+            />
             <Bar
               dataKey="sales"
               radius={[4, 4, 0, 0]}

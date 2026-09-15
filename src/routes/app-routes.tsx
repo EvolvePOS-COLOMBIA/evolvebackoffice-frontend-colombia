@@ -6,6 +6,7 @@ import { UnauthorizedPage } from "@/features/auth/pages/unauthorized-page"
 import { LoginPage } from "@/features/auth/pages/login-page"
 import { BusinessDashboardPage } from "@/features/business/dashboard/pages/business-dashboard-page"
 import { InventoryPage } from "@/features/business/inventory/pages/inventory-page"
+import { OnboardingPage } from "@/features/business/onboarding/pages/onboarding-page"
 import { ItemsPage } from "@/features/business/items/pages/items-page"
 import { ItemsCatalogPage } from "@/features/business/items/catalog/pages/items-catalog-page"
 import { PeoplePage } from "@/features/business/people/pages/people-page"
@@ -15,6 +16,7 @@ import { SettingsPage } from "@/features/business/settings/pages/settings-page"
 import { MarketingPage } from "@/features/marketing/pages/marketing-page"
 import { TenantsPage } from "@/features/platform/tenants/pages/tenants-page"
 import { PlatformDashboardPage } from "@/features/platform/dashboard/pages/platform-dashboard-page"
+import { OnboardingGate } from "@/routes/onboarding-gate"
 import { ProtectedRoute } from "@/routes/protected-route"
 import { PublicRoute } from "@/routes/public-route"
 import { useAuth } from "@/features/auth/hooks/use-auth"
@@ -51,15 +53,20 @@ function AppRoutesContent() {
       </Route>
 
       <Route element={<ProtectedRoute allowedRoles={["BusinessAdmin"]} />}>
-        <Route element={<AppLayout />}>
-          <Route path="/business/dashboard" element={<BusinessDashboardPage />} />
-          <Route path="/business/items" element={<ItemsPage />} />
-          <Route path="/business/items/catalog" element={<ItemsCatalogPage />} />
-          <Route path="/business/inventory" element={<InventoryPage />} />
-          <Route path="/business/people" element={<PeoplePage />} />
-          <Route path="/business/people/users" element={<UsersCatalogPage />} />
-          <Route path="/business/reports" element={<ReportsPage />} />
-          <Route path="/business/settings" element={<SettingsPage />} />
+        {/* El onboarding vive fuera del AppLayout: pantalla completa, sin sidebar. */}
+        <Route path="/business/onboarding" element={<OnboardingPage />} />
+
+        <Route element={<OnboardingGate />}>
+          <Route element={<AppLayout />}>
+            <Route path="/business/dashboard" element={<BusinessDashboardPage />} />
+            <Route path="/business/items" element={<ItemsPage />} />
+            <Route path="/business/items/catalog" element={<ItemsCatalogPage />} />
+            <Route path="/business/inventory" element={<InventoryPage />} />
+            <Route path="/business/people" element={<PeoplePage />} />
+            <Route path="/business/people/users" element={<UsersCatalogPage />} />
+            <Route path="/business/reports" element={<ReportsPage />} />
+            <Route path="/business/settings" element={<SettingsPage />} />
+          </Route>
         </Route>
       </Route>
 

@@ -22,7 +22,7 @@ import {
 } from "@/components/ui/select"
 import { useTranslation } from "@/i18n/use-i18n"
 import { createUserSchema, type CreateUserFormValues } from "../schemas/user-schema"
-import type { UserResponseDto } from "../types"
+import { IdentificationType, type UserResponseDto } from "../types"
 
 type UserFormDialogProps = {
   open: boolean
@@ -33,10 +33,12 @@ type UserFormDialogProps = {
 }
 
 const defaultValues: CreateUserFormValues = {
-  fullName: "",
+  firstName: "",
+  lastName: "",
   email: null,
-  documentType: 1,
-  documentNumber: "",
+  identificationTypeId: IdentificationType.CedulaCiudadania,
+  identificationNumber: "",
+  phoneNumber: null,
   role: "Cashier",
 }
 
@@ -60,10 +62,12 @@ export function UserFormDialog({
 
     if (userToEdit) {
       form.reset({
-        fullName: userToEdit.fullName ?? "",
+        firstName: userToEdit.firstName ?? "",
+        lastName: userToEdit.lastName ?? "",
         email: userToEdit.email,
-        documentType: userToEdit.documentType ?? 1,
-        documentNumber: userToEdit.documentNumber ?? "",
+        identificationTypeId: userToEdit.identificationTypeId || IdentificationType.CedulaCiudadania,
+        identificationNumber: userToEdit.identificationNumber ?? "",
+        phoneNumber: userToEdit.phoneNumber,
         role: userToEdit.role ?? "Cashier",
       })
       return
@@ -82,14 +86,48 @@ export function UserFormDialog({
 
         <Form {...form}>
           <form className="space-y-5" onSubmit={form.handleSubmit(onSubmit)}>
+            <div className="grid gap-4 sm:grid-cols-2">
+              <FormField
+                control={form.control}
+                name="firstName"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>{t("first_name")}</FormLabel>
+                    <FormControl>
+                      <Input placeholder={t("first_name_placeholder")} {...field} value={field.value ?? ""} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="lastName"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>{t("last_name")}</FormLabel>
+                    <FormControl>
+                      <Input placeholder={t("last_name_placeholder")} {...field} value={field.value ?? ""} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
+
             <FormField
               control={form.control}
-              name="fullName"
+              name="phoneNumber"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>{t("full_name")}</FormLabel>
+                  <FormLabel>{t("phone")}</FormLabel>
                   <FormControl>
-                    <Input placeholder={t("full_name_placeholder")} {...field} value={field.value ?? ""} />
+                    <Input
+                      placeholder={t("phone_placeholder")}
+                      value={field.value ?? ""}
+                      onChange={(e) => field.onChange(e.target.value || null)}
+                    />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -120,7 +158,7 @@ export function UserFormDialog({
                 <div className="grid gap-4 sm:grid-cols-2">
                   <FormField
                     control={form.control}
-                    name="documentType"
+                    name="identificationTypeId"
                     render={({ field }) => (
                       <FormItem>
                         <FormLabel>{t("document_type")}</FormLabel>
@@ -145,7 +183,7 @@ export function UserFormDialog({
 
                   <FormField
                     control={form.control}
-                    name="documentNumber"
+                    name="identificationNumber"
                     render={({ field }) => (
                       <FormItem>
                         <FormLabel>{t("document_number")}</FormLabel>

@@ -13,38 +13,43 @@ import {
 } from "@/components/ui/dialog"
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form"
 import { Input } from "@/components/ui/input"
+import { Switch } from "@/components/ui/switch"
 import { useTranslation } from "@/i18n/use-i18n"
 import { createItemSchema, type CreateItemFormValues } from "../schemas/item-schema"
+import { useCreateItem, useUpdateItem } from "../hooks/use-items"
 import type { ItemResponseDto } from "../types"
 
 type ItemFormDialogProps = {
   open: boolean
   onOpenChange: (open: boolean) => void
   itemToEdit?: ItemResponseDto | null
-  onSubmit: (values: CreateItemFormValues) => void
-  isSubmitting?: boolean
 }
 
 const defaultValues: CreateItemFormValues = {
   name: "",
   sku: null,
   description: null,
-  salePrice: 0,
-  costPrice: 0,
-  stock: 0,
-  minStockLevel: 0,
-  category: null,
+  plu: 0,
+  departmentId: 1,
+  itemType: 1,
+  unitOfMeasure: null,
+  taxable: false,
+  webItem: false,
+  extendedDescription: null,
+  subDescription1: null,
+  subDescription2: null,
+  subDescription3: null,
+  priceMustBeEntered: false,
+  brandId: 0,
+  itemPresentationId: 0,
+  askQuantity: 0,
 }
 
-export function ItemFormDialog({
-  open,
-  onOpenChange,
-  itemToEdit,
-  onSubmit,
-  isSubmitting = false,
-}: ItemFormDialogProps) {
+export function ItemFormDialog({ open, onOpenChange, itemToEdit }: ItemFormDialogProps) {
   const isEditMode = Boolean(itemToEdit)
   const { t } = useTranslation("business-items-catalog")
+  const createItem = useCreateItem()
+  const updateItem = useUpdateItem()
 
   const form = useForm<CreateItemFormValues>({
     resolver: zodResolver(createItemSchema(t)) as never,
@@ -56,14 +61,23 @@ export function ItemFormDialog({
 
     if (itemToEdit) {
       form.reset({
-        name: itemToEdit.name,
+        name: itemToEdit.name ?? "",
         sku: itemToEdit.sku,
         description: itemToEdit.description,
-        salePrice: itemToEdit.salePrice,
-        costPrice: itemToEdit.costPrice,
-        stock: itemToEdit.stock,
-        minStockLevel: itemToEdit.minStockLevel,
-        category: itemToEdit.category,
+        plu: itemToEdit.plu,
+        departmentId: itemToEdit.departmentId,
+        itemType: itemToEdit.itemType,
+        unitOfMeasure: itemToEdit.unitOfMeasure,
+        taxable: itemToEdit.taxable,
+        webItem: itemToEdit.webItem,
+        extendedDescription: null,
+        subDescription1: null,
+        subDescription2: null,
+        subDescription3: null,
+        priceMustBeEntered: false,
+        brandId: itemToEdit.brandId,
+        itemPresentationId: itemToEdit.itemPresentationId,
+        askQuantity: itemToEdit.askQuantity,
       })
       return
     }
@@ -71,16 +85,42 @@ export function ItemFormDialog({
     form.reset(defaultValues)
   }, [itemToEdit, form, open])
 
+  const handleSubmit = (values: CreateItemFormValues) => {
+    // Transform form values to API types (convert undefined to null)
+    const transformValues = (v: CreateItemFormValues) => ({
+      ...v,
+      sku: v.sku ?? null,
+      description: v.description ?? null,
+      unitOfMeasure: v.unitOfMeasure ?? null,
+      extendedDescription: v.extendedDescription ?? null,
+      subDescription1: v.subDescription1 ?? null,
+      subDescription2: v.subDescription2 ?? null,
+      subDescription3: v.subDescription3 ?? null,
+    })
+
+    if (isEditMode && itemToEdit) {
+      updateItem.mutate(
+        { id: itemToEdit.id, payload: transformValues(values) },
+        { onSuccess: () => onOpenChange(false) }
+      )
+    } else {
+      createItem.mutate(transformValues(values), { onSuccess: () => onOpenChange(false) })
+    }
+  }
+
+  const isSubmitting = createItem.isPending || updateItem.isPending
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="w-[calc(100%-2rem)] lg:w-[760px]">
+      <DialogContent className="max-h-[85vh] w-[calc(100%-2rem)] overflow-y-auto lg:w-190">
         <DialogHeader>
           <DialogTitle>{isEditMode ? t("edit_item") : t("create_item")}</DialogTitle>
           <DialogDescription>{t("item_form_desc")}</DialogDescription>
         </DialogHeader>
 
         <Form {...form}>
-          <form className="space-y-5" onSubmit={form.handleSubmit(onSubmit)}>
+          <form className="space-y-5" onSubmit={form.handleSubmit(handleSubmit)}>
+            {/* Basic Info */}
             <div className="grid gap-4 sm:grid-cols-2">
               <FormField
                 control={form.control}
@@ -133,43 +173,14 @@ export function ItemFormDialog({
               )}
             />
 
-            <div className="grid gap-4 sm:grid-cols-2">
+            {/* Numeric Fields */}
+            <div className="grid gap-4 sm:grid-cols-3">
               <FormField
                 control={form.control}
-                name="salePrice"
+                name="plu"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>{t("sale_price")}</FormLabel>
-                    <FormControl>
-                      <Input type="number" step="0.01" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              <FormField
-                control={form.control}
-                name="costPrice"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>{t("cost_price")}</FormLabel>
-                    <FormControl>
-                      <Input type="number" step="0.01" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            </div>
-
-            <div className="grid gap-4 sm:grid-cols-2">
-              <FormField
-                control={form.control}
-                name="stock"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>{t("stock")}</FormLabel>
+                    <FormLabel>{t("plu")}</FormLabel>
                     <FormControl>
                       <Input type="number" {...field} />
                     </FormControl>
@@ -180,10 +191,24 @@ export function ItemFormDialog({
 
               <FormField
                 control={form.control}
-                name="minStockLevel"
+                name="departmentId"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>{t("min_stock_level")}</FormLabel>
+                    <FormLabel>{t("department_id")}</FormLabel>
+                    <FormControl>
+                      <Input type="number" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="itemType"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>{t("item_type")}</FormLabel>
                     <FormControl>
                       <Input type="number" {...field} />
                     </FormControl>
@@ -193,23 +218,95 @@ export function ItemFormDialog({
               />
             </div>
 
-            <FormField
-              control={form.control}
-              name="category"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>{t("category")}</FormLabel>
-                  <FormControl>
-                    <Input
-                      placeholder={t("category_placeholder")}
-                      value={field.value ?? ""}
-                      onChange={(e) => field.onChange(e.target.value || null)}
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
+            <div className="grid gap-4 sm:grid-cols-3">
+              <FormField
+                control={form.control}
+                name="unitOfMeasure"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>{t("unit_of_measure")}</FormLabel>
+                    <FormControl>
+                      <Input
+                        placeholder={t("unit_of_measure_placeholder")}
+                        value={field.value ?? ""}
+                        onChange={(e) => field.onChange(e.target.value || null)}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="brandId"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>{t("brand_id")}</FormLabel>
+                    <FormControl>
+                      <Input type="number" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="askQuantity"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>{t("ask_quantity")}</FormLabel>
+                    <FormControl>
+                      <Input type="number" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
+
+            {/* Boolean Toggles */}
+            <div className="grid gap-4 sm:grid-cols-3">
+              <FormField
+                control={form.control}
+                name="taxable"
+                render={({ field }) => (
+                  <FormItem className="flex items-center justify-between rounded-lg border p-3">
+                    <FormLabel>{t("taxable")}</FormLabel>
+                    <FormControl>
+                      <Switch checked={field.value} onCheckedChange={field.onChange} />
+                    </FormControl>
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="webItem"
+                render={({ field }) => (
+                  <FormItem className="flex items-center justify-between rounded-lg border p-3">
+                    <FormLabel>{t("web_item")}</FormLabel>
+                    <FormControl>
+                      <Switch checked={field.value} onCheckedChange={field.onChange} />
+                    </FormControl>
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="priceMustBeEntered"
+                render={({ field }) => (
+                  <FormItem className="flex items-center justify-between rounded-lg border p-3">
+                    <FormLabel>{t("price_must_be_entered")}</FormLabel>
+                    <FormControl>
+                      <Switch checked={field.value} onCheckedChange={field.onChange} />
+                    </FormControl>
+                  </FormItem>
+                )}
+              />
+            </div>
 
             {form.formState.errors.root ? (
               <p className="text-sm font-medium text-destructive">{form.formState.errors.root.message}</p>

@@ -8,6 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { useTranslation } from "@/i18n/use-i18n"
 import { useLocaleFormat } from "@/hooks/use-locale-format"
 import type { VsPreviousMonthWeek } from "../mock/dashboard-data"
+import { CHART_PRIMARY, CHART_SECONDARY } from "../constants"
 
 const MONTHS_EN = [
   "January", "February", "March", "April", "May", "June",
@@ -29,11 +30,11 @@ function makeChartConfig(): ChartConfig {
   return {
     previousMonth: {
       label: "Previous Month",
-      color: "#ef4444",
+      color: CHART_SECONDARY,
     },
     currentMonth: {
       label: "Current Month",
-      color: "#f59e0b",
+      color: CHART_PRIMARY,
     },
   }
 }
@@ -102,7 +103,6 @@ export function VsPreviousMonthChart({
   return (
     <Card className="transition-all duration-300 hover:shadow-md">
       <CardHeader className="pb-2">
-        {/* Row 1: Title + Select */}
         <div className="flex items-center justify-between">
           <CardTitle className="text-lg font-semibold">{t("vs_previous_month")}</CardTitle>
           <Select value={formatMonthName(selectedMonth)} onValueChange={handleMonthChange}>
@@ -119,18 +119,17 @@ export function VsPreviousMonthChart({
           </Select>
         </div>
 
-        {/* Row 2: Legend + Action buttons */}
         <div className="flex items-center justify-between pt-1 text-xs">
           <div className="flex items-center gap-4">
             <div className="flex items-center gap-1.5">
-              <div className="h-2.5 w-2.5 rounded-full bg-red-500" />
+              <div className="h-2.5 w-2.5 rounded-full" style={{ backgroundColor: CHART_SECONDARY }} />
               <span className="text-muted-foreground">{formatMonthName(previousMonthName)}</span>
               <span className="font-mono font-medium tabular-nums">
                 {formatCurrency(previousMonthTotal)}
               </span>
             </div>
             <div className="flex items-center gap-1.5">
-              <div className="h-2.5 w-2.5 rounded-full bg-amber-500" />
+              <div className="h-2.5 w-2.5 rounded-full" style={{ backgroundColor: CHART_PRIMARY }} />
               <span className="text-muted-foreground">{formatMonthName(currentMonthName)}</span>
               <span className="font-mono font-medium tabular-nums">
                 {formatCurrency(currentMonthTotal)}
@@ -167,8 +166,12 @@ export function VsPreviousMonthChart({
               tickLine={false}
               axisLine={false}
               tickMargin={4}
-              fontSize={11}
-              tickFormatter={(value) => `${value}`}
+              fontSize={10}
+              tickFormatter={(value: number) => {
+                if (value >= 1_000_000) return `$${(value / 1_000_000).toFixed(1)}M`
+                if (value >= 1_000) return `$${(value / 1_000).toFixed(0)}k`
+                return `$${value}`
+              }}
             />
             <ChartTooltip
               content={
@@ -179,7 +182,7 @@ export function VsPreviousMonthChart({
             />
             <Bar
               dataKey="previousMonth"
-              fill="#ef4444"
+              fill={CHART_SECONDARY}
               radius={[4, 4, 0, 0]}
               isAnimationActive={true}
               animationDuration={800}
@@ -187,7 +190,7 @@ export function VsPreviousMonthChart({
             />
             <Bar
               dataKey="currentMonth"
-              fill="#f59e0b"
+              fill={CHART_PRIMARY}
               radius={[4, 4, 0, 0]}
               isAnimationActive={true}
               animationDuration={800}

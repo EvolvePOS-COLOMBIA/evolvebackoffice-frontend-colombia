@@ -12,7 +12,7 @@ import {
 } from "@/components/ui/table"
 import { useTranslation } from "@/i18n/use-i18n"
 import type { UserResponseDto } from "../types"
-import { DOCUMENT_TYPE_LABELS, DocumentType } from "../types"
+import { IDENTIFICATION_TYPE_LABELS, IdentificationType, getUserDisplayName } from "../types"
 
 type UsersTableProps = {
   users: UserResponseDto[]
@@ -49,7 +49,7 @@ export function UsersTable({ users, onEdit }: UsersTableProps) {
             <TableRow key={user.id}>
               <TableCell>
                 <div>
-                  <p className="font-medium text-foreground">{user.fullName ?? "—"}</p>
+                  <p className="font-medium text-foreground">{getUserDisplayName(user)}</p>
                   {user.username && (
                     <p className="text-xs text-muted-foreground">@{user.username}</p>
                   )}
@@ -59,10 +59,10 @@ export function UsersTable({ users, onEdit }: UsersTableProps) {
                 {user.email ?? "—"}
               </TableCell>
               <TableCell className="hidden md:table-cell text-muted-foreground">
-                {user.documentType ? DOCUMENT_TYPE_LABELS[user.documentType as DocumentType] ?? "—" : "—"}
+                {IDENTIFICATION_TYPE_LABELS[user.identificationTypeId as IdentificationType] ?? "—"}
               </TableCell>
               <TableCell className="hidden md:table-cell text-muted-foreground">
-                {user.documentNumber ?? "—"}
+                {user.identificationNumber ?? "—"}
               </TableCell>
               <TableCell>
                 <Badge tone={getRoleTone(user.role)}>

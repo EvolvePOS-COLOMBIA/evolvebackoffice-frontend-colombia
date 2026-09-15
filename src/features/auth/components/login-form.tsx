@@ -24,9 +24,9 @@ export function LoginForm() {
   const businessForm = useForm<TenantLoginFormValues>({
     resolver: zodResolver(businessLoginSchema(t)),
     defaultValues: {
-      tenantPublicId: "joaco-pizza-8b3e5755",
-      email: "admin@joaco.com",
-      password: "Admin#2025!",
+      tenantPublicId: "-juaco-pizza-ca474991",
+      email: "joaquin@urspos.com",
+      password: "Guar123!",
     },
   })
 
@@ -42,6 +42,9 @@ export function LoginForm() {
     loginBusiness(values, {
       onSuccess: (session) => {
         notify.success(t("welcome_back", { name: session.user.fullName }))
+        // Siempre ir al dashboard. El OnboardingGate se encargará de redirigir
+        // al onboarding si es necesario, y el modal de cambio de contraseña
+        // aparecerá si forcePasswordChange es true.
         navigate("/business/dashboard")
       },
       onError: (error) => {
@@ -95,7 +98,7 @@ export function LoginForm() {
                 <Form {...businessForm}>
                   <form className="space-y-5" onSubmit={businessForm.handleSubmit(handleBusinessSubmit)}>
                     <FormField
-                      control={businessForm.control}
+                      // control={businessForm.control}
                       name="tenantPublicId"
                       render={({ field }) => (
                         <FormItem>

@@ -7,7 +7,7 @@ import { Card, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { useTranslation } from "@/i18n/use-i18n"
 import { useUsers, useCreateUser, useUpdateUser } from "../hooks/use-users"
-import type { UserResponseDto } from "../types"
+import { getUserDisplayName, type UserResponseDto } from "../types"
 import { UsersTable } from "../components/users-table"
 import { UserFormDialog } from "../components/user-form-dialog"
 import { CredentialsDialog } from "../components/credentials-dialog"
@@ -27,20 +27,26 @@ export function UsersCatalogPage() {
 
   const userList = users ?? []
   const filteredUsers = search
-    ? userList.filter(
-        (user) =>
-          user.fullName?.toLowerCase().includes(search.toLowerCase()) ||
-          user.email?.toLowerCase().includes(search.toLowerCase()) ||
-          user.documentNumber?.toLowerCase().includes(search.toLowerCase())
-      )
+    ? userList.filter((user) => {
+        const term = search.toLowerCase()
+        return (
+          getUserDisplayName(user).toLowerCase().includes(term) ||
+          user.email?.toLowerCase().includes(term) ||
+          user.identificationNumber?.toLowerCase().includes(term)
+        )
+      })
     : userList
 
   const handleCreate = (values: CreateUserFormValues) => {
     createUserMutation.mutate(
       {
-        ...values,
+        firstName: values.firstName,
+        lastName: values.lastName,
+        identificationTypeId: values.identificationTypeId,
+        identificationNumber: values.identificationNumber,
+        phoneNumber: values.phoneNumber ?? null,
         email: values.email ?? null,
-        documentNumber: values.documentNumber ?? null,
+        role: values.role,
       },
       {
         onSuccess: (result) => {
@@ -55,7 +61,14 @@ export function UsersCatalogPage() {
   const handleEdit = (values: CreateUserFormValues) => {
     if (!selectedUser) return
     updateUserMutation.mutate(
-      { id: selectedUser.id, payload: { fullName: values.fullName } },
+      {
+        id: selectedUser.id,
+        payload: {
+          firstName: values.firstName,
+          lastName: values.lastName,
+          phoneNumber: values.phoneNumber ?? null,
+        },
+      },
       {
         onSuccess: () => {
           setFormOpen(false)

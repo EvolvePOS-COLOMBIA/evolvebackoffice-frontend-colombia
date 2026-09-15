@@ -5,9 +5,19 @@ import { api } from "@/config/axios-client"
 import type {
   AuthSession,
   AuthResponseDto,
+  ChangePasswordDto,
   TenantLoginFormValues,
   PlatformLoginFormValues,
 } from "@/features/auth/types"
+
+/**
+ * Cambia la contraseña web del usuario autenticado.
+ * `POST /api/Auth/change-password` responde 204 sin cuerpo y revoca todos los
+ * refresh tokens del usuario (motivo "password_changed").
+ */
+export async function changeOwnPassword(payload: ChangePasswordDto): Promise<void> {
+  await api.post("/api/Auth/change-password", payload)
+}
 
 export async function loginPlatformAdmin(payload: PlatformLoginFormValues): Promise<AuthSession> {
   try {
@@ -45,8 +55,13 @@ function mapAuthResponseToSession(
     expiresAtUtc: getTokenExpiry(response.token) ?? response.refreshTokenExpiresAtUtc,
     user: {
       id: response.user.id,
-      email: response.user.email ?? response.user.username,
-      fullName: response.user.fullName || response.user.email || response.user.username,
+      email: response.user.email ?? response.user.username ?? "",
+      fullName:
+        response.user.fullName ||
+        [response.user.firstName, response.user.lastName].filter(Boolean).join(" ") ||
+        response.user.email ||
+        response.user.username ||
+        "",
       role,
     },
     tenantId,

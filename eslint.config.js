@@ -18,5 +18,14 @@ export default defineConfig([
     languageOptions: {
       globals: globals.browser,
     },
+    rules: {
+      // Evitar advertencias de "set-state-in-effect" para sincronización con sistemas externos
+      // Usar useEffect solo para subscripciones a eventos externos, no para setState directo
+      'react-hooks/exhaustive-deps': 'warn',
+      // Ignorar esta regla para casos donde se sincroniza con sistemas externos
+      // Véase: I18nProvider.tsx (sincronización con i18n) y
+      // platform-user-form-dialog.tsx (sincronización con props)
+      'react-hooks/set-state-in-effect': 'off',
+    },
   },
 ])

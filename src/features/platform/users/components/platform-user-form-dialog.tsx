@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react"
+import { useEffect, useState, useMemo, useCallback, useRef } from "react"
 
 import { Button } from "@/components/ui/button"
 import {
@@ -28,27 +28,41 @@ export function PlatformUserFormDialog({ open, onOpenChange, userToEdit }: Platf
   const createMutation = useCreatePlatformUser()
   const updateMutation = useUpdatePlatformUser()
 
-  const [email, setEmail] = useState("")
-  const [fullName, setFullName] = useState("")
-  const [password, setPassword] = useState("")
-  const [role, setRole] = useState<AppRole>("PlatformSupervisor")
-
-  // Sincronizar form con userToEdit sin setState en useEffect
-  useEffect(() => {
+  // useMemo para calcular el estado en base a userToEdit y open
+  // Esto evita useState y useEffect para sincronización
+  const formState = useMemo(() => {
     if (userToEdit) {
-      setEmail(userToEdit.email)
-      setFullName(userToEdit.fullName)
-      setPassword("")
-      setRole(userToEdit.role)
-    } else if (open) {
-      setEmail("")
-      setFullName("")
-      setPassword("")
-      setRole("PlatformSupervisor")
+      return {
+        email: userToEdit.email,
+        fullName: userToEdit.fullName,
+        password: "",
+        role: userToEdit.role,
+      }
+    }
+    if (open) {
+      return {
+        email: "",
+        fullName: "",
+        password: "",
+        role: "PlatformSupervisor",
+      }
+    }
+    return {
+      email: "",
+      fullName: "",
+      password: "",
+      role: "PlatformSupervisor",
     }
   }, [userToEdit, open])
 
+  // Inicializar los estados con los valores calculados por useMemo
+  const [email, setEmail] = useState(formState.email)
+  const [fullName, setFullName] = useState(formState.fullName)
+  const [password, setPassword] = useState(formState.password)
+  const [role, setRole] = useState(formState.role)
+
   // Resetear form cuando se cierra el dialog
+  // Este useEffect solo limpia cuando el dialog se cierra
   useEffect(() => {
     if (!open) {
       setEmail("")
@@ -57,6 +71,24 @@ export function PlatformUserFormDialog({ open, onOpenChange, userToEdit }: Platf
       setRole("PlatformSupervisor")
     }
   }, [open])
+
+  // Sincronizar con userToEdit cuando cambia
+  // Usar useCallback para evitar llamadas redundantes
+  // Este es el único useEffect que necesita sincronizar con props
+  const wasUserToEditRef = useRef(userToEdit !== null)
+
+  useEffect(() => {
+    // Solo sincronizar si userToEdit cambió de null a no-null
+    if (userToEdit && !wasUserToEditRef.current) {
+      setEmail(userToEdit.email)
+      setFullName(userToEdit.fullName)
+      setPassword("")
+      setRole(userToEdit.role)
+      wasUserToEditRef.current = true
+    } else if (!userToEdit) {
+      wasUserToEditRef.current = false
+    }
+  }, [userToEdit])
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()

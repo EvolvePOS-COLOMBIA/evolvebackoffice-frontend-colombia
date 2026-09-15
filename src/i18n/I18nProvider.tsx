@@ -1,27 +1,22 @@
-import { useEffect, useState, useMemo } from "react"
+import { useEffect, useState } from "react"
 import { I18nextProvider } from "react-i18next"
 import i18n from "./index"
 import { I18nLoading } from "./I18nLoading"
 
 // Componente para esperar la inicialización de i18n
 export function I18nProvider({ children }: { children: React.ReactNode }) {
-  // useMemo para calcular si está inicializado
-  // Esto evita el setState sincrónico en useEffect
-  const isInitialized = useMemo(() => i18n.isInitialized, [])
-
-  // Estado para disparar re-renders cuando el valor cambia
-  // Solo se actualiza cuando el evento 'initialized' se dispara
-  const [, setForceUpdate] = useState({})
+  const [isInitialized, setIsInitialized] = useState(i18n.isInitialized)
 
   useEffect(() => {
-    // Suscribirse al evento 'initialized' de i18n
-    // Solo necesitamos esto si no está inicializado
+    // Si ya está inicializado, no hacer nada
     if (i18n.isInitialized) {
+      setIsInitialized(true)
       return
     }
 
+    // Esperamos a que se inicialice (en casos donde init sea asíncrono)
     const handleInitialized = () => {
-      setForceUpdate({})
+      setIsInitialized(true)
     }
 
     i18n.on("initialized", handleInitialized)
@@ -32,7 +27,7 @@ export function I18nProvider({ children }: { children: React.ReactNode }) {
     }
   }, [])
 
-  // Usar el valor de useMemo para determinar si mostrar el componente
+  // Mostrar loading mientras no está inicializado
   if (!isInitialized) {
     return <I18nLoading />
   }

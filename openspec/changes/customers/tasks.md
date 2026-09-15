@@ -36,9 +36,9 @@ Chain strategy: feature-branch-chain
 
 ## Phase 2: UI Components — Table, Form Dialog, Delete Dialog
 
-- [ ] 2.1 Create `src/features/business/people/customers/components/customers-table.tsx`: responsive table with columns — name, identification (type+number), email, phone, city, status (active badge), actions (edit button, delete button). Empty state when list is empty. Accept `customers: CustomerResponseDto[]`, `onEdit`, `onDelete` props.
-- [ ] 2.2 Create `src/features/business/people/customers/components/customer-form-dialog.tsx`: shared create/edit Dialog using `react-hook-form` + `zodResolver`. Pre-populate on edit. Fields: firstName, lastName, identificationTypeId (select CC/CE), identificationNumber, phoneNumber, emailAddress, address, city, department. Accept `customerToEdit?`, `onSubmit`, `isSubmitting` props. Use `business-customers-catalog` namespace.
-- [ ] 2.3 Create `src/features/business/people/customers/components/delete-confirm-dialog.tsx`: Confirmation dialog with customer name displayed. Accept `open`, `onOpenChange`, `customerName`, `onConfirm`, `isPending` props. Cancel + Confirm buttons.
+- [x] 2.1 Create `src/features/business/people/customers/components/customers-table.tsx`: responsive table with columns — name, identification (type+number), email, phone, city, status (active badge), actions (edit button, delete button). Empty state when list is empty. Accept `customers: CustomerResponseDto[]`, `onEdit`, `onDelete` props.
+- [x] 2.2 Create `src/features/business/people/customers/components/customer-form-dialog.tsx`: shared create/edit Dialog using `react-hook-form` + `zodResolver`. Pre-populate on edit. Fields: firstName, lastName, identificationTypeId (select CC/CE), identificationNumber, phoneNumber, emailAddress, address, city, department. Accept `customerToEdit?`, `onSubmit`, `isSubmitting` props. Use `business-customers-catalog` namespace.
+- [x] 2.3 Create `src/features/business/people/customers/components/delete-confirm-dialog.tsx`: Confirmation dialog with customer name displayed. Accept `open`, `onOpenChange`, `customerName`, `onConfirm`, `isPending` props. Cancel + Confirm buttons.
 
 ## Phase 3: Page, Routing, Integration
 

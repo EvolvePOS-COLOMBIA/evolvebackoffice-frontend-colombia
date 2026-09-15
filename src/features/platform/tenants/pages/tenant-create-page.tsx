@@ -16,6 +16,7 @@ import {
   Package,
   Minus,
   Plus,
+  Flag,
 } from "lucide-react"
 
 import { notify } from "@/hooks/use-notify"
@@ -54,6 +55,7 @@ export function TenantCreatePage() {
     contactEmail: string
     phone: string
     address: string
+    countryCode: string
     maxRegisters: number
     adminIdentification: string
     subdomain: string
@@ -68,6 +70,7 @@ export function TenantCreatePage() {
       contactEmail: "",
       phone: "",
       address: "",
+      countryCode: "",
       maxRegisters: 1,
       adminIdentification: "",
       subdomain: "",
@@ -141,6 +144,7 @@ export function TenantCreatePage() {
       contactEmail: (values.contactEmail as string) || null,
       phone: (values.phone as string) || null,
       address: (values.address as string) || null,
+      countryCode: (values.countryCode as string) || null,
       maxRegisters: (values.maxRegisters as number) ?? 1,
       adminIdentification: (values.adminIdentification as string) || null,
       subdomain: (values.subdomain as string) || null,
@@ -261,6 +265,36 @@ export function TenantCreatePage() {
                   )}
                 />
               </div>
+              <FormField
+                control={form.control}
+                name="countryCode"
+                render={({ field }) => (
+                  <FormItem className="space-y-2">
+                    <FormLabel className="flex items-center gap-2 text-sm font-medium">
+                      <Flag className="size-4 text-muted-foreground" />
+                      {t("country")}
+                    </FormLabel>
+                    <Select value={field.value} onValueChange={field.onChange}>
+                      <FormControl>
+                        <SelectTrigger className="h-11">
+                          <SelectValue placeholder={t("country_placeholder")} />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        <SelectItem value="CO">Colombia (CO)</SelectItem>
+                        <SelectItem value="MX">México (MX)</SelectItem>
+                        <SelectItem value="AR">Argentina (AR)</SelectItem>
+                        <SelectItem value="PE">Perú (PE)</SelectItem>
+                        <SelectItem value="CL">Chile (CL)</SelectItem>
+                        <SelectItem value="EC">Ecuador (EC)</SelectItem>
+                        <SelectItem value="ES">España (ES)</SelectItem>
+                        <SelectItem value="US">Estados Unidos (US)</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
               <FormField
                 control={form.control}
                 name="maxRegisters"

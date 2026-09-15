@@ -7,6 +7,7 @@ export interface Tenant {
   contactEmail: string
   phone: string
   address: string
+  countryCode: string | null
   isActive: boolean
   status: string
   createdById: string | null
@@ -63,6 +64,7 @@ export interface TenantFormValues {
   contactEmail: string
   phone: string
   address: string
+  countryCode: string
   maxRegisters: number
   adminIdentification: string
   subdomain: string

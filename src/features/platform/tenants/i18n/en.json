@@ -13,6 +13,8 @@
   "contact_email": "Contact email",
   "phone": "Phone",
   "address": "Address",
+  "country": "Country",
+  "country_placeholder": "Select the country",
    "status": "Status",
    "status_active": "Active",
    "status_pending": "Pending",

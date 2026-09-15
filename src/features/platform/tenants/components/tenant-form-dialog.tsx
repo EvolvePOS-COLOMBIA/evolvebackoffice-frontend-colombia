@@ -47,6 +47,7 @@ const defaultValues: TenantFormValues = {
   contactEmail: "",
   phone: "",
   address: "",
+  countryCode: "",
   maxRegisters: 1,
   adminIdentification: "",
   subdomain: "",
@@ -99,6 +100,7 @@ export function TenantFormDialog({
         contactEmail: tenantToEdit.contactEmail,
         phone: tenantToEdit.phone,
         address: tenantToEdit.address,
+        countryCode: tenantToEdit.countryCode ?? "",
         maxRegisters: tenantToEdit.maxRegisters,
         adminIdentification: "",
         subdomain: tenantToEdit.subdomain ?? "",
@@ -277,6 +279,34 @@ export function TenantFormDialog({
                 )}
               />
             </div>
+
+            <FormField
+              control={form.control}
+              name="countryCode"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>{t("country")}</FormLabel>
+                  <Select value={field.value} onValueChange={field.onChange}>
+                    <FormControl>
+                      <SelectTrigger>
+                        <SelectValue placeholder={t("country_placeholder")} />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      <SelectItem value="CO">Colombia (CO)</SelectItem>
+                      <SelectItem value="MX">México (MX)</SelectItem>
+                      <SelectItem value="AR">Argentina (AR)</SelectItem>
+                      <SelectItem value="PE">Perú (PE)</SelectItem>
+                      <SelectItem value="CL">Chile (CL)</SelectItem>
+                      <SelectItem value="EC">Ecuador (EC)</SelectItem>
+                      <SelectItem value="ES">España (ES)</SelectItem>
+                      <SelectItem value="US">Estados Unidos (US)</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
 
             <FormField
               control={form.control}

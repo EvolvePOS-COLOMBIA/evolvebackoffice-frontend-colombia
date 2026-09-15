@@ -7,6 +7,7 @@ export const tenantCreateSchema = (t: TFunction) =>
     contactEmail: z.string().email(t("email_validation")),
     phone: z.string().optional().default(""),
     address: z.string().optional().default(""),
+    countryCode: z.string().optional().default(""),
     maxRegisters: z.coerce.number().int().min(1, t("max_registers_min")),
     adminIdentification: z.string().min(1, t("admin_identification_required")),
     subdomain: z.string().optional().default(""),

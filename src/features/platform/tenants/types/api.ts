@@ -13,6 +13,7 @@ export interface CreateTenantDto {
   address: string | null
   maxRegisters: number | null
   adminIdentification: string | null
+  countryCode: string | null
   subdomain: string | null
   identificationNumber: string | null
   identificationTypeId: number
@@ -27,6 +28,7 @@ export interface CreateTenantResponseDto {
   contactEmail: string | null
   phone: string | null
   address: string | null
+  countryCode: string | null
   identificationNumber: string | null
   identificationTypeId: number
   subdomain: string | null
@@ -46,6 +48,7 @@ export interface UpdateTenantDto {
   contactEmail: string | null
   phone: string | null
   address: string | null
+  countryCode: string | null
   subdomain: string | null
   identificationNumber: string | null
   identificationTypeId: number | null
@@ -72,6 +75,7 @@ export interface TenantResponseDto {
   contactEmail: string | null
   phone: string | null
   address: string | null
+  countryCode: string | null
   identificationNumber: string | null
   identificationTypeId: number
   subdomain: string | null
@@ -94,6 +98,7 @@ export interface TenantListResponseDto {
   name: string | null
   tenantId: string | null
   contactEmail: string | null
+  countryCode: string | null
   isActive: boolean
   status: string
   createdById: string | null

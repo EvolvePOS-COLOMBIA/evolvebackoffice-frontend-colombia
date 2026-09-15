@@ -4,14 +4,14 @@ import { initReactI18next } from "react-i18next"
 import commonEs from "./locales/es/common.json"
 import commonEn from "./locales/en/common.json"
 
-import authEs from "@/features/auth/i18n/es.json"
-import authEn from "@/features/auth/i18n/en.json"
-import marketingEs from "@/features/marketing/i18n/es.json"
-import marketingEn from "@/features/marketing/i18n/en.json"
 import platformDashboardEs from "@/features/platform/dashboard/i18n/es.json"
 import platformDashboardEn from "@/features/platform/dashboard/i18n/en.json"
 import platformTenantsEs from "@/features/platform/tenants/i18n/es.json"
 import platformTenantsEn from "@/features/platform/tenants/i18n/en.json"
+import platformUsersEs from "@/features/platform/users/i18n/es.json"
+import platformUsersEn from "@/features/platform/users/i18n/en.json"
+import platformEmailEs from "@/features/platform/email/i18n/es.json"
+import platformEmailEn from "@/features/platform/email/i18n/en.json"
 import businessDashboardEs from "@/features/business/dashboard/i18n/es.json"
 import businessDashboardEn from "@/features/business/dashboard/i18n/en.json"
 import businessItemsEs from "@/features/business/items/i18n/es.json"
@@ -34,10 +34,10 @@ import businessUsersCatalogEn from "@/features/business/people/users/i18n/en.jso
 const resources = {
   es: {
     common: commonEs,
-    auth: authEs,
-    marketing: marketingEs,
     "platform-dashboard": platformDashboardEs,
     "platform-tenants": platformTenantsEs,
+    "platform-users": platformUsersEs,
+    "platform-email": platformEmailEs,
     "business-dashboard": businessDashboardEs,
     "business-items": businessItemsEs,
     "business-items-catalog": businessItemsCatalogEs,
@@ -50,10 +50,10 @@ const resources = {
   },
   en: {
     common: commonEn,
-    auth: authEn,
-    marketing: marketingEn,
     "platform-dashboard": platformDashboardEn,
     "platform-tenants": platformTenantsEn,
+    "platform-users": platformUsersEn,
+    "platform-email": platformEmailEn,
     "business-dashboard": businessDashboardEn,
     "business-items": businessItemsEn,
     "business-items-catalog": businessItemsCatalogEn,
@@ -70,7 +70,24 @@ i18n.use(initReactI18next).init({
   resources,
   lng: "es",
   fallbackLng: "es",
-  ns: ["common"],
+  ns: [
+    "common",
+    "auth",
+    "marketing",
+    "platform-dashboard",
+    "platform-tenants",
+    "platform-users",
+    "platform-email",
+    "business-dashboard",
+    "business-items",
+    "business-items-catalog",
+    "business-inventory",
+    "business-onboarding",
+    "business-people",
+    "business-reports",
+    "business-settings",
+    "business-users-catalog",
+  ],
   defaultNS: "common",
   interpolation: {
     escapeValue: false,

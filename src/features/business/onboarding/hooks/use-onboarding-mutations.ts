@@ -2,11 +2,7 @@ import { useMutation, useQueryClient } from "@tanstack/react-query"
 
 import type { Branch } from "@/features/business/branches/types"
 
-import {
-  createFirstBranch,
-  saveAdminProfile,
-  saveBusinessProfile,
-} from "../services/onboarding.service"
+import { createFirstBranch, saveAdminProfile, saveBusinessProfile } from "../services/onboarding.service"
 import type { AccountStepValues, BranchStepValues, BusinessStepValues } from "../types"
 
 /**
@@ -18,10 +14,7 @@ export function useSaveAdminProfile() {
   const queryClient = useQueryClient()
 
   return useMutation({
-    mutationFn: async (input: {
-      userId: string
-      values: AccountStepValues
-    }) => {
+    mutationFn: async (input: { userId: string; values: AccountStepValues }) => {
       await saveAdminProfile(input.userId, input.values)
       return { passwordChanged: false, userId: input.userId }
     },

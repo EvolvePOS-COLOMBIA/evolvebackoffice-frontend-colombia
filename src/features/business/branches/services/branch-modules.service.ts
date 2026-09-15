@@ -1,10 +1,6 @@
 import { api } from "@/config/axios-client"
 
-import type {
-  AssignModuleBody,
-  BranchModuleResponseDto,
-  TenantModuleResponseDto,
-} from "../types/modules"
+import type { AssignModuleBody, BranchModuleResponseDto, TenantModuleResponseDto } from "../types/modules"
 
 /**
  * Servicio de módulos de sucursal.
@@ -51,9 +47,7 @@ export async function getTenantModules(): Promise<TenantModuleResponseDto[]> {
 /* ------------------------------------------------------------------ */
 
 /** Lista los módulos asignados a una sucursal. */
-export async function getBranchModules(
-  branchId: string
-): Promise<BranchModuleResponseDto[]> {
+export async function getBranchModules(branchId: string): Promise<BranchModuleResponseDto[]> {
   const { data } = await api.get<PagedResponse<BranchModuleResponseDto> | BranchModuleResponseDto[]>(
     `/api/Branches/${branchId}/modules`
   )
@@ -66,17 +60,11 @@ export async function assignModuleToBranch(
   tenantModulePublicId: string
 ): Promise<BranchModuleResponseDto> {
   const body: AssignModuleBody = { tenantModulePublicId }
-  const { data } = await api.post<BranchModuleResponseDto>(
-    `/api/Branches/${branchId}/modules`,
-    body
-  )
+  const { data } = await api.post<BranchModuleResponseDto>(`/api/Branches/${branchId}/modules`, body)
   return data
 }
 
 /** Quita un módulo de una sucursal. */
-export async function removeModuleFromBranch(
-  branchId: string,
-  modulePublicId: string
-): Promise<void> {
+export async function removeModuleFromBranch(branchId: string, modulePublicId: string): Promise<void> {
   await api.delete(`/api/Branches/${branchId}/modules/${modulePublicId}`)
 }

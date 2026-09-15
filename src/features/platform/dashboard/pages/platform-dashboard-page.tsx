@@ -72,15 +72,7 @@ export function PlatformDashboardPage() {
   )
 }
 
-function MetricCard({
-  label,
-  value,
-  icon: Icon,
-}: {
-  label: string
-  value: number
-  icon: typeof Building2
-}) {
+function MetricCard({ label, value, icon: Icon }: { label: string; value: number; icon: typeof Building2 }) {
   return (
     <Card className="rounded-3xl">
       <CardContent className="space-y-3 p-5">

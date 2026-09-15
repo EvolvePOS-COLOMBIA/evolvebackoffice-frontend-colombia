@@ -31,7 +31,8 @@ export function ItemCard({ item }: { item: ItemCardLink }) {
         <div
           className={cn(
             "flex size-11 shrink-0 items-center justify-center rounded-xl border border-primary/20 bg-primary/10 transition-all duration-300 ease-out",
-            !isDisabled && "group-hover:scale-105 group-hover:border-white/25 group-hover:bg-white/15 group-hover:shadow-md group-hover:shadow-white/10"
+            !isDisabled &&
+              "group-hover:scale-105 group-hover:border-white/25 group-hover:bg-white/15 group-hover:shadow-md group-hover:shadow-white/10"
           )}
         >
           <item.icon

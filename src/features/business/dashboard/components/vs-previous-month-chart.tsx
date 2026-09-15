@@ -11,8 +11,18 @@ import type { VsPreviousMonthWeek } from "../mock/dashboard-data"
 import { CHART_PRIMARY, CHART_SECONDARY } from "../constants"
 
 const MONTHS_EN = [
-  "January", "February", "March", "April", "May", "June",
-  "July", "August", "September", "October", "November", "December"
+  "January",
+  "February",
+  "March",
+  "April",
+  "May",
+  "June",
+  "July",
+  "August",
+  "September",
+  "October",
+  "November",
+  "December",
 ]
 
 interface VsPreviousMonthChartProps {
@@ -124,16 +134,12 @@ export function VsPreviousMonthChart({
             <div className="flex items-center gap-1.5">
               <div className="h-2.5 w-2.5 rounded-full" style={{ backgroundColor: CHART_SECONDARY }} />
               <span className="text-muted-foreground">{formatMonthName(previousMonthName)}</span>
-              <span className="font-mono font-medium tabular-nums">
-                {formatCurrency(previousMonthTotal)}
-              </span>
+              <span className="font-mono font-medium tabular-nums">{formatCurrency(previousMonthTotal)}</span>
             </div>
             <div className="flex items-center gap-1.5">
               <div className="h-2.5 w-2.5 rounded-full" style={{ backgroundColor: CHART_PRIMARY }} />
               <span className="text-muted-foreground">{formatMonthName(currentMonthName)}</span>
-              <span className="font-mono font-medium tabular-nums">
-                {formatCurrency(currentMonthTotal)}
-              </span>
+              <span className="font-mono font-medium tabular-nums">{formatCurrency(currentMonthTotal)}</span>
             </div>
           </div>
           <div className="flex gap-3">
@@ -149,10 +155,7 @@ export function VsPreviousMonthChart({
 
       <CardContent>
         <ChartContainer config={chartConfig} className="h-[250px] w-full">
-          <BarChart
-            data={weeks}
-            margin={{ top: 10, right: 10, left: -10, bottom: 10 }}
-          >
+          <BarChart data={weeks} margin={{ top: 10, right: 10, left: -10, bottom: 10 }}>
             <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="hsl(var(--border))" />
             <XAxis
               dataKey="label"
@@ -173,13 +176,7 @@ export function VsPreviousMonthChart({
                 return `$${value}`
               }}
             />
-            <ChartTooltip
-              content={
-                <ChartTooltipContent
-                  formatter={(value) => formatCurrency(Number(value))}
-                />
-              }
-            />
+            <ChartTooltip content={<ChartTooltipContent formatter={(value) => formatCurrency(Number(value))} />} />
             <Bar
               dataKey="previousMonth"
               fill={CHART_SECONDARY}

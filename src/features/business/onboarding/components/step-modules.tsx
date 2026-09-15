@@ -31,14 +31,7 @@ const MODULE_ICONS: Record<ModuleKey, LucideIcon> = {
   reportes: BarChart3,
 }
 
-export function StepModules({
-  branchName,
-  modules,
-  isSubmitting,
-  onToggle,
-  onBack,
-  onSubmit,
-}: StepModulesProps) {
+export function StepModules({ branchName, modules, isSubmitting, onToggle, onBack, onSubmit }: StepModulesProps) {
   const { t } = useTranslation("business-onboarding")
 
   return (
@@ -55,18 +48,13 @@ export function StepModules({
           </span>
           <div className="min-w-0 flex-1">
             <p className="truncate text-sm font-semibold">{branchName || t("your_branch")}</p>
-            <p className="text-[13px] leading-[18px] text-muted-foreground">
-              {t("modules_preset_hint", { type: "" })}
-            </p>
+            <p className="text-[13px] leading-[18px] text-muted-foreground">{t("modules_preset_hint", { type: "" })}</p>
           </div>
         </div>
 
         <div className="mt-4.5 grid gap-3.5 sm:grid-cols-2">
           {BASE_MODULES.map(({ key, icon: Icon }) => (
-            <div
-              key={key}
-              className="flex items-start gap-3.5 rounded-2xl border border-border/70 bg-muted/45 p-3.5"
-            >
+            <div key={key} className="flex items-start gap-3.5 rounded-2xl border border-border/70 bg-muted/45 p-3.5">
               <span className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-muted text-muted-foreground">
                 <Icon className="size-5" />
               </span>
@@ -121,12 +109,7 @@ export function StepModules({
         </div>
       </StepCard>
 
-      <StepFooter
-        onBack={onBack}
-        backLabel={t("back")}
-        submitLabel={t("finish_setup")}
-        isSubmitting={isSubmitting}
-      />
+      <StepFooter onBack={onBack} backLabel={t("back")} submitLabel={t("finish_setup")} isSubmitting={isSubmitting} />
     </form>
   )
 }

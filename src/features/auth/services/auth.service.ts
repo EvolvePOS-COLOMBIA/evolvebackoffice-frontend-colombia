@@ -8,6 +8,8 @@ import type {
   ChangePasswordDto,
   TenantLoginFormValues,
   PlatformLoginFormValues,
+  AppRole,
+  PasswordResetScope,
 } from "@/features/auth/types"
 
 /**
@@ -49,6 +51,15 @@ function mapAuthResponseToSession(
     throw new Error("This account is not authorized to access the platform.")
   }
 
+  // Map backend role to frontend AppRole
+  const backendRole = response.user.role?.toUpperCase()
+  let mappedRole: AppRole = role
+  if (backendRole === "SUBADMIN") {
+    mappedRole = "PlatformSubAdmin"
+  } else if (backendRole === "SUPERVISOR") {
+    mappedRole = "PlatformSupervisor"
+  }
+
   return {
     accessToken: response.token,
     refreshToken: response.refreshToken,
@@ -62,7 +73,7 @@ function mapAuthResponseToSession(
         response.user.email ||
         response.user.username ||
         "",
-      role,
+      role: mappedRole,
     },
     tenantId,
     forcePasswordChange: response.forcePasswordChange,
@@ -74,7 +85,16 @@ function isPlatformRole(role: string | null | undefined) {
     return false
   }
 
-  return ["admin", "platformadmin", "platform-admin", "superadmin", "super-admin"].includes(role.toLowerCase())
+  return [
+    "admin",
+    "platformadmin",
+    "platform-admin",
+    "superadmin",
+    "super-admin",
+    "subadmin",
+    "sub-admin",
+    "supervisor",
+  ].includes(role.toLowerCase())
 }
 
 function readJwtClaims(token: string): Record<string, unknown> {
@@ -157,4 +177,34 @@ function mapBusinessLoginError(error: unknown) {
   }
 
   return new Error(t("sign_in_error"))
+}
+
+/**
+ * Solicita el enlace de restablecimiento de contraseña ("olvidé mi contraseña").
+ * El backend siempre responde genéricamente para no revelar si el email existe.
+ */
+export async function requestPasswordReset(email: string, scope: PasswordResetScope, tenantId?: string): Promise<void> {
+  const url = scope === "platform" ? "/api/Auth/forgot-password/platform" : "/api/Auth/forgot-password"
+  const headers: Record<string, string> = {}
+  if (scope === "tenant" && tenantId) {
+    headers["X-Tenant-Id"] = tenantId
+  }
+  await api.post(url, { email }, { headers })
+}
+
+/**
+ * Completa el restablecimiento de contraseña con el token de un solo uso.
+ */
+export async function resetPassword(
+  token: string,
+  newPassword: string,
+  scope: PasswordResetScope,
+  tenantId?: string
+): Promise<void> {
+  const url = scope === "platform" ? "/api/Auth/reset-password/platform" : "/api/Auth/reset-password"
+  const headers: Record<string, string> = {}
+  if (scope === "tenant" && tenantId) {
+    headers["X-Tenant-Id"] = tenantId
+  }
+  await api.post(url, { token, newPassword }, { headers })
 }

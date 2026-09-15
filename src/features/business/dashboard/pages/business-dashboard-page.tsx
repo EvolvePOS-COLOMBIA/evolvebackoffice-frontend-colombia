@@ -12,7 +12,16 @@ import {
 } from "@/components/ui/alert-dialog"
 import { useTranslation } from "@/i18n/use-i18n"
 import { useLocaleFormat } from "@/hooks/use-locale-format"
-import { dashboardData, type Period } from "../mock/dashboard-data"
+import type { Period } from "../mock/dashboard-data"
+import {
+  useDashboardStats,
+  useDepartmentSales,
+  useTenderReport,
+  useSalesByPeriod,
+  useActiveOrders,
+  useYearOnYear,
+  useVsPreviousMonth,
+} from "../hooks/use-dashboard"
 import { PeriodFilter } from "../components/period-filter"
 import { SalesByPeriodChart } from "../components/sales-by-period-chart"
 import { ActiveOrdersCard } from "../components/active-orders-card"
@@ -57,6 +66,14 @@ export function BusinessDashboardPage() {
   const [alertOpen, setAlertOpen] = useState(false)
   const [alertMessage, setAlertMessage] = useState("")
 
+  const { data: stats } = useDashboardStats(period)
+  const { data: departmentSales } = useDepartmentSales(period)
+  const { data: tenderReport } = useTenderReport(period)
+  const { data: salesByPeriod } = useSalesByPeriod(period)
+  const { data: activeOrders } = useActiveOrders()
+  const { data: yearOnYear } = useYearOnYear()
+  const { data: vsPreviousMonth } = useVsPreviousMonth()
+
   const showAlert = useCallback((message: string) => {
     setAlertMessage(message)
     setAlertOpen(true)
@@ -70,13 +87,19 @@ export function BusinessDashboardPage() {
 
   const salesByPeriodData = useMemo(() => {
     const map = { day: "hourly", week: "weekly", month: "monthly" } as const
-    const points = dashboardData.salesByPeriod[map[period]]
+    const points = salesByPeriod?.[map[period]] ?? []
     return {
       points,
       totalSales: points.reduce((sum, p) => sum + p.sales, 0),
       totalTransactions: points.reduce((sum, p) => sum + p.transactions, 0),
     }
-  }, [period])
+  }, [period, salesByPeriod])
+
+  const defaultStats = useMemo(() => ({
+    grossSales: 0, taxes: 0, netSales: 0, hash: 0, negHash: 0,
+    netSalesWohash: 0, customers: 0, voidTrans: 0, cancelTrans: 0,
+    itemsSold: 0, webSales: 0,
+  }), [])
 
   return (
     <div>
@@ -103,7 +126,7 @@ export function BusinessDashboardPage() {
 
           {/* Stats Grid */}
           <div className="space-y-6">
-            <StatsGrid stats={dashboardData.stats[period]} />
+            <StatsGrid stats={stats ?? defaultStats} />
             <SalesByPeriodChart
               data={salesByPeriodData.points}
               period={period}
@@ -117,7 +140,7 @@ export function BusinessDashboardPage() {
           {/* Department Sales */}
           <div>
             <DepartmentSalesChart
-              data={dashboardData.departmentSales[period]}
+              data={(departmentSales ?? []).map((d) => ({ ...d, fill: "" }))}
               dateRange={dateRange}
               onPrint={handlePrint}
               onSave={handleSave}
@@ -127,9 +150,9 @@ export function BusinessDashboardPage() {
           {/* Year-on-year */}
           <div>
             <YearOnYearChart
-              data={dashboardData.yearOnYear.months}
-              total2025={dashboardData.yearOnYear.total2025}
-              total2026={dashboardData.yearOnYear.total2026}
+              data={yearOnYear?.months ?? []}
+              total2025={yearOnYear?.total2025 ?? 0}
+              total2026={yearOnYear?.total2026 ?? 0}
               onPrint={handlePrint}
               onSave={handleSave}
             />
@@ -142,13 +165,13 @@ export function BusinessDashboardPage() {
         <div className="space-y-4">
           {/* Active Orders */}
           <div>
-            <ActiveOrdersCard orders={dashboardData.activeOrders} />
+            <ActiveOrdersCard orders={(activeOrders ?? []).map((o) => ({ ...o, status: o.status as "pending" | "preparing" | "ready" | "on_the_way" | "delivered" }))} />
           </div>
 
           {/* Tender Report */}
           <div>
             <TenderReportCard
-              data={dashboardData.tenderReport[period]}
+              data={(tenderReport ?? []).map((t) => ({ ...t, color: "" }))}
               dateRange={dateRange}
               onPrint={handlePrint}
               onSave={handleSave}
@@ -158,11 +181,11 @@ export function BusinessDashboardPage() {
           {/* Vs. Previous Month */}
           <div>
             <VsPreviousMonthChart
-              weeks={dashboardData.vsPreviousMonth.weeks}
-              currentMonthName={dashboardData.vsPreviousMonth.currentMonthName}
-              previousMonthName={dashboardData.vsPreviousMonth.previousMonthName}
-              previousMonthTotal={dashboardData.vsPreviousMonth.previousMonthTotal}
-              currentMonthTotal={dashboardData.vsPreviousMonth.currentMonthTotal}
+              weeks={vsPreviousMonth?.weeks ?? []}
+              currentMonthName={vsPreviousMonth?.currentMonthName ?? ""}
+              previousMonthName={vsPreviousMonth?.previousMonthName ?? ""}
+              previousMonthTotal={vsPreviousMonth?.previousMonthTotal ?? 0}
+              currentMonthTotal={vsPreviousMonth?.currentMonthTotal ?? 0}
               onPrint={handlePrint}
               onSave={handleSave}
             />

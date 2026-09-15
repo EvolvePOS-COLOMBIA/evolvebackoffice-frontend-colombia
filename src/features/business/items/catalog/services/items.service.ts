@@ -1,11 +1,5 @@
 import { api } from "@/config/axios-client"
-import type {
-  CreateItemDto,
-  ItemListParams,
-  ItemResponseDto,
-  PaginatedResponse,
-  UpdateItemDto,
-} from "../types"
+import type { CreateItemDto, ItemListParams, ItemResponseDto, PaginatedResponse, UpdateItemDto } from "../types"
 
 /**
  * Global catalog endpoints: /api/Items

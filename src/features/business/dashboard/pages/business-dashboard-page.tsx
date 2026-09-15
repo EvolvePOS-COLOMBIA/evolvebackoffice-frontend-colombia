@@ -95,11 +95,22 @@ export function BusinessDashboardPage() {
     }
   }, [period, salesByPeriod])
 
-  const defaultStats = useMemo(() => ({
-    grossSales: 0, taxes: 0, netSales: 0, hash: 0, negHash: 0,
-    netSalesWohash: 0, customers: 0, voidTrans: 0, cancelTrans: 0,
-    itemsSold: 0, webSales: 0,
-  }), [])
+  const defaultStats = useMemo(
+    () => ({
+      grossSales: 0,
+      taxes: 0,
+      netSales: 0,
+      hash: 0,
+      negHash: 0,
+      netSalesWohash: 0,
+      customers: 0,
+      voidTrans: 0,
+      cancelTrans: 0,
+      itemsSold: 0,
+      webSales: 0,
+    }),
+    []
+  )
 
   return (
     <div>
@@ -165,7 +176,12 @@ export function BusinessDashboardPage() {
         <div className="space-y-4">
           {/* Active Orders */}
           <div>
-            <ActiveOrdersCard orders={(activeOrders ?? []).map((o) => ({ ...o, status: o.status as "pending" | "preparing" | "ready" | "on_the_way" | "delivered" }))} />
+            <ActiveOrdersCard
+              orders={(activeOrders ?? []).map((o) => ({
+                ...o,
+                status: o.status as "pending" | "preparing" | "ready" | "on_the_way" | "delivered",
+              }))}
+            />
           </div>
 
           {/* Tender Report */}

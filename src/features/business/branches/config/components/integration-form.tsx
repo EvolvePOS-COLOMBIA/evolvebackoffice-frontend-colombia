@@ -92,7 +92,11 @@ export function IntegrationForm({ branchId, platformCode, integration }: Props) 
         baseUrl: values.baseUrl,
       }
       const dto: CreateBranchIntegrationDto = isWoo
-        ? { ...baseDto, consumerKey: (values as { consumerKey: string }).consumerKey, consumerSecret: (values as { consumerSecret: string }).consumerSecret }
+        ? {
+            ...baseDto,
+            consumerKey: (values as { consumerKey: string }).consumerKey,
+            consumerSecret: (values as { consumerSecret: string }).consumerSecret,
+          }
         : { ...baseDto, apiKey: (values as { apiKey: string }).apiKey }
       createMutation.mutate(
         { branchId, dto },

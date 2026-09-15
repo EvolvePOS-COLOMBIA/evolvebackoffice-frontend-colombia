@@ -3,10 +3,11 @@
   "private": true,
   "version": "0.0.1",
   "type": "module",
+  "packageManager": "bun@1.2.4",
   "scripts": {
     "dev": "vite",
     "build": "tsc -b && vite build",
-    "check": "npm run typecheck && npm run lint && npm run test",
+    "check": "bun run format:check && bun run typecheck && bun run lint && bun run test",
     "lint": "eslint .",
     "format": "prettier --write \"**/*.{ts,tsx}\"",
     "format:check": "prettier --check \"**/*.{ts,tsx}\"",

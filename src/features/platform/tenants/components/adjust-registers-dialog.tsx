@@ -138,9 +138,7 @@ export function AdjustRegistersDialog({
                           </p>
                         </div>
                       </div>
-                      <Badge
-                        tone={serial.status === "Activated" ? "success" : "warning"}
-                      >
+                      <Badge tone={serial.status === "Activated" ? "success" : "warning"}>
                         {serial.status === "Activated" ? t("serial_activated") : t("serial_unassigned")}
                       </Badge>
                     </div>

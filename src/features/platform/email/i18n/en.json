@@ -30,5 +30,7 @@
   "settings_saved": "Settings saved successfully",
   "test_email_sent": "Test email sent",
   "test_email_failed": "Error sending test email",
-  "unable_to_save": "Could not save"
+  "unable_to_save": "Could not save",
+  "validation_required": "is required",
+  "validation_email_invalid": "Invalid email"
 }

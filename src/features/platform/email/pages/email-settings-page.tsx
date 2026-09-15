@@ -1,7 +1,7 @@
 import { useEffect } from "react"
 import { Mail, Send, Save } from "lucide-react"
 import { zodResolver } from "@hookform/resolvers/zod"
-import { useForm } from "react-hook-form"
+import { useForm, type Resolver } from "react-hook-form"
 
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
@@ -11,6 +11,7 @@ import { Input } from "@/components/ui/input"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { useEmailSetting, useUpdateEmailSetting, useSendTestEmail } from "@/features/platform/email/hooks/use-email-settings"
 import { emailSettingsSchema, sendTestEmailSchema } from "@/features/platform/email/schemas/email-schema"
+import type { EmailSettingsFormValues, SendTestEmailFormValues } from "@/features/platform/email/schemas/email-schema"
 import { notify } from "@/hooks/use-notify"
 import { useTranslation } from "@/i18n/use-i18n"
 
@@ -20,16 +21,8 @@ export function EmailSettingsPage() {
   const updateMutation = useUpdateEmailSetting()
   const testMutation = useSendTestEmail()
 
-  const form = useForm<{
-    smtpServer: string
-    smtpPort: number
-    username: string
-    password: string
-    senderEmail: string
-    senderName: string
-    encryptionType: string
-  }>({
-    resolver: zodResolver(emailSettingsSchema(t)) as never,
+  const form = useForm<EmailSettingsFormValues>({
+    resolver: zodResolver(emailSettingsSchema(t)) as unknown as Resolver<EmailSettingsFormValues>,
     defaultValues: {
       smtpServer: "",
       smtpPort: 587,
@@ -41,8 +34,8 @@ export function EmailSettingsPage() {
     },
   })
 
-  const testForm = useForm<{ recipientEmail: string }>({
-    resolver: zodResolver(sendTestEmailSchema(t)) as never,
+  const testForm = useForm<SendTestEmailFormValues>({
+    resolver: zodResolver(sendTestEmailSchema(t)) as unknown as Resolver<SendTestEmailFormValues>,
     defaultValues: {
       recipientEmail: "",
     },
@@ -62,15 +55,7 @@ export function EmailSettingsPage() {
     }
   }, [setting, form])
 
-  const handleSave = (values: {
-    smtpServer: string
-    smtpPort: number
-    username?: string
-    password?: string
-    senderEmail: string
-    senderName: string
-    encryptionType: string
-  }) => {
+  const handleSave = (values: EmailSettingsFormValues) => {
     updateMutation.mutate(
       {
         smtpServer: values.smtpServer,
@@ -88,7 +73,7 @@ export function EmailSettingsPage() {
     )
   }
 
-  const handleSendTest = (values: { recipientEmail: string }) => {
+  const handleSendTest = (values: SendTestEmailFormValues) => {
     testMutation.mutate(
       { recipientEmail: values.recipientEmail },
       {

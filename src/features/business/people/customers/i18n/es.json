@@ -1,4 +1,5 @@
 {
+  "full_name": "Nombre completo",
   "customers": "Clientes",
   "customer_catalog": "Gestion de Clientes",
   "customer_catalog_desc": "Administra clientes externos identificados por documentos CC o CE.",

@@ -12,16 +12,19 @@ export function InventoryPage() {
       name: t("suppliers"),
       label: t("suppliers_desc"),
       icon: Truck,
+      disabled: true,
     },
     {
       name: t("purchase_orders"),
       label: t("purchase_orders_desc"),
       icon: ShoppingCart,
+      disabled: true,
     },
     {
       name: t("physical_inventory"),
       label: t("physical_inventory_desc"),
       icon: ClipboardCheck,
+      disabled: true,
     },
   ]
 

@@ -106,7 +106,7 @@ export function TenderReportCard({ data, dateRange, onPrint, onSave }: TenderRep
   }, [])
 
   return (
-    <Card className="flex max-h-[640px] flex-col transition-all duration-300 hover:shadow-md">
+    <Card className="flex max-h-175 flex-col transition-all duration-300 hover:shadow-md">
       <CardHeader className="shrink-0 pb-2">
         <div className="flex items-start justify-between">
           <div>
@@ -124,7 +124,7 @@ export function TenderReportCard({ data, dateRange, onPrint, onSave }: TenderRep
         </div>
       </CardHeader>
       <CardContent className="flex min-h-0 flex-1 flex-col space-y-4">
-        <div className="relative h-[280px] w-full shrink-0">
+        <div className="relative h-70 w-full shrink-0">
           <ResponsiveContainer width="100%" height="100%">
             <PieChart>
               <Pie
@@ -169,7 +169,7 @@ export function TenderReportCard({ data, dateRange, onPrint, onSave }: TenderRep
         <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
           <div className="grid grid-cols-3 border-b px-4 py-2">
             <span className="text-xs font-medium text-muted-foreground">{t("description")}</span>
-            <span className="text-right text-xs font-medium text-muted-foreground">{t("quantity")}</span>
+            <span className="text-center text-xs font-medium text-muted-foreground">{t("quantity")}</span>
             <span className="text-right text-xs font-medium text-muted-foreground">{t("sales")}</span>
           </div>
           <div className="min-h-0 flex-1 overflow-y-auto">
@@ -178,7 +178,7 @@ export function TenderReportCard({ data, dateRange, onPrint, onSave }: TenderRep
                 {data.map((entry) => (
                   <TableRow key={entry.description}>
                     <TableCell className="text-xs font-medium">{entry.description}</TableCell>
-                    <TableCell className="text-right text-xs tabular-nums">{entry.quantity}</TableCell>
+                    <TableCell className="text-center text-xs tabular-nums">{entry.quantity}</TableCell>
                     <TableCell className="text-right text-xs tabular-nums">{formatCurrency(entry.sales)}</TableCell>
                   </TableRow>
                 ))}
@@ -187,7 +187,7 @@ export function TenderReportCard({ data, dateRange, onPrint, onSave }: TenderRep
           </div>
           <div className="grid grid-cols-3 border-t-2 border-foreground/10 px-4 py-2 font-bold">
             <span className="text-xs">{t("total")}</span>
-            <span className="text-right text-xs tabular-nums">{totalQuantity}</span>
+            <span className="-ml-4 text-center text-xs tabular-nums">{totalQuantity}</span>
             <span className="text-right text-xs tabular-nums">{formatCurrency(totalSales)}</span>
           </div>
         </div>

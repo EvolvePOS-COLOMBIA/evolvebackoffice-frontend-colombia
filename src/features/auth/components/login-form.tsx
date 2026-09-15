@@ -1,7 +1,7 @@
 import { zodResolver } from "@hookform/resolvers/zod"
 import { ArrowRight, Building2, ShieldCheck } from "lucide-react"
 import { useForm } from "react-hook-form"
-import { useNavigate } from "react-router-dom"
+import { Link, useNavigate } from "react-router-dom"
 
 import Spinner from "@/components/Spinner"
 import { Badge } from "@/components/ui/badge"
@@ -12,7 +12,7 @@ import { Input } from "@/components/ui/input"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { useAuth } from "@/features/auth/hooks/use-auth"
 import { businessLoginSchema, platformLoginSchema } from "@/features/auth/schemas/login-schema"
-import type { BusinessLoginFormValues, PlatformLoginFormValues } from "@/features/auth/types"
+import type { PlatformLoginFormValues, TenantLoginFormValues } from "@/features/auth/types"
 import { notify } from "@/hooks/use-notify"
 import { useTranslation } from "@/i18n/use-i18n"
 
@@ -21,27 +21,30 @@ export function LoginForm() {
   const { defaultRoute, isLogging, loginBusiness, loginPlatform } = useAuth()
   const { t } = useTranslation("auth")
 
-  const businessForm = useForm<BusinessLoginFormValues>({
+  const businessForm = useForm<TenantLoginFormValues>({
     resolver: zodResolver(businessLoginSchema(t)),
     defaultValues: {
-      slug: "harbor-cafe",
-      email: "owner@northstar.co",
-      password: "Business123",
+      tenantPublicId: "-juaco-pizza-ca474991",
+      email: "joaquin@urspos.com",
+      password: "Guar123!",
     },
   })
 
   const platformForm = useForm<PlatformLoginFormValues>({
     resolver: zodResolver(platformLoginSchema(t)),
     defaultValues: {
-      email: "platform@posmanager.app",
-      password: "Platform123",
+      email: "giovany@urspos.com",
+      password: "Guar123!",
     },
   })
 
-  const handleBusinessSubmit = (values: BusinessLoginFormValues) => {
+  const handleBusinessSubmit = (values: TenantLoginFormValues) => {
     loginBusiness(values, {
       onSuccess: (session) => {
         notify.success(t("welcome_back", { name: session.user.fullName }))
+        // Siempre ir al dashboard. El OnboardingGate se encargará de redirigir
+        // al onboarding si es necesario, y el modal de cambio de contraseña
+        // aparecerá si forcePasswordChange es true.
         navigate("/business/dashboard")
       },
       onError: (error) => {
@@ -67,7 +70,7 @@ export function LoginForm() {
   }
 
   return (
-    <div className="grid min-h-svh gap-8 px-4 py-8 lg:grid-cols-[1.05fr_0.95fr] lg:px-8">
+    <div className="grid min-h-svh gap-8 px-4 py-8 lg:px-8">
       <section className="flex items-center">
         <Card className="mx-auto w-full max-w-xl bg-card/88">
           <CardHeader className="space-y-3">
@@ -95,15 +98,15 @@ export function LoginForm() {
                 <Form {...businessForm}>
                   <form className="space-y-5" onSubmit={businessForm.handleSubmit(handleBusinessSubmit)}>
                     <FormField
-                      control={businessForm.control}
-                      name="slug"
+                      // control={businessForm.control}
+                      name="tenantPublicId"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>{t("business_slug")}</FormLabel>
+                          <FormLabel>{t("tenant_public_id")}</FormLabel>
                           <FormControl>
                             <Input
                               className="bg-white dark:bg-secondary"
-                              placeholder={t("business_slug_placeholder")}
+                              placeholder={t("tenant_public_id_placeholder")}
                               {...field}
                             />
                           </FormControl>
@@ -156,6 +159,15 @@ export function LoginForm() {
                       </p>
                     ) : null}
 
+                    <p className="text-center text-sm">
+                      <Link
+                        to={`/forgot-password?scope=tenant&tenantId=${encodeURIComponent(businessForm.getValues("tenantPublicId") ?? "")}`}
+                        className="text-muted-foreground underline-offset-4 hover:text-foreground hover:underline"
+                      >
+                        {t("forgot_password")}
+                      </Link>
+                    </p>
+
                     <Button type="submit" size="lg" className="w-full" disabled={isLogging}>
                       {isLogging && <Spinner IsButton />}
                       {isLogging ? t("signing_in") : t("continue_as_business_admin")}
@@ -206,11 +218,14 @@ export function LoginForm() {
                       )}
                     />
 
-                    {platformForm.formState.errors.root ? (
-                      <p className="text-sm font-medium text-destructive">
-                        {platformForm.formState.errors.root.message}
-                      </p>
-                    ) : null}
+                    <p className="text-center text-sm">
+                      <Link
+                        to="/forgot-password?scope=platform"
+                        className="text-muted-foreground underline-offset-4 hover:text-foreground hover:underline"
+                      >
+                        {t("forgot_password")}
+                      </Link>
+                    </p>
 
                     <Button type="submit" size="lg" className="w-full" disabled={isLogging}>
                       {isLogging && <Spinner IsButton />}
@@ -224,15 +239,6 @@ export function LoginForm() {
 
             <Card className="rounded-3xl border-primary/20 bg-primary/8 shadow-none">
               <CardContent className="space-y-3 px-4 py-4 text-sm leading-6 text-muted-foreground">
-                {/* <p>
-                  {t("demo_platform_access")}{" "}
-                  <span className="font-medium text-foreground">platform@posmanager.app</span> /
-                  <span className="font-medium text-foreground"> Platform123</span>
-                </p>
-                <p>
-                  {t("demo_business_access")} <span className="font-medium text-foreground">owner@northstar.co</span> /
-                  <span className="font-medium text-foreground"> Business123</span>
-                </p> */}
                 <p>
                   {t("press")} <kbd className="rounded-md border px-1.5 py-0.5 text-xs">d</kbd> {t("toggle_theme_hint")}
                 </p>
@@ -245,33 +251,6 @@ export function LoginForm() {
           </CardContent>
         </Card>
       </section>
-
-      <section className="hidden items-center lg:flex">
-        <div className="mx-auto grid w-full max-w-2xl gap-4">
-          <InfoPanel
-            eyebrow={t("platform_control")}
-            title={t("platform_control_title")}
-            description={t("platform_control_desc")}
-          />
-          <InfoPanel
-            eyebrow={t("business_operations")}
-            title={t("business_operations_title")}
-            description={t("business_operations_desc")}
-          />
-        </div>
-      </section>
     </div>
-  )
-}
-
-function InfoPanel({ eyebrow, title, description }: { eyebrow: string; title: string; description: string }) {
-  return (
-    <Card className="rounded-[30px] border-border/70 bg-background/65">
-      <CardContent className="space-y-3 p-6">
-        <p className="text-[11px] font-semibold tracking-[0.24em] text-primary/80 uppercase">{eyebrow}</p>
-        <h2 className="text-2xl font-semibold text-balance text-foreground">{title}</h2>
-        <p className="text-sm leading-7 text-muted-foreground">{description}</p>
-      </CardContent>
-    </Card>
   )
 }

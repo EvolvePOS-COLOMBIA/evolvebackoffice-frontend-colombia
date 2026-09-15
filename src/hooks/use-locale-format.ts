@@ -14,8 +14,28 @@ export function useLocaleFormat() {
       return new Intl.NumberFormat(appLocale, {
         style: "currency",
         currency: opts?.currency ?? currency,
-        minimumFractionDigits: 2,
-        maximumFractionDigits: 2,
+      }).format(value)
+    },
+    [appLocale, currency]
+  )
+
+  const formatCurrencyCompactFn = useCallback(
+    (value: number, opts?: { currency?: string }) => {
+      if (Math.abs(value) < 1_000_000) {
+        return new Intl.NumberFormat(appLocale, {
+          style: "currency",
+          currency: opts?.currency ?? currency,
+          minimumFractionDigits: 0,
+          maximumFractionDigits: 0,
+        }).format(value)
+      }
+      return new Intl.NumberFormat(appLocale, {
+        style: "currency",
+        currency: opts?.currency ?? currency,
+        notation: "compact",
+        compactDisplay: "short",
+        minimumFractionDigits: 1,
+        maximumFractionDigits: 1,
       }).format(value)
     },
     [appLocale, currency]
@@ -47,10 +67,11 @@ export function useLocaleFormat() {
       locale: appLocale,
       currency,
       formatCurrency: formatCurrencyFn,
+      formatCurrencyCompact: formatCurrencyCompactFn,
       formatNumber: formatNumberFn,
       formatDate: formatDateFn,
       formatDateTime: formatDateTimeFn,
     }),
-    [appLocale, currency, formatCurrencyFn, formatNumberFn, formatDateFn, formatDateTimeFn]
+    [appLocale, currency, formatCurrencyFn, formatCurrencyCompactFn, formatNumberFn, formatDateFn, formatDateTimeFn]
   )
 }

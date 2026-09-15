@@ -9,10 +9,7 @@ export const platformLoginSchema = (t: TFunction) =>
 
 export const businessLoginSchema = (t: TFunction) =>
   z.object({
-    slug: z
-      .string()
-      .min(3, t("slug_min_validation"))
-      .regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/, t("slug_regex_validation")),
+    tenantPublicId: z.string().min(0, t("tenant_public_id_validation")),
     email: z.string().email(t("email_validation")),
     password: z.string().min(6, t("password_validation")),
   })

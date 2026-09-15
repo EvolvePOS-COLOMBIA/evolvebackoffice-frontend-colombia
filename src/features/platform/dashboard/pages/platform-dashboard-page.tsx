@@ -2,16 +2,17 @@ import { Building2, CircleOff, CirclePlus, Sparkles } from "lucide-react"
 
 import { Badge } from "@/components/ui/badge"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { useAppStore } from "@/store/app-store"
+import { useTenants } from "@/features/platform/tenants/hooks/use-tenants"
 import { useTranslation } from "@/i18n/use-i18n"
 
 export function PlatformDashboardPage() {
-  const clients = useAppStore((state) => state.platformClients)
+  const { data: pagedData } = useTenants(1, 100)
+  const tenants = pagedData?.data ?? []
   const { t } = useTranslation("platform-dashboard")
 
-  const activeClients = clients.filter((client) => client.status === "active").length
-  const inactiveClients = clients.length - activeClients
-  const recentClients = [...clients].sort((left, right) => right.createdAt.localeCompare(left.createdAt)).slice(0, 3)
+  const activeTenants = tenants.filter((tenant) => tenant.isActive).length
+  const inactiveTenants = tenants.length - activeTenants
+  const recentTenants = [...tenants].sort((left, right) => right.createdAt.localeCompare(left.createdAt)).slice(0, 3)
 
   return (
     <div className="space-y-6">
@@ -26,9 +27,9 @@ export function PlatformDashboardPage() {
           </div>
 
           <div className="grid gap-3 sm:grid-cols-3">
-            <MetricCard label={t("total_clients")} value={clients.length} icon={Building2} />
-            <MetricCard label={t("active_clients")} value={activeClients} icon={Sparkles} />
-            <MetricCard label={t("inactive_clients")} value={inactiveClients} icon={CircleOff} />
+            <MetricCard label={t("total_tenants")} value={tenants.length} icon={Building2} />
+            <MetricCard label={t("active_tenants")} value={activeTenants} icon={Sparkles} />
+            <MetricCard label={t("inactive_tenants")} value={inactiveTenants} icon={CircleOff} />
           </div>
         </CardContent>
       </Card>
@@ -39,15 +40,17 @@ export function PlatformDashboardPage() {
           <CardDescription>{t("recent_activity_desc")}</CardDescription>
         </CardHeader>
         <CardContent className="grid gap-4 lg:grid-cols-3">
-          {recentClients.map((client) => (
-            <Card key={client.id} className="rounded-[24px] border-border/70 bg-background/45 shadow-none">
+          {recentTenants.map((tenant) => (
+            <Card key={tenant.id} className="rounded-[24px] border-border/70 bg-background/45 shadow-none">
               <CardContent className="space-y-3 p-5">
                 <div className="flex items-center justify-between gap-3">
-                  <h2 className="text-lg font-semibold text-foreground">{client.businessName}</h2>
-                  <Badge tone={client.status === "active" ? "success" : "warning"}>{client.status}</Badge>
+                  <h2 className="text-lg font-semibold text-foreground">{tenant.name}</h2>
+                  <Badge tone={tenant.isActive ? "success" : "warning"}>
+                    {tenant.isActive ? t("active") : t("inactive")}
+                  </Badge>
                 </div>
-                <p className="text-sm text-muted-foreground">{client.slug}</p>
-                <p className="text-sm text-muted-foreground">{client.adminEmail}</p>
+                <p className="text-sm text-muted-foreground">{tenant.tenantId}</p>
+                <p className="text-sm text-muted-foreground">{tenant.contactEmail}</p>
               </CardContent>
             </Card>
           ))}
@@ -69,15 +72,7 @@ export function PlatformDashboardPage() {
   )
 }
 
-function MetricCard({
-  label,
-  value,
-  icon: Icon,
-}: {
-  label: string
-  value: number
-  icon: typeof Building2
-}) {
+function MetricCard({ label, value, icon: Icon }: { label: string; value: number; icon: typeof Building2 }) {
   return (
     <Card className="rounded-3xl">
       <CardContent className="space-y-3 p-5">

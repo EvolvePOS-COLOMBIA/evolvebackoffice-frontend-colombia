@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from "react"
+import { useEffect, useRef, useState } from "react"
 
 interface UseCountUpOptions {
   duration?: number
@@ -12,18 +12,11 @@ export function useCountUp(
   target: number,
   { duration = 1200, decimals = 0, prefix = "", locale, formatter }: UseCountUpOptions = {}
 ) {
-  const format = useCallback(
-    (v: number) => {
-      if (formatter) return formatter(v)
-      return `${prefix}${v.toLocaleString(locale, {
-        minimumFractionDigits: decimals,
-        maximumFractionDigits: decimals,
-      })}`
-    },
-    [formatter, prefix, locale, decimals]
+  const [display, setDisplay] = useState(() =>
+    formatter
+      ? formatter(target)
+      : `${prefix}${target.toLocaleString(locale, { minimumFractionDigits: decimals, maximumFractionDigits: decimals })}`
   )
-
-  const [display, setDisplay] = useState(() => format(target))
   const frameRef = useRef<number>(0)
   const startTimeRef = useRef<number | null>(null)
 
@@ -37,11 +30,21 @@ export function useCountUp(
       const elapsed = timestamp - startTimeRef.current
       const progress = Math.min(elapsed / duration, 1)
 
-      // ease-out cubic
       const eased = 1 - Math.pow(1 - progress, 3)
       const current = eased * target
 
-      setDisplay(format(current))
+      // During animation: plain number with decimals. Final frame: apply formatter.
+      if (progress >= 1) {
+        setDisplay(
+          formatter
+            ? formatter(target)
+            : `${prefix}${target.toLocaleString(locale, { minimumFractionDigits: decimals, maximumFractionDigits: decimals })}`
+        )
+      } else {
+        setDisplay(
+          `${prefix}${current.toLocaleString(locale, { minimumFractionDigits: decimals, maximumFractionDigits: decimals })}`
+        )
+      }
 
       if (progress < 1) {
         frameRef.current = requestAnimationFrame(step)
@@ -51,7 +54,7 @@ export function useCountUp(
     frameRef.current = requestAnimationFrame(step)
 
     return () => cancelAnimationFrame(frameRef.current)
-  }, [target, duration, format])
+  }, [target, duration, formatter, prefix, locale, decimals])
 
   return display
 }

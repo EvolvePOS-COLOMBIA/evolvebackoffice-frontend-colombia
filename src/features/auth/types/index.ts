@@ -1,18 +1,21 @@
-export type AppRole = "PlatformAdmin" | "BusinessAdmin"
+export type AppRole = "PlatformAdmin" | "PlatformSubAdmin" | "PlatformSupervisor" | "BusinessAdmin"
 
-export interface AuthUser {
+export type { AuthResponseDto, ChangePasswordDto, UserResponseDto } from "./api"
+
+export interface SessionUser {
   id: string
   email: string
   fullName: string
   role: AppRole
 }
 
-export interface AppSession {
+export interface AuthSession {
   accessToken: string
-  refreshToken: string
+  refreshToken: string | null
   expiresAtUtc: string
-  user: AuthUser
-  managedTenantIds: string[]
+  user: SessionUser
+  tenantId: string | null
+  forcePasswordChange: boolean
 }
 
 export interface PlatformLoginFormValues {
@@ -20,8 +23,10 @@ export interface PlatformLoginFormValues {
   password: string
 }
 
-export interface BusinessLoginFormValues {
-  slug: string
+export interface TenantLoginFormValues {
+  tenantPublicId: string
   email: string
   password: string
 }
+
+export type PasswordResetScope = "tenant" | "platform"

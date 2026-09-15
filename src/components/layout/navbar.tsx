@@ -1,4 +1,4 @@
-import { Globe, Menu, MoonStar, SunMedium } from "lucide-react"
+import { Globe, Menu, MoonStar, PanelLeftClose, PanelLeftOpen, SunMedium } from "lucide-react"
 import { useState } from "react"
 
 import { SidebarContent } from "@/components/layout/sidebar"
@@ -6,13 +6,16 @@ import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet"
-import { useAuth } from "@/features/auth/hooks/use-auth"
 import { useAppStore } from "@/store/app-store"
 import i18n from "@/i18n"
 import { useTranslation } from "@/i18n/use-i18n"
 
-export function Navbar() {
-  const { availableTenants, currentTenant, isBusinessAdmin, setActiveTenant } = useAuth()
+interface NavbarProps {
+  isCollapsed: boolean
+  onToggleCollapse: () => void
+}
+
+export function Navbar({ isCollapsed, onToggleCollapse }: NavbarProps) {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
   const { t } = useTranslation()
 
@@ -32,8 +35,9 @@ export function Navbar() {
 
   return (
     <Card className="sticky top-0 z-20 rounded-none border-x-0 border-t-0 bg-sidebar shadow-none backdrop-blur-xl">
-      <div className="flex justify-between gap-4 px-4 py-4 sm:px-6 lg:flex-row lg:items-end lg:justify-between lg:px-8">
+      <div className="flex justify-between gap-4 px-4 py-2 sm:px-6 lg:flex-row lg:items-end lg:justify-between">
         <div className="flex min-w-0 items-center gap-3">
+          {/* Botón para pantallas móviles (Sheet) */}
           <Sheet open={isMobileMenuOpen} onOpenChange={setIsMobileMenuOpen}>
             <SheetTrigger asChild>
               <Button variant="outline" size="icon" className="mt-0.5 lg:hidden" aria-label="Open navigation menu">
@@ -49,25 +53,19 @@ export function Navbar() {
             </SheetContent>
           </Sheet>
 
-          {isBusinessAdmin && (
-            <div className="min-w-[220px]">
-              <Select value={currentTenant?.id} onValueChange={setActiveTenant}>
-                <SelectTrigger className="bg-background/55">
-                  <SelectValue placeholder={t("select_business")} />
-                </SelectTrigger>
-                <SelectContent>
-                  {availableTenants.map((tenant) => (
-                    <SelectItem key={tenant.id} value={tenant.id}>
-                      {tenant.businessName}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-          )}
+          {/* Botón exclusivo de escritorio para colapsar/expandir el Sidebar */}
+          <Button
+            variant="outline"
+            size="icon"
+            className="mt-0.5 hidden bg-background/55 text-muted-foreground hover:text-foreground lg:flex"
+            onClick={onToggleCollapse}
+            aria-label="Toggle Sidebar"
+          >
+            {isCollapsed ? <PanelLeftOpen className="size-4" /> : <PanelLeftClose className="size-4" />}
+          </Button>
         </div>
 
-        <div className="flex flex-wrap items-center gap-2 overflow-x-auto pb-1 sm:pb-0">
+        <div className="flex flex-wrap items-center gap-2 overflow-x-auto">
           <Select value={locale} onValueChange={handleLocaleChange}>
             <SelectTrigger className="w-max bg-background/55">
               <Globe className="mr-1 size-4" />

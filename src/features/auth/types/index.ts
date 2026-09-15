@@ -28,3 +28,5 @@ export interface TenantLoginFormValues {
   email: string
   password: string
 }
+
+export type PasswordResetScope = "tenant" | "platform"

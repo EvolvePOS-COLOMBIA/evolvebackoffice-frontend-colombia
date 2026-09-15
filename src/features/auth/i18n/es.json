@@ -51,5 +51,20 @@
   "password_change_error": "Error al cambiar la contraseña. Verifica tu contraseña actual.",
   "logout": "Cerrar sesión",
   "save_password": "Guardar contraseña",
-  "saving": "Guardando..."
+  "saving": "Guardando...",
+  "forgot_password": "¿Olvidaste tu contraseña?",
+  "forgot_password_title": "Recuperar contraseña",
+  "forgot_password_desc": "Ingresa tu email y te enviaremos un enlace de un solo uso para restablecer tu contraseña.",
+  "send_reset_link": "Enviar enlace de restablecimiento",
+  "sending": "Enviando...",
+  "reset_link_sent": "Revisa tu correo",
+  "reset_link_sent_desc": "Si el email está registrado, recibirás un enlace para restablecer tu contraseña. El enlace es de un solo uso y expira en 30 minutos.",
+  "back_to_login": "Volver al inicio de sesión",
+  "reset_password_title": "Define tu nueva contraseña",
+  "reset_password_desc": "Ingresa una nueva contraseña segura para tu cuenta.",
+  "new_password": "Nueva contraseña",
+  "password_reset_success": "Contraseña restablecida correctamente. Ya puedes iniciar sesión.",
+  "password_reset_error": "No se pudo restablecer la contraseña en este momento.",
+  "invalid_reset_link": "Enlace no válido",
+  "invalid_reset_link_desc": "El enlace de restablecimiento no es válido o ha expirado. Solicita uno nuevo desde la página de inicio de sesión."
 }

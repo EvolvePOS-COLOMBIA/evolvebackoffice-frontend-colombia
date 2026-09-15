@@ -1,7 +1,7 @@
 import { zodResolver } from "@hookform/resolvers/zod"
 import { ArrowRight, Building2, ShieldCheck } from "lucide-react"
 import { useForm } from "react-hook-form"
-import { useNavigate } from "react-router-dom"
+import { Link, useNavigate } from "react-router-dom"
 
 import Spinner from "@/components/Spinner"
 import { Badge } from "@/components/ui/badge"
@@ -159,6 +159,15 @@ export function LoginForm() {
                       </p>
                     ) : null}
 
+                    <p className="text-center text-sm">
+                      <Link
+                        to={`/forgot-password?scope=tenant&tenantId=${encodeURIComponent(businessForm.getValues("tenantPublicId") ?? "")}`}
+                        className="text-muted-foreground underline-offset-4 hover:text-foreground hover:underline"
+                      >
+                        {t("forgot_password")}
+                      </Link>
+                    </p>
+
                     <Button type="submit" size="lg" className="w-full" disabled={isLogging}>
                       {isLogging && <Spinner IsButton />}
                       {isLogging ? t("signing_in") : t("continue_as_business_admin")}
@@ -208,6 +217,15 @@ export function LoginForm() {
                         </FormItem>
                       )}
                     />
+
+                    <p className="text-center text-sm">
+                      <Link
+                        to="/forgot-password?scope=platform"
+                        className="text-muted-foreground underline-offset-4 hover:text-foreground hover:underline"
+                      >
+                        {t("forgot_password")}
+                      </Link>
+                    </p>
 
                     <Button type="submit" size="lg" className="w-full" disabled={isLogging}>
                       {isLogging && <Spinner IsButton />}

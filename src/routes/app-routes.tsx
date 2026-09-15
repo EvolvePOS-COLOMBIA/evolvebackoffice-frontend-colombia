@@ -4,6 +4,8 @@ import { BrowserRouter, Navigate, Route, Routes } from "react-router-dom"
 import { AppLayout } from "@/components/layout/app-layout"
 import { UnauthorizedPage } from "@/features/auth/pages/unauthorized-page"
 import { LoginPage } from "@/features/auth/pages/login-page"
+import { ForgotPasswordPage } from "@/features/auth/pages/forgot-password-page"
+import { ResetPasswordPage } from "@/features/auth/pages/reset-password-page"
 import { BusinessDashboardPage } from "@/features/business/dashboard/pages/business-dashboard-page"
 import { InventoryPage } from "@/features/business/inventory/pages/inventory-page"
 import { OnboardingPage } from "@/features/business/onboarding/pages/onboarding-page"
@@ -46,6 +48,11 @@ function AppRoutesContent() {
       <Route element={<PublicRoute redirectAuthenticated />}>
         <Route path="/" element={<MarketingPage />} />
         <Route path="/login" element={<LoginPage />} />
+      </Route>
+
+      <Route element={<PublicRoute />}>
+        <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+        <Route path="/reset-password" element={<ResetPasswordPage />} />
       </Route>
 
       <Route element={<PublicRoute />}>

@@ -1,0 +1,41 @@
+schema: spec-driven
+
+context: |
+  Tech stack: React 19, TypeScript 6, Vite 8, TailwindCSS 4, Zustand 5, React Router 7
+  UI: Radix UI + shadcn/ui (v4), Recharts, Lucide + Phosphor icons
+  Forms: React Hook Form + Zod 4, @hookform/resolvers
+  API: Axios + TanStack React Query 5
+  i18n: i18next + react-i18next
+  Testing: Vitest 3 + @testing-library/react + happy-dom, Playwright E2E
+  Quality: ESLint 10 + typescript-eslint, Prettier 3 + tailwindcss plugin, Husky + lint-staged
+  Architecture: Feature-based (src/features/{domain}/{module}/), path alias @/
+  Strict TDD: enabled (test runner detected)
+
+rules:
+  proposal:
+    - Include rollback plan for risky changes
+    - Consider feature boundary isolation
+  specs:
+    - Use Given/When/Then for scenarios
+    - Use RFC 2119 keywords (MUST, SHALL, SHOULD, MAY)
+  design:
+    - Include component hierarchy for UI changes
+    - Document Zustand store decisions with rationale
+    - Follow feature-based architecture
+  tasks:
+    - Group by phase, use hierarchical numbering
+    - Keep tasks completable in one session
+  apply:
+    guidelines:
+      - Follow existing code patterns and feature folder structure
+      - Use path alias @/ for imports
+      - Use cn() utility for Tailwind class merging
+      - Keep components in components/ui for shared, colocate in feature
+    tdd: true
+    test_command: "vitest run"
+  verify:
+    test_command: "vitest run"
+    build_command: "npm run build"
+    coverage_threshold: 0
+  archive:
+    - Warn before merging destructive deltas

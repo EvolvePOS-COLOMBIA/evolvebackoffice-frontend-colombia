@@ -4,10 +4,6 @@ import { initReactI18next } from "react-i18next"
 import commonEs from "./locales/es/common.json"
 import commonEn from "./locales/en/common.json"
 
-import authEs from "@/features/auth/i18n/es.json"
-import authEn from "@/features/auth/i18n/en.json"
-import marketingEs from "@/features/marketing/i18n/es.json"
-import marketingEn from "@/features/marketing/i18n/en.json"
 import platformDashboardEs from "@/features/platform/dashboard/i18n/es.json"
 import platformDashboardEn from "@/features/platform/dashboard/i18n/en.json"
 import platformTenantsEs from "@/features/platform/tenants/i18n/es.json"
@@ -38,8 +34,6 @@ import businessUsersCatalogEn from "@/features/business/people/users/i18n/en.jso
 const resources = {
   es: {
     common: commonEs,
-    auth: authEs,
-    marketing: marketingEs,
     "platform-dashboard": platformDashboardEs,
     "platform-tenants": platformTenantsEs,
     "platform-users": platformUsersEs,
@@ -56,8 +50,6 @@ const resources = {
   },
   en: {
     common: commonEn,
-    auth: authEn,
-    marketing: marketingEn,
     "platform-dashboard": platformDashboardEn,
     "platform-tenants": platformTenantsEn,
     "platform-users": platformUsersEn,

@@ -81,7 +81,7 @@ export function AdjustRegistersDialog({
         </DialogHeader>
 
         <div className="space-y-4">
-          <Alert variant={isIncreasing ? "default" : "destructive"}>
+          <Alert variant={isIncreasing ? "default" : "danger"}>
             <AlertTriangle className="size-4" />
             <AlertDescription>
               {isIncreasing ? (
@@ -105,12 +105,12 @@ export function AdjustRegistersDialog({
           <div className="flex items-center justify-between rounded-lg border p-3">
             <div className="flex items-center gap-2">
               <span className="text-sm font-medium">{t("current_max")}</span>
-              <Badge variant="outline">{previousMax}</Badge>
+              <Badge>{previousMax}</Badge>
             </div>
             <span className="text-muted-foreground">→</span>
             <div className="flex items-center gap-2">
               <span className="text-sm font-medium">{t("new_max")}</span>
-              <Badge variant={isIncreasing ? "success" : "warning"}>{newMax}</Badge>
+              <Badge tone={isIncreasing ? "success" : "warning"}>{newMax}</Badge>
             </div>
           </div>
 
@@ -151,7 +151,7 @@ export function AdjustRegistersDialog({
                         </div>
                       </div>
                       <Badge
-                        variant={serial.status === "Activated" ? "default" : "secondary"}
+                        tone={serial.status === "Activated" ? "success" : "warning"}
                       >
                         {serial.status === "Activated" ? t("serial_activated") : t("serial_unassigned")}
                       </Badge>

@@ -64,8 +64,20 @@ export function TenantCreatePage() {
     Record<string, { isEnabled: boolean; quantity: number }>
   >({})
 
-  const form = useForm({
-    resolver: zodResolver(tenantCreateSchema(t)),
+  const form = useForm<{
+    name: string
+    contactEmail: string
+    phone: string
+    address: string
+    maxRegisters: number
+    adminIdentification: string
+    subdomain: string
+    identificationNumber: string
+    identificationTypeId: number
+    maxBranches: number
+    maxUsers: number
+  }>({
+    resolver: zodResolver(tenantCreateSchema(t)) as never,
     defaultValues: {
       name: "",
       contactEmail: "",

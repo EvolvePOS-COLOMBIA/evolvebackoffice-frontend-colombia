@@ -1,3 +1,4 @@
+/// <reference types="@testing-library/jest-dom/vitest" />
 import { describe, it, expect, vi, beforeEach, type Mock } from "vitest"
 import React from "react"
 import { render, screen, waitFor, fireEvent } from "@testing-library/react"
@@ -74,10 +75,20 @@ const fakeTenantDto: TenantResponseDto = {
   phone: "+57 300 111 2233",
   address: "Calle 123 # 45-67, Bogota",
   isActive: true,
+  status: "Active",
   maxRegisters: 10,
   currentRegisterCount: 3,
   serialCodes: null,
   createdAt: "2025-01-15T10:30:00Z",
+  identificationNumber: "900123456",
+  identificationTypeId: 3,
+  subdomain: "northstar",
+  maxBranches: 5,
+  maxUsers: 20,
+  createdById: "user-admin",
+  rejectionReason: null,
+  approvedAt: "2025-01-15T11:00:00Z",
+  rejectedAt: null,
 }
 
 const fakeModulesDto: TenantModuleDto[] = [
@@ -156,6 +167,9 @@ describe("TenantDetailPage", () => {
       tenantId: null,
       isAuthenticated: true,
       isPlatformAdmin: true,
+      isPlatformSubAdmin: false,
+      isPlatformSupervisor: false,
+      isPlatformUser: false,
       isBusinessAdmin: false,
       defaultRoute: "/platform/dashboard",
       hasRole: vi.fn(),

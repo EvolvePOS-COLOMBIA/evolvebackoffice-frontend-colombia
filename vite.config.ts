@@ -17,4 +17,4 @@ export default defineConfig({
     setupFiles: ["./vitest.setup.ts"],
     css: false,
   },
-})
+} as ReturnType<typeof defineConfig> & { test: Record<string, unknown> })

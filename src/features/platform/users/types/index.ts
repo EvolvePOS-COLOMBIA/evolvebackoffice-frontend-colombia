@@ -1,6 +1,6 @@
 import type { AppRole } from "@/features/auth/types"
 
-export { AppRole }
+export type { AppRole }
 
 export interface PlatformUser {
   id: string

@@ -140,7 +140,7 @@ export function BusinessDashboardPage() {
           {/* Department Sales */}
           <div>
             <DepartmentSalesChart
-              data={departmentSales ?? []}
+              data={(departmentSales ?? []).map((d) => ({ ...d, fill: "" }))}
               dateRange={dateRange}
               onPrint={handlePrint}
               onSave={handleSave}
@@ -165,13 +165,13 @@ export function BusinessDashboardPage() {
         <div className="space-y-4">
           {/* Active Orders */}
           <div>
-            <ActiveOrdersCard orders={activeOrders ?? []} />
+            <ActiveOrdersCard orders={(activeOrders ?? []).map((o) => ({ ...o, status: o.status as "pending" | "preparing" | "ready" | "on_the_way" | "delivered" }))} />
           </div>
 
           {/* Tender Report */}
           <div>
             <TenderReportCard
-              data={tenderReport ?? []}
+              data={(tenderReport ?? []).map((t) => ({ ...t, color: "" }))}
               dateRange={dateRange}
               onPrint={handlePrint}
               onSave={handleSave}

@@ -82,14 +82,14 @@ export function IntegrationForm({ branchId, platformCode, integration }: Props) 
 
   const onSubmit = (values: FormValues) => {
     if (isNew) {
-      const dto: CreateBranchIntegrationDto = {
+      const baseDto = {
         platformCode,
         isActive: values.isActive,
         baseUrl: values.baseUrl,
-        ...(isWoo
-          ? { consumerKey: values.consumerKey, consumerSecret: values.consumerSecret }
-          : { apiKey: values.apiKey }),
       }
+      const dto: CreateBranchIntegrationDto = isWoo
+        ? { ...baseDto, consumerKey: (values as { consumerKey: string }).consumerKey, consumerSecret: (values as { consumerSecret: string }).consumerSecret }
+        : { ...baseDto, apiKey: (values as { apiKey: string }).apiKey }
       createMutation.mutate(
         { branchId, dto },
         {
@@ -110,14 +110,14 @@ export function IntegrationForm({ branchId, platformCode, integration }: Props) 
       const dto: UpdateBranchIntegrationDto = {
         isActive: values.isActive,
         baseUrl: values.baseUrl,
-        setNewApiKey: !isWoo && values.apiKey.length > 0,
-        apiKey: !isWoo ? values.apiKey : undefined,
+        setNewApiKey: !isWoo && (values as { apiKey: string }).apiKey.length > 0,
+        apiKey: !isWoo ? (values as { apiKey: string }).apiKey : undefined,
         setNewApiSecret: false,
         apiSecret: undefined,
-        setNewConsumerKey: isWoo && values.consumerKey.length > 0,
-        consumerKey: isWoo ? values.consumerKey : undefined,
-        setNewConsumerSecret: isWoo && values.consumerSecret.length > 0,
-        consumerSecret: isWoo ? values.consumerSecret : undefined,
+        setNewConsumerKey: isWoo && (values as { consumerKey: string }).consumerKey.length > 0,
+        consumerKey: isWoo ? (values as { consumerKey: string }).consumerKey : undefined,
+        setNewConsumerSecret: isWoo && (values as { consumerSecret: string }).consumerSecret.length > 0,
+        consumerSecret: isWoo ? (values as { consumerSecret: string }).consumerSecret : undefined,
       }
       updateMutation.mutate(
         { branchId, id: integration.id, dto },

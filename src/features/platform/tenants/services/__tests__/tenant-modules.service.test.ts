@@ -52,7 +52,7 @@ describe("tenant-modules.service", () => {
       delete: vi.fn(),
       defaults: { headers: {}, baseURL: "http://localhost" },
     }))
-    vi.mocked(axios.create).mockImplementation(mockCreate as unknown as ReturnType<typeof axios.create>)
+    vi.mocked(axios.create).mockReturnValue(mockCreate() as unknown as ReturnType<typeof axios.create>)
   })
 
   describe("getTenantModules", () => {

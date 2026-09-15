@@ -85,7 +85,7 @@ export function TenantFormDialog({
   const [tenantModulesLoaded, setTenantModulesLoaded] = useState(false)
 
   const form = useForm<TenantFormValues>({
-    resolver: zodResolver(tenantSchema(t)) as Resolver<TenantFormValues>,
+    resolver: zodResolver(tenantSchema(t)) as unknown as Resolver<TenantFormValues>,
     defaultValues,
   })
 
@@ -103,7 +103,7 @@ export function TenantFormDialog({
         phone: tenantToEdit.phone,
         address: tenantToEdit.address,
         maxRegisters: tenantToEdit.maxRegisters,
-        adminIdentification: tenantToEdit.adminIdentification ?? "",
+        adminIdentification: "",
         subdomain: tenantToEdit.subdomain ?? "",
         identificationNumber: tenantToEdit.identificationNumber ?? "",
         identificationTypeId: tenantToEdit.identificationTypeId ?? 0,

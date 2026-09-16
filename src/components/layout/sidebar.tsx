@@ -11,6 +11,7 @@ import {
   Sparkles,
   CreditCard,
   Bell,
+  Truck,
 } from "lucide-react"
 import { Link, NavLink, useLocation } from "react-router-dom"
 import { useState } from "react"
@@ -50,6 +51,7 @@ const platformNavigationItems = [
 
 const businessNavigationItems = [
   { to: "/business/dashboard", labelKey: "dashboard", icon: LayoutDashboard },
+  { to: "/business/orders", labelKey: "orders", icon: Truck },
   { to: "/business/items", labelKey: "items", icon: Package },
   { to: "/business/inventory", labelKey: "inventory", icon: Building2 },
   { to: "/business/people", labelKey: "people", icon: Users },
@@ -139,6 +141,7 @@ export function SidebarContent({
                         | "people"
                         | "reports"
                         | "settings"
+                        | "orders"
                     )
                   : undefined
               }
@@ -164,6 +167,7 @@ export function SidebarContent({
                       | "settings"
                       | "users"
                       | "email_settings"
+                      | "orders"
                   )}
                 </span>
               )}

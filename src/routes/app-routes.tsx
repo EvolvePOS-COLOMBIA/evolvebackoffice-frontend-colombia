@@ -16,6 +16,7 @@ import { UsersCatalogPage } from "@/features/business/people/users/pages/users-c
 import { ReportsPage } from "@/features/business/reports/pages/reports-page"
 import { SettingsPage } from "@/features/business/settings/pages/settings-page"
 import { RegistersPage } from "@/features/business/registers/pages/registers-page"
+import { OrdersPage } from "@/features/business/orders/pages/orders-page"
 import { BranchTerminalSettingsPage } from "@/features/business/branches/terminals/pages/branch-terminal-settings-page"
 import { BranchConfigPage } from "@/features/business/branches/config/pages/branch-config-page"
 import { MarketingPage } from "@/features/marketing/pages/marketing-page"
@@ -77,6 +78,7 @@ function AppRoutesContent() {
         <Route element={<OnboardingGate />}>
           <Route element={<AppLayout />}>
             <Route path="/business/dashboard" element={<BusinessDashboardPage />} />
+            <Route path="/business/orders" element={<OrdersPage />} />
             <Route path="/business/items" element={<ItemsPage />} />
             <Route path="/business/items/catalog" element={<ItemsCatalogPage />} />
             <Route path="/business/inventory" element={<InventoryPage />} />

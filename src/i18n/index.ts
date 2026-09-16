@@ -30,6 +30,8 @@ import businessSettingsEs from "@/features/business/settings/i18n/es.json"
 import businessSettingsEn from "@/features/business/settings/i18n/en.json"
 import businessUsersCatalogEs from "@/features/business/people/users/i18n/es.json"
 import businessUsersCatalogEn from "@/features/business/people/users/i18n/en.json"
+import businessOrdersEs from "@/features/business/orders/i18n/es.json"
+import businessOrdersEn from "@/features/business/orders/i18n/en.json"
 
 const resources = {
   es: {
@@ -47,6 +49,7 @@ const resources = {
     "business-reports": businessReportsEs,
     "business-settings": businessSettingsEs,
     "business-users-catalog": businessUsersCatalogEs,
+    "business-orders": businessOrdersEs,
   },
   en: {
     common: commonEn,
@@ -63,6 +66,7 @@ const resources = {
     "business-reports": businessReportsEn,
     "business-settings": businessSettingsEn,
     "business-users-catalog": businessUsersCatalogEn,
+    "business-orders": businessOrdersEn,
   },
 }
 
@@ -87,6 +91,7 @@ i18n.use(initReactI18next).init({
     "business-reports",
     "business-settings",
     "business-users-catalog",
+    "business-orders",
   ],
   defaultNS: "common",
   interpolation: {

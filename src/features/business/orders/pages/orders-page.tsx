@@ -6,8 +6,9 @@ import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { RefreshCw, Truck, Settings, Plus, Store, ShoppingCart } from "lucide-react"
+import { RefreshCw, Truck, Settings, Plus, Store, ShoppingCart, AlertTriangle } from "lucide-react"
 import { useBranches } from "@/features/business/branches/hooks/use-branches"
+import { useBranchModules } from "@/features/business/branches/hooks/use-branch-modules"
 import { useOrders, useBranchIntegrations, useUpdateOrderStatus } from "../hooks/use-orders"
 import { OrdersKanban } from "../components/orders-kanban"
 import { OrderDetailDialog } from "../components/order-detail-dialog"
@@ -28,6 +29,9 @@ export function OrdersPage() {
 
   const { data: branchesData } = useBranches(1, 1)
   const branchId = branchesData?.data?.[0]?.id ?? ""
+
+  const { data: branchModules } = useBranchModules(branchId)
+  const hasOrdersModule = branchModules?.some((m) => m.moduleCode === "ORDERS" && m.isEnabled)
 
   const { data: integrations } = useBranchIntegrations(branchId)
   const hasCluviIntegration = integrations?.some((i) => i.platformCode === "CLUVI" && i.isActive)
@@ -94,16 +98,32 @@ export function OrdersPage() {
             <RefreshCw className="mr-2 h-4 w-4" />
             {t("refresh")}
           </Button>
-          <Button variant="outline" size="sm" onClick={() => openConfig("CLUVI")}>
+          <Button variant="outline" size="sm" onClick={() => openConfig("CLUVI")} disabled={!hasOrdersModule}>
             <Truck className="mr-2 h-4 w-4" />
             Cluvi
           </Button>
-          <Button variant="outline" size="sm" onClick={() => openConfig("WOOCOMMERCE")}>
+          <Button variant="outline" size="sm" onClick={() => openConfig("WOOCOMMERCE")} disabled={!hasOrdersModule}>
             <Store className="mr-2 h-4 w-4" />
             WooCommerce
           </Button>
         </div>
       </div>
+
+      {/* Warning if ORDERS module not active */}
+      {!hasOrdersModule && (
+        <Card className="border-amber-200 bg-amber-50">
+          <CardContent className="flex items-center gap-3 py-3">
+            <AlertTriangle className="h-5 w-5 text-amber-600" />
+            <div>
+              <p className="text-sm font-medium text-amber-800">Módulo Órdenes no activo</p>
+              <p className="text-xs text-amber-700">
+                Activa el módulo "Órdenes" en la configuración de la sucursal para habilitar integraciones con Cluvi y
+                WooCommerce.
+              </p>
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       {/* Integration Status */}
       <div className="flex gap-3">

@@ -66,10 +66,12 @@ export function IntegrationConfigDialog({ open, onOpenChange, branchId, platform
   const steps = [t("config_step_credentials"), t("config_step_verify"), t("config_step_menu")]
 
   const handleTestConnection = () => {
-    if (!branchId || !existingIntegration) return
+    if (!branchId) return
+    const integrationId = existingIntegration?.id
+    if (!integrationId) return
     setTestResult(null)
     testMutation.mutate(
-      { branchId, integrationId: existingIntegration.id },
+      { branchId, integrationId },
       {
         onSuccess: (result) => setTestResult(result),
         onError: () => setTestResult({ success: false, message: t("connection_failed") }),
@@ -94,9 +96,11 @@ export function IntegrationConfigDialog({ open, onOpenChange, branchId, platform
         },
       },
       {
-        onSuccess: () => {
+        onSuccess: (data) => {
           notify.success(t("save_integration"))
-          setStep(1)
+          // After create, the query will refetch and existingIntegration will update
+          // Force step 1 after a short delay to allow query invalidation
+          setTimeout(() => setStep(1), 500)
         },
         onError: () => notify.error(t("connection_failed")),
       }
@@ -104,8 +108,21 @@ export function IntegrationConfigDialog({ open, onOpenChange, branchId, platform
   }
 
   const handleSyncMenu = () => {
-    notify.success(t("sync_success"))
-    onOpenChange(false)
+    if (!branchId || !existingIntegration) return
+    syncMenuMutation.mutate(
+      {
+        branchId,
+        integrationId: existingIntegration.id,
+        menu: { products: [], categories: [], modifiers: [] },
+      },
+      {
+        onSuccess: () => {
+          notify.success(t("sync_success"))
+          onOpenChange(false)
+        },
+        onError: () => notify.error(t("sync_failed")),
+      }
+    )
   }
 
   const PlatformIcon = isCluvi ? Truck : Store
@@ -121,7 +138,7 @@ export function IntegrationConfigDialog({ open, onOpenChange, branchId, platform
           {existingIntegration && (
             <div className="flex items-center gap-2 text-sm text-muted-foreground">
               <CheckCircle className="h-4 w-4 text-emerald-500" />
-              Integración activa
+              {t("integration_active")}
             </div>
           )}
         </DialogHeader>

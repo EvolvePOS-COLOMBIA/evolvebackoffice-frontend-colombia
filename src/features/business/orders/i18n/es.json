@@ -63,5 +63,14 @@
   "last_sync": "Última sincronización",
   "filter_by_branch": "Filtrar por sucursal",
   "filter_by_status": "Filtrar por estado",
-  "refresh": "Actualizar"
+  "refresh": "Actualizar",
+  "integration_active": "Integración activa",
+  "order_created": "Orden creada exitosamente",
+  "order_create_error": "Error al crear orden",
+  "new_order": "Nueva Orden",
+  "customer_name": "Nombre del cliente",
+  "phone": "Teléfono",
+  "address": "Dirección",
+  "notes": "Notas",
+  "create_order": "Crear Orden"
 }

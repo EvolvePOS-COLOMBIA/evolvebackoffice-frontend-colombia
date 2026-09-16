@@ -63,5 +63,14 @@
   "last_sync": "Last sync",
   "filter_by_branch": "Filter by branch",
   "filter_by_status": "Filter by status",
-  "refresh": "Refresh"
+  "refresh": "Refresh",
+  "integration_active": "Integration active",
+  "order_created": "Order created successfully",
+  "order_create_error": "Error creating order",
+  "new_order": "New Order",
+  "customer_name": "Customer name",
+  "phone": "Phone",
+  "address": "Address",
+  "notes": "Notes",
+  "create_order": "Create Order"
 }

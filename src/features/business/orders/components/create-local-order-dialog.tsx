@@ -29,14 +29,14 @@ export function CreateLocalOrderDialog({ open, onOpenChange }: CreateLocalOrderD
     try {
       // TODO: POST /api/orders with manual order data
       // For now just close and notify
-      notify.success("Orden creada exitosamente")
+      notify.success(t("order_created"))
       onOpenChange(false)
       setCustomerName("")
       setPhone("")
       setAddress("")
       setNotes("")
     } catch {
-      notify.error("Error al crear orden")
+      notify.error(t("order_create_error"))
     } finally {
       setLoading(false)
     }
@@ -48,25 +48,25 @@ export function CreateLocalOrderDialog({ open, onOpenChange }: CreateLocalOrderD
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <ShoppingCart className="h-5 w-5" />
-            Nueva Orden Local
+            {t("new_order")}
           </DialogTitle>
         </DialogHeader>
 
         <div className="space-y-4">
           <div className="space-y-2">
-            <Label>Nombre del cliente</Label>
+            <Label>{t("customer_name")}</Label>
             <Input value={customerName} onChange={(e) => setCustomerName(e.target.value)} placeholder="Juan Pérez" />
           </div>
           <div className="space-y-2">
-            <Label>Teléfono</Label>
+            <Label>{t("phone")}</Label>
             <Input value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="300 123 4567" />
           </div>
           <div className="space-y-2">
-            <Label>Dirección</Label>
+            <Label>{t("address")}</Label>
             <Input value={address} onChange={(e) => setAddress(e.target.value)} placeholder="Calle 123 #45-67" />
           </div>
           <div className="space-y-2">
-            <Label>Notas</Label>
+            <Label>{t("notes")}</Label>
             <Textarea
               value={notes}
               onChange={(e) => setNotes(e.target.value)}
@@ -81,7 +81,7 @@ export function CreateLocalOrderDialog({ open, onOpenChange }: CreateLocalOrderD
             </Button>
             <Button onClick={handleSubmit} disabled={!customerName || loading}>
               {loading && <Spinner className="mr-2 h-4 w-4" />}
-              Crear Orden
+              {t("create_order")}
             </Button>
           </div>
         </div>

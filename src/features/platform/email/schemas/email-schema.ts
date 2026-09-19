@@ -4,7 +4,10 @@ import type { TFunction } from "i18next"
 export const emailSettingsSchema = (t: TFunction) =>
   z.object({
     smtpServer: z.string().min(1, `${t("smtp_server")} ${t("validation_required")}`),
-    smtpPort: z.coerce.number().int().min(1, `${t("smtp_port")} ${t("validation_required")}`),
+    smtpPort: z.coerce
+      .number()
+      .int()
+      .min(1, `${t("smtp_port")} ${t("validation_required")}`),
     username: z.string().optional().default(""),
     password: z.string().optional().default(""),
     senderEmail: z.string().email(t("validation_email_invalid")),

@@ -110,7 +110,7 @@ export async function deleteTenant(id: string): Promise<void> {
 
 export async function getSerialCodes(tenantId: string): Promise<PosSerialCodeResponseDto[]> {
   const response = await api.get<PosSerialCodeResponseDto[]>(`/api/Tenants/${tenantId}/serial-codes`)
-  return response.data
+  return Array.isArray(response.data) ? response.data : []
 }
 
 export async function decommissionSerial(

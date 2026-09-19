@@ -8,7 +8,7 @@ import {
   toBackendRole,
   toAppRole,
 } from "@/features/platform/users/services/platform-user.service"
-import type { PlatformUserListResponse, PlatformUserResponse } from "@/features/platform/users/types/api"
+import type { PlatformUserResponseDto } from "@/features/platform/users/types"
 
 const FAKE_USER_ID = "11111111-1111-1111-1111-111111111111"
 
@@ -72,7 +72,7 @@ describe("platform-user.service", () => {
 
   describe("listPlatformUsers", () => {
     it("mapea los roles del backend a AppRole", async () => {
-      const dtos: PlatformUserListResponse[] = [
+      const dtos: PlatformUserResponseDto[] = [
         {
           id: "11111111-1111-1111-1111-111111111111",
           email: "admin@test.com",
@@ -114,7 +114,7 @@ describe("platform-user.service", () => {
 
   describe("getPlatformUser", () => {
     it("mapea el rol del backend a AppRole", async () => {
-      const dto: PlatformUserResponse = {
+      const dto: PlatformUserResponseDto = {
         id: FAKE_USER_ID,
         email: "admin@test.com",
         fullName: "Admin Uno",

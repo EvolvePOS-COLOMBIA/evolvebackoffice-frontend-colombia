@@ -1,4 +1,6 @@
-import { useEffect, useState } from "react"
+import { useEffect } from "react"
+import { useForm } from "react-hook-form"
+import { zodResolver } from "@hookform/resolvers/zod"
 
 import { Button } from "@/components/ui/button"
 import {
@@ -9,13 +11,14 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog"
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form"
 import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { useCreatePlatformUser, useUpdatePlatformUser } from "@/features/platform/users/hooks/use-platform-users"
 import { notify } from "@/hooks/use-notify"
-import type { PlatformUser, AppRole } from "@/features/platform/users/types"
 import { useTranslation } from "@/i18n/use-i18n"
+import { platformUserSchema, type PlatformUserFormValues } from "../schemas/platform-user-schema"
+import type { CreatePlatformUserRequest, PlatformUser, UpdatePlatformUserRequest } from "../types"
 
 interface PlatformUserFormDialogProps {
   open: boolean
@@ -28,37 +31,51 @@ export function PlatformUserFormDialog({ open, onOpenChange, userToEdit }: Platf
   const createMutation = useCreatePlatformUser()
   const updateMutation = useUpdatePlatformUser()
 
-  const [email, setEmail] = useState("")
-  const [fullName, setFullName] = useState("")
-  const [password, setPassword] = useState("")
-  const [role, setRole] = useState<AppRole>("PlatformSupervisor")
+  const isEditMode = Boolean(userToEdit)
 
+  // El esquema comparte los campos editables; la contraseña solo se exige al crear.
+  const form = useForm<PlatformUserFormValues>({
+    resolver: zodResolver(platformUserSchema(t)),
+    defaultValues: {
+      email: "",
+      fullName: "",
+      password: "",
+      role: "PlatformSupervisor" as const,
+    },
+  })
+
+  // Handle form reset when dialog opens
   useEffect(() => {
+    if (!open) return
+
     if (userToEdit) {
-      setEmail(userToEdit.email)
-      setFullName(userToEdit.fullName)
-      setPassword("")
-      setRole(userToEdit.role)
+      form.reset({
+        email: userToEdit.email,
+        fullName: userToEdit.fullName,
+        password: "",
+        role: userToEdit.role,
+      })
     } else {
-      setEmail("")
-      setFullName("")
-      setPassword("")
-      setRole("PlatformSupervisor")
+      form.reset({
+        email: "",
+        fullName: "",
+        password: "",
+        role: "PlatformSupervisor" as const,
+      })
     }
-  }, [userToEdit, open])
+  }, [userToEdit, form, open])
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault()
+  const handleSubmit = (values: PlatformUserFormValues) => {
+    if (isEditMode) {
+      const updateData: UpdatePlatformUserRequest = {
+        fullName: values.fullName,
+        role: values.role,
+      }
 
-    if (userToEdit) {
       updateMutation.mutate(
         {
-          id: userToEdit.id,
-          data: {
-            email: email || undefined,
-            fullName: fullName || undefined,
-            role: role || undefined,
-          },
+          id: userToEdit!.id,
+          data: updateData,
         },
         {
           onSuccess: () => {
@@ -71,90 +88,136 @@ export function PlatformUserFormDialog({ open, onOpenChange, userToEdit }: Platf
         }
       )
     } else {
-      createMutation.mutate(
-        { email, fullName, password, role },
-        {
-          onSuccess: (result) => {
-            notify.success(t("user_created"))
-            if (result.temporaryPassword) {
-              notify.info(`${t("temporary_password")}: ${result.temporaryPassword}`)
-            }
-            onOpenChange(false)
-          },
-          onError: (error) => {
-            notify.error(error instanceof Error ? error.message : t("unable_to_save"))
-          },
-        }
-      )
+      if (!values.password) {
+        form.setError("password", { message: t("password_min_length") })
+        return
+      }
+
+      const createData: CreatePlatformUserRequest = {
+        email: values.email,
+        fullName: values.fullName,
+        password: values.password,
+        role: values.role,
+      }
+
+      createMutation.mutate(createData, {
+        onSuccess: (result) => {
+          notify.success(t("user_created"))
+          if (result.temporaryPassword) {
+            notify.info(`${t("temporary_password")}: ${result.temporaryPassword}`)
+          }
+          onOpenChange(false)
+        },
+        onError: (error) => {
+          notify.error(error instanceof Error ? error.message : t("unable_to_save"))
+        },
+      })
     }
   }
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[480px]">
+      <DialogContent className="sm:max-w-120">
         <DialogHeader>
-          <DialogTitle>{userToEdit ? t("edit_user") : t("create_user")}</DialogTitle>
-          <DialogDescription>{userToEdit ? t("edit_user_desc") : t("create_user_desc")}</DialogDescription>
+          <DialogTitle>{isEditMode ? t("edit_user") : t("create_user")}</DialogTitle>
+          <DialogDescription>{isEditMode ? t("edit_user_desc") : t("create_user_desc")}</DialogDescription>
         </DialogHeader>
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div className="space-y-2">
-            <Label htmlFor="email">{t("email")}</Label>
-            <Input
-              id="email"
-              type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              placeholder={t("email_placeholder")}
-              required={!userToEdit}
-              disabled={!!userToEdit}
+
+        <Form {...form}>
+          <form className="space-y-5" onSubmit={form.handleSubmit(handleSubmit)}>
+            <FormField
+              control={form.control}
+              name="email"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>{t("email")}</FormLabel>
+                  <FormControl>
+                    <Input
+                      type="email"
+                      placeholder={t("email_placeholder")}
+                      {...field}
+                      value={field.value ?? ""}
+                      disabled={isEditMode}
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
             />
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="fullName">{t("full_name")}</Label>
-            <Input
-              id="fullName"
-              value={fullName}
-              onChange={(e) => setFullName(e.target.value)}
-              placeholder={t("full_name_placeholder")}
-              required
+
+            <FormField
+              control={form.control}
+              name="fullName"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>{t("full_name")}</FormLabel>
+                  <FormControl>
+                    <Input placeholder={t("full_name_placeholder")} {...field} value={field.value ?? ""} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
             />
-          </div>
-          {!userToEdit && (
-            <div className="space-y-2">
-              <Label htmlFor="password">{t("password")}</Label>
-              <Input
-                id="password"
-                type="password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                placeholder={t("password_placeholder")}
-                required
-                minLength={8}
+
+            {!isEditMode && (
+              <FormField
+                control={form.control}
+                name="password"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>{t("password")}</FormLabel>
+                    <FormControl>
+                      <Input
+                        type="password"
+                        placeholder={t("password_placeholder")}
+                        {...field}
+                        value={field.value ?? ""}
+                        minLength={8}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
               />
-            </div>
-          )}
-          <div className="space-y-2">
-            <Label htmlFor="role">{t("role")}</Label>
-            <Select value={role} onValueChange={(v) => setRole(v as AppRole)}>
-              <SelectTrigger>
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="PlatformAdmin">{t("role_admin")}</SelectItem>
-                <SelectItem value="PlatformSubAdmin">{t("role_subadmin")}</SelectItem>
-                <SelectItem value="PlatformSupervisor">{t("role_supervisor")}</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-          <DialogFooter>
-            <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
-              {t("cancel")}
-            </Button>
-            <Button type="submit" disabled={createMutation.isPending || updateMutation.isPending}>
-              {userToEdit ? t("save") : t("create")}
-            </Button>
-          </DialogFooter>
-        </form>
+            )}
+
+            <FormField
+              control={form.control}
+              name="role"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>{t("role")}</FormLabel>
+                  <Select onValueChange={field.onChange} value={field.value}>
+                    <FormControl>
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      <SelectItem value="PlatformAdmin">{t("role_admin")}</SelectItem>
+                      <SelectItem value="PlatformSubAdmin">{t("role_subadmin")}</SelectItem>
+                      <SelectItem value="PlatformSupervisor">{t("role_supervisor")}</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            {form.formState.errors.root ? (
+              <p className="text-sm font-medium text-destructive">{form.formState.errors.root.message}</p>
+            ) : null}
+
+            <DialogFooter>
+              <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
+                {t("cancel")}
+              </Button>
+              <Button type="submit" disabled={createMutation.isPending || updateMutation.isPending}>
+                {isEditMode ? t("save") : t("create")}
+              </Button>
+            </DialogFooter>
+          </form>
+        </Form>
       </DialogContent>
     </Dialog>
   )

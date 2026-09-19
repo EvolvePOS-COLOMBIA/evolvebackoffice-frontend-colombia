@@ -36,20 +36,18 @@ const mockDto2: TenantModuleDto = {
 describe("tenant-modules.service", () => {
   let mockGet: ReturnType<typeof vi.fn>
   let mockPut: ReturnType<typeof vi.fn>
-  let mockCreate: ReturnType<typeof vi.fn>
 
   beforeEach(() => {
     vi.clearAllMocks()
     mockGet = vi.fn()
     mockPut = vi.fn()
-    mockCreate = vi.fn(() => ({
+    vi.mocked(axios.create).mockReturnValue({
       get: mockGet,
       put: mockPut,
       post: vi.fn(),
       delete: vi.fn(),
       defaults: { headers: {}, baseURL: "http://localhost" },
-    }))
-    vi.mocked(axios.create).mockReturnValue(mockCreate() as unknown as ReturnType<typeof axios.create>)
+    } as unknown as ReturnType<typeof axios.create>)
   })
 
   describe("getTenantModules", () => {
@@ -60,7 +58,7 @@ describe("tenant-modules.service", () => {
       const result: TenantModule[] = await getTenantModules(FAKE_TOKEN, FAKE_TENANT_ID)
 
       expect(axios.create).toHaveBeenCalledTimes(1)
-      expect(mockCreate).toHaveBeenCalledWith(
+      expect(axios.create).toHaveBeenCalledWith(
         expect.objectContaining({
           headers: expect.objectContaining({
             Authorization: `Bearer ${FAKE_TOKEN}`,

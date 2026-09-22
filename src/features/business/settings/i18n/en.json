@@ -3,6 +3,8 @@
   "settings_desc": "Configure your store preferences, hardware, and system-wide settings from one place.",
   "store": "Store",
   "global": "Global",
+  "branches": "Branches",
+  "branches_desc": "Create and manage branches, their owners, terminals and operational settings.",
   "store_information": "Store Information",
   "store_information_desc": "Edit essential details, physical address, and contact information for your location.",
   "tenders": "Tenders",

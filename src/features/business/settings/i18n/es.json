@@ -3,6 +3,8 @@
   "settings_desc": "Configura las preferencias de tu tienda, hardware y configuraciones del sistema desde un solo lugar.",
   "store": "Tienda",
   "global": "Global",
+  "branches": "Sucursales",
+  "branches_desc": "Crea y administra las sucursales, sus responsables, terminales y configuración operativa.",
   "store_information": "Información de Tienda",
   "store_information_desc": "Edita detalles esenciales, dirección física e información de contacto para tu ubicación.",
   "tenders": "Formas de Pago",

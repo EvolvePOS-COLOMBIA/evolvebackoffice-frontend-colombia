@@ -16,6 +16,7 @@ import { UsersCatalogPage } from "@/features/business/people/users/pages/users-c
 import { ReportsPage } from "@/features/business/reports/pages/reports-page"
 import { SettingsPage } from "@/features/business/settings/pages/settings-page"
 import { RegistersPage } from "@/features/business/registers/pages/registers-page"
+import { BranchesPage } from "@/features/business/branches/pages/branches-page"
 import { BranchTerminalSettingsPage } from "@/features/business/branches/terminals/pages/branch-terminal-settings-page"
 import { BranchConfigPage } from "@/features/business/branches/config/pages/branch-config-page"
 import { MarketingPage } from "@/features/marketing/pages/marketing-page"
@@ -84,6 +85,7 @@ function AppRoutesContent() {
             <Route path="/business/people/users" element={<UsersCatalogPage />} />
             <Route path="/business/reports" element={<ReportsPage />} />
             <Route path="/business/settings" element={<SettingsPage />} />
+            <Route path="/business/settings/branches" element={<BranchesPage />} />
             <Route path="/business/settings/registers" element={<RegistersPage />} />
             <Route path="/business/branches/:branchId/settings/terminals" element={<BranchTerminalSettingsPage />} />
             <Route path="/business/branches/:branchId/config" element={<BranchConfigPage />} />

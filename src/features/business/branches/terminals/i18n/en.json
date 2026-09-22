@@ -1,7 +1,7 @@
 {
   "page_title": "POS Terminals Settings",
   "page_desc": "Configure the terminal limit and enable or disable all registers for this branch.",
-  "back_to_branches": "← Back to Branches",
+  "back_to_branches": "Back to Branches",
   "breadcrumb_branches": "Branches",
   "breadcrumb_settings": "POS Terminals Settings",
   "settings_card_title": "Terminal Settings",
@@ -24,6 +24,8 @@
   "registers_list_title": "Branch Terminals",
   "registers_list_desc": "Current list of assigned registers. They respect the allowed maximum.",
   "counter_label": "Current: {{current}} / Max: {{max}}",
+  "in_use": "In use",
+  "available_slots": "Available slots",
   "column_name": "Name",
   "column_code": "Code",
   "column_status": "Status",

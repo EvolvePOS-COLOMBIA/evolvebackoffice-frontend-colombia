@@ -1,7 +1,7 @@
 {
   "page_title": "Configuración de Terminales POS",
   "page_desc": "Configura el límite máximo de terminales, activa o desactiva todas las cajas de esta sucursal.",
-  "back_to_branches": "← Volver a Sucursales",
+  "back_to_branches": "Back to Branches",
   "breadcrumb_branches": "Sucursales",
   "breadcrumb_settings": "Configuración Terminales POS",
   "settings_card_title": "Ajustes de Terminales",
@@ -24,6 +24,8 @@
   "registers_list_title": "Terminales de la Sucursal",
   "registers_list_desc": "Listado actual de cajas asignadas. Respetan el máximo permitido.",
   "counter_label": "Actual: {{current}} / Máx: {{max}}",
+  "in_use": "En uso",
+  "available_slots": "Cupo disponible",
   "column_name": "Nombre",
   "column_code": "Código",
   "column_status": "Estado",

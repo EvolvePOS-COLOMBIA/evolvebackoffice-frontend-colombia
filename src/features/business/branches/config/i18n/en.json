@@ -18,6 +18,7 @@
   "info_address": "Address",
   "info_phone": "Phone",
   "info_email": "Email",
+  "info_admin": "Owner",
   "info_status": "Status",
   "info_active": "Active",
   "info_inactive": "Inactive",

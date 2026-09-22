@@ -47,5 +47,8 @@
   "toast_deleted": "Cliente eliminado exitosamente.",
   "page": "Pagina",
   "previous": "Anterior",
-  "next": "Siguiente"
+  "next": "Siguiente",
+  "pagination_total": "{{count}} clientes",
+  "selected": "seleccionados",
+  "no_results_for_search": "No se encontraron resultados para \"{{search}}\""
 }

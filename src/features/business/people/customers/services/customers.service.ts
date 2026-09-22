@@ -1,4 +1,5 @@
 import { api } from "@/config/axios-client"
+import type { PaginatedResponse } from "@/components/data-table"
 import type { CreateCustomerDto, CustomerResponseDto, UpdateCustomerDto } from "../types"
 
 export interface GetCustomersParams {
@@ -12,21 +13,39 @@ export interface GetCustomersParams {
  * GET /api/Customers — normaliza array plano o sobre paginado.
  * El Swagger no documenta la forma exacta del 200, así que aceptamos ambos.
  */
-export async function getCustomers(params: GetCustomersParams): Promise<CustomerResponseDto[]> {
-  const { data } = await api.get<CustomerResponseDto[] | { data: CustomerResponseDto[] }>("/api/Customers", {
-    params: {
-      pageNumber: params.pageNumber,
-      pageSize: params.pageSize,
-      searchField: params.searchField,
-      searchValue: params.searchValue,
-    },
-  })
+export async function getCustomers(params: GetCustomersParams): Promise<PaginatedResponse<CustomerResponseDto>> {
+  const { data } = await api.get<CustomerResponseDto[] | { data: CustomerResponseDto[]; totalCount?: number }>(
+    "/api/Customers",
+    {
+      params: {
+        pageNumber: params.pageNumber,
+        pageSize: params.pageSize,
+        searchField: params.searchField,
+        searchValue: params.searchValue,
+      },
+    }
+  )
 
   if (Array.isArray(data)) {
-    return data
+    return {
+      data,
+      pageNumber: params.pageNumber,
+      pageSize: params.pageSize,
+      totalCount: data.length,
+      totalPages: Math.max(1, Math.ceil(data.length / params.pageSize)),
+    }
   }
 
-  return data?.data ?? []
+  const items = data?.data ?? []
+  const totalCount = data?.totalCount ?? items.length
+
+  return {
+    data: items,
+    pageNumber: params.pageNumber,
+    pageSize: params.pageSize,
+    totalCount,
+    totalPages: Math.max(1, Math.ceil(totalCount / params.pageSize)),
+  }
 }
 
 export async function getCustomerById(id: string): Promise<CustomerResponseDto> {

@@ -1,7 +1,7 @@
 import { useMemo, useState } from "react"
 import { useNavigate, useParams } from "react-router-dom"
 import { useQuery } from "@tanstack/react-query"
-import { ArrowLeft, Building2, Lock, MonitorCog, Save, Settings, Unlock } from "lucide-react"
+import { ArrowLeft, Building2, MonitorCog, Settings } from "lucide-react"
 
 import {
   AlertDialog,
@@ -17,18 +17,14 @@ import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { ErrorState } from "@/components/ui/error-state"
-import { Input } from "@/components/ui/input"
 import { Skeleton } from "@/components/ui/skeleton"
-import { Switch } from "@/components/ui/switch"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 
 import { getBranchById } from "@/features/business/branches/services/branches.service"
 import {
-  useActivateBranchTerminals,
   useBranchRegisters,
   useBranchTerminalSettings,
   useDeactivateBranchTerminals,
-  useUpsertBranchTerminalSettings,
 } from "@/features/business/branches/hooks/use-branch-terminals"
 import type { RegisterStatus } from "@/features/business/registers/types"
 
@@ -68,7 +64,6 @@ export function BranchTerminalSettingsPage() {
   const { t } = useTranslation("business-branches-terminals")
 
   const [maxOverride, setMaxOverride] = useState<number | null>(null)
-  const [enabledOverride, setEnabledOverride] = useState<boolean | null>(null)
   const [confirmOpen, setConfirmOpen] = useState(false)
 
   const {
@@ -85,48 +80,12 @@ export function BranchTerminalSettingsPage() {
 
   const { data: registers = [], isLoading: registersLoading, refetch: refetchRegisters } = useBranchRegisters(branchId)
 
-  const upsertMutation = useUpsertBranchTerminalSettings()
   const deactivateMutation = useDeactivateBranchTerminals()
-  const activateMutation = useActivateBranchTerminals()
 
   const localMax = useMemo(() => maxOverride ?? settings?.maxTerminals ?? 3, [maxOverride, settings?.maxTerminals])
-  const localEnabled = useMemo(
-    () => enabledOverride ?? settings?.areTerminalsEnabled ?? true,
-    [enabledOverride, settings?.areTerminalsEnabled]
-  )
-  const isDirty = useMemo(() => maxOverride !== null || enabledOverride !== null, [maxOverride, enabledOverride])
+  const availableTerminalSlots = Math.max(0, localMax - registers.length)
 
   const branchName = branch?.name ?? ""
-
-  const handleMaxChange = (raw: string) => {
-    const n = Number(raw)
-    const next = Number.isFinite(n) && n >= 0 ? Math.floor(n) : 0
-    setMaxOverride(next)
-  }
-
-  const handleEnabledChange = (checked: boolean) => {
-    setEnabledOverride(checked)
-  }
-
-  const handleSave = () => {
-    if (!branchId || !branch) return
-    upsertMutation.mutate(
-      {
-        branchId,
-        payload: { maxTerminals: localMax, areTerminalsEnabled: localEnabled },
-      },
-      {
-        onSuccess: () => {
-          notify.success(t("saved_success"))
-          setMaxOverride(null)
-          setEnabledOverride(null)
-        },
-        onError: (error) => {
-          notify.error(error instanceof Error ? error.message : t("loading"))
-        },
-      }
-    )
-  }
 
   const handleConfirmDeactivate = () => {
     if (!branchId) return
@@ -135,7 +94,6 @@ export function BranchTerminalSettingsPage() {
         notify.success(t("deactivated_success"))
         setConfirmOpen(false)
         setMaxOverride(null)
-        setEnabledOverride(null)
         refetchSettings()
         refetchRegisters()
       },
@@ -144,24 +102,6 @@ export function BranchTerminalSettingsPage() {
       },
     })
   }
-
-  const handleActivate = () => {
-    if (!branchId) return
-    activateMutation.mutate(branchId, {
-      onSuccess: () => {
-        notify.success(t("activated_success"))
-        setMaxOverride(null)
-        setEnabledOverride(null)
-        refetchSettings()
-        refetchRegisters()
-      },
-      onError: (error) => {
-        notify.error(error instanceof Error ? error.message : t("loading"))
-      },
-    })
-  }
-
-  const anyMutating = upsertMutation.isPending || deactivateMutation.isPending || activateMutation.isPending
 
   const counterLabel = useMemo(() => {
     const max = settings?.maxTerminals ?? localMax
@@ -180,7 +120,7 @@ export function BranchTerminalSettingsPage() {
           title={t("branch_not_found")}
           description={t("branch_not_found_desc")}
           action={
-            <Button onClick={() => navigate("/business/settings/registers")}>
+            <Button onClick={() => navigate("/business/settings/branches")}>
               <MonitorCog className="size-4" />
               {t("go_registers")}
             </Button>
@@ -191,9 +131,9 @@ export function BranchTerminalSettingsPage() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-5">
       <div className="flex items-center justify-between">
-        <Button variant="ghost" onClick={() => navigate(-1)}>
+        <Button variant="ghost" size="sm" onClick={() => navigate(-1)}>
           <ArrowLeft className="size-4" />
           {t("back_to_branches")}
         </Button>
@@ -208,7 +148,7 @@ export function BranchTerminalSettingsPage() {
           type="button"
           variant="link"
           className="h-auto p-0 text-muted-foreground hover:text-foreground"
-          onClick={() => navigate("/business/settings/registers")}
+          onClick={() => navigate("/business/settings/branches")}
         >
           {t("breadcrumb_branches")}
         </Button>
@@ -218,143 +158,50 @@ export function BranchTerminalSettingsPage() {
         <span className="font-medium text-foreground">{t("breadcrumb_settings")}</span>
       </div>
 
-      <Card className="overflow-hidden">
-        <CardContent className="grid gap-6 p-5 sm:p-6 lg:grid-cols-[1.2fr_0.8fr] lg:p-8">
+      <Card className="relative overflow-hidden border-border/80 bg-card/70 shadow-none">
+        <div className="pointer-events-none absolute -top-24 -right-20 size-80 rounded-full border border-primary/10 bg-primary/[0.035]" />
+        <CardContent className="relative grid gap-6 p-5 sm:p-6 lg:grid-cols-[1fr_auto] lg:items-center lg:p-8">
           <div className="space-y-4">
-            <Badge tone="primary">{t("page_title")}</Badge>
+            <Badge tone="primary" className="w-fit text-[10px] tracking-[0.18em] uppercase">
+              {t("page_title")}
+            </Badge>
             {branchLoading ? (
               <div className="space-y-3">
                 <Skeleton className="h-9 w-2/3" />
                 <Skeleton className="h-5 w-1/2" />
               </div>
             ) : (
-              <div className="space-y-2">
-                <div className="flex flex-wrap items-center gap-3">
-                  <h1 className="text-3xl font-semibold text-balance text-foreground">{branchName}</h1>
-                  <Badge tone={settings?.areTerminalsEnabled ? "success" : "warning"}>
-                    {settings?.areTerminalsEnabled ? t("status_active") : t("status_inactive")}
-                  </Badge>
+              <div className="flex items-start gap-4">
+                <div className="flex size-12 shrink-0 items-center justify-center rounded-2xl border border-primary/15 bg-primary/10 text-primary shadow-sm shadow-primary/10">
+                  <Building2 className="size-5" />
                 </div>
-                <p className="text-sm text-muted-foreground">{t("page_desc")}</p>
+                <div className="space-y-2">
+                  <div className="flex flex-wrap items-center gap-3">
+                    <h1 className="text-3xl font-semibold tracking-tight text-balance text-foreground">{branchName}</h1>
+                    <Badge tone={settings?.areTerminalsEnabled ? "success" : "warning"}>
+                      {settings?.areTerminalsEnabled ? t("status_active") : t("status_inactive")}
+                    </Badge>
+                  </div>
+                  <p className="max-w-xl text-sm leading-6 text-muted-foreground">{t("page_desc")}</p>
+                </div>
               </div>
             )}
           </div>
 
-          <div className="grid grid-cols-1 gap-3">
-            <Card className="max-h-min rounded-3xl">
-              <CardContent className="p-5">
-                <p className="text-[11px] font-semibold tracking-[0.24em] text-muted-foreground uppercase">
-                  {t("counter_label", {
-                    current: registersLoading ? 0 : registers.length,
-                    max: settings?.maxTerminals ?? 0,
-                  })}
-                </p>
-                {registersLoading || settingsLoading ? (
-                  <Skeleton className="mt-3 h-9 w-16" />
-                ) : (
-                  <p className="mt-3 text-3xl font-semibold text-foreground">
-                    {registers.length}
-                    <span className="ml-2 text-base text-muted-foreground">/ {settings?.maxTerminals ?? 0}</span>
-                  </p>
-                )}
-              </CardContent>
-            </Card>
+          <div className="grid grid-cols-2 gap-3">
+            <TerminalStat label={t("in_use")} value={registers.length} loading={registersLoading || settingsLoading} />
+            <TerminalStat
+              label={t("available_slots")}
+              value={availableTerminalSlots}
+              loading={registersLoading || settingsLoading}
+              muted
+            />
           </div>
         </CardContent>
       </Card>
 
-      <Card>
-        <CardHeader className="pb-0">
-          <div className="flex flex-col gap-1">
-            <CardTitle>{t("settings_card_title")}</CardTitle>
-            <CardDescription>{t("settings_card_desc")}</CardDescription>
-          </div>
-        </CardHeader>
-
-        <CardContent className="space-y-6 pt-6">
-          {settingsLoading ? (
-            <div className="space-y-5">
-              <Skeleton className="h-24 w-full rounded-2xl" />
-              <Skeleton className="h-24 w-full rounded-2xl" />
-            </div>
-          ) : (
-            <>
-              <div className="rounded-2xl border border-border/70 bg-card/60 p-5">
-                <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-                  <div className="space-y-1">
-                    <div className="flex items-center gap-2">
-                      <span className="text-base font-semibold text-foreground">{t("are_terminals_enabled")}</span>
-                      <Badge tone={localEnabled ? "success" : "warning"}>
-                        {localEnabled ? t("switch_on") : t("switch_off")}
-                      </Badge>
-                    </div>
-                    <p className="text-xs text-muted-foreground sm:text-sm">{t("are_terminals_enabled_hint")}</p>
-                  </div>
-                  <Switch
-                    checked={localEnabled}
-                    onCheckedChange={handleEnabledChange}
-                    disabled={anyMutating}
-                    className="scale-150 data-[state=checked]:bg-emerald-500 data-[state=unchecked]:bg-muted sm:scale-175"
-                  />
-                </div>
-              </div>
-
-              <div className="rounded-2xl border border-border/70 bg-card/60 p-5">
-                <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
-                  <div className="max-w-xs flex-1 space-y-1">
-                    <p className="text-base font-semibold text-foreground">{t("max_terminals")}</p>
-                    <p className="text-xs text-muted-foreground sm:text-sm">{t("max_terminals_hint")}</p>
-                    <Input
-                      type="number"
-                      min={0}
-                      value={localMax}
-                      onChange={(e) => handleMaxChange(e.target.value)}
-                      className="mt-2"
-                      disabled={anyMutating}
-                    />
-                  </div>
-                </div>
-              </div>
-
-              <div className="rounded-2xl border border-border/70 bg-card/60 p-5">
-                <div className="flex flex-col gap-3">
-                  <p className="text-base font-semibold text-foreground">{t("bulk_actions")}</p>
-                  <div className="flex flex-wrap gap-2">
-                    <Button
-                      type="button"
-                      variant="outline"
-                      onClick={handleActivate}
-                      disabled={anyMutating || !settings?.areTerminalsEnabled === false}
-                    >
-                      <Unlock className="size-4" />
-                      {t("activate_all")}
-                    </Button>
-                    <Button
-                      type="button"
-                      variant="destructive"
-                      onClick={() => setConfirmOpen(true)}
-                      disabled={anyMutating}
-                    >
-                      <Lock className="size-4" />
-                      {t("deactivate_all")}
-                    </Button>
-                  </div>
-                </div>
-              </div>
-
-              <div className="flex justify-end">
-                <Button type="button" onClick={handleSave} disabled={anyMutating || !isDirty}>
-                  <Save className="size-4" />
-                  {t("save_settings")}
-                </Button>
-              </div>
-            </>
-          )}
-        </CardContent>
-      </Card>
-
-      <Card>
-        <CardHeader className="pb-0">
+      <Card className="border-border/80 bg-card/70 shadow-none">
+        <CardHeader className="border-b border-border/70 pb-5">
           <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
             <div className="space-y-1">
               <CardTitle>{t("registers_list_title")}</CardTitle>
@@ -364,7 +211,7 @@ export function BranchTerminalSettingsPage() {
           </div>
         </CardHeader>
 
-        <CardContent className="space-y-4 pt-6">
+        <CardContent className="space-y-4 p-4 sm:p-5">
           {registersLoading ? (
             <div className="space-y-3">
               {Array.from({ length: 3 }).map((_, i) => (
@@ -385,7 +232,7 @@ export function BranchTerminalSettingsPage() {
             </Card>
           ) : (
             <>
-              <div className="hidden xl:block">
+              <div className="hidden overflow-hidden rounded-2xl border border-border/70 xl:block">
                 <Table>
                   <TableHeader>
                     <TableRow>
@@ -397,7 +244,7 @@ export function BranchTerminalSettingsPage() {
                   </TableHeader>
                   <TableBody>
                     {registers.map((r) => (
-                      <TableRow key={r.id}>
+                      <TableRow key={r.id} className="transition-colors hover:bg-muted/40">
                         <TableCell className="font-medium">{r.name}</TableCell>
                         <TableCell className="text-muted-foreground">{r.code}</TableCell>
                         <TableCell>
@@ -414,7 +261,10 @@ export function BranchTerminalSettingsPage() {
 
               <div className="grid gap-4 xl:hidden">
                 {registers.map((r) => (
-                  <Card key={r.id} className="rounded-[24px] border-border/70 bg-background/45 shadow-none">
+                  <Card
+                    key={r.id}
+                    className="rounded-[24px] border-border/70 bg-background/45 shadow-none transition-colors hover:border-primary/25"
+                  >
                     <CardContent className="space-y-3 p-4">
                       <div className="flex items-center justify-between">
                         <span className="font-medium">{r.name}</span>
@@ -457,5 +307,36 @@ export function BranchTerminalSettingsPage() {
         </AlertDialogContent>
       </AlertDialog>
     </div>
+  )
+}
+
+function TerminalStat({
+  label,
+  value,
+  loading,
+  muted = false,
+}: {
+  label: string
+  value: number
+  loading: boolean
+  muted?: boolean
+}) {
+  return (
+    <Card className="max-h-min rounded-2xl border-border/70 bg-background/45 shadow-none">
+      <CardContent className="p-4">
+        <p className="text-[10px] font-semibold tracking-[0.18em] text-muted-foreground uppercase">{label}</p>
+        {loading ? (
+          <Skeleton className="mt-3 h-8 w-10" />
+        ) : (
+          <p
+            className={
+              "mt-2 text-2xl font-semibold tracking-tight " + (muted ? "text-muted-foreground" : "text-foreground")
+            }
+          >
+            {value}
+          </p>
+        )}
+      </CardContent>
+    </Card>
   )
 }

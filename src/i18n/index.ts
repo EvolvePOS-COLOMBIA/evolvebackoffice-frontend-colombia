@@ -28,6 +28,12 @@ import businessReportsEs from "@/features/business/reports/i18n/es.json"
 import businessReportsEn from "@/features/business/reports/i18n/en.json"
 import businessSettingsEs from "@/features/business/settings/i18n/es.json"
 import businessSettingsEn from "@/features/business/settings/i18n/en.json"
+import businessBranchesEs from "@/features/business/branches/i18n/es.json"
+import businessBranchesEn from "@/features/business/branches/i18n/en.json"
+import businessBranchesTerminalsEs from "@/features/business/branches/terminals/i18n/es.json"
+import businessBranchesTerminalsEn from "@/features/business/branches/terminals/i18n/en.json"
+import businessBranchesConfigEs from "@/features/business/branches/config/i18n/es.json"
+import businessBranchesConfigEn from "@/features/business/branches/config/i18n/en.json"
 import businessUsersCatalogEs from "@/features/business/people/users/i18n/es.json"
 import businessUsersCatalogEn from "@/features/business/people/users/i18n/en.json"
 
@@ -46,6 +52,9 @@ const resources = {
     "business-people": businessPeopleEs,
     "business-reports": businessReportsEs,
     "business-settings": businessSettingsEs,
+    "business-branches": businessBranchesEs,
+    "business-branches-terminals": businessBranchesTerminalsEs,
+    "business-branches-config": businessBranchesConfigEs,
     "business-users-catalog": businessUsersCatalogEs,
   },
   en: {
@@ -62,6 +71,9 @@ const resources = {
     "business-people": businessPeopleEn,
     "business-reports": businessReportsEn,
     "business-settings": businessSettingsEn,
+    "business-branches": businessBranchesEn,
+    "business-branches-terminals": businessBranchesTerminalsEn,
+    "business-branches-config": businessBranchesConfigEn,
     "business-users-catalog": businessUsersCatalogEn,
   },
 }
@@ -86,6 +98,9 @@ i18n.use(initReactI18next).init({
     "business-people",
     "business-reports",
     "business-settings",
+    "business-branches",
+    "business-branches-terminals",
+    "business-branches-config",
     "business-users-catalog",
   ],
   defaultNS: "common",

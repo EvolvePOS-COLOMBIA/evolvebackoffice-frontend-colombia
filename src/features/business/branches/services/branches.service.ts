@@ -7,6 +7,11 @@ import type {
 } from "@/features/business/branches/types/api"
 import type { Branch, PagedBranches } from "@/features/business/branches/types"
 
+export interface BranchListOptions {
+  searchField?: string
+  searchValue?: string
+}
+
 // El adaptador es la frontera entre los DTO del Swagger y el modelo que usa la UI.
 function mapBranchResponseToBranch(dto: BranchResponseDto): Branch {
   return {
@@ -54,9 +59,13 @@ function normalizePagedResponse(
   }
 }
 
-export async function getBranches(pageNumber = 1, pageSize = 20): Promise<PagedBranches> {
+export async function getBranches(
+  pageNumber = 1,
+  pageSize = 20,
+  options: BranchListOptions = {}
+): Promise<PagedBranches> {
   const { data } = await api.get<PagedBranchesResponse | BranchResponseDto[]>("/api/Branches", {
-    params: { pageNumber, pageSize },
+    params: { pageNumber, pageSize, ...options },
   })
 
   return normalizePagedResponse(data, pageNumber, pageSize)
@@ -81,4 +90,13 @@ export async function createBranch(payload: CreateBranchDto): Promise<Branch> {
 export async function updateBranch(id: string, payload: UpdateBranchDto): Promise<Branch> {
   const { data } = await api.put<BranchResponseDto>(`/api/Branches/${id}`, payload)
   return mapBranchResponseToBranch(data)
+}
+
+/** La eliminación en el backend es lógica: la sucursal queda disponible para reactivarse. */
+export async function deactivateBranch(id: string): Promise<void> {
+  await api.delete(`/api/Branches/${id}`)
+}
+
+export async function activateBranch(id: string): Promise<void> {
+  await api.post(`/api/Branches/${id}/activate`)
 }

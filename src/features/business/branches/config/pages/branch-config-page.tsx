@@ -1,18 +1,7 @@
 import { useState } from "react"
 import { useNavigate, useParams } from "react-router-dom"
 import { useQuery } from "@tanstack/react-query"
-import {
-  ArrowLeft,
-  Building2,
-  CheckCircle2,
-  Globe,
-  MonitorCog,
-  Package,
-  ShoppingCart,
-  Tag,
-  Trash2,
-  Warehouse,
-} from "lucide-react"
+import { Building2, CheckCircle2, Globe, MonitorCog, Package, ShoppingCart, Tag, Trash2, Warehouse } from "lucide-react"
 
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
@@ -105,43 +94,17 @@ export function BranchConfigPage() {
 
   if (branchError || (!branchLoading && !branch)) {
     return (
-      <div className="space-y-6">
-        <Button variant="ghost" onClick={() => navigate("/business/settings")}>
-          <ArrowLeft className="size-4" />
-          {t("back_to_branches")}
-        </Button>
-        <ErrorState
-          eyebrow="Branch"
-          title={t("branch_not_found")}
-          description={t("branch_not_found_desc")}
-          action={<Button onClick={() => navigate("/business/settings/branches")}>{t("back_to_branches")}</Button>}
-        />
-      </div>
+      <ErrorState
+        eyebrow="Branch"
+        title={t("branch_not_found")}
+        description={t("branch_not_found_desc")}
+        action={<Button onClick={() => navigate("/business/settings/branches")}>{t("back_to_branches")}</Button>}
+      />
     )
   }
 
   return (
     <div className="space-y-5">
-      <Button variant="ghost" size="sm" className="w-fit" onClick={() => navigate(-1)}>
-        <ArrowLeft className="size-4" />
-        {t("back_to_branches")}
-      </Button>
-
-      <div className="flex flex-wrap items-center gap-2 text-sm text-muted-foreground">
-        <Button
-          type="button"
-          variant="link"
-          className="h-auto p-0 text-muted-foreground hover:text-foreground"
-          onClick={() => navigate("/business/settings/branches")}
-        >
-          {t("breadcrumb_branches")}
-        </Button>
-        <span>/</span>
-        <span>{branchLoading ? <Skeleton className="inline-block h-4 w-32" /> : branch?.name}</span>
-        <span>/</span>
-        <span className="font-medium text-foreground">{t("breadcrumb_config")}</span>
-      </div>
-
       <Card className="relative overflow-hidden border-border/80 bg-card/70 shadow-none">
         <div className="pointer-events-none absolute -top-24 -right-20 size-80 rounded-full border border-primary/10 bg-primary/[0.035]" />
         <CardContent className="relative grid gap-6 p-5 sm:p-6 lg:grid-cols-[1fr_auto] lg:items-center lg:p-8">

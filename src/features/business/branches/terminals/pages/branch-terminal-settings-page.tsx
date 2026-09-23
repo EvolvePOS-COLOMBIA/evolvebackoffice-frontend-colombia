@@ -1,7 +1,7 @@
 import { useMemo, useState } from "react"
 import { useNavigate, useParams } from "react-router-dom"
 import { useQuery } from "@tanstack/react-query"
-import { ArrowLeft, Building2, MonitorCog, Settings } from "lucide-react"
+import { Building2, MonitorCog, Settings } from "lucide-react"
 
 import {
   AlertDialog,
@@ -110,61 +110,35 @@ export function BranchTerminalSettingsPage() {
 
   if (branchError || (!branchLoading && !branch)) {
     return (
-      <div className="space-y-6">
-        <Button variant="ghost" onClick={() => navigate("/business/settings")}>
-          <ArrowLeft className="size-4" />
-          {t("back_to_branches")}
-        </Button>
-        <ErrorState
-          eyebrow="Branch"
-          title={t("branch_not_found")}
-          description={t("branch_not_found_desc")}
-          action={
-            <Button onClick={() => navigate("/business/settings/branches")}>
-              <MonitorCog className="size-4" />
-              {t("go_registers")}
-            </Button>
-          }
-        />
-      </div>
+      <ErrorState
+        eyebrow="Branch"
+        title={t("branch_not_found")}
+        description={t("branch_not_found_desc")}
+        action={
+          <Button onClick={() => navigate("/business/settings/branches")}>
+            <MonitorCog className="size-4" />
+            {t("go_registers")}
+          </Button>
+        }
+      />
     )
   }
 
   return (
     <div className="space-y-5">
-      <div className="flex items-center justify-between">
-        <Button variant="ghost" size="sm" onClick={() => navigate(-1)}>
-          <ArrowLeft className="size-4" />
-          {t("back_to_branches")}
-        </Button>
-        <Button variant="outline" onClick={() => navigate(`/business/branches/${branchId}/config`)}>
-          <Settings className="size-4" />
-          {t("breadcrumb_config")}
-        </Button>
-      </div>
-
-      <div className="flex flex-wrap items-center gap-2 text-sm text-muted-foreground">
-        <Button
-          type="button"
-          variant="link"
-          className="h-auto p-0 text-muted-foreground hover:text-foreground"
-          onClick={() => navigate("/business/settings/branches")}
-        >
-          {t("breadcrumb_branches")}
-        </Button>
-        <span>/</span>
-        <span>{branchLoading ? <Skeleton className="inline-block h-4 w-32" /> : branchName}</span>
-        <span>/</span>
-        <span className="font-medium text-foreground">{t("breadcrumb_settings")}</span>
-      </div>
-
       <Card className="relative overflow-hidden border-border/80 bg-card/70 shadow-none">
         <div className="pointer-events-none absolute -top-24 -right-20 size-80 rounded-full border border-primary/10 bg-primary/[0.035]" />
         <CardContent className="relative grid gap-6 p-5 sm:p-6 lg:grid-cols-[1fr_auto] lg:items-center lg:p-8">
           <div className="space-y-4">
-            <Badge tone="primary" className="w-fit text-[10px] tracking-[0.18em] uppercase">
-              {t("page_title")}
-            </Badge>
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <Badge tone="primary" className="w-fit text-[10px] tracking-[0.18em] uppercase">
+                {t("page_title")}
+              </Badge>
+              <Button variant="outline" size="sm" onClick={() => navigate(`/business/branches/${branchId}/config`)}>
+                <Settings className="size-4" />
+                {t("breadcrumb_config")}
+              </Button>
+            </div>
             {branchLoading ? (
               <div className="space-y-3">
                 <Skeleton className="h-9 w-2/3" />

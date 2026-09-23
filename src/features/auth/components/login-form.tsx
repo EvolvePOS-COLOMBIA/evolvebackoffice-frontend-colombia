@@ -24,8 +24,8 @@ export function LoginForm() {
   const businessForm = useForm<TenantLoginFormValues>({
     resolver: zodResolver(businessLoginSchema(t)),
     defaultValues: {
-      tenantPublicId: "carlos-retail-c863d5a0",
-      email: "carlos@urspos.com",
+      tenantPublicId: "juaco-pizza-431e770e",
+      email: "JOAQUIN@URSPOS.COM",
       password: "Guar123!",
     },
   })
@@ -33,7 +33,7 @@ export function LoginForm() {
   const platformForm = useForm<PlatformLoginFormValues>({
     resolver: zodResolver(platformLoginSchema(t)),
     defaultValues: {
-      email: "giovany@urspos.com",
+      email: "carlos@urspos.com",
       password: "Guar123!",
     },
   })

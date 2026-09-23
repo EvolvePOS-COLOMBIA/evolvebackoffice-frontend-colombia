@@ -131,13 +131,7 @@ export interface AdjustBranchItemStockDto {
 
 // ─── Pagination ──────────────────────────────────────────────────────────────
 
-export interface PaginatedResponse<T> {
-  data: T[]
-  pageNumber: number
-  pageSize: number
-  totalCount: number
-  totalPages: number
-}
+export type { PaginatedResponse } from "@/components/data-table"
 
 export interface ItemListParams {
   pageNumber?: number
@@ -155,7 +149,6 @@ export interface ItemSyncDto {
   departmentId: number
   itemType: number
   unitOfMeasure: string | null
-  taxable: boolean
   isActive: boolean
   price: number
   priceA: number

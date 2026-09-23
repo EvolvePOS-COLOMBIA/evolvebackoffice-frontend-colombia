@@ -36,6 +36,8 @@ import businessBranchesConfigEs from "@/features/business/branches/config/i18n/e
 import businessBranchesConfigEn from "@/features/business/branches/config/i18n/en.json"
 import businessUsersCatalogEs from "@/features/business/people/users/i18n/es.json"
 import businessUsersCatalogEn from "@/features/business/people/users/i18n/en.json"
+import businessCustomersCatalogEs from "@/features/business/people/customers/i18n/es.json"
+import businessCustomersCatalogEn from "@/features/business/people/customers/i18n/en.json"
 
 const resources = {
   es: {
@@ -56,6 +58,7 @@ const resources = {
     "business-branches-terminals": businessBranchesTerminalsEs,
     "business-branches-config": businessBranchesConfigEs,
     "business-users-catalog": businessUsersCatalogEs,
+    "business-customers-catalog": businessCustomersCatalogEs,
   },
   en: {
     common: commonEn,
@@ -75,6 +78,7 @@ const resources = {
     "business-branches-terminals": businessBranchesTerminalsEn,
     "business-branches-config": businessBranchesConfigEn,
     "business-users-catalog": businessUsersCatalogEn,
+    "business-customers-catalog": businessCustomersCatalogEn,
   },
 }
 
@@ -102,6 +106,7 @@ i18n.use(initReactI18next).init({
     "business-branches-terminals",
     "business-branches-config",
     "business-users-catalog",
+    "business-customers-catalog",
   ],
   defaultNS: "common",
   interpolation: {

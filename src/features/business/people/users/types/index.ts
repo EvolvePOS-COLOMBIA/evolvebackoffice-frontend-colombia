@@ -8,10 +8,12 @@
  */
 export enum IdentificationType {
   CedulaCiudadania = 1,
+  CedulaExtranjeria = 2,
 }
 
 export const IDENTIFICATION_TYPE_LABELS: Record<IdentificationType, string> = {
   [IdentificationType.CedulaCiudadania]: "CC",
+  [IdentificationType.CedulaExtranjeria]: "CE",
 }
 
 export type Role = "Admin" | "Manager" | "Cashier"

@@ -23,6 +23,7 @@ export type Namespace =
   | "business-branches-terminals"
   | "business-branches-config"
   | "business-users-catalog"
+  | "business-customers-catalog"
   | "marketing"
 
 export function useTranslation(ns: Namespace = "common") {

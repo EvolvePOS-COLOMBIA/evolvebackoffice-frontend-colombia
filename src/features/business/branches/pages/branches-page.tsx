@@ -1,6 +1,18 @@
-import { useDeferredValue, useEffect, useMemo, useState } from "react"
+import { useDeferredValue, useMemo, useState } from "react"
 import { useNavigate } from "react-router-dom"
-import { Building2, CircleEllipsis, MonitorCog, Pencil, Plus, Power, RefreshCw, Search, Settings2 } from "lucide-react"
+import {
+  Building2,
+  CheckCircle2,
+  CircleEllipsis,
+  MonitorCog,
+  Plus,
+  Power,
+  RefreshCw,
+  Search,
+  Settings2,
+  SquarePen,
+  XCircle,
+} from "lucide-react"
 
 import {
   AlertDialog,
@@ -12,6 +24,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
+import { BackLink } from "@/components/ui/back-link"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
@@ -64,10 +77,6 @@ export function BranchesPage() {
   const updateMutation = useUpdateBranch()
   const deactivateMutation = useDeactivateBranch()
   const activateMutation = useActivateBranch()
-
-  useEffect(() => {
-    setPage(1)
-  }, [deferredSearch])
 
   const branches = pagedData?.data ?? []
   const totalCount = pagedData?.totalCount ?? 0
@@ -162,11 +171,9 @@ export function BranchesPage() {
       <Card className="overflow-hidden border-border/80 bg-card/70 shadow-none">
         <CardHeader className="relative overflow-hidden border-b border-border/70 px-5 pt-6 pb-5 sm:px-7 sm:pt-7">
           <div className="pointer-events-none absolute -top-16 -right-14 size-64 rounded-full border border-primary/10 bg-primary/[0.035]" />
-          <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-            <div className="relative space-y-3">
-              <Badge tone="primary" className="w-fit text-[10px] tracking-[0.18em] uppercase">
-                {t("eyebrow")}
-              </Badge>
+          <div className="flex flex-col gap-5 xl:flex-row xl:items-start xl:justify-between">
+            <div className="relative min-w-0 space-y-3 xl:flex-1">
+              <BackLink to="/business/settings">{t("back_to_settings")}</BackLink>
               <div className="space-y-1">
                 <CardTitle className="text-3xl font-semibold tracking-tight text-balance text-foreground">
                   {t("page_title")}
@@ -176,19 +183,31 @@ export function BranchesPage() {
                 </CardDescription>
               </div>
             </div>
-            <Button onClick={openCreate} disabled={isMutating} className="relative shadow-sm shadow-primary/20">
-              <Plus className="size-4" />
-              {t("create")}
-            </Button>
+            <div className="z-10 grid shrink-0 grid-cols-3 gap-2.5 sm:gap-3 xl:w-fit">
+              <SummaryStat
+                icon={Building2}
+                tone="info"
+                label={t("total_branches")}
+                value={totalCount}
+                loading={isLoading}
+              />
+              <SummaryStat
+                icon={CheckCircle2}
+                tone="success"
+                label={t("active_on_page")}
+                value={activeOnPage}
+                loading={isLoading}
+              />
+              <SummaryStat
+                icon={XCircle}
+                tone="warning"
+                label={t("inactive_on_page")}
+                value={inactiveOnPage}
+                loading={isLoading}
+              />
+            </div>
           </div>
         </CardHeader>
-
-        <div className="grid grid-cols-2 gap-3 border-b border-border/70 bg-muted/20 p-4 sm:grid-cols-4 sm:p-5">
-          <SummaryTile label={t("total_branches")} value={totalCount} loading={isLoading} />
-          <SummaryTile label={t("active_on_page")} value={activeOnPage} loading={isLoading} />
-          <SummaryTile label={t("inactive_on_page")} value={inactiveOnPage} loading={isLoading} muted />
-          <SummaryTile label={t("showing_on_page")} value={branches.length} loading={isLoading} muted />
-        </div>
 
         <CardContent className="space-y-5 p-4 sm:p-5">
           <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
@@ -201,9 +220,11 @@ export function BranchesPage() {
                 className="pl-9"
               />
             </div>
-            <Badge tone="neutral" className="w-fit rounded-full px-3 py-1 text-xs">
-              {t("results", { count: totalCount })}
-            </Badge>
+
+            <Button onClick={openCreate} disabled={isMutating} className="relative shadow-sm shadow-primary/20">
+              <Plus className="size-4" />
+              {t("create")}
+            </Button>
           </div>
 
           {isLoading ? (
@@ -279,7 +300,7 @@ export function BranchesPage() {
                           onClick={() => openEdit(branch)}
                           disabled={isMutating}
                         >
-                          <Pencil className="size-4" />
+                          <SquarePen className="size-4" />
                           {t("edit")}
                         </Button>
                         <Button
@@ -388,7 +409,7 @@ function BranchIdentity({ branch }: { branch: Branch }) {
   return (
     <div className="flex items-start gap-3">
       <div className="flex size-10 shrink-0 items-center justify-center rounded-2xl border border-primary/15 bg-primary/10 text-primary shadow-sm shadow-primary/5">
-        <Building2 className="size-[18px]" />
+        <Building2 className="size-4.5" />
       </div>
       <div className="min-w-0">
         <p className="font-medium text-foreground group-hover:text-primary">{branch.name}</p>
@@ -420,7 +441,7 @@ function BranchActions({
   return (
     <div className="flex justify-end gap-2">
       <Button type="button" variant="outline" size="sm" onClick={() => onEdit(branch)} disabled={disabled}>
-        <Pencil className="size-4" />
+        <SquarePen className="size-4" />
         {t("edit")}
       </Button>
       <DropdownMenu>
@@ -452,34 +473,42 @@ function BranchActions({
   )
 }
 
-function SummaryTile({
+const STAT_TONES = {
+  info: "border-sky-400/30 bg-sky-500/10 text-sky-500",
+  success: "border-emerald-400/30 bg-emerald-500/10 text-emerald-500",
+  warning: "border-amber-400/30 bg-amber-500/10 text-amber-500",
+  purple: "border-purple-400/30 bg-purple-500/10 text-purple-500",
+} as const
+
+function SummaryStat({
+  icon: Icon,
+  tone,
   label,
   value,
   loading,
-  muted = false,
 }: {
+  icon: typeof Building2
+  tone: keyof typeof STAT_TONES
   label: string
   value: number
   loading: boolean
-  muted?: boolean
 }) {
   return (
-    <Card className="max-h-min rounded-2xl border-border/70 bg-background/45 shadow-none">
-      <CardContent className="p-4">
-        <p className="text-[10px] font-semibold tracking-[0.18em] text-muted-foreground uppercase">{label}</p>
+    <div className="min-w-0 rounded-2xl border border-border/70 bg-background/45 px-3.5 py-3 sm:min-w-32">
+      <div className={`flex size-7 items-center justify-center rounded-lg border ${STAT_TONES[tone]}`}>
+        <Icon className="size-3.5" />
+      </div>
+      <div className="flex min-w-0 justify-between gap-2">
+        <p className="mt-2.5 text-[9px] font-semibold tracking-[0.14em] text-muted-foreground uppercase sm:text-[10px]">
+          {label}
+        </p>
         {loading ? (
-          <Skeleton className="mt-3 h-8 w-12" />
+          <Skeleton className="mt-1.5 h-5 w-6" />
         ) : (
-          <p
-            className={
-              "mt-2 text-2xl font-semibold tracking-tight " + (muted ? "text-muted-foreground" : "text-foreground")
-            }
-          >
-            {value}
-          </p>
+          <p className="mt-1 text-lg font-semibold tracking-tight">{value}</p>
         )}
-      </CardContent>
-    </Card>
+      </div>
+    </div>
   )
 }
 

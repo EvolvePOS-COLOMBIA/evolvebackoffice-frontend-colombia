@@ -82,15 +82,15 @@ export function BranchFormDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-h-[90vh] w-[calc(100%-2rem)] overflow-y-auto border-border/80 bg-card p-0 sm:max-w-xl">
+      <DialogContent className="max-h-[90vh] w-[calc(100%-2rem)] overflow-y-auto border-border/80 bg-card p-0 sm:max-w-5xl">
         <DialogHeader className="relative overflow-hidden border-b border-border/70 px-5 pt-6 pb-5 sm:px-6">
           <div className="pointer-events-none absolute -top-10 -right-8 size-32 rounded-full border border-primary/10 bg-primary/[0.035]" />
-          <div className="relative flex gap-3">
-            <div className="flex size-10 shrink-0 items-center justify-center rounded-2xl border border-primary/15 bg-primary/10 text-primary">
-              <Building2 className="size-[18px]" />
+          <div className="relative flex items-center gap-2">
+            <div className="flex size-12 shrink-0 items-center justify-center rounded-2xl border border-primary/15 bg-primary/10 text-primary">
+              <Building2 className="size-6" />
             </div>
-            <div className="space-y-1.5">
-              <DialogTitle className="text-lg">{isEditMode ? t("edit_title") : t("create_title")}</DialogTitle>
+            <div>
+              <DialogTitle className="-mb-1 text-lg">{isEditMode ? t("edit_title") : t("create_title")}</DialogTitle>
               <DialogDescription className="leading-6">
                 {isEditMode ? t("edit_desc") : t("create_desc")}
               </DialogDescription>
@@ -99,31 +99,61 @@ export function BranchFormDialog({
         </DialogHeader>
 
         <Form {...form}>
-          <form className="space-y-6 p-5 sm:p-6" onSubmit={form.handleSubmit(onSubmit)}>
-            <div className="space-y-5 rounded-2xl border border-border/70 bg-background/35 p-4 sm:p-5">
-              <FormField
-                control={form.control}
-                name="name"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>{t("name_label")}</FormLabel>
-                    <FormControl>
-                      <Input autoFocus placeholder={t("name_placeholder")} {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              <div className="grid gap-4 sm:grid-cols-2">
+          <form onSubmit={form.handleSubmit(onSubmit)}>
+            <section className="flex flex-col justify-between gap-4 p-4 lg:flex-row">
+              <div className="w-full space-y-5 rounded-2xl border border-border/70 bg-background/35 p-4">
                 <FormField
                   control={form.control}
-                  name="identification"
+                  name="name"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>{t("identification_label")}</FormLabel>
+                      <FormLabel>{t("name_label")}</FormLabel>
                       <FormControl>
-                        <Input placeholder={t("identification_placeholder")} {...field} />
+                        <Input autoFocus placeholder={t("name_placeholder")} {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <div className="grid gap-4 sm:grid-cols-2">
+                  <FormField
+                    control={form.control}
+                    name="identification"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>{t("identification_label")}</FormLabel>
+                        <FormControl>
+                          <Input placeholder={t("identification_placeholder")} {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={form.control}
+                    name="phone"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>{t("phone_label")}</FormLabel>
+                        <FormControl>
+                          <Input inputMode="tel" placeholder={t("phone_placeholder")} {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
+
+                <FormField
+                  control={form.control}
+                  name="address"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>{t("address_label")}</FormLabel>
+                      <FormControl>
+                        <Input placeholder={t("address_placeholder")} {...field} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -132,86 +162,56 @@ export function BranchFormDialog({
 
                 <FormField
                   control={form.control}
-                  name="phone"
+                  name="email"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>{t("phone_label")}</FormLabel>
+                      <FormLabel>{t("email_label")}</FormLabel>
                       <FormControl>
-                        <Input inputMode="tel" placeholder={t("phone_placeholder")} {...field} />
+                        <Input type="email" placeholder={t("email_placeholder")} {...field} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
                   )}
                 />
               </div>
-
               <FormField
                 control={form.control}
-                name="address"
+                name="adminUserId"
                 render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>{t("address_label")}</FormLabel>
-                    <FormControl>
-                      <Input placeholder={t("address_placeholder")} {...field} />
-                    </FormControl>
+                  <FormItem className="h-max rounded-2xl border border-border/70 bg-background/35 p-4 sm:p-5">
+                    <FormLabel>{t("admin_label")}</FormLabel>
+                    <Select
+                      value={field.value || AUTOMATIC_ADMIN}
+                      onValueChange={(value) => field.onChange(value === AUTOMATIC_ADMIN ? "" : value)}
+                      disabled={isUsersLoading}
+                    >
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder={t("admin_placeholder")} />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        <SelectItem value={AUTOMATIC_ADMIN}>{t("admin_automatic")}</SelectItem>
+                        {branchToEdit?.adminUserId &&
+                        !eligibleUsers.some((user) => user.id === branchToEdit.adminUserId) ? (
+                          <SelectItem value={branchToEdit.adminUserId}>
+                            {branchToEdit.adminUserName || branchToEdit.adminUserId}
+                          </SelectItem>
+                        ) : null}
+                        {eligibleUsers.map((user) => (
+                          <SelectItem key={user.id} value={user.id}>
+                            {getUserDisplayName(user)}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <p className="text-xs leading-5 text-muted-foreground">{t("admin_hint")}</p>
                     <FormMessage />
                   </FormItem>
                 )}
               />
-
-              <FormField
-                control={form.control}
-                name="email"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>{t("email_label")}</FormLabel>
-                    <FormControl>
-                      <Input type="email" placeholder={t("email_placeholder")} {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            </div>
-
-            <FormField
-              control={form.control}
-              name="adminUserId"
-              render={({ field }) => (
-                <FormItem className="rounded-2xl border border-border/70 bg-muted/20 p-4 sm:p-5">
-                  <FormLabel>{t("admin_label")}</FormLabel>
-                  <Select
-                    value={field.value || AUTOMATIC_ADMIN}
-                    onValueChange={(value) => field.onChange(value === AUTOMATIC_ADMIN ? "" : value)}
-                    disabled={isUsersLoading}
-                  >
-                    <FormControl>
-                      <SelectTrigger>
-                        <SelectValue placeholder={t("admin_placeholder")} />
-                      </SelectTrigger>
-                    </FormControl>
-                    <SelectContent>
-                      <SelectItem value={AUTOMATIC_ADMIN}>{t("admin_automatic")}</SelectItem>
-                      {branchToEdit?.adminUserId &&
-                      !eligibleUsers.some((user) => user.id === branchToEdit.adminUserId) ? (
-                        <SelectItem value={branchToEdit.adminUserId}>
-                          {branchToEdit.adminUserName || branchToEdit.adminUserId}
-                        </SelectItem>
-                      ) : null}
-                      {eligibleUsers.map((user) => (
-                        <SelectItem key={user.id} value={user.id}>
-                          {getUserDisplayName(user)}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                  <p className="text-xs leading-5 text-muted-foreground">{t("admin_hint")}</p>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            <DialogFooter className="border-t border-border/70 pt-5">
+            </section>
+            <DialogFooter className="border-t border-border/70 p-4">
               <Button type="button" variant="outline" onClick={() => onOpenChange(false)} disabled={isSubmitting}>
                 {t("cancel")}
               </Button>

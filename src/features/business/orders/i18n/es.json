@@ -72,5 +72,11 @@
   "phone": "Teléfono",
   "address": "Dirección",
   "notes": "Notas",
-  "create_order": "Crear Orden"
+  "create_order": "Crear Orden",
+  "store_active": "Tienda activa — aceptando pedidos",
+  "store_inactive": "Tienda inactiva — no aceptará pedidos",
+  "activate_store": "Activar tienda",
+  "activating_store": "Activando...",
+  "store_activated": "Tienda activada — webhooks configurados, ya puede aceptar pedidos",
+  "store_activation_failed": "No se pudo activar la tienda"
 }

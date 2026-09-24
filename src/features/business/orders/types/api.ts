@@ -141,8 +141,27 @@ export interface CluviModifierItem {
   order: number
 }
 
-export interface SyncMenuRequest {
-  products: CluviMenuProduct[]
-  categories: CluviMenuCategory[]
-  modifiers: CluviMenuModifier[]
+export interface SyncMenuResponse {
+  success: boolean
+  message: string | null
+  products: number
+  categories: number
+  modifiers: number
+}
+
+/** Respuesta de POST .../integrations/{id}/test-connection */
+export interface TestConnectionResult {
+  success: boolean
+  message: string
+  /** Estado de la tienda en Cluvi: "on" | "off" (null cuando no aplica). */
+  storeStatus?: string | null
+}
+
+/** Respuesta de POST .../integrations/{id}/activate-store */
+export interface ActivateStoreResult {
+  success: boolean
+  message: string | null
+  storeStatus: string | null
+  newOrderWebhookUrl: string | null
+  pingWebhookUrl: string | null
 }

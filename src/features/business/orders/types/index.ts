@@ -11,7 +11,9 @@ export type {
   CluviMenuCategory,
   CluviMenuModifier,
   CluviModifierItem,
-  SyncMenuRequest,
+  SyncMenuResponse,
+  TestConnectionResult,
+  ActivateStoreResult,
 } from "./api"
 
 export const ORDER_STATUS_CONFIG: Record<string, { label: string; color: string; bgClass: string }> = {

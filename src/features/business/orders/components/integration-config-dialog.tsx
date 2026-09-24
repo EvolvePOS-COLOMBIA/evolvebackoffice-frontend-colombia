@@ -9,7 +9,13 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs"
 import { useTranslation } from "@/i18n/use-i18n"
 import { useNotify } from "@/hooks/use-notify"
 import Spinner from "@/components/Spinner"
-import { useBranchIntegrations, useCreateIntegration, useTestConnection, useSyncMenu } from "../hooks/use-orders"
+import {
+  useBranchIntegrations,
+  useCreateIntegration,
+  useTestConnection,
+  useSyncMenu,
+  useActivateStore,
+} from "../hooks/use-orders"
 import { CheckCircle, XCircle, ArrowRight, ArrowLeft, Truck, Store } from "lucide-react"
 
 interface IntegrationConfigDialogProps {
@@ -29,6 +35,8 @@ export function IntegrationConfigDialog({ open, onOpenChange, branchId, platform
   const [secretKey, setSecretKey] = useState("")
   const [storeId, setStoreId] = useState("")
   const [testResult, setTestResult] = useState<{ success: boolean; message: string } | null>(null)
+  // Estado de la tienda en Cluvi: "on" | "off" | null (aún desconocido)
+  const [storeStatus, setStoreStatus] = useState<string | null>(null)
 
   const { data: integrations } = useBranchIntegrations(branchId)
   const existingIntegration = integrations?.find((i) => i.platformCode === platform && i.isActive)
@@ -36,6 +44,7 @@ export function IntegrationConfigDialog({ open, onOpenChange, branchId, platform
   const createMutation = useCreateIntegration()
   const testMutation = useTestConnection()
   const syncMenuMutation = useSyncMenu()
+  const activateMutation = useActivateStore()
 
   const isCluvi = platform === "CLUVI"
   const platformName = isCluvi ? "Cluvi" : "WooCommerce"
@@ -73,8 +82,29 @@ export function IntegrationConfigDialog({ open, onOpenChange, branchId, platform
     testMutation.mutate(
       { branchId, integrationId },
       {
-        onSuccess: (result) => setTestResult(result),
+        onSuccess: (result) => {
+          setTestResult(result)
+          setStoreStatus(result.storeStatus ?? null)
+        },
         onError: () => setTestResult({ success: false, message: t("connection_failed") }),
+      }
+    )
+  }
+
+  const handleActivateStore = () => {
+    if (!branchId || !existingIntegration) return
+    activateMutation.mutate(
+      { branchId, integrationId: existingIntegration.id },
+      {
+        onSuccess: (res) => {
+          if (res.success) {
+            setStoreStatus(res.storeStatus ?? "on")
+            notify.success(res.message ?? t("store_activated"))
+          } else {
+            notify.error(res.message ?? t("store_activation_failed"))
+          }
+        },
+        onError: () => notify.error(t("store_activation_failed")),
       }
     )
   }
@@ -110,15 +140,15 @@ export function IntegrationConfigDialog({ open, onOpenChange, branchId, platform
   const handleSyncMenu = () => {
     if (!branchId || !existingIntegration) return
     syncMenuMutation.mutate(
+      { branchId, integrationId: existingIntegration.id },
       {
-        branchId,
-        integrationId: existingIntegration.id,
-        menu: { products: [], categories: [], modifiers: [] },
-      },
-      {
-        onSuccess: () => {
-          notify.success(t("sync_success"))
-          onOpenChange(false)
+        onSuccess: (res) => {
+          if (res.success) {
+            notify.success(res.message ?? t("sync_success"))
+            onOpenChange(false)
+          } else {
+            notify.error(res.message ?? t("sync_failed"))
+          }
         },
         onError: () => notify.error(t("sync_failed")),
       }
@@ -230,6 +260,26 @@ export function IntegrationConfigDialog({ open, onOpenChange, branchId, platform
                     {testResult.message}
                   </div>
                 )}
+
+                {/* Estado de la tienda en Cluvi: activa → ok; inactiva → botón de activación */}
+                {storeStatus !== null &&
+                  (storeStatus === "on" ? (
+                    <div className="flex items-center gap-2 rounded-lg bg-emerald-50 p-3 text-sm text-emerald-700">
+                      <CheckCircle className="h-4 w-4 shrink-0" />
+                      {t("store_active")}
+                    </div>
+                  ) : (
+                    <div className="flex flex-wrap items-center justify-between gap-3 rounded-lg bg-amber-50 p-3 text-sm text-amber-800">
+                      <span className="flex items-center gap-2">
+                        <XCircle className="h-4 w-4 shrink-0" />
+                        {t("store_inactive")}
+                      </span>
+                      <Button size="sm" onClick={handleActivateStore} disabled={activateMutation.isPending}>
+                        {activateMutation.isPending && <Spinner className="mr-2 h-4 w-4" />}
+                        {activateMutation.isPending ? t("activating_store") : t("activate_store")}
+                      </Button>
+                    </div>
+                  ))}
               </CardContent>
             </Card>
             <div className="flex justify-end gap-2">

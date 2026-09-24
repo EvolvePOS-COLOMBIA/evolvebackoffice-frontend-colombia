@@ -89,8 +89,21 @@ export function CluviConfigWizard({ open, onOpenChange, branchId }: CluviConfigW
   }
 
   const handleSyncMenu = () => {
-    notify.success(t("sync_success"))
-    onOpenChange(false)
+    if (!branchId || !existingIntegration) return
+    syncMenuMutation.mutate(
+      { branchId, integrationId: existingIntegration.id },
+      {
+        onSuccess: (res) => {
+          if (res.success) {
+            notify.success(res.message ?? t("sync_success"))
+            onOpenChange(false)
+          } else {
+            notify.error(res.message ?? t("sync_failed"))
+          }
+        },
+        onError: () => notify.error(t("sync_failed")),
+      }
+    )
   }
 
   return (

@@ -29,6 +29,7 @@ import {
 } from "@/components/ui/alert-dialog"
 import { Logo } from "@/components/icons/logo"
 import { useAuth } from "@/features/auth/hooks/use-auth"
+import { useTenantModules } from "@/features/business/branches/hooks/use-branch-modules"
 import { useNotify } from "@/hooks/use-notify"
 import { cn } from "@/lib/utils"
 import { useTranslation } from "@/i18n/use-i18n"
@@ -85,10 +86,23 @@ export function SidebarContent({
   isCollapsed?: boolean
   onNavigate?: () => void
 }) {
-  const { defaultRoute, isPlatformAdmin } = useAuth()
+  const { defaultRoute, isPlatformAdmin, isBusinessAdmin } = useAuth()
   const { pathname } = useLocation()
   const { t } = useTranslation()
-  const navigationItems = isPlatformAdmin ? platformNavigationItems : businessNavigationItems
+
+  // El módulo Órdenes solo se muestra si el tenant tiene al menos una
+  // licencia (módulo de tenant) asignada y habilitada.
+  const { data: tenantModules, isLoading: tenantModulesLoading } = useTenantModules(isBusinessAdmin)
+  const hasOrdersLicense = isPlatformAdmin || (tenantModules ?? []).some((m) => m.isEnabled)
+
+  const baseNavigationItems = isPlatformAdmin ? platformNavigationItems : businessNavigationItems
+  const navigationItems = baseNavigationItems.filter((item) => {
+    if (item.labelKey !== "orders") return true
+    // Evita parpadeo: oculto hasta confirmar licencias (salvo platform admin).
+    if (isPlatformAdmin) return true
+    if (tenantModulesLoading) return false
+    return hasOrdersLicense
+  })
 
   return (
     <div

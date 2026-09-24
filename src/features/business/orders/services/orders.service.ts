@@ -1,5 +1,13 @@
 import { api } from "@/config/axios-client"
-import type { PagedOrders, OrderDetail, BranchIntegration, CreateIntegrationDto, SyncMenuRequest } from "../types/api"
+import type {
+  PagedOrders,
+  OrderDetail,
+  BranchIntegration,
+  CreateIntegrationDto,
+  SyncMenuResponse,
+  TestConnectionResult,
+  ActivateStoreResult,
+} from "../types/api"
 
 function normalizePagedResponse(raw: unknown, pageNumber: number, pageSize: number): PagedOrders {
   if (raw && typeof raw === "object" && "data" in raw) {
@@ -59,19 +67,32 @@ export async function createIntegration(branchId: string, dto: CreateIntegration
   return data
 }
 
-export async function testConnection(
-  branchId: string,
-  integrationId: string
-): Promise<{ success: boolean; message: string }> {
-  const { data } = await api.post(`/api/branches/${branchId}/integrations/${integrationId}/test-connection`)
+/** Prueba la conexión; la respuesta incluye storeStatus ("on"/"off"). */
+export async function testConnection(branchId: string, integrationId: string): Promise<TestConnectionResult> {
+  const { data } = await api.post<TestConnectionResult>(
+    `/api/branches/${branchId}/integrations/${integrationId}/test-connection`
+  )
   return data
 }
 
-export async function syncMenu(
-  branchId: string,
-  integrationId: string,
-  menu: SyncMenuRequest
-): Promise<{ success: boolean }> {
-  const { data } = await api.put(`/api/branches/${branchId}/integrations/${integrationId}/sync-menu`, menu)
+/**
+ * Activa la tienda en Cluvi para aceptar pedidos. El backend configura los
+ * webhooks (new_order → webhook del backend, ping → /health) que Cluvi
+ * exige al activar.
+ */
+export async function activateStore(branchId: string, integrationId: string): Promise<ActivateStoreResult> {
+  const { data } = await api.post<ActivateStoreResult>(
+    `/api/branches/${branchId}/integrations/${integrationId}/activate-store`
+  )
+  return data
+}
+
+/**
+ * Sincroniza el menú de la sucursal hacia Cluvi. El backend construye el menú
+ * desde los artículos con IsPublishedForWeb y sus modificadores — no se
+ * envían productos en la petición.
+ */
+export async function syncMenu(branchId: string, integrationId: string): Promise<SyncMenuResponse> {
+  const { data } = await api.put<SyncMenuResponse>(`/api/branches/${branchId}/integrations/${integrationId}/sync-menu`)
   return data
 }

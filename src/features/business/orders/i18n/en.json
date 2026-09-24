@@ -72,5 +72,11 @@
   "phone": "Phone",
   "address": "Address",
   "notes": "Notes",
-  "create_order": "Create Order"
+  "create_order": "Create Order",
+  "store_active": "Store active — accepting orders",
+  "store_inactive": "Store inactive — orders will not be accepted",
+  "activate_store": "Activate store",
+  "activating_store": "Activating...",
+  "store_activated": "Store activated — webhooks configured, ready to accept orders",
+  "store_activation_failed": "Could not activate the store"
 }

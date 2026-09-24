@@ -7,8 +7,9 @@ import {
   createIntegration,
   testConnection,
   syncMenu,
+  activateStore,
 } from "../services/orders.service"
-import type { CreateIntegrationDto, SyncMenuRequest } from "../types/api"
+import type { CreateIntegrationDto, SyncMenuResponse, ActivateStoreResult } from "../types/api"
 
 export const ordersKeys = {
   all: ["orders"] as const,
@@ -71,14 +72,20 @@ export function useTestConnection() {
 
 export function useSyncMenu() {
   return useMutation({
+    mutationFn: ({ branchId, integrationId }: { branchId: string; integrationId: string }): Promise<SyncMenuResponse> =>
+      syncMenu(branchId, integrationId),
+  })
+}
+
+/** Activa la tienda en Cluvi (incluye webhooks) para aceptar pedidos. */
+export function useActivateStore() {
+  return useMutation({
     mutationFn: ({
       branchId,
       integrationId,
-      menu,
     }: {
       branchId: string
       integrationId: string
-      menu: SyncMenuRequest
-    }) => syncMenu(branchId, integrationId, menu),
+    }): Promise<ActivateStoreResult> => activateStore(branchId, integrationId),
   })
 }

@@ -1,4 +1,4 @@
-import { useState } from "react"
+import { useRef, useState } from "react"
 import { Pencil, Trash2, CheckSquare, Square, Package, SearchX } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
@@ -28,26 +28,32 @@ export function GlobalCatalogView({ onAssignToBranch }: GlobalCatalogViewProps) 
   const { t } = useTranslation("business-items-catalog")
   const [page, setPage] = useState(1)
   const [search, setSearch] = useState("")
+  const [debouncedSearch, setDebouncedSearch] = useState("")
+  const searchTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set())
   const [formOpen, setFormOpen] = useState(false)
   const [itemToEdit, setItemToEdit] = useState<ItemResponseDto | null>(null)
 
-  const { data, isLoading } = useItems({ pageNumber: page, pageSize: 20 })
+  const { data, isLoading } = useItems({
+    pageNumber: page,
+    pageSize: 20,
+    searchField: "all",
+    searchValue: debouncedSearch.trim() || undefined,
+  })
   const deleteItem = useDeleteItem()
 
   const handleSearchChange = (value: string) => {
     setSearch(value)
-    setPage(1)
+    if (searchTimer.current) clearTimeout(searchTimer.current)
+    searchTimer.current = setTimeout(() => {
+      setDebouncedSearch(value)
+      setPage(1)
+    }, 350)
   }
 
+  // Búsqueda server-side (searchField=all): el backend ya devuelve filtrado.
   const items = data?.data ?? []
-  const filteredItems = search
-    ? items.filter(
-        (item) =>
-          item.name?.toLowerCase().includes(search.toLowerCase()) ||
-          item.sku?.toLowerCase().includes(search.toLowerCase())
-      )
-    : items
+  const filteredItems = items
 
   const isMultiSelectMode = selectedIds.size > 0
   const hasSearch = search.trim().length > 0

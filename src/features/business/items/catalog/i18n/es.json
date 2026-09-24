@@ -42,7 +42,7 @@
   "active": "Activo",
   "inactive": "Inactivo",
   "actions": "Acciones",
-  "search_items": "Buscar por nombre, SKU o categoría...",
+  "search_items": "Buscar por nombre, SKU o descripción...",
   "no_items": "No se encontraron productos.",
   "loading": "Cargando...",
   "saving": "Guardando...",
@@ -115,5 +115,10 @@
   "toast_item_removed_from_branch": "\"{{name}}\" removido de la sucursal",
   "toast_error_remove": "Error al remover el producto",
   "assign_products": "Asignar productos",
+  "department_none": "Sin departamento",
+  "department_placeholder": "Selecciona un departamento",
+  "item_type_standard": "Estándar",
+  "item_type_weighted": "Pesado",
+  "item_type_no_inventory": "Sin inventario",
   "pagination_total": "{{count}} producto(s)"
 }

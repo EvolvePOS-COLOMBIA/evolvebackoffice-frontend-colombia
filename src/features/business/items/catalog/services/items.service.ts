@@ -10,7 +10,7 @@ export async function getItems(params: ItemListParams = {}): Promise<PaginatedRe
   const pageNumber = params.pageNumber ?? 1
   const pageSize = params.pageSize ?? 20
   const { data } = await api.get<{ data: ItemResponseDto[]; totalCount: number }>("/api/Items", {
-    params: { pageNumber, pageSize },
+    params: { pageNumber, pageSize, searchField: params.searchField, searchValue: params.searchValue },
   })
   return {
     data: data.data,

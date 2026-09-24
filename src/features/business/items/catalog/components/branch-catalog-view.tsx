@@ -15,7 +15,7 @@ import {
 import { Skeleton } from "@/components/ui/skeleton"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { useTranslation } from "@/i18n/use-i18n"
-import { useBranchItems, useDeleteBranchItem } from "../hooks/use-branch-items"
+import { useAdjustBranchItemStock, useBranchItems, useDeleteBranchItem } from "../hooks/use-branch-items"
 import type { BranchItemResponseDto } from "../types"
 import { BranchItemFormDialog } from "./branch-item-form-dialog"
 import { AdjustStockDialog } from "./adjust-stock-dialog"
@@ -34,6 +34,7 @@ export function BranchCatalogView({ branchId, onAssignClick }: BranchCatalogView
 
   const { data, isLoading } = useBranchItems(branchId, { pageNumber: page, pageSize: 20 })
   const deleteBranchItem = useDeleteBranchItem(branchId)
+  const adjustStock = useAdjustBranchItemStock(branchId)
 
   const items = data?.data ?? []
 
@@ -242,7 +243,18 @@ export function BranchCatalogView({ branchId, onAssignClick }: BranchCatalogView
 
       {/* Adjust Stock Dialog */}
       {selectedItem && (
-        <AdjustStockDialog open={stockDialogOpen} onOpenChange={handleStockDialogClose} item={selectedItem} />
+        <AdjustStockDialog
+          open={stockDialogOpen}
+          onOpenChange={handleStockDialogClose}
+          item={selectedItem}
+          onSubmit={(quantity) => {
+            adjustStock.mutate(
+              { id: selectedItem.id, payload: { quantity, quantityCommitted: selectedItem.quantityCommitted } },
+              { onSuccess: () => setStockDialogOpen(false) }
+            )
+          }}
+          isSubmitting={adjustStock.isPending}
+        />
       )}
     </div>
   )

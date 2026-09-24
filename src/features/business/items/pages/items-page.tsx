@@ -21,7 +21,8 @@ export function ItemsPage() {
       name: t("departments"),
       label: t("departments_desc"),
       icon: Building2,
-      disabled: true,
+      disabled: false,
+      onClick: () => navigate("/business/items/departments"),
     },
     {
       name: t("discounts_promos"),
@@ -39,7 +40,8 @@ export function ItemsPage() {
       name: t("tax_rules"),
       label: t("tax_rules_desc"),
       icon: Receipt,
-      disabled: true,
+      disabled: false,
+      onClick: () => navigate("/business/items/taxes"),
     },
     {
       name: t("brands_sizes"),
@@ -51,7 +53,8 @@ export function ItemsPage() {
       name: t("modifiers"),
       label: t("modifiers_desc"),
       icon: Pencil,
-      disabled: true,
+      disabled: false,
+      onClick: () => navigate("/business/items/modifiers"),
     },
     {
       name: t("bulk_editor"),

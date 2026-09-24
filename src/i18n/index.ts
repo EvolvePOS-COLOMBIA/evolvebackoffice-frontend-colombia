@@ -18,6 +18,12 @@ import businessItemsEs from "@/features/business/items/i18n/es.json"
 import businessItemsEn from "@/features/business/items/i18n/en.json"
 import businessItemsCatalogEs from "@/features/business/items/catalog/i18n/es.json"
 import businessItemsCatalogEn from "@/features/business/items/catalog/i18n/en.json"
+import businessItemsDepartmentsEs from "@/features/business/items/departments/i18n/es.json"
+import businessItemsDepartmentsEn from "@/features/business/items/departments/i18n/en.json"
+import businessItemsTaxesEs from "@/features/business/items/taxes/i18n/es.json"
+import businessItemsTaxesEn from "@/features/business/items/taxes/i18n/en.json"
+import businessItemsModifiersEs from "@/features/business/items/modifiers/i18n/es.json"
+import businessItemsModifiersEn from "@/features/business/items/modifiers/i18n/en.json"
 import businessInventoryEs from "@/features/business/inventory/i18n/es.json"
 import businessInventoryEn from "@/features/business/inventory/i18n/en.json"
 import businessOnboardingEs from "@/features/business/onboarding/i18n/es.json"
@@ -43,6 +49,9 @@ const resources = {
     "business-dashboard": businessDashboardEs,
     "business-items": businessItemsEs,
     "business-items-catalog": businessItemsCatalogEs,
+    "business-items-departments": businessItemsDepartmentsEs,
+    "business-items-taxes": businessItemsTaxesEs,
+    "business-items-modifiers": businessItemsModifiersEs,
     "business-inventory": businessInventoryEs,
     "business-onboarding": businessOnboardingEs,
     "business-people": businessPeopleEs,
@@ -60,6 +69,9 @@ const resources = {
     "business-dashboard": businessDashboardEn,
     "business-items": businessItemsEn,
     "business-items-catalog": businessItemsCatalogEn,
+    "business-items-departments": businessItemsDepartmentsEn,
+    "business-items-taxes": businessItemsTaxesEn,
+    "business-items-modifiers": businessItemsModifiersEn,
     "business-inventory": businessInventoryEn,
     "business-onboarding": businessOnboardingEn,
     "business-people": businessPeopleEn,
@@ -85,6 +97,9 @@ i18n.use(initReactI18next).init({
     "business-dashboard",
     "business-items",
     "business-items-catalog",
+    "business-items-departments",
+    "business-items-taxes",
+    "business-items-modifiers",
     "business-inventory",
     "business-onboarding",
     "business-people",

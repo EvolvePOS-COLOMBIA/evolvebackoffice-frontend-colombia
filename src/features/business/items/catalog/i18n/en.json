@@ -42,7 +42,7 @@
   "active": "Active",
   "inactive": "Inactive",
   "actions": "Actions",
-  "search_items": "Search by name, SKU or category...",
+  "search_items": "Search by name, SKU or description...",
   "no_items": "No products found.",
   "loading": "Loading...",
   "saving": "Saving...",
@@ -114,5 +114,10 @@
   "toast_error_stock": "Error adjusting stock",
   "toast_item_removed_from_branch": "\"{{name}}\" removed from branch",
   "toast_error_remove": "Error removing product",
+  "department_none": "No department",
+  "department_placeholder": "Select a department",
+  "item_type_standard": "Standard",
+  "item_type_weighted": "Weighted",
+  "item_type_no_inventory": "No inventory",
   "pagination_total": "{{count}} product(s)"
 }

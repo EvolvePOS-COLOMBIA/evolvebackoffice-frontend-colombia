@@ -11,6 +11,9 @@ import { InventoryPage } from "@/features/business/inventory/pages/inventory-pag
 import { OnboardingPage } from "@/features/business/onboarding/pages/onboarding-page"
 import { ItemsPage } from "@/features/business/items/pages/items-page"
 import { ItemsCatalogPage } from "@/features/business/items/catalog/pages/items-catalog-page"
+import { DepartmentsPage } from "@/features/business/items/departments/pages/departments-page"
+import { TaxesPage } from "@/features/business/items/taxes/pages/taxes-page"
+import { ModifiersPage } from "@/features/business/items/modifiers/pages/modifiers-page"
 import { PeoplePage } from "@/features/business/people/pages/people-page"
 import { UsersCatalogPage } from "@/features/business/people/users/pages/users-catalog-page"
 import { ReportsPage } from "@/features/business/reports/pages/reports-page"
@@ -81,6 +84,9 @@ function AppRoutesContent() {
             <Route path="/business/orders" element={<OrdersPage />} />
             <Route path="/business/items" element={<ItemsPage />} />
             <Route path="/business/items/catalog" element={<ItemsCatalogPage />} />
+            <Route path="/business/items/departments" element={<DepartmentsPage />} />
+            <Route path="/business/items/taxes" element={<TaxesPage />} />
+            <Route path="/business/items/modifiers" element={<ModifiersPage />} />
             <Route path="/business/inventory" element={<InventoryPage />} />
             <Route path="/business/people" element={<PeoplePage />} />
             <Route path="/business/people/users" element={<UsersCatalogPage />} />

@@ -13,10 +13,12 @@ import {
 } from "@/components/ui/dialog"
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form"
 import { Input } from "@/components/ui/input"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Switch } from "@/components/ui/switch"
 import { useTranslation } from "@/i18n/use-i18n"
 import { createItemSchema, type CreateItemFormValues } from "../schemas/item-schema"
 import { useCreateItem, useUpdateItem } from "../hooks/use-items"
+import { useDepartmentsAll } from "../../departments/hooks/use-departments"
 import type { ItemResponseDto } from "../types"
 
 type ItemFormDialogProps = {
@@ -30,8 +32,8 @@ const defaultValues: CreateItemFormValues = {
   sku: null,
   description: null,
   plu: 0,
-  departmentId: 1,
-  itemType: 1,
+  departmentId: 0,
+  itemType: 0,
   unitOfMeasure: null,
   taxable: false,
   webItem: false,
@@ -50,6 +52,7 @@ export function ItemFormDialog({ open, onOpenChange, itemToEdit }: ItemFormDialo
   const { t } = useTranslation("business-items-catalog")
   const createItem = useCreateItem()
   const updateItem = useUpdateItem()
+  const { data: departments, isLoading: departmentsLoading } = useDepartmentsAll()
 
   const form = useForm<CreateItemFormValues>({
     resolver: zodResolver(createItemSchema(t)) as never,
@@ -74,7 +77,7 @@ export function ItemFormDialog({ open, onOpenChange, itemToEdit }: ItemFormDialo
         subDescription1: null,
         subDescription2: null,
         subDescription3: null,
-        priceMustBeEntered: false,
+        priceMustBeEntered: itemToEdit.priceMustBeEntered,
         brandId: itemToEdit.brandId,
         itemPresentationId: itemToEdit.itemPresentationId,
         askQuantity: itemToEdit.askQuantity,
@@ -194,10 +197,26 @@ export function ItemFormDialog({ open, onOpenChange, itemToEdit }: ItemFormDialo
                 name="departmentId"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>{t("department_id")}</FormLabel>
-                    <FormControl>
-                      <Input type="number" {...field} />
-                    </FormControl>
+                    <FormLabel>{t("department")}</FormLabel>
+                    <Select
+                      value={String(field.value ?? 0)}
+                      onValueChange={(value) => field.onChange(Number(value))}
+                      disabled={departmentsLoading}
+                    >
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder={t("department_placeholder")} />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        <SelectItem value="0">{t("department_none")}</SelectItem>
+                        {(departments ?? []).map((d) => (
+                          <SelectItem key={d.id} value={String(d.internalId)}>
+                            {d.parentName ? `${d.name} (${d.parentName})` : d.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
                     <FormMessage />
                   </FormItem>
                 )}
@@ -209,9 +228,18 @@ export function ItemFormDialog({ open, onOpenChange, itemToEdit }: ItemFormDialo
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>{t("item_type")}</FormLabel>
-                    <FormControl>
-                      <Input type="number" {...field} />
-                    </FormControl>
+                    <Select value={String(field.value ?? 0)} onValueChange={(value) => field.onChange(Number(value))}>
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder={t("item_type")} />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        <SelectItem value="0">{t("item_type_standard")}</SelectItem>
+                        <SelectItem value="1">{t("item_type_weighted")}</SelectItem>
+                        <SelectItem value="2">{t("item_type_no_inventory")}</SelectItem>
+                      </SelectContent>
+                    </Select>
                     <FormMessage />
                   </FormItem>
                 )}

@@ -22,6 +22,16 @@ export interface ItemResponseDto {
   available: number
   dateCreated: string
   createdAt: string
+  priceMustBeEntered: boolean
+  taxRates?: ItemTaxRateDto[]
+}
+
+export interface ItemTaxRateDto {
+  taxRateId: string
+  name: string
+  taxType: number
+  taxTypeName: string
+  rate: number
 }
 
 export interface CreateItemDto {
@@ -142,6 +152,8 @@ export interface PaginatedResponse<T> {
 export interface ItemListParams {
   pageNumber?: number
   pageSize?: number
+  searchField?: string
+  searchValue?: string
 }
 
 // ─── Item Sync (for POS offline) ─────────────────────────────────────────────

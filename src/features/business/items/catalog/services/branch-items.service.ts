@@ -74,6 +74,16 @@ export async function deleteBranchItem(branchId: string, id: string): Promise<vo
   await api.delete(`/api/branches/${branchId}/items/${id}`)
 }
 
+/** Reactiva un producto en la sucursal (reverse del inactivar). */
+export async function activateBranchItem(branchId: string, id: string): Promise<void> {
+  await api.post(`/api/branches/${branchId}/items/${id}/activate`)
+}
+
+/** Inactiva un producto en la sucursal sin eliminarlo (reversible). */
+export async function deactivateBranchItem(branchId: string, id: string): Promise<void> {
+  await api.post(`/api/branches/${branchId}/items/${id}/deactivate`)
+}
+
 export interface BranchItemConfig {
   id: string
   useGlobalTaxes: boolean

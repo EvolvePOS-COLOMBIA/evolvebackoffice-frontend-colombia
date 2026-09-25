@@ -1,5 +1,5 @@
 import { useState } from "react"
-import { Pencil, Receipt, Tags, Trash2, Package, Settings } from "lucide-react"
+import { Pencil, Power, Trash2, Package } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
@@ -15,12 +15,10 @@ import {
 import { Skeleton } from "@/components/ui/skeleton"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { useTranslation } from "@/i18n/use-i18n"
-import { useAdjustBranchItemStock, useBranchItems, useDeleteBranchItem } from "../hooks/use-branch-items"
+import { useBranchItems, useDeleteBranchItem, useSetBranchItemActive } from "../hooks/use-branch-items"
 import type { BranchItemResponseDto } from "../types"
-import { BranchItemFormDialog } from "./branch-item-form-dialog"
-import { AdjustStockDialog } from "./adjust-stock-dialog"
-import { BranchItemTaxDialog } from "./branch-item-tax-dialog"
-import { BranchItemModifierDialog } from "./branch-item-modifier-dialog"
+import { BranchItemEditDialog } from "./branch-item-edit-dialog"
+import { ConfirmActionDialog } from "@/components/confirm-action-dialog"
 
 type BranchCatalogViewProps = {
   branchId: string
@@ -30,64 +28,41 @@ type BranchCatalogViewProps = {
 export function BranchCatalogView({ branchId, onAssignClick }: BranchCatalogViewProps) {
   const { t } = useTranslation("business-items-catalog")
   const [page, setPage] = useState(1)
-  const [pricingDialogOpen, setPricingDialogOpen] = useState(false)
-  const [stockDialogOpen, setStockDialogOpen] = useState(false)
+  const [editDialogOpen, setEditDialogOpen] = useState(false)
   const [selectedItemId, setSelectedItemId] = useState<string | null>(null)
-  const [taxDialogOpen, setTaxDialogOpen] = useState(false)
-  const [modifierDialogOpen, setModifierDialogOpen] = useState(false)
+  const [confirmDeactivate, setConfirmDeactivate] = useState<BranchItemResponseDto | null>(null)
+  const [confirmRemove, setConfirmRemove] = useState<BranchItemResponseDto | null>(null)
 
   const { data, isLoading } = useBranchItems(branchId, { pageNumber: page, pageSize: 20 })
   const deleteBranchItem = useDeleteBranchItem(branchId)
-  const adjustStock = useAdjustBranchItemStock(branchId)
+  const setActive = useSetBranchItemActive(branchId)
 
   const items = data?.data ?? []
   // Selección derivada de la query: refresca los flags (global/personalizado)
   // automáticamente tras cada mutación de configuración.
   const selectedItem = items.find((i) => i.id === selectedItemId) ?? null
 
-  const handleEditPricing = (item: BranchItemResponseDto) => {
+  const handleEdit = (item: BranchItemResponseDto) => {
     setSelectedItemId(item.id)
-    setPricingDialogOpen(true)
+    setEditDialogOpen(true)
   }
 
-  const handleAdjustStock = (item: BranchItemResponseDto) => {
-    setSelectedItemId(item.id)
-    setStockDialogOpen(true)
-  }
-
-  const handleOpenTaxes = (item: BranchItemResponseDto) => {
-    setSelectedItemId(item.id)
-    setTaxDialogOpen(true)
-  }
-
-  const handleOpenModifiers = (item: BranchItemResponseDto) => {
-    setSelectedItemId(item.id)
-    setModifierDialogOpen(true)
-  }
-
-  const handleDelete = (item: BranchItemResponseDto) => {
-    if (confirm(t("confirm_remove_from_branch", { name: item.itemName }))) {
-      deleteBranchItem.mutate({ id: item.id, name: item.itemName ?? "" })
+  // Inactivar (reversible) pide confirmación visual; activar es directo.
+  const handleToggleStatus = (item: BranchItemResponseDto) => {
+    if (item.inactive) {
+      setActive.mutate({ id: item.id, active: true, name: item.itemName ?? "" })
+    } else {
+      setConfirmDeactivate(item)
     }
   }
 
-  const handlePricingDialogClose = () => {
-    setPricingDialogOpen(false)
-    setSelectedItemId(null)
+  // Eliminar = quitar la asignación de ESTA sucursal (el catálogo general no se toca).
+  const handleRemove = (item: BranchItemResponseDto) => {
+    setConfirmRemove(item)
   }
 
-  const handleStockDialogClose = () => {
-    setStockDialogOpen(false)
-    setSelectedItemId(null)
-  }
-
-  const handleTaxDialogClose = (openValue: boolean) => {
-    setTaxDialogOpen(openValue)
-    if (!openValue) setSelectedItemId(null)
-  }
-
-  const handleModifierDialogClose = (openValue: boolean) => {
-    setModifierDialogOpen(openValue)
+  const handleEditDialogClose = (openValue: boolean) => {
+    setEditDialogOpen(openValue)
     if (!openValue) setSelectedItemId(null)
   }
 
@@ -185,35 +160,17 @@ export function BranchCatalogView({ branchId, onAssignClick }: BranchCatalogView
                           variant="secondary"
                           size="icon"
                           className="size-7 sm:size-8"
-                          onClick={() => handleOpenTaxes(item)}
-                          aria-label={t("item_taxes")}
+                          onClick={() => handleToggleStatus(item)}
+                          aria-label={item.inactive ? t("activate_item") : t("deactivate_item")}
                         >
-                          <Receipt className="size-3.5 sm:size-4" />
+                          <Power className="size-3.5 sm:size-4" />
                         </Button>
                         <Button
                           variant="secondary"
                           size="icon"
                           className="size-7 sm:size-8"
-                          onClick={() => handleOpenModifiers(item)}
-                          aria-label={t("item_modifiers")}
-                        >
-                          <Tags className="size-3.5 sm:size-4" />
-                        </Button>
-                        <Button
-                          variant="secondary"
-                          size="icon"
-                          className="size-7 sm:size-8"
-                          onClick={() => handleEditPricing(item)}
-                          aria-label={t("edit_pricing")}
-                        >
-                          <Settings className="size-3.5 sm:size-4" />
-                        </Button>
-                        <Button
-                          variant="secondary"
-                          size="icon"
-                          className="size-7 sm:size-8"
-                          onClick={() => handleAdjustStock(item)}
-                          aria-label={t("adjust_stock")}
+                          onClick={() => handleEdit(item)}
+                          aria-label={t("edit_item")}
                         >
                           <Pencil className="size-3.5 sm:size-4" />
                         </Button>
@@ -221,7 +178,7 @@ export function BranchCatalogView({ branchId, onAssignClick }: BranchCatalogView
                           variant="destructive"
                           size="icon"
                           className="size-7 text-destructive sm:size-8"
-                          onClick={() => handleDelete(item)}
+                          onClick={() => handleRemove(item)}
                           aria-label={t("remove_from_branch")}
                         >
                           <Trash2 className="size-3.5 sm:size-4" />
@@ -276,44 +233,52 @@ export function BranchCatalogView({ branchId, onAssignClick }: BranchCatalogView
         )}
       </div>
 
-      {/* Pricing Dialog */}
-      {selectedItem && (
-        <BranchItemFormDialog
-          open={pricingDialogOpen}
-          onOpenChange={handlePricingDialogClose}
-          branchId={branchId}
-          item={selectedItem}
-        />
-      )}
-
-      {/* Adjust Stock Dialog */}
-      {selectedItem && (
-        <AdjustStockDialog
-          open={stockDialogOpen}
-          onOpenChange={handleStockDialogClose}
-          item={selectedItem}
-          onSubmit={(quantity) => {
-            adjustStock.mutate(
-              { id: selectedItem.id, payload: { quantity, quantityCommitted: selectedItem.quantityCommitted } },
-              { onSuccess: () => setStockDialogOpen(false) }
-            )
-          }}
-          isSubmitting={adjustStock.isPending}
-        />
-      )}
-
-      {/* Config de impuestos / modificadores: global vs sucursal */}
-      <BranchItemTaxDialog
-        open={taxDialogOpen}
-        onOpenChange={handleTaxDialogClose}
+      {/* Edición por pestañas: Precios / Stock / Impuestos / Modificadores */}
+      <BranchItemEditDialog
+        open={editDialogOpen}
+        onOpenChange={handleEditDialogClose}
         branchId={branchId}
         item={selectedItem}
       />
-      <BranchItemModifierDialog
-        open={modifierDialogOpen}
-        onOpenChange={handleModifierDialogClose}
-        branchId={branchId}
-        item={selectedItem}
+
+      {/* Confirmación visual: desactivar solo en esta sucursal */}
+      <ConfirmActionDialog
+        open={confirmDeactivate !== null}
+        onOpenChange={(openValue) => {
+          if (!openValue) setConfirmDeactivate(null)
+        }}
+        title={t("branch_deactivate_title")}
+        description={t("branch_deactivate_desc", { name: confirmDeactivate?.itemName ?? "" })}
+        confirmLabel={t("deactivate_confirm")}
+        tone="destructive"
+        isPending={setActive.isPending}
+        onConfirm={() => {
+          if (!confirmDeactivate) return
+          setActive.mutate(
+            { id: confirmDeactivate.id, active: false, name: confirmDeactivate.itemName ?? "" },
+            { onSuccess: () => setConfirmDeactivate(null) }
+          )
+        }}
+      />
+
+      {/* Confirmación visual: quitar de esta sucursal (no borra el catálogo general) */}
+      <ConfirmActionDialog
+        open={confirmRemove !== null}
+        onOpenChange={(openValue) => {
+          if (!openValue) setConfirmRemove(null)
+        }}
+        title={t("branch_remove_title")}
+        description={t("branch_remove_desc", { name: confirmRemove?.itemName ?? "" })}
+        confirmLabel={t("remove_from_branch")}
+        tone="destructive"
+        isPending={deleteBranchItem.isPending}
+        onConfirm={() => {
+          if (!confirmRemove) return
+          deleteBranchItem.mutate(
+            { id: confirmRemove.id, name: confirmRemove.itemName ?? "" },
+            { onSuccess: () => setConfirmRemove(null) }
+          )
+        }}
       />
     </div>
   )

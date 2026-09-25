@@ -156,6 +156,8 @@ export interface ItemListParams {
   pageSize?: number
   searchField?: string
   searchValue?: string
+  /** Incluye productos desactivados/soft-deleteados (para mostrar el badge y poder reactivarlos). */
+  includeInactive?: boolean
 }
 
 // ─── Item Sync (for POS offline) ─────────────────────────────────────────────

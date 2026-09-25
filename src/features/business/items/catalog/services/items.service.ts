@@ -10,7 +10,13 @@ export async function getItems(params: ItemListParams = {}): Promise<PaginatedRe
   const pageNumber = params.pageNumber ?? 1
   const pageSize = params.pageSize ?? 20
   const { data } = await api.get<{ data: ItemResponseDto[]; totalCount: number }>("/api/Items", {
-    params: { pageNumber, pageSize, searchField: params.searchField, searchValue: params.searchValue },
+    params: {
+      pageNumber,
+      pageSize,
+      searchField: params.searchField,
+      searchValue: params.searchValue,
+      includeInactive: params.includeInactive,
+    },
   })
   return {
     data: data.data,
@@ -38,4 +44,9 @@ export async function updateItem(id: string, payload: UpdateItemDto): Promise<It
 
 export async function deleteItem(id: string): Promise<void> {
   await api.delete(`/api/Items/${id}`)
+}
+
+/** Reactiva un producto (reverse del soft-delete). */
+export async function activateItem(id: string): Promise<void> {
+  await api.post(`/api/Items/${id}/activate`)
 }

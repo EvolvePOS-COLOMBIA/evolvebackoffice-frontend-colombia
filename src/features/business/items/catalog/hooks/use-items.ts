@@ -2,7 +2,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import toast from "react-hot-toast"
 
 import { useTranslation } from "@/i18n/use-i18n"
-import { createItem, deleteItem, getItems, updateItem } from "../services/items.service"
+import { activateItem, createItem, deleteItem, getItems, updateItem } from "../services/items.service"
 import type { CreateItemDto, ItemListParams, UpdateItemDto } from "../types"
 
 export function useItems(params: ItemListParams = {}) {
@@ -37,6 +37,28 @@ export function useUpdateItem() {
     onSuccess: (_data, variables) => {
       queryClient.invalidateQueries({ queryKey: ["items"] })
       toast.success(t("toast_item_updated", { name: variables.payload.name }))
+    },
+    onError: () => {
+      toast.error(t("toast_error_update"))
+    },
+  })
+}
+
+/**
+ * Activa o desactiva (soft-delete) un producto desde el catálogo general.
+ * Desactivar lo oculta de la venta en todas las sucursales; con
+ * includeInactive el producto sigue listado con su badge y puede reactivarse.
+ */
+export function useSetItemActive() {
+  const queryClient = useQueryClient()
+  const { t } = useTranslation("business-items-catalog")
+
+  return useMutation({
+    mutationFn: ({ id, active }: { id: string; active: boolean; name: string }) =>
+      active ? activateItem(id) : deleteItem(id),
+    onSuccess: (_data, variables) => {
+      queryClient.invalidateQueries({ queryKey: ["items"] })
+      toast.success(variables.active ? t("toast_item_activated") : t("toast_item_deactivated"))
     },
     onError: () => {
       toast.error(t("toast_error_update"))

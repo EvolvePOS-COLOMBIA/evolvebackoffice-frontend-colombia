@@ -1,5 +1,5 @@
 import { useRef, useState } from "react"
-import { Pencil, Trash2, CheckSquare, Square, Package, SearchX } from "lucide-react"
+import { Pencil, Power, CheckSquare, Square, Package, SearchX } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
@@ -16,8 +16,9 @@ import {
 import { Skeleton } from "@/components/ui/skeleton"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { useTranslation } from "@/i18n/use-i18n"
-import { useItems, useDeleteItem } from "../hooks/use-items"
+import { useItems, useSetItemActive } from "../hooks/use-items"
 import type { ItemResponseDto } from "../types"
+import { ConfirmActionDialog } from "@/components/confirm-action-dialog"
 import { ItemFormDialog } from "./item-form-dialog"
 
 type GlobalCatalogViewProps = {
@@ -33,14 +34,16 @@ export function GlobalCatalogView({ onAssignToBranch }: GlobalCatalogViewProps) 
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set())
   const [formOpen, setFormOpen] = useState(false)
   const [itemToEdit, setItemToEdit] = useState<ItemResponseDto | null>(null)
+  const [deactivateTarget, setDeactivateTarget] = useState<ItemResponseDto | null>(null)
 
   const { data, isLoading } = useItems({
     pageNumber: page,
     pageSize: 20,
     searchField: "all",
     searchValue: debouncedSearch.trim() || undefined,
+    includeInactive: true,
   })
-  const deleteItem = useDeleteItem()
+  const setItemActive = useSetItemActive()
 
   const handleSearchChange = (value: string) => {
     setSearch(value)
@@ -89,9 +92,12 @@ export function GlobalCatalogView({ onAssignToBranch }: GlobalCatalogViewProps) 
     setFormOpen(true)
   }
 
-  const handleDelete = (item: ItemResponseDto) => {
-    if (confirm(t("confirm_delete_item", { name: item.name }))) {
-      deleteItem.mutate({ id: item.id, name: item.name ?? "" })
+  // Activar es directo; desactivar pide confirmación visual (afecta a todas las sucursales).
+  const handleToggleStatus = (item: ItemResponseDto) => {
+    if (item.isActive) {
+      setDeactivateTarget(item)
+    } else {
+      setItemActive.mutate({ id: item.id, active: true, name: item.name ?? "" })
     }
   }
 
@@ -229,13 +235,13 @@ export function GlobalCatalogView({ onAssignToBranch }: GlobalCatalogViewProps) 
                           <Pencil className="size-3.5 sm:size-4" />
                         </Button>
                         <Button
-                          variant="destructive"
+                          variant={item.isActive ? "destructive" : "secondary"}
                           size="icon"
-                          className="size-7 text-destructive sm:size-8"
-                          onClick={() => handleDelete(item)}
-                          aria-label={t("delete_item")}
+                          className="size-7 sm:size-8"
+                          onClick={() => handleToggleStatus(item)}
+                          aria-label={item.isActive ? t("deactivate_item") : t("activate_item")}
                         >
-                          <Trash2 className="size-3.5 sm:size-4" />
+                          <Power className="size-3.5 sm:size-4" />
                         </Button>
                       </div>
                     </TableCell>
@@ -294,6 +300,26 @@ export function GlobalCatalogView({ onAssignToBranch }: GlobalCatalogViewProps) 
 
       {/* Form Dialog */}
       <ItemFormDialog open={formOpen} onOpenChange={handleDialogClose} itemToEdit={itemToEdit} />
+
+      {/* Confirmación visual: desactivar en todas las sucursales */}
+      <ConfirmActionDialog
+        open={deactivateTarget !== null}
+        onOpenChange={(openValue) => {
+          if (!openValue) setDeactivateTarget(null)
+        }}
+        title={t("deactivate_item_title")}
+        description={t("deactivate_item_desc")}
+        confirmLabel={t("deactivate_confirm")}
+        tone="destructive"
+        isPending={setItemActive.isPending}
+        onConfirm={() => {
+          if (!deactivateTarget) return
+          setItemActive.mutate(
+            { id: deactivateTarget.id, active: false, name: deactivateTarget.name ?? "" },
+            { onSuccess: () => setDeactivateTarget(null) }
+          )
+        }}
+      />
     </div>
   )
 }

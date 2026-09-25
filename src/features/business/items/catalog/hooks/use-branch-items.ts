@@ -3,8 +3,10 @@ import toast from "react-hot-toast"
 
 import { useTranslation } from "@/i18n/use-i18n"
 import {
+  activateBranchItem,
   adjustBranchItemStock,
   createBranchItem,
+  deactivateBranchItem,
   deleteBranchItem,
   getBranchItems,
   updateBranchItemConfig,
@@ -97,6 +99,27 @@ export function useUpdateBranchItemConfig(branchId: string) {
     },
     onError: () => {
       toast.error(t("toast_error_config"))
+    },
+  })
+}
+
+/**
+ * Activa o desactiva un producto dentro de la sucursal.
+ * Desactivar es reversible (el badge queda en la fila); no afecta al catálogo general.
+ */
+export function useSetBranchItemActive(branchId: string) {
+  const queryClient = useQueryClient()
+  const { t } = useTranslation("business-items-catalog")
+
+  return useMutation({
+    mutationFn: ({ id, active }: { id: string; active: boolean; name: string }) =>
+      active ? activateBranchItem(branchId, id) : deactivateBranchItem(branchId, id),
+    onSuccess: (_data, variables) => {
+      queryClient.invalidateQueries({ queryKey: ["branch-items", branchId] })
+      toast.success(variables.active ? t("toast_branch_item_activated") : t("toast_branch_item_deactivated"))
+    },
+    onError: () => {
+      toast.error(t("toast_error_remove"))
     },
   })
 }

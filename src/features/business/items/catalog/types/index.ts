@@ -105,6 +105,8 @@ export interface BranchItemResponseDto {
   lastCounted: string | null
   available: number
   createdAt: string
+  useGlobalTaxes: boolean
+  useGlobalModifiers: boolean
 }
 
 export interface CreateBranchItemDto {

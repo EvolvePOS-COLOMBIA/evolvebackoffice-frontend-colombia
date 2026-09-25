@@ -34,6 +34,8 @@ type ItemModifierFormDialogProps = {
   parentItemId: string
   modifierToEdit?: ItemModifier | null
   items: ItemResponseDto[]
+  /** Si se pasa, el modificador se crea en el ámbito de esta sucursal (?branchId). */
+  branchId?: string
 }
 
 const defaultValues: ItemModifierFormValues = {
@@ -54,10 +56,11 @@ export function ItemModifierFormDialog({
   parentItemId,
   modifierToEdit,
   items,
+  branchId,
 }: ItemModifierFormDialogProps) {
   const isEditMode = Boolean(modifierToEdit)
   const { t } = useTranslation("business-items-modifiers")
-  const createModifier = useCreateItemModifier()
+  const createModifier = useCreateItemModifier(branchId)
   const updateModifier = useUpdateItemModifier()
   const { data: groups, isLoading: groupsLoading } = useModifierGroups()
 

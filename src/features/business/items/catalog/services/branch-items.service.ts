@@ -73,3 +73,22 @@ export async function adjustBranchItemStock(
 export async function deleteBranchItem(branchId: string, id: string): Promise<void> {
   await api.delete(`/api/branches/${branchId}/items/${id}`)
 }
+
+export interface BranchItemConfig {
+  id: string
+  useGlobalTaxes: boolean
+  useGlobalModifiers: boolean
+}
+
+/**
+ * Cambia el modo global/personalizado de impuestos y/o modificadores del ítem en la sucursal.
+ * Al personalizar (false) el backend copia la configuración global si no existe copia propia.
+ */
+export async function updateBranchItemConfig(
+  branchId: string,
+  id: string,
+  dto: { useGlobalTaxes?: boolean; useGlobalModifiers?: boolean }
+): Promise<BranchItemConfig> {
+  const { data } = await api.put<BranchItemConfig>(`/api/branches/${branchId}/items/${id}/config`, dto)
+  return data
+}

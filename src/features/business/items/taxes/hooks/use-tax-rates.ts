@@ -19,7 +19,7 @@ export const taxRatesKeys = {
   all: ["tax-rates"] as const,
   list: (page: number, pageSize: number) => ["tax-rates", "list", page, pageSize] as const,
   defaults: ["tax-rates", "defaults"] as const,
-  item: (itemId: string) => ["tax-rates", "item", itemId] as const,
+  item: (itemId: string, branchId?: string) => ["tax-rates", "item", itemId, branchId ?? "global"] as const,
 }
 
 /** Listado paginado de tasas de impuesto (incluye inactivas). */
@@ -94,11 +94,11 @@ export function useSetTaxRateActive() {
   })
 }
 
-/** Impuestos asignados a un item (solo se consulta cuando hay itemId). */
-export function useItemTaxRates(itemId?: string) {
+/** Impuestos asignados a un item, globalmente o en el ámbito de una sucursal (?branchId). */
+export function useItemTaxRates(itemId?: string, branchId?: string) {
   return useQuery({
-    queryKey: taxRatesKeys.item(itemId ?? ""),
-    queryFn: () => getItemTaxRates(itemId as string),
+    queryKey: taxRatesKeys.item(itemId ?? "", branchId),
+    queryFn: () => getItemTaxRates(itemId as string, branchId),
     enabled: Boolean(itemId),
   })
 }
@@ -112,11 +112,12 @@ export function useAssignItemTaxRates() {
   const { t } = useTranslation("business-items-taxes")
 
   return useMutation({
-    mutationFn: ({ itemId, taxRateIds }: { itemId: string; taxRateIds: string[] }) =>
-      assignItemTaxRates(itemId, taxRateIds),
-    onSuccess: () => {
+    mutationFn: ({ itemId, taxRateIds, branchId }: { itemId: string; taxRateIds: string[]; branchId?: string }) =>
+      assignItemTaxRates(itemId, taxRateIds, branchId),
+    onSuccess: (_data, variables) => {
       queryClient.invalidateQueries({ queryKey: taxRatesKeys.all })
       queryClient.invalidateQueries({ queryKey: ["items"] })
+      if (variables.branchId) queryClient.invalidateQueries({ queryKey: ["branch-items"] })
     },
     onError: () => {
       toast.error(t("toast_assignment_error"))
@@ -130,10 +131,12 @@ export function useRemoveItemTaxRate() {
   const { t } = useTranslation("business-items-taxes")
 
   return useMutation({
-    mutationFn: ({ itemId, taxRateId }: { itemId: string; taxRateId: string }) => removeItemTaxRate(itemId, taxRateId),
-    onSuccess: () => {
+    mutationFn: ({ itemId, taxRateId, branchId }: { itemId: string; taxRateId: string; branchId?: string }) =>
+      removeItemTaxRate(itemId, taxRateId, branchId),
+    onSuccess: (_data, variables) => {
       queryClient.invalidateQueries({ queryKey: taxRatesKeys.all })
       queryClient.invalidateQueries({ queryKey: ["items"] })
+      if (variables.branchId) queryClient.invalidateQueries({ queryKey: ["branch-items"] })
     },
     onError: () => {
       toast.error(t("toast_assignment_error"))

@@ -67,8 +67,10 @@ export async function setTaxRateActive(id: string, active: boolean): Promise<voi
 }
 
 /** Impuestos actualmente asignados a un item. */
-export async function getItemTaxRates(itemId: string): Promise<ItemTaxRate[]> {
-  const { data } = await api.get<unknown>(`/api/items/${itemId}/tax-rates`)
+export async function getItemTaxRates(itemId: string, branchId?: string): Promise<ItemTaxRate[]> {
+  const { data } = await api.get<unknown>(`/api/items/${itemId}/tax-rates`, {
+    params: branchId ? { branchId } : undefined,
+  })
   if (Array.isArray(data)) return data as ItemTaxRate[]
   const payload = data as { data?: ItemTaxRate[]; items?: ItemTaxRate[] } | null
   return payload?.data ?? payload?.items ?? []
@@ -79,12 +81,14 @@ export async function getItemTaxRates(itemId: string): Promise<ItemTaxRate[]> {
  * IMPORTANTE: el backend solo AGREGA las tasas enviadas; las bajas se hacen
  * con `removeItemTaxRate` (nunca se envían eliminaciones en el POST).
  */
-export async function assignItemTaxRates(itemId: string, taxRateIds: string[]): Promise<void> {
+export async function assignItemTaxRates(itemId: string, taxRateIds: string[], branchId?: string): Promise<void> {
   const payload: AssignItemTaxRatesDto = { taxRateIds }
-  await api.post(`/api/items/${itemId}/tax-rates`, payload)
+  await api.post(`/api/items/${itemId}/tax-rates`, payload, { params: branchId ? { branchId } : undefined })
 }
 
-/** Quita un impuesto específico de un item. */
-export async function removeItemTaxRate(itemId: string, taxRateId: string): Promise<void> {
-  await api.delete(`/api/items/${itemId}/tax-rates/${taxRateId}`)
+/** Quita un impuesto específico de un item (global o de una sucursal con ?branchId). */
+export async function removeItemTaxRate(itemId: string, taxRateId: string, branchId?: string): Promise<void> {
+  await api.delete(`/api/items/${itemId}/tax-rates/${taxRateId}`, {
+    params: branchId ? { branchId } : undefined,
+  })
 }

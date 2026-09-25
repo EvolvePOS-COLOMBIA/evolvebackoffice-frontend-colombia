@@ -7,6 +7,7 @@ import {
   createBranchItem,
   deleteBranchItem,
   getBranchItems,
+  updateBranchItemConfig,
   updateBranchItemPricing,
 } from "../services/branch-items.service"
 import type { AdjustBranchItemStockDto, CreateBranchItemDto, ItemListParams, UpdateBranchItemDto } from "../types"
@@ -68,6 +69,34 @@ export function useAdjustBranchItemStock(branchId: string) {
     },
     onError: () => {
       toast.error(t("toast_error_stock"))
+    },
+  })
+}
+
+/**
+ * Cambia el modo de configuración (global vs personalizada) de impuestos/modificadores
+ * del ítem en la sucursal. Refresca los ítems de la sucursal porque cambian los flags.
+ */
+export function useUpdateBranchItemConfig(branchId: string) {
+  const queryClient = useQueryClient()
+  const { t } = useTranslation("business-items-catalog")
+
+  return useMutation({
+    mutationFn: ({
+      id,
+      payload,
+    }: {
+      id: string
+      payload: { useGlobalTaxes?: boolean; useGlobalModifiers?: boolean }
+    }) => updateBranchItemConfig(branchId, id, payload),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["branch-items", branchId] })
+      queryClient.invalidateQueries({ queryKey: ["tax-rates"] })
+      queryClient.invalidateQueries({ queryKey: ["item-modifiers"] })
+      toast.success(t("toast_config_saved"))
+    },
+    onError: () => {
+      toast.error(t("toast_error_config"))
     },
   })
 }

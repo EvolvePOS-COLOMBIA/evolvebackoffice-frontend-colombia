@@ -45,14 +45,18 @@ export async function deleteModifierGroup(id: string): Promise<void> {
 // ─── Modificadores por producto ─────────────────────────────────────────────
 
 /** Lista los modificadores de un producto padre. */
-export async function getItemModifiers(parentItemId: string): Promise<ItemModifier[]> {
-  const { data } = await api.get<ListPayload<ItemModifier>>(`/api/itemmodifiers/items/${parentItemId}`)
+export async function getItemModifiers(parentItemId: string, branchId?: string): Promise<ItemModifier[]> {
+  const { data } = await api.get<ListPayload<ItemModifier>>(`/api/itemmodifiers/items/${parentItemId}`, {
+    params: branchId ? { branchId } : undefined,
+  })
   return normalizeList(data)
 }
 
-/** Agrega un modificador (producto hijo) a un producto padre. */
-export async function createItemModifier(dto: CreateItemModifierDto): Promise<ItemModifier> {
-  const { data } = await api.post<ItemModifier>("/api/itemmodifiers/items", dto)
+/** Agrega un modificador (producto hijo) a un producto padre; con branchId lo crea en el ámbito de la sucursal. */
+export async function createItemModifier(dto: CreateItemModifierDto, branchId?: string): Promise<ItemModifier> {
+  const { data } = await api.post<ItemModifier>("/api/itemmodifiers/items", dto, {
+    params: branchId ? { branchId } : undefined,
+  })
   return data
 }
 

@@ -1,5 +1,5 @@
 import { useState } from "react"
-import { Pencil, Trash2, Package, Settings } from "lucide-react"
+import { Pencil, Receipt, Tags, Trash2, Package, Settings } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
@@ -19,6 +19,8 @@ import { useAdjustBranchItemStock, useBranchItems, useDeleteBranchItem } from ".
 import type { BranchItemResponseDto } from "../types"
 import { BranchItemFormDialog } from "./branch-item-form-dialog"
 import { AdjustStockDialog } from "./adjust-stock-dialog"
+import { BranchItemTaxDialog } from "./branch-item-tax-dialog"
+import { BranchItemModifierDialog } from "./branch-item-modifier-dialog"
 
 type BranchCatalogViewProps = {
   branchId: string
@@ -30,22 +32,37 @@ export function BranchCatalogView({ branchId, onAssignClick }: BranchCatalogView
   const [page, setPage] = useState(1)
   const [pricingDialogOpen, setPricingDialogOpen] = useState(false)
   const [stockDialogOpen, setStockDialogOpen] = useState(false)
-  const [selectedItem, setSelectedItem] = useState<BranchItemResponseDto | null>(null)
+  const [selectedItemId, setSelectedItemId] = useState<string | null>(null)
+  const [taxDialogOpen, setTaxDialogOpen] = useState(false)
+  const [modifierDialogOpen, setModifierDialogOpen] = useState(false)
 
   const { data, isLoading } = useBranchItems(branchId, { pageNumber: page, pageSize: 20 })
   const deleteBranchItem = useDeleteBranchItem(branchId)
   const adjustStock = useAdjustBranchItemStock(branchId)
 
   const items = data?.data ?? []
+  // Selección derivada de la query: refresca los flags (global/personalizado)
+  // automáticamente tras cada mutación de configuración.
+  const selectedItem = items.find((i) => i.id === selectedItemId) ?? null
 
   const handleEditPricing = (item: BranchItemResponseDto) => {
-    setSelectedItem(item)
+    setSelectedItemId(item.id)
     setPricingDialogOpen(true)
   }
 
   const handleAdjustStock = (item: BranchItemResponseDto) => {
-    setSelectedItem(item)
+    setSelectedItemId(item.id)
     setStockDialogOpen(true)
+  }
+
+  const handleOpenTaxes = (item: BranchItemResponseDto) => {
+    setSelectedItemId(item.id)
+    setTaxDialogOpen(true)
+  }
+
+  const handleOpenModifiers = (item: BranchItemResponseDto) => {
+    setSelectedItemId(item.id)
+    setModifierDialogOpen(true)
   }
 
   const handleDelete = (item: BranchItemResponseDto) => {
@@ -56,12 +73,22 @@ export function BranchCatalogView({ branchId, onAssignClick }: BranchCatalogView
 
   const handlePricingDialogClose = () => {
     setPricingDialogOpen(false)
-    setSelectedItem(null)
+    setSelectedItemId(null)
   }
 
   const handleStockDialogClose = () => {
     setStockDialogOpen(false)
-    setSelectedItem(null)
+    setSelectedItemId(null)
+  }
+
+  const handleTaxDialogClose = (openValue: boolean) => {
+    setTaxDialogOpen(openValue)
+    if (!openValue) setSelectedItemId(null)
+  }
+
+  const handleModifierDialogClose = (openValue: boolean) => {
+    setModifierDialogOpen(openValue)
+    if (!openValue) setSelectedItemId(null)
   }
 
   return (
@@ -154,6 +181,24 @@ export function BranchCatalogView({ branchId, onAssignClick }: BranchCatalogView
                     </TableCell>
                     <TableCell className="px-1 text-right sm:px-4">
                       <div className="flex justify-end gap-1 sm:gap-1">
+                        <Button
+                          variant="secondary"
+                          size="icon"
+                          className="size-7 sm:size-8"
+                          onClick={() => handleOpenTaxes(item)}
+                          aria-label={t("item_taxes")}
+                        >
+                          <Receipt className="size-3.5 sm:size-4" />
+                        </Button>
+                        <Button
+                          variant="secondary"
+                          size="icon"
+                          className="size-7 sm:size-8"
+                          onClick={() => handleOpenModifiers(item)}
+                          aria-label={t("item_modifiers")}
+                        >
+                          <Tags className="size-3.5 sm:size-4" />
+                        </Button>
                         <Button
                           variant="secondary"
                           size="icon"
@@ -256,6 +301,20 @@ export function BranchCatalogView({ branchId, onAssignClick }: BranchCatalogView
           isSubmitting={adjustStock.isPending}
         />
       )}
+
+      {/* Config de impuestos / modificadores: global vs sucursal */}
+      <BranchItemTaxDialog
+        open={taxDialogOpen}
+        onOpenChange={handleTaxDialogClose}
+        branchId={branchId}
+        item={selectedItem}
+      />
+      <BranchItemModifierDialog
+        open={modifierDialogOpen}
+        onOpenChange={handleModifierDialogClose}
+        branchId={branchId}
+        item={selectedItem}
+      />
     </div>
   )
 }

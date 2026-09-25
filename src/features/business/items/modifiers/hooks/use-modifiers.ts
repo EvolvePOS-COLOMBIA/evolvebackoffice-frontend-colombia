@@ -24,7 +24,8 @@ import type {
 export const modifierKeys = {
   all: ["item-modifiers"] as const,
   groups: ["item-modifiers", "groups"] as const,
-  itemModifiers: (parentItemId: string) => ["item-modifiers", "by-item", parentItemId] as const,
+  itemModifiers: (parentItemId: string, branchId?: string) =>
+    ["item-modifiers", "by-item", parentItemId, branchId ?? "global"] as const,
   pickerItems: ["item-modifiers", "picker-items"] as const,
 }
 
@@ -46,12 +47,12 @@ export function useItemsForPicker() {
   })
 }
 
-/** Modificadores de un producto padre (solo consulta cuando hay id). */
-export function useItemModifiers(parentItemId?: string) {
+/** Modificadores de un producto padre, global o en el ámbito de una sucursal (?branchId). */
+export function useItemModifiers(parentItemId?: string, branchId?: string) {
   const enabled = Boolean(parentItemId)
   return useQuery({
-    queryKey: modifierKeys.itemModifiers(parentItemId ?? ""),
-    queryFn: () => getItemModifiers(parentItemId as string),
+    queryKey: modifierKeys.itemModifiers(parentItemId ?? "", branchId),
+    queryFn: () => getItemModifiers(parentItemId as string, branchId),
     enabled,
   })
 }
@@ -109,14 +110,15 @@ export function useDeleteModifierGroup() {
 
 // ─── Modificadores: mutaciones ──────────────────────────────────────────────
 
-export function useCreateItemModifier() {
+export function useCreateItemModifier(branchId?: string) {
   const queryClient = useQueryClient()
   const { t } = useTranslation("business-items-modifiers")
 
   return useMutation({
-    mutationFn: (payload: CreateItemModifierDto) => createItemModifier(payload),
-    onSuccess: (_data, variables) => {
-      queryClient.invalidateQueries({ queryKey: modifierKeys.itemModifiers(variables.parentItemId) })
+    mutationFn: (payload: CreateItemModifierDto) => createItemModifier(payload, branchId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: modifierKeys.all })
+      if (branchId) queryClient.invalidateQueries({ queryKey: ["branch-items"] })
       toast.success(t("toast_modifier_created"))
     },
     onError: () => {
@@ -132,12 +134,9 @@ export function useUpdateItemModifier() {
   return useMutation({
     mutationFn: ({ id, payload }: { id: string; payload: UpdateItemModifierDto; parentItemId?: string }) =>
       updateItemModifier(id, payload),
-    onSuccess: (_data, variables) => {
-      if (variables.parentItemId) {
-        queryClient.invalidateQueries({ queryKey: modifierKeys.itemModifiers(variables.parentItemId) })
-      } else {
-        queryClient.invalidateQueries({ queryKey: modifierKeys.all })
-      }
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: modifierKeys.all })
+      queryClient.invalidateQueries({ queryKey: ["branch-items"] })
       toast.success(t("toast_modifier_updated"))
     },
     onError: () => {
@@ -152,12 +151,9 @@ export function useDeleteItemModifier() {
 
   return useMutation({
     mutationFn: ({ id }: { id: string; parentItemId?: string }) => deleteItemModifier(id),
-    onSuccess: (_data, variables) => {
-      if (variables.parentItemId) {
-        queryClient.invalidateQueries({ queryKey: modifierKeys.itemModifiers(variables.parentItemId) })
-      } else {
-        queryClient.invalidateQueries({ queryKey: modifierKeys.all })
-      }
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: modifierKeys.all })
+      queryClient.invalidateQueries({ queryKey: ["branch-items"] })
       toast.success(t("toast_modifier_deleted"))
     },
     onError: () => {

@@ -94,5 +94,7 @@
   "toast_modifier_deleted": "Modificador eliminado correctamente",
   "toast_error_create": "Error al crear. Intenta de nuevo.",
   "toast_error_update": "Error al actualizar. Intenta de nuevo.",
-  "toast_error_delete": "Error al eliminar. Intenta de nuevo."
+  "toast_error_delete": "Error al eliminar. Intenta de nuevo.",
+  "delete_group_title": "Eliminar grupo de modificadores",
+  "delete_modifier_title": "Eliminar modificador"
 }

@@ -79,5 +79,6 @@
   "toast_assignment_error": "Product taxes could not be saved.",
   "no_item_selected": "Select a product to view and edit its taxes.",
   "no_items": "No products available.",
-  "no_active_rates": "There are no active tax rates. Activate at least one in the previous tab."
+  "no_active_rates": "There are no active tax rates. Activate at least one in the previous tab.",
+  "deactivate_title": "Deactivate tax rate"
 }

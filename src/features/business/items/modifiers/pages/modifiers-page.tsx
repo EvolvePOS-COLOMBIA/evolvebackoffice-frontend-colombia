@@ -10,6 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Skeleton } from "@/components/ui/skeleton"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { ConfirmActionDialog } from "@/components/confirm-action-dialog"
 import { notify } from "@/hooks/use-notify"
 import { useTranslation } from "@/i18n/use-i18n"
 import { formatCurrency } from "@/utils/format"
@@ -39,6 +40,10 @@ export function ModifiersPage() {
   const [parentItemId, setParentItemId] = useState("")
   const [modifierDialogOpen, setModifierDialogOpen] = useState(false)
   const [modifierToEdit, setModifierToEdit] = useState<ItemModifier | null>(null)
+
+  // Objetivos de eliminación (confirmación visual, sin confirm() nativo)
+  const [deleteGroupTarget, setDeleteGroupTarget] = useState<ModifierGroup | null>(null)
+  const [deleteModifierTarget, setDeleteModifierTarget] = useState<ItemModifier | null>(null)
 
   const groupsQuery = useModifierGroups()
   const itemsQuery = useItemsForPicker()
@@ -72,8 +77,7 @@ export function ModifiersPage() {
   }
 
   const handleDeleteGroup = (group: ModifierGroup) => {
-    if (!confirm(t("confirm_delete_group", { name: group.name }))) return
-    deleteGroupMutation.mutate({ id: group.id, name: group.name })
+    setDeleteGroupTarget(group)
   }
 
   const handleAddModifier = () => {
@@ -91,8 +95,7 @@ export function ModifiersPage() {
   }
 
   const handleDeleteModifier = (modifier: ItemModifier) => {
-    if (!confirm(t("confirm_delete_modifier"))) return
-    deleteModifierMutation.mutate({ id: modifier.id, parentItemId: modifier.parentItemId })
+    setDeleteModifierTarget(modifier)
   }
 
   if (groupsQuery.isError && !groupsQuery.isLoading) {
@@ -163,13 +166,19 @@ export function ModifiersPage() {
                     value={query}
                     onChange={(e) => setQuery(e.target.value)}
                     placeholder={t("search_placeholder")}
+                    className="h-8 w-full max-w-sm px-3 text-sm sm:h-9"
                   />
                 </div>
                 <div className="flex items-center gap-2">
                   <Badge tone="neutral" className="w-fit">
                     {filteredGroups.length} {t("results")}
                   </Badge>
-                  <Button onClick={openCreateGroup} disabled={isMutating}>
+                  <Button
+                    onClick={openCreateGroup}
+                    disabled={isMutating}
+                    size="sm"
+                    className="h-8 px-2 text-xs sm:h-9 sm:px-3 sm:text-sm"
+                  >
                     <Plus className="size-4" />
                     {t("create_group")}
                   </Button>
@@ -219,27 +228,31 @@ export function ModifiersPage() {
                             {group.isActive ? t("active") : t("inactive")}
                           </Badge>
                         </TableCell>
-                        <TableCell className="text-right">
-                          <div className="flex justify-end gap-2">
+                        <TableCell className="px-1 text-right sm:px-4">
+                          <div className="flex justify-end gap-1 sm:gap-2">
                             <Button
                               type="button"
-                              variant="outline"
-                              size="sm"
+                              variant="secondary"
+                              size="icon"
+                              className="size-7 sm:size-8"
                               onClick={() => openEditGroup(group)}
                               disabled={isMutating}
+                              aria-label={t("edit")}
+                              title={t("edit")}
                             >
-                              <Pencil className="size-4" />
-                              {t("edit")}
+                              <Pencil className="size-3.5 sm:size-4" />
                             </Button>
                             <Button
                               type="button"
-                              variant="outline"
-                              size="sm"
+                              variant="destructive"
+                              size="icon"
+                              className="size-7 sm:size-8"
                               onClick={() => handleDeleteGroup(group)}
                               disabled={isMutating}
+                              aria-label={t("delete")}
+                              title={t("delete")}
                             >
-                              <Trash2 className="size-4" />
-                              {t("delete")}
+                              <Trash2 className="size-3.5 sm:size-4" />
                             </Button>
                           </div>
                         </TableCell>
@@ -277,7 +290,12 @@ export function ModifiersPage() {
                       {modifiers.length} {t("results")}
                     </Badge>
                   ) : null}
-                  <Button onClick={handleAddModifier} disabled={isMutating}>
+                  <Button
+                    onClick={handleAddModifier}
+                    disabled={isMutating}
+                    size="sm"
+                    className="h-8 px-2 text-xs sm:h-9 sm:px-3 sm:text-sm"
+                  >
                     <Plus className="size-4" />
                     {t("add_modifier")}
                   </Button>
@@ -368,27 +386,31 @@ export function ModifiersPage() {
                             {modifier.isActive ? t("active") : t("inactive")}
                           </Badge>
                         </TableCell>
-                        <TableCell className="text-right">
-                          <div className="flex justify-end gap-2">
+                        <TableCell className="px-1 text-right sm:px-4">
+                          <div className="flex justify-end gap-1 sm:gap-2">
                             <Button
                               type="button"
-                              variant="outline"
-                              size="sm"
+                              variant="secondary"
+                              size="icon"
+                              className="size-7 sm:size-8"
                               onClick={() => openEditModifier(modifier)}
                               disabled={isMutating}
+                              aria-label={t("edit")}
+                              title={t("edit")}
                             >
-                              <Pencil className="size-4" />
-                              {t("edit")}
+                              <Pencil className="size-3.5 sm:size-4" />
                             </Button>
                             <Button
                               type="button"
-                              variant="outline"
-                              size="sm"
+                              variant="destructive"
+                              size="icon"
+                              className="size-7 sm:size-8"
                               onClick={() => handleDeleteModifier(modifier)}
                               disabled={isMutating}
+                              aria-label={t("delete")}
+                              title={t("delete")}
                             >
-                              <Trash2 className="size-4" />
-                              {t("delete")}
+                              <Trash2 className="size-3.5 sm:size-4" />
                             </Button>
                           </div>
                         </TableCell>
@@ -420,6 +442,46 @@ export function ModifiersPage() {
         parentItemId={parentItemId}
         modifierToEdit={modifierToEdit}
         items={items}
+      />
+
+      {/* Confirmación visual: eliminar grupo */}
+      <ConfirmActionDialog
+        open={deleteGroupTarget !== null}
+        onOpenChange={(openValue) => {
+          if (!openValue) setDeleteGroupTarget(null)
+        }}
+        title={t("delete_group_title")}
+        description={t("confirm_delete_group", { name: deleteGroupTarget?.name ?? "" })}
+        confirmLabel={t("delete")}
+        tone="destructive"
+        isPending={deleteGroupMutation.isPending}
+        onConfirm={() => {
+          if (!deleteGroupTarget) return
+          deleteGroupMutation.mutate(
+            { id: deleteGroupTarget.id, name: deleteGroupTarget.name },
+            { onSuccess: () => setDeleteGroupTarget(null) }
+          )
+        }}
+      />
+
+      {/* Confirmación visual: eliminar modificador */}
+      <ConfirmActionDialog
+        open={deleteModifierTarget !== null}
+        onOpenChange={(openValue) => {
+          if (!openValue) setDeleteModifierTarget(null)
+        }}
+        title={t("delete_modifier_title")}
+        description={t("confirm_delete_modifier")}
+        confirmLabel={t("delete")}
+        tone="destructive"
+        isPending={deleteModifierMutation.isPending}
+        onConfirm={() => {
+          if (!deleteModifierTarget) return
+          deleteModifierMutation.mutate(
+            { id: deleteModifierTarget.id, parentItemId: deleteModifierTarget.parentItemId },
+            { onSuccess: () => setDeleteModifierTarget(null) }
+          )
+        }}
       />
     </div>
   )

@@ -1,5 +1,5 @@
-import { useMemo, useState } from "react"
-import { Pencil, Power, Plus, RefreshCw, SearchX } from "lucide-react"
+import { Fragment, useMemo, useState } from "react"
+import { ChevronDown, CornerDownRight, Pencil, Power, Plus, RefreshCw, SearchX } from "lucide-react"
 
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
@@ -8,6 +8,7 @@ import { ErrorState } from "@/components/ui/error-state"
 import { Input } from "@/components/ui/input"
 import { Skeleton } from "@/components/ui/skeleton"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
+import { ConfirmActionDialog } from "@/components/confirm-action-dialog"
 import { notify } from "@/hooks/use-notify"
 import { useTranslation } from "@/i18n/use-i18n"
 import { DepartmentFormDialog } from "../components/department-form-dialog"
@@ -19,6 +20,9 @@ export function DepartmentsPage() {
   const [query, setQuery] = useState("")
   const [formOpen, setFormOpen] = useState(false)
   const [selectedDepartment, setSelectedDepartment] = useState<Department | null>(null)
+  // Departamentos padre con el detalle (subdepartamentos) expandido
+  const [expandedIds, setExpandedIds] = useState<Set<string>>(new Set())
+  const [deactivateTarget, setDeactivateTarget] = useState<Department | null>(null)
 
   const { data, isLoading, isError, refetch } = useDepartments(1, 500)
   const setStatusMutation = useSetDepartmentActive()
@@ -27,11 +31,41 @@ export function DepartmentsPage() {
   const totalCount = data?.totalCount ?? 0
   const activeCount = useMemo(() => departments.filter((d) => d.isActive).length, [departments])
 
-  const filtered = useMemo(() => {
-    const q = query.trim().toLowerCase()
-    if (!q) return departments
-    return departments.filter((d) => d.name.toLowerCase().includes(q) || d.code.toLowerCase().includes(q))
-  }, [departments, query])
+  const q = query.trim().toLowerCase()
+  const matches = (d: Department) => !q || d.name.toLowerCase().includes(q) || d.code.toLowerCase().includes(q)
+
+  const deptIds = useMemo(() => new Set(departments.map((d) => d.id)), [departments])
+
+  const childrenByParent = useMemo(() => {
+    const map = new Map<string, Department[]>()
+    for (const d of departments) {
+      if (d.parentPublicId) {
+        const arr = map.get(d.parentPublicId) ?? []
+        arr.push(d)
+        map.set(d.parentPublicId, arr)
+      }
+    }
+    return map
+  }, [departments])
+
+  // Nivel superior: departamentos sin padre (los huérfanos también se listan arriba).
+  const topLevels = useMemo(
+    () => departments.filter((d) => !d.parentPublicId || !deptIds.has(d.parentPublicId)),
+    [departments, deptIds]
+  )
+
+  // Con búsqueda: un padre es visible si él o alguno de sus hijos coincide.
+  const visibleParents = useMemo(() => {
+    if (!q) return topLevels
+    return topLevels.filter((p) => matches(p) || (childrenByParent.get(p.id) ?? []).some(matches))
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [topLevels, q, childrenByParent])
+
+  const shownChildrenCount = useMemo(
+    () => visibleParents.reduce((acc, p) => acc + (childrenByParent.get(p.id) ?? []).filter(matches).length, 0),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [visibleParents, childrenByParent, q]
+  )
 
   const handleCreate = () => {
     setSelectedDepartment(null)
@@ -43,18 +77,28 @@ export function DepartmentsPage() {
     setFormOpen(true)
   }
 
+  const toggleDetails = (id: string) => {
+    setExpandedIds((prev) => {
+      const next = new Set(prev)
+      if (next.has(id)) next.delete(id)
+      else next.add(id)
+      return next
+    })
+  }
+
+  // Activar es directo; desactivar pide confirmación visual.
   const handleToggleStatus = (dept: Department) => {
-    const confirmMsg = dept.isActive
-      ? t("confirm_deactivate", { name: dept.name })
-      : t("confirm_activate", { name: dept.name })
-    if (!confirm(confirmMsg)) return
-    setStatusMutation.mutate(
-      { id: dept.id, active: !dept.isActive },
-      {
-        onSuccess: () => notify.success(t("success_status")),
-        onError: () => notify.error(t("error_load_title")),
-      }
-    )
+    if (dept.isActive) {
+      setDeactivateTarget(dept)
+    } else {
+      setStatusMutation.mutate(
+        { id: dept.id, active: true },
+        {
+          onSuccess: () => notify.success(t("success_status")),
+          onError: () => notify.error(t("error_status")),
+        }
+      )
+    }
   }
 
   const isMutating = setStatusMutation.isPending
@@ -103,7 +147,12 @@ export function DepartmentsPage() {
               <CardTitle>{t("page_title")}</CardTitle>
               <CardDescription>{t("search_placeholder")}</CardDescription>
             </div>
-            <Button onClick={handleCreate} disabled={isMutating}>
+            <Button
+              onClick={handleCreate}
+              disabled={isMutating}
+              size="sm"
+              className="h-8 px-2 text-xs sm:h-9 sm:px-3 sm:text-sm"
+            >
               <Plus className="size-4" />
               {t("create")}
             </Button>
@@ -113,16 +162,21 @@ export function DepartmentsPage() {
         <CardContent className="space-y-4 pt-6">
           <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
             <div className="max-w-xl flex-1">
-              <Input value={query} onChange={(e) => setQuery(e.target.value)} placeholder={t("search_placeholder")} />
+              <Input
+                value={query}
+                onChange={(e) => setQuery(e.target.value)}
+                placeholder={t("search_placeholder")}
+                className="h-8 w-full max-w-sm px-3 text-sm sm:h-9"
+              />
             </div>
             <Badge tone="neutral" className="w-fit">
-              {filtered.length} {t("results")}
+              {visibleParents.length + shownChildrenCount} {t("results")}
             </Badge>
           </div>
 
           {isLoading ? (
             <DepartmentsSkeleton />
-          ) : filtered.length === 0 ? (
+          ) : visibleParents.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-12 text-muted-foreground">
               <SearchX className="mb-3 size-10 opacity-40" />
               <p className="text-sm">{query ? t("no_results") : t("empty_desc")}</p>
@@ -138,50 +192,85 @@ export function DepartmentsPage() {
                 <TableRow>
                   <TableHead>{t("code_label")}</TableHead>
                   <TableHead>{t("name_label")}</TableHead>
-                  <TableHead className="hidden sm:table-cell">{t("parent_label")}</TableHead>
                   <TableHead>{t("status_label")}</TableHead>
                   <TableHead className="text-right">{t("actions")}</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {filtered.map((d) => (
-                  <TableRow key={d.id}>
-                    <TableCell className="font-mono text-muted-foreground">{d.code}</TableCell>
-                    <TableCell className="font-medium">{d.name}</TableCell>
-                    <TableCell className="hidden text-muted-foreground sm:table-cell">
-                      {d.parentName ?? t("no_parent")}
-                    </TableCell>
-                    <TableCell>
-                      <Badge tone={d.isActive ? "success" : "neutral"}>
-                        {d.isActive ? t("active") : t("inactive")}
-                      </Badge>
-                    </TableCell>
-                    <TableCell className="text-right">
-                      <div className="flex justify-end gap-2">
-                        <Button
-                          type="button"
-                          variant="outline"
-                          size="sm"
-                          onClick={() => handleEdit(d)}
-                          disabled={isMutating}
-                        >
-                          <Pencil className="size-4" />
-                          {t("edit")}
-                        </Button>
-                        <Button
-                          type="button"
-                          variant="outline"
-                          size="sm"
-                          onClick={() => handleToggleStatus(d)}
-                          disabled={isMutating}
-                        >
-                          <Power className="size-4" />
-                          {d.isActive ? t("deactivate") : t("activate")}
-                        </Button>
-                      </div>
-                    </TableCell>
-                  </TableRow>
-                ))}
+                {visibleParents.map((parent) => {
+                  const children = childrenByParent.get(parent.id) ?? []
+                  const matchingChildren = children.filter(matches)
+                  const isOpen = expandedIds.has(parent.id) || (q.length > 0 && matchingChildren.length > 0)
+
+                  return (
+                    <Fragment key={parent.id}>
+                      <TableRow>
+                        <TableCell className="font-mono text-muted-foreground">{parent.code}</TableCell>
+                        <TableCell>
+                          <div className="flex items-center gap-1.5">
+                            {children.length > 0 ? (
+                              <Button
+                                type="button"
+                                variant="secondary"
+                                size="icon"
+                                className="size-6 shrink-0 sm:size-7"
+                                onClick={() => toggleDetails(parent.id)}
+                                aria-label={isOpen ? t("hide_details") : t("details")}
+                                title={isOpen ? t("hide_details") : t("details")}
+                              >
+                                <ChevronDown
+                                  className={`size-3.5 transition-transform sm:size-4 ${isOpen ? "rotate-180" : ""}`}
+                                />
+                              </Button>
+                            ) : (
+                              <span className="w-6 shrink-0 sm:w-7" aria-hidden="true" />
+                            )}
+                            <span className="font-medium">{parent.name}</span>
+                          </div>
+                        </TableCell>
+                        <TableCell>
+                          <Badge tone={parent.isActive ? "success" : "neutral"}>
+                            {parent.isActive ? t("active") : t("inactive")}
+                          </Badge>
+                        </TableCell>
+                        <TableCell className="px-1 text-right sm:px-4">
+                          <ActionsCell
+                            dept={parent}
+                            isMutating={isMutating}
+                            onEdit={handleEdit}
+                            onToggle={handleToggleStatus}
+                          />
+                        </TableCell>
+                      </TableRow>
+
+                      {isOpen &&
+                        matchingChildren.map((child) => (
+                          <TableRow key={child.id} className="bg-muted/30 hover:bg-muted/45">
+                            <TableCell className="font-mono text-muted-foreground">{child.code}</TableCell>
+                            <TableCell>
+                              <div className="flex items-center gap-1.5 pl-7 sm:pl-9">
+                                <CornerDownRight className="size-3.5 shrink-0 text-muted-foreground" />
+                                <span className="text-muted-foreground">{child.name}</span>
+                              </div>
+                            </TableCell>
+                            <TableCell>
+                              <Badge tone={child.isActive ? "success" : "neutral"}>
+                                {child.isActive ? t("active") : t("inactive")}
+                              </Badge>
+                            </TableCell>
+                            <TableCell className="px-1 text-right sm:px-4">
+                              <ActionsCell
+                                dept={child}
+                                isMutating={isMutating}
+                                onEdit={handleEdit}
+                                onToggle={handleToggleStatus}
+                              />
+                            </TableCell>
+                          </TableRow>
+                        ))}
+                    </Fragment>
+                  )
+                })}
               </TableBody>
             </Table>
           )}
@@ -196,6 +285,75 @@ export function DepartmentsPage() {
         }}
         departmentToEdit={selectedDepartment}
       />
+
+      {/* Confirmación visual: desactivar departamento */}
+      <ConfirmActionDialog
+        open={deactivateTarget !== null}
+        onOpenChange={(openValue) => {
+          if (!openValue) setDeactivateTarget(null)
+        }}
+        title={t("deactivate_title")}
+        description={t("confirm_deactivate", { name: deactivateTarget?.name ?? "" })}
+        confirmLabel={t("deactivate")}
+        tone="destructive"
+        isPending={isMutating}
+        onConfirm={() => {
+          if (!deactivateTarget) return
+          setStatusMutation.mutate(
+            { id: deactivateTarget.id, active: false },
+            {
+              onSuccess: () => {
+                notify.success(t("success_status"))
+                setDeactivateTarget(null)
+              },
+              onError: () => notify.error(t("error_status")),
+            }
+          )
+        }}
+      />
+    </div>
+  )
+}
+
+/** Acciones de fila solo con íconos (misma presentación que el catálogo de productos). */
+function ActionsCell({
+  dept,
+  isMutating,
+  onEdit,
+  onToggle,
+}: {
+  dept: Department
+  isMutating: boolean
+  onEdit: (dept: Department) => void
+  onToggle: (dept: Department) => void
+}) {
+  const { t } = useTranslation("business-items-departments")
+  return (
+    <div className="flex justify-end gap-1 sm:gap-2">
+      <Button
+        type="button"
+        variant="secondary"
+        size="icon"
+        className="size-7 sm:size-8"
+        onClick={() => onEdit(dept)}
+        disabled={isMutating}
+        aria-label={t("edit")}
+        title={t("edit")}
+      >
+        <Pencil className="size-3.5 sm:size-4" />
+      </Button>
+      <Button
+        type="button"
+        variant={dept.isActive ? "destructive" : "secondary"}
+        size="icon"
+        className="size-7 sm:size-8"
+        onClick={() => onToggle(dept)}
+        disabled={isMutating}
+        aria-label={dept.isActive ? t("deactivate") : t("activate")}
+        title={dept.isActive ? t("deactivate") : t("activate")}
+      >
+        <Power className="size-3.5 sm:size-4" />
+      </Button>
     </div>
   )
 }

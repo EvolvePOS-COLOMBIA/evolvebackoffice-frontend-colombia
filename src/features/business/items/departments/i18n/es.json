@@ -43,5 +43,9 @@
   "name_required": "El nombre es requerido.",
   "name_max": "El nombre no puede superar {{max}} caracteres.",
   "cancel": "Cancelar",
-  "saving": "Guardando..."
+  "saving": "Guardando...",
+  "details": "Ver subdepartamentos",
+  "hide_details": "Ocultar subdepartamentos",
+  "deactivate_title": "Desactivar departamento",
+  "error_status": "No se pudo actualizar el estado."
 }

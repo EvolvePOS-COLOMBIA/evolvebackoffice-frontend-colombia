@@ -43,5 +43,9 @@
   "name_required": "Name is required.",
   "name_max": "Name cannot exceed {{max}} characters.",
   "cancel": "Cancel",
-  "saving": "Saving..."
+  "saving": "Saving...",
+  "details": "View subdepartments",
+  "hide_details": "Hide subdepartments",
+  "deactivate_title": "Deactivate department",
+  "error_status": "Status could not be updated."
 }

@@ -94,5 +94,7 @@
   "toast_modifier_deleted": "Modifier deleted successfully",
   "toast_error_create": "Error creating. Please try again.",
   "toast_error_update": "Error updating. Please try again.",
-  "toast_error_delete": "Error deleting. Please try again."
+  "toast_error_delete": "Error deleting. Please try again.",
+  "delete_group_title": "Delete modifier group",
+  "delete_modifier_title": "Delete modifier"
 }

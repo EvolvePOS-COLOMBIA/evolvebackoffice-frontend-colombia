@@ -11,6 +11,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Skeleton } from "@/components/ui/skeleton"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { ConfirmActionDialog } from "@/components/confirm-action-dialog"
 import { notify } from "@/hooks/use-notify"
 import { useTranslation } from "@/i18n/use-i18n"
 import type { ItemResponseDto } from "../../catalog/types"
@@ -32,6 +33,7 @@ export function TaxesPage() {
   const [query, setQuery] = useState("")
   const [formOpen, setFormOpen] = useState(false)
   const [selectedTaxRate, setSelectedTaxRate] = useState<TaxRate | null>(null)
+  const [deactivateTarget, setDeactivateTarget] = useState<TaxRate | null>(null)
   // Vive en la página para no perder el producto seleccionado al cambiar de pestaña
   const [assignItemId, setAssignItemId] = useState("")
 
@@ -64,12 +66,13 @@ export function TaxesPage() {
     setFormOpen(true)
   }
 
+  // Activar es directo; desactivar pide confirmación visual.
   const handleToggleStatus = (taxRate: TaxRate) => {
-    const confirmMsg = taxRate.isActive
-      ? t("confirm_deactivate", { name: taxRate.name })
-      : t("confirm_activate", { name: taxRate.name })
-    if (!confirm(confirmMsg)) return
-    setStatusMutation.mutate({ id: taxRate.id, active: !taxRate.isActive })
+    if (taxRate.isActive) {
+      setDeactivateTarget(taxRate)
+    } else {
+      setStatusMutation.mutate({ id: taxRate.id, active: true })
+    }
   }
 
   const isMutating = setStatusMutation.isPending
@@ -139,13 +142,19 @@ export function TaxesPage() {
                     value={query}
                     onChange={(e) => setQuery(e.target.value)}
                     placeholder={t("search_placeholder")}
+                    className="h-8 w-full max-w-sm px-3 text-sm sm:h-9"
                   />
                 </div>
                 <div className="flex items-center gap-2">
                   <Badge tone="neutral" className="w-fit">
                     {filtered.length} {t("results")}
                   </Badge>
-                  <Button onClick={handleCreate} disabled={isMutating}>
+                  <Button
+                    onClick={handleCreate}
+                    disabled={isMutating}
+                    size="sm"
+                    className="h-8 px-2 text-xs sm:h-9 sm:px-3 sm:text-sm"
+                  >
                     <Plus className="size-4" />
                     {t("create")}
                   </Button>
@@ -200,27 +209,31 @@ export function TaxesPage() {
                             {r.isActive ? t("active") : t("inactive")}
                           </Badge>
                         </TableCell>
-                        <TableCell className="text-right">
-                          <div className="flex justify-end gap-2">
+                        <TableCell className="px-1 text-right sm:px-4">
+                          <div className="flex justify-end gap-1 sm:gap-2">
                             <Button
                               type="button"
-                              variant="outline"
-                              size="sm"
+                              variant="secondary"
+                              size="icon"
+                              className="size-7 sm:size-8"
                               onClick={() => handleEdit(r)}
                               disabled={isMutating}
+                              aria-label={t("edit")}
+                              title={t("edit")}
                             >
-                              <Pencil className="size-4" />
-                              {t("edit")}
+                              <Pencil className="size-3.5 sm:size-4" />
                             </Button>
                             <Button
                               type="button"
-                              variant="outline"
-                              size="sm"
+                              variant={r.isActive ? "destructive" : "secondary"}
+                              size="icon"
+                              className="size-7 sm:size-8"
                               onClick={() => handleToggleStatus(r)}
                               disabled={isMutating}
+                              aria-label={r.isActive ? t("deactivate") : t("activate")}
+                              title={r.isActive ? t("deactivate") : t("activate")}
                             >
-                              <Power className="size-4" />
-                              {r.isActive ? t("deactivate") : t("activate")}
+                              <Power className="size-3.5 sm:size-4" />
                             </Button>
                           </div>
                         </TableCell>
@@ -245,6 +258,26 @@ export function TaxesPage() {
           if (!open) setSelectedTaxRate(null)
         }}
         taxRateToEdit={selectedTaxRate}
+      />
+
+      {/* Confirmación visual: desactivar tasa de impuesto */}
+      <ConfirmActionDialog
+        open={deactivateTarget !== null}
+        onOpenChange={(openValue) => {
+          if (!openValue) setDeactivateTarget(null)
+        }}
+        title={t("deactivate_title")}
+        description={t("confirm_deactivate", { name: deactivateTarget?.name ?? "" })}
+        confirmLabel={t("deactivate")}
+        tone="destructive"
+        isPending={isMutating}
+        onConfirm={() => {
+          if (!deactivateTarget) return
+          setStatusMutation.mutate(
+            { id: deactivateTarget.id, active: false },
+            { onSuccess: () => setDeactivateTarget(null) }
+          )
+        }}
       />
     </div>
   )

@@ -79,5 +79,6 @@
   "toast_assignment_error": "No se pudieron guardar los impuestos del producto.",
   "no_item_selected": "Selecciona un producto para ver y editar sus impuestos.",
   "no_items": "No hay productos disponibles.",
-  "no_active_rates": "No hay tasas de impuesto activas. Activa al menos una en la pestaña anterior."
+  "no_active_rates": "No hay tasas de impuesto activas. Activa al menos una en la pestaña anterior.",
+  "deactivate_title": "Desactivar tasa de impuesto"
 }

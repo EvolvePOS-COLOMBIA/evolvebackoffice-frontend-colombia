@@ -26,4 +26,4 @@ export const ORDER_STATUS_CONFIG: Record<string, { label: string; color: string;
   Cancelled: { label: "Cancelado", color: "danger", bgClass: "bg-red-50 border-red-200" },
 }
 
-export const KANBAN_COLUMNS = ["Pending", "Confirmed", "Preparing", "Ready", "Shipped"] as const
+export const KANBAN_COLUMNS = ["Pending", "Confirmed", "Preparing", "Ready", "Shipped", "Delivered"] as const

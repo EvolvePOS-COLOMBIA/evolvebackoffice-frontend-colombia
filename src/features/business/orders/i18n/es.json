@@ -69,14 +69,12 @@
   "order_create_error": "Error al crear orden",
   "new_order": "Nueva Orden",
   "customer_name": "Nombre del cliente",
-  "phone": "Teléfono",
-  "address": "Dirección",
-  "notes": "Notas",
   "create_order": "Crear Orden",
   "store_active": "Tienda activa — aceptando pedidos",
   "store_inactive": "Tienda inactiva — no aceptará pedidos",
   "activate_store": "Activar tienda",
   "activating_store": "Activando...",
   "store_activated": "Tienda activada — webhooks configurados, ya puede aceptar pedidos",
-  "store_activation_failed": "No se pudo activar la tienda"
+  "store_activation_failed": "No se pudo activar la tienda",
+  "viewing_branch": "Sucursal consultada"
 }

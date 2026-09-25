@@ -4,11 +4,14 @@ import { useNotify } from "@/hooks/use-notify"
 import Spinner from "@/components/Spinner"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { Card, CardContent } from "@/components/ui/card"
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { RefreshCw, Truck, Settings, Plus, Store, ShoppingCart, AlertTriangle } from "lucide-react"
+import { useQueries } from "@tanstack/react-query"
 import { useBranches } from "@/features/business/branches/hooks/use-branches"
-import { useBranchModules } from "@/features/business/branches/hooks/use-branch-modules"
+import { branchModulesKeys, useBranchModules } from "@/features/business/branches/hooks/use-branch-modules"
+import { getBranchModules } from "@/features/business/branches/services/branch-modules.service"
+import { BranchSelector } from "@/features/business/items/catalog/components/branch-selector"
 import { useOrders, useBranchIntegrations, useUpdateOrderStatus } from "../hooks/use-orders"
 import { OrdersKanban } from "../components/orders-kanban"
 import { OrderDetailDialog } from "../components/order-detail-dialog"
@@ -17,6 +20,9 @@ import { KANBAN_COLUMNS, ORDER_STATUS_CONFIG } from "../types"
 import type { OrderListItem, OrderStatus } from "../types/api"
 
 type PlatformFilter = "all" | "CLUVI" | "WOOCOMMERCE" | "POSCO"
+
+/** Clave de localStorage para recordar la sucursal consultada en Órdenes. */
+const ORDERS_BRANCH_STORAGE_KEY = "business.orders.branchId"
 
 export function OrdersPage() {
   const { t } = useTranslation("business-orders")
@@ -27,8 +33,36 @@ export function OrdersPage() {
   const [configPlatform, setConfigPlatform] = useState<string>("CLUVI")
   const [platformFilter, setPlatformFilter] = useState<PlatformFilter>("all")
 
-  const { data: branchesData } = useBranches(1, 1)
-  const branchId = branchesData?.data?.[0]?.id ?? ""
+  // Sucursal consultada: selección visible con persistencia local.
+  // (Antes se tomaba branches[0] a ciegas y no se veía cuál era.)
+  const [selectedBranchId, setSelectedBranchId] = useState<string | null>(() =>
+    localStorage.getItem(ORDERS_BRANCH_STORAGE_KEY)
+  )
+  const { data: branchesData } = useBranches(1, 50)
+  const branches = branchesData?.data ?? []
+
+  // Módulos de cada sucursal (misma query key que useBranchModules → caché compartida)
+  const moduleQueries = useQueries({
+    queries: branches.map((b) => ({
+      queryKey: branchModulesKeys.list(b.id),
+      queryFn: () => getBranchModules(b.id),
+      staleTime: 60_000,
+    })),
+  })
+  // Solo sucursales con el módulo ORDERS activo se muestran en el selector
+  const branchesWithOrdersModule = branches.filter(
+    (_, i) => moduleQueries[i]?.data?.some((m) => m.moduleCode === "ORDERS" && m.isEnabled) ?? false
+  )
+
+  const branchId =
+    selectedBranchId && branchesWithOrdersModule.some((b) => b.id === selectedBranchId)
+      ? selectedBranchId
+      : (branchesWithOrdersModule[0]?.id ?? "")
+
+  const handleBranchChange = (id: string) => {
+    localStorage.setItem(ORDERS_BRANCH_STORAGE_KEY, id)
+    setSelectedBranchId(id)
+  }
 
   const { data: branchModules } = useBranchModules(branchId)
   const hasOrdersModule = branchModules?.some((m) => m.moduleCode === "ORDERS" && m.isEnabled)
@@ -37,7 +71,8 @@ export function OrdersPage() {
   const hasCluviIntegration = integrations?.some((i) => i.platformCode === "CLUVI" && i.isActive)
   const hasWooIntegration = integrations?.some((i) => i.platformCode === "WOOCOMMERCE" && i.isActive)
 
-  const { data: ordersData, isLoading, refetch } = useOrders(1, 500)
+  // enabled=!!branchId: no se pide órdenes sin sucursal (evita una petición sin filtrar mientras carga la lista)
+  const { data: ordersData, isLoading, refetch } = useOrders(1, 500, branchId ? { branchId } : undefined, !!branchId)
   const updateStatusMutation = useUpdateOrderStatus()
 
   const allOrders = ordersData?.data ?? []
@@ -93,7 +128,15 @@ export function OrdersPage() {
           <h1 className="text-2xl font-bold tracking-tight">{t("orders")}</h1>
           <p className="text-muted-foreground">{t("orders_desc")}</p>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center justify-end gap-2">
+          <span className="hidden text-sm text-muted-foreground md:inline">{t("viewing_branch")}</span>
+          <BranchSelector
+            options={branchesWithOrdersModule.map((b) => ({ id: b.id, name: b.name }))}
+            selectedId={branchId || null}
+            onSelect={(id) => {
+              if (id) handleBranchChange(id)
+            }}
+          />
           <Button variant="outline" size="sm" onClick={() => refetch()}>
             <RefreshCw className="mr-2 h-4 w-4" />
             {t("refresh")}
@@ -188,24 +231,7 @@ export function OrdersPage() {
         </TabsList>
       </Tabs>
 
-      {/* Stats Row */}
-      <div className="grid gap-4 md:grid-cols-5">
-        {KANBAN_COLUMNS.map((status) => {
-          const config = ORDER_STATUS_CONFIG[status]
-          return (
-            <Card key={status}>
-              <CardHeader className="flex flex-row items-center justify-between pb-2">
-                <CardTitle className="text-xs font-medium">{config?.label}</CardTitle>
-                <Badge variant={config?.color as "warning" | "info" | "purple" | "success"}>
-                  {ordersByStatus[status]?.length ?? 0}
-                </Badge>
-              </CardHeader>
-            </Card>
-          )
-        })}
-      </div>
-
-      {/* Kanban Board */}
+      {/* Kanban Board (los encabezados con conteo viven en la columna, sin fila de títulos duplicada) */}
       {isLoading ? (
         <div className="flex justify-center py-16">
           <Spinner className="h-8 w-8" />

@@ -22,11 +22,13 @@ export const ordersKeys = {
 export function useOrders(
   page: number,
   pageSize: number,
-  filters?: { branchId?: string; status?: string; platform?: string }
+  filters?: { branchId?: string; status?: string; platform?: string },
+  enabled = true
 ) {
   return useQuery({
     queryKey: ordersKeys.list(page, pageSize, filters as Record<string, string>),
     queryFn: () => getOrders(page, pageSize, filters),
+    enabled,
   })
 }
 

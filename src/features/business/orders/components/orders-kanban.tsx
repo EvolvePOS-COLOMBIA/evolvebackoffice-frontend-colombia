@@ -31,7 +31,7 @@ export function OrdersKanban({ ordersByStatus, onDragEnd, onViewDetail }: Orders
           const orders = ordersByStatus[status] ?? []
 
           return (
-            <div key={status} className="min-w-[300px] flex-1">
+            <div key={status} className="min-w-[270px] flex-1 sm:min-w-[300px]">
               <Card className="h-full">
                 <CardHeader className="pb-3">
                   <div className="flex items-center justify-between">

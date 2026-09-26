@@ -123,12 +123,12 @@ export function OrdersPage() {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h1 className="text-2xl font-bold tracking-tight">{t("orders")}</h1>
           <p className="text-muted-foreground">{t("orders_desc")}</p>
         </div>
-        <div className="flex flex-wrap items-center justify-end gap-2">
+        <div className="flex flex-wrap items-center justify-start gap-2 sm:justify-end">
           <span className="hidden text-sm text-muted-foreground md:inline">{t("viewing_branch")}</span>
           <BranchSelector
             options={branchesWithOrdersModule.map((b) => ({ id: b.id, name: b.name }))}
@@ -169,7 +169,7 @@ export function OrdersPage() {
       )}
 
       {/* Integration Status */}
-      <div className="flex gap-3">
+      <div className="grid gap-3 sm:grid-cols-2">
         <Card className="flex-1">
           <CardContent className="flex items-center gap-3 py-3">
             <Truck className="h-5 w-5 text-muted-foreground" />
@@ -202,7 +202,7 @@ export function OrdersPage() {
 
       {/* Platform Filter Tabs */}
       <Tabs value={platformFilter} onValueChange={(v) => setPlatformFilter(v as PlatformFilter)}>
-        <TabsList>
+        <TabsList className="max-w-full flex-wrap gap-1">
           <TabsTrigger value="all" className="gap-1.5">
             <ShoppingCart className="h-3.5 w-3.5" />
             Todas

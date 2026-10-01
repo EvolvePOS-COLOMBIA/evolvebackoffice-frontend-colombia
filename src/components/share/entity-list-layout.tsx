@@ -10,6 +10,10 @@ import { cn } from "@/lib/utils"
 import { StatTile } from "./stat-tile"
 import type { EntityListLayoutBaseProps, EntityListLayoutProps, StatConfig, ToolbarConfig } from "./types"
 
+// Symbol marker identifies the hero zone without relying on function identity:
+// thin wrappers that copy statics (Object.assign / hoist-non-react-statics) keep it.
+const HERO_MARKER: unique symbol = Symbol.for("EntityListLayout.Hero")
+
 export type ContainerProps = ComponentProps<"div">
 
 export type HeroProps = Omit<ComponentProps<"div">, "children"> & {
@@ -36,6 +40,18 @@ function Hero({ children, decorative = true, className, ...props }: HeroProps) {
   )
 }
 
+Object.assign(Hero, { [HERO_MARKER]: true })
+
+function isHeroElement(item: ReactNode): boolean {
+  if (!isValidElement(item)) return false
+  if (item.type === Hero) return true
+  const { type } = item
+  // Wrappers that forward the static marker still classify as the hero zone.
+  if (typeof type === "function") return HERO_MARKER in type
+  if (typeof type === "object" && type !== null) return HERO_MARKER in type
+  return false
+}
+
 function Container({ children, className, ...props }: ContainerProps) {
   const items = Children.toArray(children)
   const headerZones: ReactNode[] = []
@@ -43,7 +59,7 @@ function Container({ children, className, ...props }: ContainerProps) {
   let bodyStarted = false
 
   for (const item of items) {
-    const isLeadingHero = !bodyStarted && isValidElement(item) && item.type === Hero
+    const isLeadingHero = !bodyStarted && isHeroElement(item)
     if (isLeadingHero) {
       headerZones.push(item)
     } else {
@@ -149,21 +165,22 @@ function EntityListLayoutImpl(
 ): ReactElement
 function EntityListLayoutImpl(props: EntityListLayoutProps): ReactElement
 function EntityListLayoutImpl(props: EntityListLayoutProps): ReactElement {
-  const { back, title, description, stats, toolbar, hero, decorative = true, className, children } = props
+  const { back, title, description, eyebrow, stats, toolbar, hero, decorative = true, className, children } = props
 
   const hasCustomHero = hero !== undefined && hero !== null && hero !== false
 
   let heroZone: ReactNode = null
   if (hasCustomHero) {
     heroZone = <Hero decorative={decorative}>{hero}</Hero>
-  } else if (back || title || description || hasStatsContent(stats)) {
-    const hasLeftContent = Boolean(back || title || description)
+  } else if (eyebrow || back || title || description || hasStatsContent(stats)) {
+    const hasLeftContent = Boolean(eyebrow || back || title || description)
     heroZone = (
       <Hero decorative={decorative}>
         <div className="flex flex-col gap-5 xl:flex-row xl:items-start xl:justify-between">
           {hasLeftContent ? (
             <div className="relative min-w-0 space-y-3 xl:flex-1">
               {back ? <BackLink to={back.to}>{back.label}</BackLink> : null}
+              {eyebrow}
               {title || description ? (
                 <div className="space-y-1">
                   {title ? (

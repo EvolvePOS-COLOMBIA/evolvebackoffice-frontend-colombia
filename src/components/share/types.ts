@@ -28,6 +28,8 @@ export type ToolbarConfig = {
 }
 
 export type EntityListLayoutBaseProps = {
+  /** Badge/eyebrow content rendered above the title (hero zone). */
+  eyebrow?: ReactNode
   back?: BackLinkConfig
   title?: string
   description?: string

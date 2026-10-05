@@ -62,5 +62,11 @@
   "copied": "Copiado al portapapeles",
   "close": "Cerrar",
   "no_tenant": "Sin tenant",
-  "events_with_exception": "Este evento incluye una excepción"
+  "events_with_exception": "Este evento incluye una excepción",
+  "explain_with_ai": "Explicar con IA",
+  "explain_again": "Explicar de nuevo",
+  "explaining": "Explicando…",
+  "explaining_hint": "La IA está analizando el evento…",
+  "ai_explanation": "Explicación de la IA",
+  "explain_error": "No se pudo explicar el evento con la IA"
 }

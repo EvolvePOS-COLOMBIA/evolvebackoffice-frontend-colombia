@@ -26,6 +26,7 @@ import { OrdersPage } from "@/features/business/orders/pages/orders-page"
 import { OrderClosingPage } from "@/features/business/orders/pages/order-closing-page"
 import { BranchTerminalSettingsPage } from "@/features/business/branches/terminals/pages/branch-terminal-settings-page"
 import { BranchConfigPage } from "@/features/business/branches/config/pages/branch-config-page"
+import { AiChatPage } from "@/features/business/ai-chat/pages/ai-chat-page"
 import { MarketingPage } from "@/features/marketing/pages/marketing-page"
 import { TenantsPage } from "@/features/platform/tenants/pages/tenants-page"
 import { TenantDetailPage } from "@/features/platform/tenants/pages/tenant-detail-page"
@@ -33,6 +34,7 @@ import { TenantCreatePage } from "@/features/platform/tenants/pages/tenant-creat
 import { PlatformDashboardPage } from "@/features/platform/dashboard/pages/platform-dashboard-page"
 import { PlatformUsersPage } from "@/features/platform/users/pages/platform-users-page"
 import { EmailSettingsPage } from "@/features/platform/email/pages/email-settings-page"
+import { AiSettingsPage } from "@/features/platform/ai-settings/pages/ai-settings-page"
 import { LogsPage } from "@/features/platform/logs/pages/logs-page"
 import { OnboardingGate } from "@/routes/onboarding-gate"
 import { ProtectedRoute } from "@/routes/protected-route"
@@ -76,6 +78,7 @@ function AppRoutesContent() {
           <Route path="/platform/tenants/:id" element={<TenantDetailPage />} />
           <Route path="/platform/users" element={<PlatformUsersPage />} />
           <Route path="/platform/email-settings" element={<EmailSettingsPage />} />
+          <Route path="/platform/ai-settings" element={<AiSettingsPage />} />
           <Route path="/platform/logs" element={<LogsPage />} />
         </Route>
       </Route>
@@ -100,6 +103,7 @@ function AppRoutesContent() {
             <Route path="/business/people/users" element={<UsersCatalogPage />} />
             <Route path="/business/people/customers" element={<CustomersPage />} />
             <Route path="/business/reports" element={<ReportsPage />} />
+            <Route path="/business/ai-chat" element={<AiChatPage />} />
             <Route path="/business/settings" element={<SettingsPage />} />
             <Route path="/business/settings/registers" element={<RegistersPage />} />
             <Route path="/business/settings/payment-methods" element={<PaymentMethodsPage />} />

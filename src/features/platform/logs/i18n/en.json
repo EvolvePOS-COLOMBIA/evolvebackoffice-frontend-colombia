@@ -62,5 +62,11 @@
   "copied": "Copied to clipboard",
   "close": "Close",
   "no_tenant": "No tenant",
-  "events_with_exception": "This event includes an exception"
+  "events_with_exception": "This event includes an exception",
+  "explain_with_ai": "Explain with AI",
+  "explain_again": "Explain again",
+  "explaining": "Explaining…",
+  "explaining_hint": "The AI is analyzing the event…",
+  "ai_explanation": "AI explanation",
+  "explain_error": "Could not explain this event with the AI"
 }

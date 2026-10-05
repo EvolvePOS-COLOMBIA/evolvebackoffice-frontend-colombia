@@ -9,6 +9,7 @@ export type Namespace =
   | "platform-clients"
   | "platform-tenants"
   | "platform-email"
+  | "platform-ai-settings"
   | "platform-logs"
   | "platform-users"
   | "business-dashboard"
@@ -31,6 +32,7 @@ export type Namespace =
   | "business-suppliers"
   | "business-payment-methods"
   | "business-credit"
+  | "business-ai-chat"
   | "marketing"
 
 export function useTranslation(ns: Namespace = "common") {

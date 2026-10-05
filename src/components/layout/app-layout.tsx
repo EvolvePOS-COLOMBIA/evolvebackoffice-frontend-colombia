@@ -6,6 +6,7 @@ import { Sidebar } from "@/components/layout/sidebar"
 import { useAuth } from "@/features/auth/hooks/use-auth"
 import { ChangePasswordDialog } from "@/features/auth/components/change-password-dialog"
 import { useNewOrderNotifications } from "@/features/business/orders/hooks/use-new-order-notifications"
+import { AiChatWidget } from "@/features/business/ai-chat/components/ai-chat-widget"
 
 export function AppLayout() {
   const { session } = useAuth()
@@ -43,6 +44,7 @@ export function AppLayout() {
       </div>
 
       <ChangePasswordDialog open={mustChangePassword} onPasswordChanged={() => setPasswordChanged(true)} />
+      <AiChatWidget />
     </div>
   )
 }

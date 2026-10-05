@@ -1,5 +1,6 @@
 import {
   BarChart3,
+  Bot,
   Building2,
   LayoutDashboard,
   LogOut,
@@ -49,12 +50,14 @@ const platformNavigationItems = [
   { to: "/platform/tenants", labelKey: "tenants", icon: Building2 },
   { to: "/platform/users", labelKey: "users", icon: Users },
   { to: "/platform/email-settings", labelKey: "email_settings", icon: Mail },
+  { to: "/platform/ai-settings", labelKey: "ai_settings", icon: Bot },
   { to: "/platform/logs", labelKey: "logs", icon: ScrollText },
 ]
 
 const businessNavigationItems = [
   { to: "/business/dashboard", labelKey: "dashboard", icon: LayoutDashboard },
   { to: "/business/orders", labelKey: "orders", icon: Truck },
+  { to: "/business/ai-chat", labelKey: "ai_chat", icon: Sparkles },
   { to: "/business/items", labelKey: "items", icon: Package },
   { to: "/business/inventory", labelKey: "inventory", icon: Building2 },
   { to: "/business/people", labelKey: "people", icon: Users },
@@ -96,14 +99,16 @@ export function SidebarContent({
   // licencia (módulo de tenant) asignada y habilitada.
   const { data: tenantModules, isLoading: tenantModulesLoading } = useTenantModules(isBusinessAdmin)
   const hasOrdersLicense = isPlatformAdmin || (tenantModules ?? []).some((m) => m.isEnabled)
+  // El Asistente IA requiere específicamente el módulo "IA" habilitado.
+  const hasAiLicense = isPlatformAdmin || (tenantModules ?? []).some((m) => m.moduleCode === "IA" && m.isEnabled)
 
   const baseNavigationItems = isPlatformAdmin ? platformNavigationItems : businessNavigationItems
   const navigationItems = baseNavigationItems.filter((item) => {
-    if (item.labelKey !== "orders") return true
+    if (item.labelKey !== "orders" && item.labelKey !== "ai_chat") return true
     // Evita parpadeo: oculto hasta confirmar licencias (salvo platform admin).
     if (isPlatformAdmin) return true
     if (tenantModulesLoading) return false
-    return hasOrdersLicense
+    return item.labelKey === "orders" ? hasOrdersLicense : hasAiLicense
   })
 
   return (
@@ -158,7 +163,9 @@ export function SidebarContent({
                         | "reports"
                         | "settings"
                         | "orders"
+                        | "ai_chat"
                         | "logs"
+                        | "ai_settings"
                     )
                   : undefined
               }
@@ -185,7 +192,9 @@ export function SidebarContent({
                       | "users"
                       | "email_settings"
                       | "orders"
+                      | "ai_chat"
                       | "logs"
+                      | "ai_settings"
                   )}
                 </span>
               )}

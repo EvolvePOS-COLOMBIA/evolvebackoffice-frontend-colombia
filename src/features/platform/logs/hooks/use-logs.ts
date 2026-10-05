@@ -1,6 +1,6 @@
-import { useQuery } from "@tanstack/react-query"
+import { useMutation, useQuery } from "@tanstack/react-query"
 
-import { getLog, getLogSummary, getLogTenants, getLogs } from "../services/log.service"
+import { explainLog, getLog, getLogSummary, getLogTenants, getLogs } from "../services/log.service"
 import type { LogsFilters } from "../types"
 
 export const systemLogsKeys = {
@@ -42,5 +42,11 @@ export function useLogDetail(id: number | null) {
     queryKey: systemLogsKeys.detail(id ?? -1),
     queryFn: () => getLog(id as number),
     enabled: id !== null,
+  })
+}
+
+export function useExplainLog() {
+  return useMutation({
+    mutationFn: (id: number) => explainLog(id),
   })
 }

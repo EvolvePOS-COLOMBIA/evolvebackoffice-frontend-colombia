@@ -12,6 +12,8 @@ import platformUsersEs from "@/features/platform/users/i18n/es.json"
 import platformUsersEn from "@/features/platform/users/i18n/en.json"
 import platformEmailEs from "@/features/platform/email/i18n/es.json"
 import platformEmailEn from "@/features/platform/email/i18n/en.json"
+import platformAiSettingsEs from "@/features/platform/ai-settings/i18n/es.json"
+import platformAiSettingsEn from "@/features/platform/ai-settings/i18n/en.json"
 import platformLogsEs from "@/features/platform/logs/i18n/es.json"
 import platformLogsEn from "@/features/platform/logs/i18n/en.json"
 import businessDashboardEs from "@/features/business/dashboard/i18n/es.json"
@@ -54,6 +56,8 @@ import businessBranchesConfigEs from "@/features/business/branches/config/i18n/e
 import businessBranchesConfigEn from "@/features/business/branches/config/i18n/en.json"
 import businessBranchesTerminalsEs from "@/features/business/branches/terminals/i18n/es.json"
 import businessBranchesTerminalsEn from "@/features/business/branches/terminals/i18n/en.json"
+import businessAiChatEs from "@/features/business/ai-chat/i18n/es.json"
+import businessAiChatEn from "@/features/business/ai-chat/i18n/en.json"
 
 const resources = {
   es: {
@@ -62,6 +66,7 @@ const resources = {
     "platform-tenants": platformTenantsEs,
     "platform-users": platformUsersEs,
     "platform-email": platformEmailEs,
+    "platform-ai-settings": platformAiSettingsEs,
     "platform-logs": platformLogsEs,
     "business-dashboard": businessDashboardEs,
     "business-items": businessItemsEs,
@@ -83,6 +88,7 @@ const resources = {
     "business-registers": businessRegistersEs,
     "business-branches-config": businessBranchesConfigEs,
     "business-branches-terminals": businessBranchesTerminalsEs,
+    "business-ai-chat": businessAiChatEs,
   },
   en: {
     common: commonEn,
@@ -90,6 +96,7 @@ const resources = {
     "platform-tenants": platformTenantsEn,
     "platform-users": platformUsersEn,
     "platform-email": platformEmailEn,
+    "platform-ai-settings": platformAiSettingsEn,
     "platform-logs": platformLogsEn,
     "business-dashboard": businessDashboardEn,
     "business-items": businessItemsEn,
@@ -111,6 +118,7 @@ const resources = {
     "business-registers": businessRegistersEn,
     "business-branches-config": businessBranchesConfigEn,
     "business-branches-terminals": businessBranchesTerminalsEn,
+    "business-ai-chat": businessAiChatEn,
   },
 }
 
@@ -126,6 +134,7 @@ i18n.use(initReactI18next).init({
     "platform-tenants",
     "platform-users",
     "platform-email",
+    "platform-ai-settings",
     "platform-logs",
     "business-dashboard",
     "business-items",
@@ -147,6 +156,7 @@ i18n.use(initReactI18next).init({
     "business-registers",
     "business-branches-config",
     "business-branches-terminals",
+    "business-ai-chat",
   ],
   defaultNS: "common",
   interpolation: {

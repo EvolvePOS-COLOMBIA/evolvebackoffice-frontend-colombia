@@ -48,3 +48,8 @@ export async function getLog(id: number): Promise<SystemLogDetail> {
   const response = await api.get<SystemLogDetail>(`/api/logs/${id}`)
   return response.data
 }
+
+export async function explainLog(id: number): Promise<string> {
+  const response = await api.post<{ explanation: string }>(`/api/logs/${id}/explain`)
+  return response.data.explanation
+}

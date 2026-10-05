@@ -4,6 +4,9 @@
 @import "@fontsource-variable/public-sans";
 @import "@fontsource-variable/inter";
 
+/* Tipografía `prose` para renderizar respuestas Markdown de la IA (prompt-kit). */
+@plugin "@tailwindcss/typography";
+
 @custom-variant dark (&:is(.dark *));
 
 :root {

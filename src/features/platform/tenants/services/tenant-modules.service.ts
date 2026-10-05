@@ -29,7 +29,7 @@ function mapDtoToTenantModule(dto: TenantModuleDto): TenantModule {
     moduleName: dto.moduleName,
     moduleDescription: dto.moduleDescription,
     isEnabled: dto.isEnabled,
-    quantity: dto.quantity,
+    quantity: dto.quantity ?? 0,
     createdAt: dto.createdAt,
   }
 }

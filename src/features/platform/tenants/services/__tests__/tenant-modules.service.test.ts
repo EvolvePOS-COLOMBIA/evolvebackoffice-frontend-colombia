@@ -76,7 +76,7 @@ describe("tenant-modules.service", () => {
         moduleName: mockDto1.moduleName,
         moduleDescription: mockDto1.moduleDescription,
         isEnabled: mockDto1.isEnabled,
-        quantity: mockDto1.quantity,
+        quantity: mockDto1.quantity ?? 0,
         createdAt: mockDto1.createdAt,
       })
       expect(result[1]!).toEqual<TenantModule>({
@@ -86,7 +86,7 @@ describe("tenant-modules.service", () => {
         moduleName: mockDto2.moduleName,
         moduleDescription: mockDto2.moduleDescription,
         isEnabled: mockDto2.isEnabled,
-        quantity: mockDto2.quantity,
+        quantity: mockDto2.quantity ?? 0,
         createdAt: mockDto2.createdAt,
       })
     })

@@ -625,7 +625,9 @@ export function TenantDetailPage() {
                           <span className="font-mono text-sm">{serial.serialCode}</span>
                         </TableCell>
                         <TableCell>
-                          <Badge tone={serialStatusTone(serial.status)}>{serialStatusLabel(serial.status)}</Badge>
+                          <Badge tone={serialStatusTone(serial.status ?? "")}>
+                            {serialStatusLabel(serial.status ?? "")}
+                          </Badge>
                         </TableCell>
                         <TableCell className="text-sm text-muted-foreground">
                           {serial.machineIdentifier || "—"}
@@ -680,7 +682,9 @@ export function TenantDetailPage() {
                     <CardContent className="space-y-3 p-4">
                       <div className="flex items-center justify-between">
                         <span className="font-mono text-sm font-medium">{serial.serialCode}</span>
-                        <Badge tone={serialStatusTone(serial.status)}>{serialStatusLabel(serial.status)}</Badge>
+                        <Badge tone={serialStatusTone(serial.status ?? "")}>
+                          {serialStatusLabel(serial.status ?? "")}
+                        </Badge>
                       </div>
                       <div className="grid grid-cols-2 gap-2 text-xs text-muted-foreground">
                         <div>

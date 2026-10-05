@@ -2,7 +2,11 @@ import { useState } from "react"
 import { useLocation } from "react-router-dom"
 import { Sparkles } from "lucide-react"
 
-import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from "@/components/ui/sheet"
+import { Sheet, SheetContent, SheetHeader } from "@/components/ui/sheet"
+// DialogTitle/DialogDescription son los primitivos de Radix: los SheetTitle/
+// SheetDescription son divs simples y NO satisfacen la verificación de
+// accesibilidad de Radix (consola: "DialogContent requires a DialogTitle").
+import { DialogDescription, DialogTitle } from "@/components/ui/dialog"
 import { useAuth } from "@/features/auth/hooks/use-auth"
 import { useTenantModules } from "@/features/business/branches/hooks/use-branch-modules"
 import { useTranslation } from "@/i18n/use-i18n"
@@ -47,11 +51,11 @@ export function AiChatWidget() {
           className="w-[min(96vw,460px)] p-0 data-[state=open]:slide-in-from-right sm:max-w-none"
         >
           <SheetHeader className="border-b border-border/70 pr-14 pb-4">
-            <SheetTitle className="flex items-center gap-2">
+            <DialogTitle className="flex items-center gap-2 text-lg font-semibold text-foreground">
               <Sparkles className="size-4 text-primary" />
               {t("title")}
-            </SheetTitle>
-            <SheetDescription className="sr-only">{t("welcome_desc")}</SheetDescription>
+            </DialogTitle>
+            <DialogDescription className="sr-only">{t("welcome_desc")}</DialogDescription>
           </SheetHeader>
           <div className="min-h-0 flex-1">
             <ChatPanel variant="sheet" />

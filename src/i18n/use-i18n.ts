@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react"
 import { useTranslation as useI18NextTranslation } from "react-i18next"
-import { loadFeatureNamespace } from "./index"
+import i18n, { loadFeatureNamespace } from "./index"
 
 export type Namespace =
   | "common"
@@ -37,7 +37,11 @@ export type Namespace =
 
 export function useTranslation(ns: Namespace = "common") {
   const translation = useI18NextTranslation(ns)
-  const [isLoaded, setIsLoaded] = useState(ns === "common")
+  // Si el bundle ya está registrado (namespaces estáticos de i18n/index.ts),
+  // se considera cargado DESDE el primer render: evita un frame con claves en
+  // crudo (p. ej. "loading_conversation") al (re)montar componentes como el
+  // panel del chat al cambiar de conversación.
+  const [isLoaded, setIsLoaded] = useState(ns === "common" || i18n.hasResourceBundle(i18n.language, ns))
 
   useEffect(() => {
     // Cargar el namespace si no es "common"

@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react"
-import { ChevronDown, MessageSquarePlus, Send, Sparkles, Trash2 } from "lucide-react"
+import { ChevronDown, Loader2, MessageSquarePlus, RotateCcw, Send, Sparkles, Trash2 } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
 import { Textarea } from "@/components/ui/textarea"
@@ -32,6 +32,12 @@ export function ChatPanel({ variant = "page" }: ChatPanelProps) {
   const conversations = conversationsQuery.data ?? []
   const messages = conversationQuery.data?.messages ?? []
   const bottomRef = useRef<HTMLDivElement>(null)
+
+  // Mientras cambia de conversación el detalle aún no llega: NO mostrar el
+  // welcome (parecería vacía) sino un estado de carga; si el fetch falla,
+  // mostrar error con reintentar en vez de quedarse vacía en silencio.
+  const isLoadingMessages = activeId !== null && conversationQuery.isFetching && !conversationQuery.data
+  const conversationError = activeId !== null && conversationQuery.isError
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" })
@@ -169,7 +175,27 @@ export function ChatPanel({ variant = "page" }: ChatPanelProps) {
         </div>
 
         <div className="min-h-0 flex-1 space-y-3 overflow-y-auto p-3 sm:p-4">
-          {messages.length === 0 && !sendMutation.isPending ? (
+          {isLoadingMessages ? (
+            <div className="flex h-full flex-col items-center justify-center gap-3 text-center">
+              <Loader2 className="size-6 animate-spin text-primary" />
+              <p className="text-xs text-muted-foreground">{t("loading_conversation")}</p>
+            </div>
+          ) : conversationError ? (
+            <div className="flex h-full flex-col items-center justify-center gap-3 text-center">
+              <p className="text-sm font-medium text-foreground">{t("load_error")}</p>
+              <p className="max-w-xs text-xs text-muted-foreground">{t("load_error_desc")}</p>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                className="gap-1.5"
+                onClick={() => conversationQuery.refetch()}
+              >
+                <RotateCcw className="size-3.5" />
+                {t("retry")}
+              </Button>
+            </div>
+          ) : messages.length === 0 && !sendMutation.isPending ? (
             <div className="flex h-full flex-col items-center justify-center gap-4 text-center">
               <div className="flex size-12 items-center justify-center rounded-2xl bg-primary/10">
                 <Sparkles className="size-6 text-primary" />

@@ -38,6 +38,7 @@ function toCreateDto(values: TenantFormValues): CreateTenantDto {
     identificationTypeId: values.identificationTypeId,
     maxBranches: values.maxBranches || null,
     maxUsers: values.maxUsers || null,
+    timeZoneId: values.timeZoneId || null,
   }
 }
 
@@ -54,6 +55,7 @@ function toUpdateDto(values: TenantFormValues): UpdateTenantDto {
     maxRegisters: values.maxRegisters || null,
     maxBranches: values.maxBranches || null,
     maxUsers: values.maxUsers || null,
+    timeZoneId: values.timeZoneId || null,
   }
 }
 

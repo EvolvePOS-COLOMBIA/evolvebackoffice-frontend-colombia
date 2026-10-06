@@ -33,6 +33,7 @@ function mapTenantResponseToTenant(dto: TenantResponseDto): Tenant {
     currentRegisterCount: dto.currentRegisterCount,
     subdomain: dto.subdomain ?? "",
     identificationNumber: dto.identificationNumber ?? "",
+    timeZoneId: dto.timeZoneId ?? null,
     identificationTypeId: dto.identificationTypeId ?? 0,
     maxBranches: dto.maxBranches ?? 0,
     maxUsers: dto.maxUsers ?? 0,

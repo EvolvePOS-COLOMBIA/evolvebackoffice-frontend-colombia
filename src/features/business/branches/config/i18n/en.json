@@ -4,13 +4,11 @@
   "back_to_branches": "← Back to Settings",
   "breadcrumb_branches": "POS Terminals",
   "breadcrumb_config": "Configuration",
-
   "tab_info": "Information",
   "tab_modules": "Modules",
   "tab_serials": "Serials",
   "tab_woocommerce": "WooCommerce",
   "tab_cluvi": "CLUVI",
-
   "info_title": "Branch Data",
   "info_desc": "General information about the branch.",
   "info_name": "Name",
@@ -22,7 +20,6 @@
   "info_active": "Active",
   "info_inactive": "Inactive",
   "info_created": "Created",
-
   "modules_title": "Assigned Modules",
   "modules_desc": "Manage active modules for this branch.",
   "modules_available": "Available Modules",
@@ -36,7 +33,6 @@
   "modules_none_available": "No modules available in the tenant.",
   "modules_code": "Code",
   "modules_description": "Description",
-
   "serials_title": "Assigned Serials",
   "serials_desc": "POS register serials assigned to this branch.",
   "serials_code": "Serial",
@@ -48,7 +44,6 @@
   "serials_device": "Device",
   "serials_empty": "No serials assigned to this branch.",
   "serials_empty_hint": "Terminals and their serials are managed in POS Terminals.",
-
   "integration_title": "{{platform}} Integration",
   "integration_desc": "Configure the connection with {{platform}} to sync orders and products.",
   "integration_not_configured": "Not configured",
@@ -59,7 +54,6 @@
   "integration_last_status": "Last sync status",
   "integration_last_error": "Last error",
   "integration_never_synced": "Never synced",
-
   "integration_form_url": "Site URL",
   "integration_form_url_placeholder": "https://mystore.com",
   "integration_form_consumer_key": "Consumer Key",
@@ -72,7 +66,6 @@
   "integration_form_api_secret_placeholder": "Your CLUVI API Secret",
   "integration_form_is_active": "Integration active",
   "integration_form_is_active_hint": "Enables automatic sync of orders and products.",
-
   "integration_save": "Save configuration",
   "integration_save_success": "Integration saved successfully",
   "integration_save_error": "Error saving integration",
@@ -86,21 +79,26 @@
   "integration_test_pending": "Testing connection...",
   "integration_create": "Create integration",
   "integration_create_success": "Integration created successfully",
-
   "woocommerce_integration": "WooCommerce Integration",
   "woocommerce_desc": "Connect your WooCommerce store to sync orders and products.",
   "woocommerce_help_url": "The URL must point to your WordPress site root, e.g. https://mystore.com",
   "woocommerce_help_keys": "Get credentials from WooCommerce > Settings > Advanced > REST API",
-
   "cluvi_integration": "CLUVI Integration",
   "cluvi_desc": "Connect your CLUVI system to manage orders and loyalty.",
   "cluvi_help_url": "The URL must point to the CLUVI API, e.g. https://api.cluvi.com",
   "cluvi_help_keys": "Credentials are provided by your CLUVI administrator",
-
   "loading": "Loading...",
   "error_loading": "Error loading information",
   "branch_not_found": "Branch not found",
   "branch_not_found_desc": "Could not load branch information.",
   "cancel": "Cancel",
-  "confirm": "Confirm"
+  "confirm": "Confirm",
+  "time_zone": "Time Zone",
+  "time_zone_hint": "Defines this branch local day for reports, dashboard and AI. Empty = inherits HQ time zone.",
+  "time_zone_placeholder": "Automatic (from HQ)",
+  "time_zone_auto": "Inherit from HQ",
+  "time_zone_save": "Save zone",
+  "time_zone_saving": "Saving…",
+  "time_zone_saved": "Time zone updated",
+  "time_zone_error": "Could not save the time zone"
 }

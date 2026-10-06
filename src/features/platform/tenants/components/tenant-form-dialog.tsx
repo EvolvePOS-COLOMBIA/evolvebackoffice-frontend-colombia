@@ -23,6 +23,7 @@ import { Separator } from "@/components/ui/separator"
 import { Skeleton } from "@/components/ui/skeleton"
 import { Switch } from "@/components/ui/switch"
 import { tenantEditSchema as tenantSchema } from "@/features/platform/tenants/schemas/tenant-schema"
+import { getTimeZoneOptions, TIME_ZONE_AUTO } from "@/utils/timezones"
 import type { CatalogModule, Tenant, TenantFormValues, TenantModuleAssignment } from "@/features/platform/tenants/types"
 import { DocumentType } from "@/features/platform/tenants/types/api"
 import { useModulesCatalog } from "@/features/platform/tenants/hooks/use-modules-catalog"
@@ -59,6 +60,7 @@ const defaultValues: TenantFormValues = {
   maxBranches: 0,
   maxUsers: 0,
   modules: [],
+  timeZoneId: "",
 }
 
 function buildModulesArray(catalog: CatalogModule[], state: Record<string, ModuleState>): TenantModuleAssignment[] {
@@ -136,6 +138,7 @@ export function TenantFormDialog({
         maxBranches: tenantSource.maxBranches ?? 0,
         maxUsers: tenantSource.maxUsers ?? 0,
         modules: [],
+        timeZoneId: tenantSource.timeZoneId ?? "",
       })
     } else {
       form.reset(defaultValues)
@@ -359,6 +362,36 @@ export function TenantFormDialog({
                       <SelectItem value="US">Estados Unidos (US)</SelectItem>
                     </SelectContent>
                   </Select>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="timeZoneId"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>{t("time_zone")}</FormLabel>
+                  <Select
+                    value={field.value || TIME_ZONE_AUTO}
+                    onValueChange={(value) => field.onChange(value === TIME_ZONE_AUTO ? "" : value)}
+                  >
+                    <FormControl>
+                      <SelectTrigger>
+                        <SelectValue placeholder={t("time_zone_placeholder")} />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      <SelectItem value={TIME_ZONE_AUTO}>{t("time_zone_auto")}</SelectItem>
+                      {getTimeZoneOptions().map((zone) => (
+                        <SelectItem key={zone} value={zone}>
+                          {zone}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <p className="text-xs text-muted-foreground">{t("time_zone_hint")}</p>
                   <FormMessage />
                 </FormItem>
               )}

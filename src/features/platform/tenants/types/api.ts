@@ -19,6 +19,8 @@ export interface CreateTenantDto {
   identificationTypeId: number
   maxBranches: number | null
   maxUsers: number | null
+  /** Zona horaria IANA (ej America/Bogota). Vacío = derivar del país; si no, UTC. */
+  timeZoneId?: string | null
 }
 
 export interface CreateTenantResponseDto {
@@ -55,6 +57,8 @@ export interface UpdateTenantDto {
   maxRegisters: number | null
   maxBranches: number | null
   maxUsers: number | null
+  /** null = no cambiar; '' = limpiar (UTC). */
+  timeZoneId?: string | null
 }
 
 export interface PosSerialCodeResponseDto {
@@ -96,6 +100,7 @@ export interface TenantResponseDto {
   adminEmail?: string | null
   adminIdentification?: string | null
   adminIsActive?: boolean | null
+  timeZoneId?: string | null
 }
 
 export interface TenantListResponseDto {

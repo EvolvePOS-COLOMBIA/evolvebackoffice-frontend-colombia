@@ -1,12 +1,13 @@
 import { useState } from "react"
 import { useNavigate, useParams } from "react-router-dom"
 import { useQuery } from "@tanstack/react-query"
-import { ArrowLeft, CheckCircle2, Globe, Package, ShoppingCart, Tag, Trash2, Warehouse } from "lucide-react"
+import { ArrowLeft, CheckCircle2, Clock, Globe, Package, ShoppingCart, Tag, Trash2, Warehouse } from "lucide-react"
 
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { ErrorState } from "@/components/ui/error-state"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Skeleton } from "@/components/ui/skeleton"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
@@ -18,6 +19,7 @@ import {
   useRemoveModuleFromBranch,
   useTenantModules,
 } from "@/features/business/branches/hooks/use-branch-modules"
+import { useUpdateBranch } from "@/features/business/branches/hooks/use-branches"
 import { useBranchRegisters } from "@/features/business/branches/hooks/use-branch-terminals"
 import { useBranchIntegrationByPlatform } from "@/features/business/branches/hooks/use-branch-integrations"
 
@@ -26,6 +28,8 @@ import { IntegrationForm } from "@/features/business/branches/config/components/
 import { notify } from "@/hooks/use-notify"
 import { formatDateTime } from "@/utils/format"
 import { isTenantOnlyModule } from "@/utils/module-scope"
+import { getTimeZoneOptions, TIME_ZONE_AUTO } from "@/utils/timezones"
+import { getApiErrorMessage } from "@/utils/api-error"
 import { useTranslation } from "@/i18n/use-i18n"
 
 const MODULE_ICONS: Record<string, typeof Package> = {
@@ -100,6 +104,38 @@ export function BranchConfigPage() {
 
   const assignMutation = useAssignModuleToBranch()
   const removeMutation = useRemoveModuleFromBranch()
+
+  // Zona horaria de la sucursal: draft con patrón "derived state" (sin effect)
+  // para no pisar el valor del servidor mientras carga ni violar reglas lint.
+  const updateBranchMutation = useUpdateBranch()
+  const [tzDraft, setTzDraft] = useState<string | null>(null)
+  const selectedTz = tzDraft ?? branch?.timeZoneId ?? ""
+  const tzDirty = tzDraft !== null && tzDraft !== (branch?.timeZoneId ?? "")
+
+  const handleSaveTimeZone = () => {
+    if (!branch || !branchId) return
+    updateBranchMutation.mutate(
+      {
+        id: branchId,
+        payload: {
+          name: branch.name,
+          identification: branch.identification,
+          address: branch.address,
+          phone: branch.phone,
+          email: branch.email,
+          adminUserId: branch.adminUserId,
+          timeZoneId: selectedTz,
+        },
+      },
+      {
+        onSuccess: () => {
+          setTzDraft(selectedTz)
+          notify.success(t("time_zone_saved"))
+        },
+        onError: (error) => notify.error(getApiErrorMessage(error, t("time_zone_error"))),
+      }
+    )
+  }
 
   const assignedTenantModuleIds = new Set(branchModules.map((bm) => bm.tenantModuleId))
 
@@ -231,6 +267,46 @@ export function BranchConfigPage() {
               )}
             </CardContent>
           </Card>
+
+          {/* ───── Zona horaria de la sucursal (día local para reportes/IA) ───── */}
+          {!branchLoading && branch ? (
+            <Card className="mt-6">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Clock className="size-5" />
+                  {t("time_zone")}
+                </CardTitle>
+                <CardDescription>{t("time_zone_hint")}</CardDescription>
+              </CardHeader>
+              <CardContent className="flex flex-col gap-3 sm:flex-row sm:items-end">
+                <div className="w-full max-w-sm space-y-2">
+                  <Select
+                    value={selectedTz || TIME_ZONE_AUTO}
+                    onValueChange={(value) => setTzDraft(value === TIME_ZONE_AUTO ? "" : value)}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder={t("time_zone_placeholder")} />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value={TIME_ZONE_AUTO}>{t("time_zone_auto")}</SelectItem>
+                      {getTimeZoneOptions().map((zone) => (
+                        <SelectItem key={zone} value={zone}>
+                          {zone}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <Button
+                  type="button"
+                  onClick={handleSaveTimeZone}
+                  disabled={updateBranchMutation.isPending || !tzDirty}
+                >
+                  {updateBranchMutation.isPending ? t("time_zone_saving") : t("time_zone_save")}
+                </Button>
+              </CardContent>
+            </Card>
+          ) : null}
         </TabsContent>
 
         {/* ───── TAB: MODULES ───── */}

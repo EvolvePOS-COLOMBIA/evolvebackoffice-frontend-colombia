@@ -29,6 +29,8 @@ export interface Tenant {
   adminEmail?: string | null
   adminIdentification?: string | null
   adminIsActive?: boolean | null
+  /** Zona horaria IANA del negocio (null = UTC). */
+  timeZoneId?: string | null
 }
 
 export interface PagedTenantsResponse {
@@ -79,4 +81,6 @@ export interface TenantFormValues {
   maxBranches: number
   maxUsers: number
   modules: TenantModuleAssignment[]
+  /** Zona horaria IANA; vacío = automática según país (UTC si no hay país). */
+  timeZoneId: string
 }

@@ -11,6 +11,7 @@ import type { Branch, PagedBranches } from "@/features/business/branches/types"
 function mapBranchResponseToBranch(dto: BranchResponseDto): Branch {
   return {
     id: dto.id,
+    timeZoneId: dto.timeZoneId ?? null,
     name: dto.name ?? "",
     identification: dto.identification ?? "",
     address: dto.address ?? "",

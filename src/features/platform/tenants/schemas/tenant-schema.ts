@@ -15,6 +15,7 @@ export const tenantCreateSchema = (t: TFunction) =>
     identificationTypeId: z.coerce.number().int().min(0).optional().default(0),
     maxBranches: z.coerce.number().int().min(0).optional().default(0),
     maxUsers: z.coerce.number().int().min(0).optional().default(0),
+    timeZoneId: z.string().optional().default(""),
   })
 
 // Schema de edición: mismo que creación salvo la identificación del admin,

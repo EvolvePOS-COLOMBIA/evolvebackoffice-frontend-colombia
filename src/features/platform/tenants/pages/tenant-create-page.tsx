@@ -17,7 +17,9 @@ import {
   Minus,
   Plus,
   Flag,
+  Clock,
 } from "lucide-react"
+import { getTimeZoneOptions, TIME_ZONE_AUTO } from "@/utils/timezones"
 
 import { notify } from "@/hooks/use-notify"
 import { isTenantOnlyModule } from "@/utils/module-scope"
@@ -78,6 +80,7 @@ export function TenantCreatePage() {
     identificationTypeId: number
     maxBranches: number
     maxUsers: number
+    timeZoneId: string
   }>({
     resolver: zodResolver(tenantCreateSchema(t)) as never,
     defaultValues: {
@@ -93,6 +96,7 @@ export function TenantCreatePage() {
       identificationTypeId: 0,
       maxBranches: 0,
       maxUsers: 0,
+      timeZoneId: "",
     },
   })
 
@@ -167,6 +171,7 @@ export function TenantCreatePage() {
       identificationTypeId: (values.identificationTypeId as number) ?? 0,
       maxBranches: (values.maxBranches as number) ?? 0,
       maxUsers: (values.maxUsers as number) ?? 0,
+      timeZoneId: (values.timeZoneId as string) || null,
     }
 
     try {
@@ -306,6 +311,38 @@ export function TenantCreatePage() {
                         <SelectItem value="US">Estados Unidos (US)</SelectItem>
                       </SelectContent>
                     </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="timeZoneId"
+                render={({ field }) => (
+                  <FormItem className="space-y-2">
+                    <FormLabel className="flex items-center gap-2 text-sm font-medium">
+                      <Clock className="size-4 text-muted-foreground" />
+                      {t("time_zone")}
+                    </FormLabel>
+                    <Select
+                      value={field.value || TIME_ZONE_AUTO}
+                      onValueChange={(value) => field.onChange(value === TIME_ZONE_AUTO ? "" : value)}
+                    >
+                      <FormControl>
+                        <SelectTrigger className="h-11">
+                          <SelectValue placeholder={t("time_zone_placeholder")} />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        <SelectItem value={TIME_ZONE_AUTO}>{t("time_zone_auto")}</SelectItem>
+                        {getTimeZoneOptions().map((zone) => (
+                          <SelectItem key={zone} value={zone}>
+                            {zone}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <p className="text-xs text-muted-foreground">{t("time_zone_hint")}</p>
                     <FormMessage />
                   </FormItem>
                 )}

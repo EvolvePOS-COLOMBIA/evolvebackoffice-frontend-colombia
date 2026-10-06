@@ -54,6 +54,9 @@ export function useUpdateBranch() {
     mutationFn: ({ id, payload }: { id: string; payload: UpdateBranchDto }) => updateBranch(id, payload),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: branchesKeys.all })
+      // También el detalle (["branches","detail",id]) para que la config de la
+      // sucursal refresque datos como timeZoneId.
+      queryClient.invalidateQueries({ queryKey: ["branches", "detail"] })
     },
   })
 }

@@ -59,7 +59,7 @@ export function ChatChartBlock({ chart, className }: ChatChartBlockProps) {
                 cx="50%"
                 cy="50%"
                 outerRadius={80}
-                label={(entry) => `${entry.label}`}
+                label={(entry) => `${entry.name}`}
               >
                 {data.map((_, index) => (
                   <Cell key={index} fill={SERIES_COLORS[index % SERIES_COLORS.length]} />

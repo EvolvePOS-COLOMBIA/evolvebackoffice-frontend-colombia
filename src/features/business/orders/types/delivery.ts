@@ -54,6 +54,20 @@ export interface DeliveryOrder {
   assignedAt: string | null
   dispatchedAt: string | null
   deliveredAt: string | null
+  fulfillmentType?: string | null
+  paymentConfirmed?: boolean
+  isReconciled?: boolean
+  hasDeliveryProof?: boolean
+  tipAmount?: number
+  mappedPaymentMethodCode?: string | null
+  cashTenderedAmount?: number | null
+  changeToCarry?: number
+  readyAt?: string | null
+  promisedDeliveryAt?: string | null
+  deliveryFailureReason?: string | null
+  cancelledWhileDispatched?: boolean
+  syncStatus?: "Synced" | "Pending" | "Error"
+  syncError?: string | null
 }
 
 export interface DeliveryCourierGroup {

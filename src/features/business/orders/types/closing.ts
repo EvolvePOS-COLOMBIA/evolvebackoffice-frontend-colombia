@@ -75,6 +75,8 @@ export interface CourierSettlementRow {
   changeGiven: number
   otherMethodsTotal: number
   unreconciledTotal: number
+  tipsTotal?: number
+  prepaidTotal?: number
 }
 
 export interface ReconcileOrderResponse {

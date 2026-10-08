@@ -18,6 +18,10 @@ import { BranchSelector } from "@/features/business/items/catalog/components/bra
 import { useAssignCourier, useDeliveryBoard } from "../hooks/use-couriers"
 import { useUpdateOrderStatus } from "../hooks/use-orders"
 import { CourierPickerDialog } from "../components/courier-picker-dialog"
+import { DispatchDeliveryDialog } from "../components/dispatch-delivery-dialog"
+import { DeliveryIncidentActions } from "../components/delivery-incident-actions"
+import { useCanManageDeliveries, useDeliveryAction } from "../hooks/use-delivery-operations"
+import { useDeliveryUpdates } from "../hooks/use-delivery-updates"
 import { DeliveryOrderCard } from "../components/delivery-order-card"
 import type { DeliveryCourierGroup, DeliveryOrder } from "../types/delivery"
 import { getApiErrorMessage } from "../utils/order-helpers"
@@ -53,6 +57,9 @@ export function DeliveriesPage() {
   const branches = useMemo(() => branchesData?.data ?? [], [branchesData])
   const showAllBranches = !selectedBranchId || selectedBranchId === ALL_BRANCHES
   const branchId = showAllBranches ? null : branches.some((b) => b.id === selectedBranchId) ? selectedBranchId : null
+  useDeliveryUpdates(branchId)
+  const canManage = useCanManageDeliveries()
+  const deliveryAction = useDeliveryAction()
 
   const handleBranchChange = (id: string | null) => {
     const value = id ?? ALL_BRANCHES
@@ -99,9 +106,17 @@ export function DeliveriesPage() {
 
   const onError = (error: unknown) => notify.error(getApiErrorMessage(error, t("status_update_failed")))
 
-  const dispatch = (order: DeliveryOrder, courierId: string | null) => {
-    updateStatus.mutate(
-      { id: order.id, status: "Shipped", courierId },
+  const dispatch = (
+    order: DeliveryOrder,
+    courierId: string | null,
+    tendered: number | null = null,
+    promised: string | null = null
+  ) => {
+    deliveryAction.mutate(
+      {
+        path: `orders/${order.id}/dispatch`,
+        payload: { courierId, cashTenderedAmount: tendered, promisedDeliveryAt: promised },
+      },
       {
         onSuccess: () => {
           setPicker(null)
@@ -159,6 +174,14 @@ export function DeliveriesPage() {
             {t("orders")}
           </Badge>
           <h1 className="text-xl font-semibold text-foreground sm:text-2xl">{t("deliveries_title")}</h1>
+          <Button variant="outline" className="w-fit" onClick={() => navigate("/business/orders/routes")}>
+            {t("e_routes")}
+          </Button>
+          {canManage && (
+            <Button variant="outline" className="w-fit" onClick={() => navigate("/business/orders/operations")}>
+              {t("phase2_operations")}
+            </Button>
+          )}
           <p className="max-w-4xl text-sm leading-5 text-muted-foreground">{t("deliveries_desc")}</p>
           <Bike
             color="#58626b"
@@ -180,10 +203,12 @@ export function DeliveriesPage() {
               <ArrowLeft className="mr-2 size-4" />
               {t("orders")}
             </Button>
-            <Button variant="outline" size="sm" onClick={() => navigate("/business/orders/couriers")}>
-              <Users className="mr-2 size-4" />
-              {t("couriers_title")}
-            </Button>
+            {canManage && (
+              <Button variant="outline" size="sm" onClick={() => navigate("/business/orders/couriers")}>
+                <Users className="mr-2 size-4" />
+                {t("couriers_title")}
+              </Button>
+            )}
             <Button variant="outline" size="sm" onClick={() => refetch()} disabled={isFetching}>
               <RefreshCw className={`mr-2 size-4 ${isFetching ? "animate-spin" : ""}`} />
               {t("refresh")}
@@ -316,11 +341,12 @@ export function DeliveriesPage() {
                                 size="sm"
                                 className="h-7 text-xs"
                                 onClick={() => markDelivered(order)}
-                                disabled={updateStatus.isPending}
+                                disabled={updateStatus.isPending || !!order.deliveryFailureReason}
                               >
                                 <CheckCircle2 className="mr-1 size-3.5" />
                                 {t("delivery_mark_delivered")}
                               </Button>
+                              <DeliveryIncidentActions order={order} />
                             </>
                           }
                         />
@@ -379,7 +405,7 @@ export function DeliveriesPage() {
                         now={now}
                         showBranch={showAllBranches}
                         isPending={updateStatus.isPending}
-                        onDispatch={(order) => dispatch(order, group.courierId)}
+                        onDispatch={(order) => setPicker({ mode: "dispatch", order, courierId: group.courierId })}
                         onDelivered={markDelivered}
                       />
                     ))}
@@ -391,7 +417,7 @@ export function DeliveriesPage() {
         </Tabs>
 
         <CourierPickerDialog
-          open={picker !== null}
+          open={picker?.mode === "assign"}
           onOpenChange={(open) => !open && setPicker(null)}
           branchId={picker?.order.branchId ?? null}
           title={picker?.mode === "dispatch" ? t("delivery_dispatch_title") : t("courier_assign_title")}
@@ -408,6 +434,24 @@ export function DeliveriesPage() {
           isPending={updateStatus.isPending || assignCourier.isPending}
           onConfirm={handlePickerConfirm}
         />
+        {picker?.mode === "dispatch" && (
+          <DispatchDeliveryDialog
+            key={picker.order.id}
+            order={picker.order}
+            defaultCourierId={picker.courierId}
+            pending={deliveryAction.isPending}
+            onClose={() => setPicker(null)}
+            onSubmit={(id, tendered, promised) => dispatch(picker.order, id, tendered, promised)}
+          />
+        )}
+        {(board?.couriers ?? [])
+          .flatMap((g) => g.orders)
+          .filter((o) => o.cancelledWhileDispatched)
+          .map((o) => (
+            <div className="mt-4" key={o.id}>
+              <DeliveryOrderCard order={o} now={now} showStatus actions={<DeliveryIncidentActions order={o} />} />
+            </div>
+          ))}
       </CardContent>
     </Card>
   )
@@ -522,6 +566,7 @@ function CourierRouteCard({
             now={now}
             showBranch={showBranch}
             showStatus
+            courierName={group.name}
             actions={
               order.status === "Ready" ? (
                 <Button size="sm" className="h-7 text-xs" onClick={() => onDispatch(order)} disabled={isPending}>
@@ -529,10 +574,18 @@ function CourierRouteCard({
                   {t("delivery_dispatch")}
                 </Button>
               ) : order.status === "Shipped" ? (
-                <Button size="sm" className="h-7 text-xs" onClick={() => onDelivered(order)} disabled={isPending}>
-                  <CheckCircle2 className="mr-1 size-3.5" />
-                  {t("delivery_mark_delivered")}
-                </Button>
+                <>
+                  <Button
+                    size="sm"
+                    className="h-7 text-xs"
+                    onClick={() => onDelivered(order)}
+                    disabled={isPending || !!order.deliveryFailureReason}
+                  >
+                    <CheckCircle2 className="mr-1 size-3.5" />
+                    {t("delivery_mark_delivered")}
+                  </Button>
+                  <DeliveryIncidentActions order={order} />
+                </>
               ) : undefined
             }
           />

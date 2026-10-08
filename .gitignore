@@ -45,5 +45,6 @@ opencode.json
 .playwright-mcp/*
 
 tests/*
+!tests/delivery-phase2.spec.ts
 
 test-results/*

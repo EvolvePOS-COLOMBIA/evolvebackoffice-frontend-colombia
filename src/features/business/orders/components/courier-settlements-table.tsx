@@ -32,6 +32,7 @@ export function CourierSettlementsTable({ rows }: { rows: CourierSettlementRow[]
             <TableHead className="hidden text-right lg:table-cell">{t("settlement_change")}</TableHead>
             <TableHead className="text-right">{t("settlement_other")}</TableHead>
             <TableHead className="text-right">{t("settlement_unreconciled")}</TableHead>
+            <TableHead className="text-right">{t("phase2_tip")}</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
@@ -62,6 +63,7 @@ export function CourierSettlementsTable({ rows }: { rows: CourierSettlementRow[]
               >
                 {formatCurrency(r.unreconciledTotal)}
               </TableCell>
+              <TableCell className="text-right font-mono tabular-nums">{formatCurrency(r.tipsTotal ?? 0)}</TableCell>
             </TableRow>
           ))}
           <TableRow className="border-t-2 bg-muted/40 hover:bg-muted/40">
@@ -81,6 +83,9 @@ export function CourierSettlementsTable({ rows }: { rows: CourierSettlementRow[]
             </TableCell>
             <TableCell className="text-right font-mono tabular-nums">
               {formatCurrency(sum((r) => r.unreconciledTotal))}
+            </TableCell>
+            <TableCell className="text-right font-mono tabular-nums">
+              {formatCurrency(sum((r) => r.tipsTotal ?? 0))}
             </TableCell>
           </TableRow>
         </TableBody>

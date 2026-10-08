@@ -1,4 +1,7 @@
-import { useMemo, useState } from "react"
+import { useCallback, useMemo, useState } from "react"
+import { useQuery } from "@tanstack/react-query"
+import { quoteDelivery } from "../services/delivery-enhancements.service"
+import { DeliveryMap } from "./delivery-map"
 import { Plus, Trash2 } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
@@ -78,6 +81,29 @@ export function ManualOrderDialog({ open, onOpenChange, branchId }: ManualOrderD
   const [street, setStreet] = useState("")
   const [city, setCity] = useState("")
   const [shippingCost, setShippingCost] = useState("")
+  const [customerName, setCustomerName] = useState("")
+  const [customerPhone, setCustomerPhone] = useState("")
+  const [latitude, setLatitude] = useState("")
+  const [longitude, setLongitude] = useState("")
+  const [automaticShipping, setAutomaticShipping] = useState(false)
+  const pick = useCallback((lat: number, lon: number) => {
+    setLatitude(String(lat))
+    setLongitude(String(lon))
+  }, [])
+  const coordinatesValid =
+    !!latitude &&
+    !!longitude &&
+    Number.isFinite(Number(latitude)) &&
+    Number.isFinite(Number(longitude)) &&
+    Math.abs(Number(latitude)) <= 90 &&
+    Math.abs(Number(longitude)) <= 180
+  const quote = useQuery({
+    queryKey: ["delivery-quote", branchId, latitude, longitude],
+    queryFn: ({ signal }) => quoteDelivery(branchId!, Number(latitude), Number(longitude), signal),
+    enabled: open && !!branchId && automaticShipping && coordinatesValid,
+    retry: false,
+    staleTime: 0,
+  })
 
   const [prevOpen, setPrevOpen] = useState(open)
   if (open !== prevOpen) {
@@ -92,6 +118,11 @@ export function ManualOrderDialog({ open, onOpenChange, branchId }: ManualOrderD
       setStreet("")
       setCity("")
       setShippingCost("")
+      setCustomerName("")
+      setCustomerPhone("")
+      setLatitude("")
+      setLongitude("")
+      setAutomaticShipping(false)
     }
   }
 
@@ -133,10 +164,20 @@ export function ManualOrderDialog({ open, onOpenChange, branchId }: ManualOrderD
   }
 
   const subtotal = lines.reduce((sum, l) => sum + l.price * l.quantity, 0)
-  const shipping = Number(shippingCost) > 0 ? Number(shippingCost) : 0
+  const shipping = automaticShipping
+    ? (quote.data?.shippingCost ?? 0)
+    : Number(shippingCost) > 0
+      ? Number(shippingCost)
+      : 0
   const total = subtotal + shipping
 
-  const canSubmit = lines.length > 0 && lines.every((l) => l.quantity >= 1 && l.price >= 0) && !createOrder.isPending
+  const canSubmit =
+    lines.length > 0 &&
+    lines.every((l) => l.quantity >= 1 && l.price >= 0) &&
+    !createOrder.isPending &&
+    (!automaticShipping || (!!quote.data && !quote.isFetching && coordinatesValid && !!street.trim())) &&
+    ((!latitude && !longitude) || coordinatesValid) &&
+    (!customerPhone.trim() || !!customerName.trim())
 
   const handleSubmit = () => {
     if (!branchId || !canSubmit) return
@@ -145,6 +186,9 @@ export function ManualOrderDialog({ open, onOpenChange, branchId }: ManualOrderD
       branchId,
       customerId: null,
       personId: null,
+      customerName: customerName.trim() || null,
+      customerPhone: customerPhone.trim() || null,
+      automaticShipping,
       paymentMethod,
       status,
       origin: origin || null,
@@ -153,8 +197,8 @@ export function ManualOrderDialog({ open, onOpenChange, branchId }: ManualOrderD
       shippingCity: city.trim() ? city.trim() : null,
       shippingState: null,
       shippingZipCode: null,
-      shippingLatitude: null,
-      shippingLongitude: null,
+      shippingLatitude: latitude ? Number(latitude) : null,
+      shippingLongitude: longitude ? Number(longitude) : null,
       shippingNotes: null,
       tax: null,
       discount: null,
@@ -336,10 +380,77 @@ export function ManualOrderDialog({ open, onOpenChange, branchId }: ManualOrderD
         {/* Envío / domicilio (opcional) — alimenta el stat "Domicilios cobrados" */}
         <div className="space-y-3 rounded-xl border border-border/70 p-3">
           <p className="text-xs font-semibold tracking-wide text-muted-foreground uppercase">{t("shipping_section")}</p>
+          <div className="grid gap-3 sm:grid-cols-2">
+            <label className="space-y-1">
+              {t("customer_name")}
+              <Input
+                aria-label={t("customer_name")}
+                value={customerName}
+                maxLength={200}
+                onChange={(e) => setCustomerName(e.target.value)}
+              />
+            </label>
+            <label className="space-y-1">
+              {t("phone")}
+              <Input
+                aria-label={t("phone")}
+                value={customerPhone}
+                maxLength={30}
+                onChange={(e) => setCustomerPhone(e.target.value)}
+              />
+            </label>
+          </div>
+          <div className="grid gap-3 sm:grid-cols-2">
+            <label>
+              {t("e_zone_latitude")}
+              <Input
+                aria-label={t("e_zone_latitude")}
+                type="number"
+                step="any"
+                value={latitude}
+                onChange={(e) => setLatitude(e.target.value)}
+              />
+            </label>
+            <label>
+              {t("e_zone_longitude")}
+              <Input
+                aria-label={t("e_zone_longitude")}
+                type="number"
+                step="any"
+                value={longitude}
+                onChange={(e) => setLongitude(e.target.value)}
+              />
+            </label>
+          </div>
+          <label className="flex items-center gap-2">
+            <input
+              type="checkbox"
+              checked={automaticShipping}
+              onChange={(e) => setAutomaticShipping(e.target.checked)}
+            />
+            {t("e_automatic_shipping")}
+          </label>
+          {automaticShipping && (
+            <>
+              <DeliveryMap onPick={pick} />
+              {quote.isFetching && <p>{t("loading")}</p>}
+              {quote.error && <p role="alert">{apiErrorMessage(quote.error)}</p>}
+              {quote.data && coordinatesValid && (
+                <p>
+                  {t("e_quoted_zone", { zone: quote.data.zoneName, amount: formatCurrency(quote.data.shippingCost) })}
+                </p>
+              )}
+            </>
+          )}
           <div className="grid gap-3 sm:grid-cols-3">
             <div className="space-y-1.5 sm:col-span-2">
               <Label>{t("address")}</Label>
-              <Input value={street} onChange={(e) => setStreet(e.target.value)} maxLength={300} />
+              <Input
+                aria-label={t("address")}
+                value={street}
+                onChange={(e) => setStreet(e.target.value)}
+                maxLength={300}
+              />
             </div>
             <div className="space-y-1.5">
               <Label>{t("shipping_city")}</Label>
@@ -349,6 +460,7 @@ export function ManualOrderDialog({ open, onOpenChange, branchId }: ManualOrderD
               <Label htmlFor="manual-order-shipping">{t("shipping_cost")}</Label>
               <Input
                 id="manual-order-shipping"
+                disabled={automaticShipping}
                 type="number"
                 min={0}
                 step="0.01"

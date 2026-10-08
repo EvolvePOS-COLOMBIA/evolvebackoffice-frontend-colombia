@@ -70,6 +70,6 @@ export function useDeliveryBoard(branchId: string | null, date: string | null, e
     queryKey: couriersKeys.board(branchId, date),
     queryFn: () => getDeliveryBoard({ branchId, date }),
     enabled,
-    refetchInterval: 30_000,
+    refetchInterval: 60_000,
   })
 }

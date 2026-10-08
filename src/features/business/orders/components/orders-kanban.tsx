@@ -88,6 +88,11 @@ export function OrdersKanban({ ordersByStatus, onDragEnd, onViewDetail, showBran
                               </div>
 
                               <p className="mb-1 text-sm font-medium">${order.total.toFixed(2)}</p>
+                              <p className="mb-1 text-xs font-semibold">
+                                {order.paymentConfirmed
+                                  ? t("phase2_paid")
+                                  : t("phase2_collect", { amount: `$${order.total.toFixed(2)}` })}
+                              </p>
 
                               {order.shippingStreet && (
                                 <div className="mb-1 flex items-center gap-1 text-xs text-muted-foreground">

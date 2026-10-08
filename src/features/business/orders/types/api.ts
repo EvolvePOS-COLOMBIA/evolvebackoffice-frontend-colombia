@@ -14,6 +14,11 @@ export interface OrderListItem {
   shippingCost: number
   total: number
   paymentMethod: string | null
+  fulfillmentType?: string | null
+  paymentConfirmed?: boolean
+  tipAmount?: number
+  mappedPaymentMethodCode?: string | null
+  outboundSyncError?: string | null
   externalCreatedAt: string
   externalUpdatedAt: string | null
   createdAt: string
@@ -47,6 +52,11 @@ export interface OrderDetail {
   shippingCost: number
   total: number
   paymentMethod: string | null
+  fulfillmentType?: string | null
+  paymentConfirmed?: boolean
+  tipAmount?: number
+  mappedPaymentMethodCode?: string | null
+  outboundSyncError?: string | null
   notes: string | null
   shippingStreet: string | null
   shippingCity: string | null
@@ -246,6 +256,9 @@ export interface CreateManualOrderItemDto {
 
 /** Payload de POST /api/orders (creación manual: caja / domicilio). */
 export interface CreateManualOrderDto {
+  automaticShipping?: boolean
+  customerName?: string | null
+  customerPhone?: string | null
   branchId: string
   customerId: string | null
   personId: string | null

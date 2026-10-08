@@ -14,7 +14,7 @@ vi.mock("@/config/axios-client", () => ({
   api: { get: vi.fn(), post: vi.fn(), put: vi.fn(), delete: vi.fn() },
 }))
 
-const mockedApi = vi.mocked(api)
+const mockedApi = vi.mocked(api, { deep: true })
 
 describe("couriers.service", () => {
   beforeEach(() => {

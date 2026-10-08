@@ -41,6 +41,9 @@ export function OrderDetailDialog({ open, onOpenChange, order, onEdit }: OrderDe
           <div className="rounded-lg bg-primary/5 p-4 text-center">
             <p className="text-sm text-muted-foreground">{t("total")}</p>
             <p className="text-3xl font-bold">{formatCurrency(order.total)}</p>
+            <p className="mt-2 font-semibold">
+              {order.paymentConfirmed ? t("phase2_paid") : t("phase2_collect", { amount: formatCurrency(order.total) })}
+            </p>
           </div>
 
           {/* Info */}
@@ -92,6 +95,12 @@ export function OrderDetailDialog({ open, onOpenChange, order, onEdit }: OrderDe
               <span className="text-muted-foreground">Envío</span>
               <span>{formatCurrency(order.shippingCost)}</span>
             </div>
+            {!!order.tipAmount && (
+              <div className="flex justify-between">
+                <span className="text-muted-foreground">{t("phase2_tip")}</span>
+                <span>{formatCurrency(order.tipAmount)}</span>
+              </div>
+            )}
             <div className="flex justify-between">
               <span className="text-muted-foreground">Descuento</span>
               <span>{order.discount > 0 ? `− ${formatCurrency(order.discount)}` : formatCurrency(0)}</span>

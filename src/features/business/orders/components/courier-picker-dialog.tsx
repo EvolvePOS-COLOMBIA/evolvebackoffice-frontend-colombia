@@ -13,7 +13,7 @@ import {
 } from "@/components/ui/dialog"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { useTranslation } from "@/i18n/use-i18n"
-import { useCouriers } from "../hooks/use-couriers"
+import { useDeliveryOperations, useCanManageDeliveries } from "../hooks/use-delivery-operations"
 
 const NONE = "__NONE__"
 
@@ -56,8 +56,9 @@ function CourierPickerDialogInner({
 }: CourierPickerDialogProps) {
   const { t } = useTranslation("business-orders")
   const navigate = useNavigate()
-  const { data, isLoading } = useCouriers(branchId)
-  const couriers = data?.data ?? []
+  const { data, isLoading } = useDeliveryOperations(branchId)
+  const canManage = useCanManageDeliveries()
+  const couriers = data?.couriers ?? []
   const [value, setValue] = useState<string>(defaultCourierId ?? (allowNone ? NONE : ""))
 
   const handleConfirm = () => {
@@ -81,10 +82,12 @@ function CourierPickerDialogInner({
         ) : couriers.length === 0 ? (
           <div className="space-y-3 rounded-xl border border-dashed border-border/70 p-4 text-center">
             <p className="text-sm text-muted-foreground">{t("courier_none_available")}</p>
-            <Button variant="outline" size="sm" onClick={() => navigate("/business/orders/couriers")}>
-              <UserPlus className="mr-2 size-4" />
-              {t("couriers_manage")}
-            </Button>
+            {canManage && (
+              <Button variant="outline" size="sm" onClick={() => navigate("/business/orders/couriers")}>
+                <UserPlus className="mr-2 size-4" />
+                {t("couriers_manage")}
+              </Button>
+            )}
           </div>
         ) : (
           <Select value={value} onValueChange={setValue}>
@@ -96,7 +99,7 @@ function CourierPickerDialogInner({
               {couriers.map((c) => (
                 <SelectItem key={c.id} value={c.id}>
                   {c.name}
-                  {c.phone ? ` · ${c.phone}` : ""}
+                  {` · ${c.load}`}
                 </SelectItem>
               ))}
             </SelectContent>

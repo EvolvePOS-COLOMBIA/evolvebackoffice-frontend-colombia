@@ -26,6 +26,9 @@ import { OrdersPage } from "@/features/business/orders/pages/orders-page"
 import { OrderClosingPage } from "@/features/business/orders/pages/order-closing-page"
 import { DeliveriesPage } from "@/features/business/orders/pages/deliveries-page"
 import { CouriersPage } from "@/features/business/orders/pages/couriers-page"
+import { CourierMobilePage } from "@/features/business/orders/pages/courier-mobile-page"
+import { DeliveryOperationsPage } from "@/features/business/orders/pages/delivery-operations-page"
+import { DeliveryRoutesPage } from "@/features/business/orders/pages/delivery-routes-page"
 import { BranchTerminalSettingsPage } from "@/features/business/branches/terminals/pages/branch-terminal-settings-page"
 import { BranchConfigPage } from "@/features/business/branches/config/pages/branch-config-page"
 import { AiChatPage } from "@/features/business/ai-chat/pages/ai-chat-page"
@@ -58,6 +61,7 @@ function AppRoutesContent() {
 
   return (
     <Routes>
+      <Route path="/courier/:tenantId" element={<CourierMobilePage />} />
       <Route element={<PublicRoute redirectAuthenticated />}>
         <Route path="/" element={<MarketingPage />} />
         <Route path="/login" element={<LoginPage />} />
@@ -96,6 +100,8 @@ function AppRoutesContent() {
             <Route path="/business/orders/closing" element={<OrderClosingPage />} />
             <Route path="/business/orders/deliveries" element={<DeliveriesPage />} />
             <Route path="/business/orders/couriers" element={<CouriersPage />} />
+            <Route path="/business/orders/operations" element={<DeliveryOperationsPage />} />
+            <Route path="/business/orders/routes" element={<DeliveryRoutesPage />} />
             <Route path="/business/items" element={<ItemsPage />} />
             <Route path="/business/items/catalog" element={<ItemsCatalogPage />} />
             <Route path="/business/items/departments" element={<DepartmentsPage />} />

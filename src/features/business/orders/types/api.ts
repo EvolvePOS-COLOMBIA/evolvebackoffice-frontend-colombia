@@ -19,6 +19,12 @@ export interface OrderListItem {
   createdAt: string
   shippingCity: string | null
   shippingStreet: string | null
+  /** Domiciliario asignado (null = sin asignar). */
+  courierId?: string | null
+  courierName?: string | null
+  assignedAt?: string | null
+  dispatchedAt?: string | null
+  deliveredAt?: string | null
 }
 
 export interface OrderDetail {
@@ -53,6 +59,11 @@ export interface OrderDetail {
   externalUpdatedAt: string | null
   needsOutboundSync: boolean
   items: OrderItemDto[]
+  courierId?: string | null
+  courierName?: string | null
+  assignedAt?: string | null
+  dispatchedAt?: string | null
+  deliveredAt?: string | null
 }
 
 export interface OrderItemDto {

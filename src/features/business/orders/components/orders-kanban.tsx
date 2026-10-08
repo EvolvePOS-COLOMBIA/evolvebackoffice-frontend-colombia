@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button"
 import { useTranslation } from "@/i18n/use-i18n"
 import { KANBAN_COLUMNS, ORDER_STATUS_CONFIG } from "../types"
 import type { OrderListItem, OrderStatus } from "../types/api"
-import { Eye, Clock, MapPin } from "lucide-react"
+import { Bike, Eye, Clock, MapPin } from "lucide-react"
 
 interface OrdersKanbanProps {
   ordersByStatus: Record<string, OrderListItem[]>
@@ -21,6 +21,8 @@ export function OrdersKanban({ ordersByStatus, onDragEnd, onViewDetail, showBran
 
   const handleDragEnd = (result: DropResult) => {
     if (!result.destination) return
+    // Soltar en la misma columna no cambia el estado (evita un PUT inválido).
+    if (result.destination.droppableId === result.source.droppableId) return
     const newStatus = result.destination.droppableId as OrderStatus
     const orderId = result.draggableId
     onDragEnd(orderId, newStatus)
@@ -91,6 +93,13 @@ export function OrdersKanban({ ordersByStatus, onDragEnd, onViewDetail, showBran
                                 <div className="mb-1 flex items-center gap-1 text-xs text-muted-foreground">
                                   <MapPin className="h-3 w-3" />
                                   <span className="truncate">{order.shippingStreet}</span>
+                                </div>
+                              )}
+
+                              {order.courierName && (
+                                <div className="mb-1 flex items-center gap-1 text-xs text-primary">
+                                  <Bike className="h-3 w-3" />
+                                  <span className="truncate">{order.courierName}</span>
                                 </div>
                               )}
 

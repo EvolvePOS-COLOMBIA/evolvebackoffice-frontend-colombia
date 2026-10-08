@@ -24,6 +24,8 @@ import { PaymentMethodsPage } from "@/features/business/payment-methods/pages/pa
 import { RegistersPage } from "@/features/business/registers/pages/registers-page"
 import { OrdersPage } from "@/features/business/orders/pages/orders-page"
 import { OrderClosingPage } from "@/features/business/orders/pages/order-closing-page"
+import { DeliveriesPage } from "@/features/business/orders/pages/deliveries-page"
+import { CouriersPage } from "@/features/business/orders/pages/couriers-page"
 import { BranchTerminalSettingsPage } from "@/features/business/branches/terminals/pages/branch-terminal-settings-page"
 import { BranchConfigPage } from "@/features/business/branches/config/pages/branch-config-page"
 import { AiChatPage } from "@/features/business/ai-chat/pages/ai-chat-page"
@@ -92,6 +94,8 @@ function AppRoutesContent() {
             <Route path="/business/dashboard" element={<BusinessDashboardPage />} />
             <Route path="/business/orders" element={<OrdersPage />} />
             <Route path="/business/orders/closing" element={<OrderClosingPage />} />
+            <Route path="/business/orders/deliveries" element={<DeliveriesPage />} />
+            <Route path="/business/orders/couriers" element={<CouriersPage />} />
             <Route path="/business/items" element={<ItemsPage />} />
             <Route path="/business/items/catalog" element={<ItemsCatalogPage />} />
             <Route path="/business/items/departments" element={<DepartmentsPage />} />

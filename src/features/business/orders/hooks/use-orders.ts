@@ -53,7 +53,8 @@ export function useOrderDetail(id: string) {
 export function useUpdateOrderStatus() {
   const qc = useQueryClient()
   return useMutation({
-    mutationFn: ({ id, status }: { id: string; status: string }) => updateOrderStatus(id, status),
+    mutationFn: ({ id, status, courierId }: { id: string; status: string; courierId?: string | null }) =>
+      updateOrderStatus(id, status, courierId),
     onSuccess: () => qc.invalidateQueries({ queryKey: ordersKeys.all }),
   })
 }

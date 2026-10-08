@@ -17,7 +17,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
-import { RefreshCw, Truck, Store, ShoppingCart, AlertTriangle, Plus, Lock } from "lucide-react"
+import { RefreshCw, Truck, Store, ShoppingCart, AlertTriangle, Plus, Lock, Bike } from "lucide-react"
 import { useQueries } from "@tanstack/react-query"
 import { useBranches } from "@/features/business/branches/hooks/use-branches"
 import {
@@ -33,6 +33,7 @@ import { OrderDetailDialog } from "../components/order-detail-dialog"
 import { IntegrationConfigDialog } from "../components/integration-config-dialog"
 import { ManualOrderDialog } from "../components/manual-order-dialog"
 import { EditOrderDialog } from "../components/edit-order-dialog"
+import { CourierPickerDialog } from "../components/courier-picker-dialog"
 import { KANBAN_COLUMNS, ORDER_STATUS_CONFIG } from "../types"
 import { checkOrderStock } from "../services/orders.service"
 import type { OrderListItem, OrderStatus, OrderStockItem } from "../types/api"
@@ -148,13 +149,18 @@ export function OrdersPage() {
   )
 
   const [stockWarning, setStockWarning] = useState<OrderStockItem[] | null>(null)
+  // Pedido a domicilio soltado en "En camino": se pide el domiciliario antes de enviarlo.
+  const [dispatchOrder, setDispatchOrder] = useState<OrderListItem | null>(null)
   const pendingConfirmRef = useRef<{ orderId: string; status: OrderStatus } | null>(null)
 
-  const applyStatus = (orderId: string, newStatus: OrderStatus) => {
+  const applyStatus = (orderId: string, newStatus: OrderStatus, courierId?: string | null) => {
     updateStatusMutation.mutate(
-      { id: orderId, status: newStatus },
+      { id: orderId, status: newStatus, courierId },
       {
-        onSuccess: () => notify.success(t("status") + " → " + (ORDER_STATUS_CONFIG[newStatus]?.label ?? newStatus)),
+        onSuccess: () => {
+          setDispatchOrder(null)
+          notify.success(t("status") + " → " + (ORDER_STATUS_CONFIG[newStatus]?.label ?? newStatus))
+        },
         onError: (error: unknown) => {
           const message = (error as { response?: { data?: { message?: string } } })?.response?.data?.message
           notify.error(message || t("status_update_failed"))
@@ -169,6 +175,14 @@ export function OrdersPage() {
    * bloquea la orden, solo se avisa antes de enviar el cambio.
    */
   const handleDragEnd = async (orderId: string, newStatus: OrderStatus) => {
+    // Un pedido a domicilio no sale sin domiciliario: se elige (o confirma) al enviarlo.
+    if (newStatus === "Shipped") {
+      const order = allOrders.find((o) => o.id === orderId)
+      if (order?.shippingStreet) {
+        setDispatchOrder(order)
+        return
+      }
+    }
     if (newStatus === "Confirmed") {
       try {
         const check = await checkOrderStock(orderId)
@@ -226,6 +240,10 @@ export function OrdersPage() {
           <Button variant="outline" size="sm" onClick={() => refetch()}>
             <RefreshCw className="mr-2 h-4 w-4" />
             {t("refresh")}
+          </Button>
+          <Button variant="outline" size="sm" onClick={() => navigate("/business/orders/deliveries")}>
+            <Bike className="mr-2 h-4 w-4" />
+            {t("deliveries_entry")}
           </Button>
           <Button variant="outline" size="sm" onClick={() => navigate("/business/orders/closing")}>
             <Lock className="mr-2 h-4 w-4" />
@@ -369,6 +387,19 @@ export function OrdersPage() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* Domiciliario al pasar un pedido a domicilio a "En camino" */}
+      <CourierPickerDialog
+        open={dispatchOrder !== null}
+        onOpenChange={(open) => !open && setDispatchOrder(null)}
+        branchId={dispatchOrder?.branchId ?? null}
+        title={t("delivery_dispatch_title")}
+        description={t("delivery_dispatch_desc")}
+        confirmLabel={t("delivery_dispatch")}
+        defaultCourierId={dispatchOrder?.courierId ?? null}
+        isPending={updateStatusMutation.isPending}
+        onConfirm={(courierId) => dispatchOrder && applyStatus(dispatchOrder.id, "Shipped", courierId)}
+      />
 
       {/* Creación manual de órdenes (venta de caja / domicilio) */}
       <ManualOrderDialog open={createOrderOpen} onOpenChange={setCreateOrderOpen} branchId={branchId || null} />

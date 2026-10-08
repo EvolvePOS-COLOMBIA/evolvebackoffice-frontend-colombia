@@ -42,6 +42,7 @@
   "email_settings": "Email Settings",
   "ai_settings": "AI Settings",
   "logs": "System logs",
+  "audit": "Audit",
   "sign_out": "Sign Out",
   "session_closed": "Session closed.",
   "navigation": "Navigation",

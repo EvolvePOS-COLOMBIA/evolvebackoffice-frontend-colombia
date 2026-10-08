@@ -11,6 +11,7 @@ export type Namespace =
   | "platform-email"
   | "platform-ai-settings"
   | "platform-logs"
+  | "platform-audit"
   | "platform-users"
   | "business-dashboard"
   | "business-items"

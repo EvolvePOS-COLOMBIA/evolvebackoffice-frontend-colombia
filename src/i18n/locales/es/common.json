@@ -42,6 +42,7 @@
   "email_settings": "Configuración de Correo",
   "ai_settings": "Configuración de IA",
   "logs": "Logs del sistema",
+  "audit": "Auditoría",
   "sign_out": "Cerrar sesión",
   "session_closed": "Sesión cerrada.",
   "navigation": "Navegación",

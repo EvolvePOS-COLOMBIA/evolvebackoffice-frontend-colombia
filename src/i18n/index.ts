@@ -16,6 +16,8 @@ import platformAiSettingsEs from "@/features/platform/ai-settings/i18n/es.json"
 import platformAiSettingsEn from "@/features/platform/ai-settings/i18n/en.json"
 import platformLogsEs from "@/features/platform/logs/i18n/es.json"
 import platformLogsEn from "@/features/platform/logs/i18n/en.json"
+import platformAuditEs from "@/features/platform/audit/i18n/es.json"
+import platformAuditEn from "@/features/platform/audit/i18n/en.json"
 import businessDashboardEs from "@/features/business/dashboard/i18n/es.json"
 import businessDashboardEn from "@/features/business/dashboard/i18n/en.json"
 import businessItemsEs from "@/features/business/items/i18n/es.json"
@@ -68,6 +70,7 @@ const resources = {
     "platform-email": platformEmailEs,
     "platform-ai-settings": platformAiSettingsEs,
     "platform-logs": platformLogsEs,
+    "platform-audit": platformAuditEs,
     "business-dashboard": businessDashboardEs,
     "business-items": businessItemsEs,
     "business-items-catalog": businessItemsCatalogEs,
@@ -98,6 +101,7 @@ const resources = {
     "platform-email": platformEmailEn,
     "platform-ai-settings": platformAiSettingsEn,
     "platform-logs": platformLogsEn,
+    "platform-audit": platformAuditEn,
     "business-dashboard": businessDashboardEn,
     "business-items": businessItemsEn,
     "business-items-catalog": businessItemsCatalogEn,
@@ -136,6 +140,7 @@ i18n.use(initReactI18next).init({
     "platform-email",
     "platform-ai-settings",
     "platform-logs",
+    "platform-audit",
     "business-dashboard",
     "business-items",
     "business-items-catalog",

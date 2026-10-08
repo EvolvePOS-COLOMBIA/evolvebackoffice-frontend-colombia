@@ -36,6 +36,7 @@ import { PlatformUsersPage } from "@/features/platform/users/pages/platform-user
 import { EmailSettingsPage } from "@/features/platform/email/pages/email-settings-page"
 import { AiSettingsPage } from "@/features/platform/ai-settings/pages/ai-settings-page"
 import { LogsPage } from "@/features/platform/logs/pages/logs-page"
+import { AuditPage } from "@/features/platform/audit/pages/audit-page"
 import { OnboardingGate } from "@/routes/onboarding-gate"
 import { ProtectedRoute } from "@/routes/protected-route"
 import { PublicRoute } from "@/routes/public-route"
@@ -80,6 +81,7 @@ function AppRoutesContent() {
           <Route path="/platform/email-settings" element={<EmailSettingsPage />} />
           <Route path="/platform/ai-settings" element={<AiSettingsPage />} />
           <Route path="/platform/logs" element={<LogsPage />} />
+          <Route path="/platform/audit" element={<AuditPage />} />
         </Route>
       </Route>
 

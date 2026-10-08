@@ -2,6 +2,7 @@ import {
   BarChart3,
   Bot,
   Building2,
+  Fingerprint,
   LayoutDashboard,
   LogOut,
   Mail,
@@ -52,6 +53,7 @@ const platformNavigationItems = [
   { to: "/platform/email-settings", labelKey: "email_settings", icon: Mail },
   { to: "/platform/ai-settings", labelKey: "ai_settings", icon: Bot },
   { to: "/platform/logs", labelKey: "logs", icon: ScrollText },
+  { to: "/platform/audit", labelKey: "audit", icon: Fingerprint },
 ]
 
 const businessNavigationItems = [
@@ -165,6 +167,7 @@ export function SidebarContent({
                         | "orders"
                         | "ai_chat"
                         | "logs"
+                        | "audit"
                         | "ai_settings"
                     )
                   : undefined
@@ -194,6 +197,7 @@ export function SidebarContent({
                       | "orders"
                       | "ai_chat"
                       | "logs"
+                      | "audit"
                       | "ai_settings"
                   )}
                 </span>

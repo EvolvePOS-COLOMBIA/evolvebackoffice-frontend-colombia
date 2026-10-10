@@ -45,8 +45,12 @@ export async function getOrderById(id: string): Promise<OrderDetail> {
   return data
 }
 
-export async function updateOrderStatus(id: string, status: string): Promise<void> {
-  await api.put(`/api/orders/${id}/status`, { status })
+/**
+ * Cambia el estado. `courierId` asigna el domiciliario en el mismo paso: el
+ * backend lo exige para pasar un pedido a domicilio a En camino.
+ */
+export async function updateOrderStatus(id: string, status: string, courierId?: string | null): Promise<void> {
+  await api.put(`/api/orders/${id}/status`, courierId ? { status, courierId } : { status })
 }
 
 /** Inventario de la orden contra la sucursal. Solo informativo, nunca bloquea. */

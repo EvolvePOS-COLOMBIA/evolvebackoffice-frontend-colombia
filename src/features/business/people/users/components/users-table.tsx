@@ -81,12 +81,12 @@ export function UsersTable({ users, onEdit }: UsersTableProps) {
 }
 
 function getRoleTone(role: string | null): "primary" | "warning" | "info" | "neutral" {
-  switch (role) {
-    case "Admin":
+  switch (role?.toUpperCase()) {
+    case "ADMIN":
       return "primary"
-    case "Manager":
+    case "MANAGER":
       return "warning"
-    case "Cashier":
+    case "CASHIER":
       return "info"
     default:
       return "neutral"
@@ -94,13 +94,15 @@ function getRoleTone(role: string | null): "primary" | "warning" | "info" | "neu
 }
 
 function getRoleLabel(role: string | null, t: ReturnType<typeof useTranslation>["t"]): string {
-  switch (role) {
-    case "Admin":
+  switch (role?.toUpperCase()) {
+    case "ADMIN":
       return t("role_admin")
-    case "Manager":
+    case "MANAGER":
       return t("role_manager")
-    case "Cashier":
+    case "CASHIER":
       return t("role_cashier")
+    case "DELIVERY":
+      return t("role_delivery")
     default:
       return role ?? "—"
   }

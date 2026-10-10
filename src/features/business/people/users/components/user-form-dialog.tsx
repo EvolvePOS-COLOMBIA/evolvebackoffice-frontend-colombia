@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react"
-import { useForm } from "react-hook-form"
+import { useForm, useWatch } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { Search } from "lucide-react"
 
@@ -13,6 +13,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog"
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form"
+import { useBranches } from "@/features/business/branches/hooks/use-branches"
 import { Input } from "@/components/ui/input"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { notify } from "@/hooks/use-notify"
@@ -38,7 +39,11 @@ const defaultValues: CreateUserFormValues = {
   identificationTypeId: IdentificationType.CedulaCiudadania,
   identificationNumber: "",
   phoneNumber: null,
-  role: "Cashier",
+  role: "CASHIER",
+  deliveryBranchId: null,
+  vehiclePlate: null,
+  deliveryNotes: null,
+  isActive: true,
 }
 
 export function UserFormDialog({
@@ -49,6 +54,7 @@ export function UserFormDialog({
   isSubmitting = false,
 }: UserFormDialogProps) {
   const isEditMode = Boolean(userToEdit)
+  const { data: branches } = useBranches(1, 100)
   const { t } = useTranslation("business-users-catalog")
   const { t: tCommon } = useTranslation("common")
   const { lookup, isLooking } = usePersonLookup()
@@ -58,6 +64,7 @@ export function UserFormDialog({
     resolver: zodResolver(createUserSchema(t)) as never,
     defaultValues,
   })
+  const selectedRole = useWatch({ control: form.control, name: "role" })
 
   /**
    * Consulta la tabla Persons compartida por tipo + número de identificación
@@ -108,7 +115,11 @@ export function UserFormDialog({
         identificationTypeId: userToEdit.identificationTypeId || IdentificationType.CedulaCiudadania,
         identificationNumber: userToEdit.identificationNumber ?? "",
         phoneNumber: userToEdit.phoneNumber,
-        role: userToEdit.role ?? "Cashier",
+        role: userToEdit.role?.toUpperCase() ?? "CASHIER",
+        deliveryBranchId: userToEdit.deliveryBranchId ?? null,
+        vehiclePlate: userToEdit.vehiclePlate ?? null,
+        deliveryNotes: userToEdit.deliveryNotes ?? null,
+        isActive: userToEdit.isActive,
       })
       return
     }
@@ -118,7 +129,7 @@ export function UserFormDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="w-[calc(100%-2rem)] lg:w-[600px]">
+      <DialogContent className="max-h-[90vh] w-[calc(100%-2rem)] overflow-y-auto lg:w-[600px]">
         <DialogHeader>
           <DialogTitle>{isEditMode ? t("edit_user") : t("create_user")}</DialogTitle>
           <DialogDescription>{t("user_form_desc")}</DialogDescription>
@@ -166,7 +177,7 @@ export function UserFormDialog({
                     <Input
                       placeholder={t("phone_placeholder")}
                       value={field.value ?? ""}
-                      onChange={(e) => field.onChange(e.target.value || null)}
+                      onChange={(e) => field.onChange(e.target.value)}
                     />
                   </FormControl>
                   <FormMessage />
@@ -174,120 +185,198 @@ export function UserFormDialog({
               )}
             />
 
-            {!isEditMode && (
-              <>
+            <>
+              <FormField
+                control={form.control}
+                name="email"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>{t("email")}</FormLabel>
+                    <FormControl>
+                      <Input
+                        type="email"
+                        name={field.name}
+                        aria-label={t("email")}
+                        placeholder={t("email_placeholder")}
+                        value={field.value ?? ""}
+                        onChange={(e) => field.onChange(e.target.value || null)}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <div className="grid gap-4 sm:grid-cols-2">
                 <FormField
                   control={form.control}
-                  name="email"
+                  name="identificationTypeId"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>{t("email")}</FormLabel>
-                      <FormControl>
-                        <Input
-                          type="email"
-                          placeholder={t("email_placeholder")}
-                          value={field.value ?? ""}
-                          onChange={(e) => field.onChange(e.target.value || null)}
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                <div className="grid gap-4 sm:grid-cols-2">
-                  <FormField
-                    control={form.control}
-                    name="identificationTypeId"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>{t("document_type")}</FormLabel>
-                        <Select
-                          onValueChange={(val) => {
-                            field.onChange(Number(val))
-                            setFoundPerson(null)
-                          }}
-                          value={String(field.value)}
-                        >
-                          <FormControl>
-                            <SelectTrigger>
-                              <SelectValue />
-                            </SelectTrigger>
-                          </FormControl>
-                          <SelectContent>
-                            <SelectItem value="1">CC</SelectItem>
-                            <SelectItem value="2">CE</SelectItem>
-                          </SelectContent>
-                        </Select>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-
-                  <FormField
-                    control={form.control}
-                    name="identificationNumber"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>{t("document_number")}</FormLabel>
-                        <FormControl>
-                          <Input
-                            placeholder={t("document_number_placeholder")}
-                            {...field}
-                            value={field.value ?? ""}
-                            onChange={(e) => {
-                              field.onChange(e.target.value)
-                              setFoundPerson(null)
-                            }}
-                            onBlur={() => void runLookup(false)}
-                          />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                </div>
-
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  className="w-full sm:w-auto"
-                  disabled={isLooking}
-                  onMouseDown={(e) => e.preventDefault()}
-                  onClick={() => void runLookup(true)}
-                >
-                  <Search className="mr-1 size-4" />
-                  {isLooking ? tCommon("person_looking") : tCommon("person_lookup")}
-                </Button>
-
-                {foundPerson && <PersonLookupBanner person={foundPerson} onDismiss={() => setFoundPerson(null)} />}
-
-                <FormField
-                  control={form.control}
-                  name="role"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>{t("role")}</FormLabel>
-                      <Select onValueChange={field.onChange} value={field.value ?? "Cashier"}>
+                      <FormLabel>{t("document_type")}</FormLabel>
+                      <Select
+                        onValueChange={(val) => {
+                          field.onChange(Number(val))
+                          setFoundPerson(null)
+                        }}
+                        value={String(field.value)}
+                      >
                         <FormControl>
                           <SelectTrigger>
                             <SelectValue />
                           </SelectTrigger>
                         </FormControl>
                         <SelectContent>
-                          <SelectItem value="Admin">{t("role_admin")}</SelectItem>
-                          <SelectItem value="Manager">{t("role_manager")}</SelectItem>
-                          <SelectItem value="Cashier">{t("role_cashier")}</SelectItem>
+                          <SelectItem value="1">CC</SelectItem>
+                          <SelectItem value="2">CE</SelectItem>
                         </SelectContent>
                       </Select>
                       <FormMessage />
                     </FormItem>
                   )}
                 />
-              </>
-            )}
 
+                <FormField
+                  control={form.control}
+                  name="identificationNumber"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>{t("document_number")}</FormLabel>
+                      <FormControl>
+                        <Input
+                          placeholder={t("document_number_placeholder")}
+                          {...field}
+                          value={field.value ?? ""}
+                          onChange={(e) => {
+                            field.onChange(e.target.value)
+                            setFoundPerson(null)
+                          }}
+                          onBlur={() => void runLookup(false)}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
+
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                className="w-full sm:w-auto"
+                disabled={isLooking}
+                onMouseDown={(e) => e.preventDefault()}
+                onClick={() => void runLookup(true)}
+              >
+                <Search className="mr-1 size-4" />
+                {isLooking ? tCommon("person_looking") : tCommon("person_lookup")}
+              </Button>
+
+              {foundPerson && <PersonLookupBanner person={foundPerson} onDismiss={() => setFoundPerson(null)} />}
+
+              <FormField
+                control={form.control}
+                name="role"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>{t("role")}</FormLabel>
+                    <Select onValueChange={field.onChange} value={field.value ?? "CASHIER"}>
+                      <FormControl>
+                        <SelectTrigger aria-label={t("role")}>
+                          <SelectValue />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        <SelectItem value="ADMIN">{t("role_admin")}</SelectItem>
+                        <SelectItem value="MANAGER">{t("role_manager")}</SelectItem>
+                        <SelectItem value="CASHIER">{t("role_cashier")}</SelectItem>
+                        <SelectItem value="DELIVERY">{t("role_delivery")}</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </>
+
+            {selectedRole?.toUpperCase() === "DELIVERY" && (
+              <div className="space-y-3 rounded-md border p-3">
+                <FormField
+                  control={form.control}
+                  name="deliveryBranchId"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>{t("delivery_branch")}</FormLabel>
+                      <FormControl>
+                        <select
+                          className="h-10 w-full rounded-md border bg-background px-3"
+                          aria-label={t("delivery_branch")}
+                          value={field.value ?? ""}
+                          onChange={(e) => field.onChange(e.target.value || null)}
+                        >
+                          <option value="">{t("delivery_all_branches")}</option>
+                          {branches?.data.map((b) => (
+                            <option key={b.id} value={b.id}>
+                              {b.name}
+                            </option>
+                          ))}
+                        </select>
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="vehiclePlate"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>{t("delivery_plate")}</FormLabel>
+                      <FormControl>
+                        <Input {...field} aria-label={t("delivery_plate")} value={field.value ?? ""} maxLength={30} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="deliveryNotes"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>{t("delivery_notes")}</FormLabel>
+                      <FormControl>
+                        <Input {...field} aria-label={t("delivery_notes")} value={field.value ?? ""} maxLength={1000} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
+            )}
+            {isEditMode && (
+              <FormField
+                control={form.control}
+                name="isActive"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>{t("status")}</FormLabel>
+                    <FormControl>
+                      <select
+                        className="h-10 w-full rounded-md border bg-background px-3"
+                        aria-label={t("status")}
+                        value={field.value ? "active" : "inactive"}
+                        onChange={(e) => field.onChange(e.target.value === "active")}
+                      >
+                        <option value="active">{t("active")}</option>
+                        <option value="inactive">{t("inactive")}</option>
+                      </select>
+                    </FormControl>
+                  </FormItem>
+                )}
+              />
+            )}
             {form.formState.errors.root ? (
               <p className="text-sm font-medium text-destructive">{form.formState.errors.root.message}</p>
             ) : null}

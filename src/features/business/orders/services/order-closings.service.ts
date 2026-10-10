@@ -1,5 +1,12 @@
 import { api } from "@/config/axios-client"
-import type { BranchSchedule, OrderClosing, OrderClosingDetail, OrderClosingPreview } from "../types/closing"
+import type {
+  BranchSchedule,
+  OrderClosing,
+  OrderClosingDetail,
+  OrderClosingPreview,
+  ReconcileOrderResponse,
+  ReconcilePaymentLine,
+} from "../types/closing"
 
 export async function getBranchSchedule(branchId: string): Promise<BranchSchedule> {
   const { data } = await api.get<BranchSchedule>(`/api/branches/${branchId}/schedule`)
@@ -42,5 +49,18 @@ export async function reconcileOrder(
     reconciled,
     paymentMethodCode: paymentMethodCode ?? null,
   })
+  return data
+}
+
+/**
+ * Conciliación progresiva de una orden con varios medios de pago (la suma
+ * debe dar el total). En efectivo puede enviarse el efectivo recibido: el
+ * backend calcula el cambio. Lista vacía = desconciliar.
+ */
+export async function reconcileOrderPayments(
+  orderId: string,
+  payments: ReconcilePaymentLine[]
+): Promise<ReconcileOrderResponse> {
+  const { data } = await api.put<ReconcileOrderResponse>(`/api/orders/${orderId}/reconcile`, { payments })
   return data
 }

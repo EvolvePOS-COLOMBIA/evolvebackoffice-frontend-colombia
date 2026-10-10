@@ -25,6 +25,8 @@ export function useCreateUser() {
     mutationFn: (payload: CreateUserDto) => createUser(payload),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["users"] })
+      queryClient.invalidateQueries({ queryKey: ["couriers"] })
+      queryClient.invalidateQueries({ queryKey: ["delivery-operations"] })
     },
   })
 }
@@ -36,6 +38,8 @@ export function useUpdateUser() {
     mutationFn: ({ id, payload }: { id: string; payload: UpdateUserDto }) => updateUser(id, payload),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["users"] })
+      queryClient.invalidateQueries({ queryKey: ["couriers"] })
+      queryClient.invalidateQueries({ queryKey: ["delivery-operations"] })
     },
   })
 }

@@ -1,4 +1,4 @@
-export type AppRole = "PlatformAdmin" | "PlatformSubAdmin" | "PlatformSupervisor" | "BusinessAdmin"
+export type AppRole = "PlatformAdmin" | "PlatformSubAdmin" | "PlatformSupervisor" | "BusinessAdmin" | "Delivery"
 
 export type { AuthResponseDto, ChangePasswordDto, UserResponseDto } from "./api"
 

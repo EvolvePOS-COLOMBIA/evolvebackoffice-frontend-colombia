@@ -1,5 +1,6 @@
 import { useCallback, useState } from "react"
-import { useParams } from "react-router-dom"
+import { useAuth } from "@/features/auth/hooks/use-auth"
+import { ChangePasswordDialog } from "@/features/auth/components/change-password-dialog"
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
@@ -15,22 +16,15 @@ import { DeliveryProofCapture } from "../components/delivery-proof-input"
 import { DeliveryMap } from "../components/delivery-map"
 
 export function CourierMobilePage() {
-  const { tenantId = "" } = useParams()
-  const [token] = useState(() => {
-    try {
-      return decodeURIComponent(window.location.hash.slice(1))
-    } catch {
-      return ""
-    }
-  })
+  const { session, logout } = useAuth()
   const { t } = useTranslation("business-orders")
   const { formatCurrency } = useLocaleFormat()
   const qc = useQueryClient()
-  const key = ["courier-mobile", tenantId, token]
+  const key = ["delivery-me", session?.tenantId, session?.user.id]
   const { data, error, isLoading, dataUpdatedAt } = useQuery({
     queryKey: key,
-    queryFn: () => getCourierMobile(tenantId, token),
-    enabled: !!token,
+    queryFn: () => getCourierMobile(),
+    enabled: !!session && !session.forcePasswordChange,
     retry: false,
     refetchInterval: 15_000,
   })
@@ -44,29 +38,30 @@ export function CourierMobilePage() {
   }, [])
   const deliver = useMutation({
     mutationFn: () =>
-      collectDelivery(
-        tenantId,
-        token,
-        selected!.id,
-        selected!.paymentConfirmed || selected!.isReconciled ? null : Number(cash),
-        proof
-      ),
+      collectDelivery(selected!.id, selected!.paymentConfirmed || selected!.isReconciled ? null : Number(cash), proof),
     onSuccess: async () => {
       setSelected(null)
       await qc.invalidateQueries({ queryKey: key })
     },
   })
-  if (!token || error)
+  if (session?.forcePasswordChange)
+    return <ChangePasswordDialog open onPasswordChanged={() => void qc.invalidateQueries({ queryKey: key })} />
+  if (!session || error)
     return (
       <main className="p-6">
         <h1 className="text-xl font-semibold">{t("phase2_my_deliveries")}</h1>
-        <p role="alert">{getApiErrorMessage(error, t("phase2_link_invalid"))}</p>
+        <p role="alert">{getApiErrorMessage(error, t("phase2_no_shift"))}</p>
+        <Button variant="outline" onClick={logout}>
+          {t("delivery_logout")}
+        </Button>
       </main>
     )
   if (isLoading || !data) return <p className="p-6">{t("loading")}</p>
   return (
     <main className="mx-auto max-w-lg space-y-4 p-4">
-      <meta name="referrer" content="no-referrer" />
+      <Button variant="outline" onClick={logout}>
+        {t("delivery_logout")}
+      </Button>
       <h1 className="text-xl font-semibold">
         {data.courierName} · {t("phase2_my_deliveries")}
       </h1>

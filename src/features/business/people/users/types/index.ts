@@ -16,7 +16,7 @@ export const IDENTIFICATION_TYPE_LABELS: Record<IdentificationType, string> = {
   [IdentificationType.CedulaExtranjeria]: "CE",
 }
 
-export type Role = "Admin" | "Manager" | "Cashier"
+export type Role = "Admin" | "Manager" | "Cashier" | "Delivery"
 
 export interface UserResponseDto {
   id: string
@@ -37,6 +37,9 @@ export interface UserResponseDto {
   lastLoginAt: string | null
   createdAt: string
   temporaryPin: string | null
+  deliveryBranchId?: string | null
+  vehiclePlate?: string | null
+  deliveryNotes?: string | null
   temporaryWebPassword: string | null
 }
 
@@ -53,6 +56,9 @@ export interface CreateUserDto {
   /** Credencial de acceso web. Puede ser null para un cajero solo-POS. */
   email: string | null
   role: string | null
+  deliveryBranchId?: string | null
+  vehiclePlate?: string | null
+  deliveryNotes?: string | null
 }
 
 export interface UpdateUserDto {
@@ -65,6 +71,9 @@ export interface UpdateUserDto {
   emailAddress?: string | null
   email?: string | null
   role?: string | null
+  deliveryBranchId?: string | null
+  vehiclePlate?: string | null
+  deliveryNotes?: string | null
   isActive?: boolean | null
 }
 

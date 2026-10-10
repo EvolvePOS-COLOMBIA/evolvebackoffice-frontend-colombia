@@ -6,13 +6,11 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { useTranslation } from "@/i18n/use-i18n"
 import { useLocaleFormat } from "@/hooks/use-locale-format"
-import { useAppStore } from "@/store/app-store"
 import { notify } from "@/hooks/use-notify"
 import { useBranches } from "@/features/business/branches/hooks/use-branches"
 import { getItems } from "@/features/business/items/catalog/services/items.service"
 import { getActivePaymentMethods } from "@/features/business/payment-methods/services/payment-methods.service"
 import { useCanManageDeliveries, useDeliveryAction, useDeliveryOperations } from "../hooks/use-delivery-operations"
-import { deliveryAction } from "../services/delivery-operations.service"
 import { getApiErrorMessage } from "../utils/order-helpers"
 import type { UnlinkedProduct, WebhookHealth } from "../types/operations"
 
@@ -20,7 +18,6 @@ export function DeliveryOperationsPage() {
   const { t } = useTranslation("business-orders")
   const { formatCurrency } = useLocaleFormat()
   const navigate = useNavigate()
-  const tenant = useAppStore((s) => s.session?.tenantId)
   const canManage = useCanManageDeliveries()
   const { data: branches } = useBranches(1, 100)
   const [branchId, setBranch] = useState("")
@@ -29,7 +26,6 @@ export function DeliveryOperationsPage() {
   const [courier, setCourier] = useState("")
   const [base, setBase] = useState("0")
   const [returned, setReturned] = useState<Record<string, string>>({})
-  const [link, setLink] = useState("")
   const run = (path: string, payload?: unknown, method?: "post" | "put") =>
     action.mutate(
       { path, payload, method },
@@ -38,22 +34,15 @@ export function DeliveryOperationsPage() {
         onError: (e) => notify.error(getApiErrorMessage(e, t("status_update_failed"))),
       }
     )
-  const issueLink = async (id: string) => {
-    try {
-      const result = await deliveryAction<{ token: string }>(`shifts/${id}/access`)
-      setLink(
-        `${window.location.origin}/courier/${encodeURIComponent(tenant ?? "")}#${encodeURIComponent(result.token)}`
-      )
-    } catch (e) {
-      notify.error(getApiErrorMessage(e, t("status_update_failed")))
-    }
-  }
   if (!canManage) return <p role="alert">{t("phase2_manager_only")}</p>
   return (
     <div className="space-y-6">
       <div className="flex flex-wrap items-center gap-3">
         <Button variant="outline" onClick={() => navigate("/business/orders/deliveries")}>
           {t("deliveries_title")}
+        </Button>
+        <Button variant="outline" onClick={() => navigate("/business/people/users")}>
+          {t("couriers_title")}
         </Button>
         <h1 className="text-xl font-semibold">{t("phase2_operations")}</h1>
       </div>
@@ -120,12 +109,6 @@ export function DeliveryOperationsPage() {
               {t("phase2_start_shift")}
             </Button>
           </form>
-          {link && (
-            <label className="block text-sm">
-              {t("phase2_mobile_link")}
-              <Input aria-label={t("phase2_mobile_link")} readOnly value={link} onFocus={(e) => e.target.select()} />
-            </label>
-          )}
           <p className="text-sm text-muted-foreground">{t("phase2_cash_formula")}</p>
           {data?.shifts.map((s) => (
             <div key={s.id} className="space-y-2 rounded-lg border p-3">
@@ -146,9 +129,6 @@ export function DeliveryOperationsPage() {
                 </p>
               ) : (
                 <div className="flex flex-wrap gap-2">
-                  <Button variant="outline" onClick={() => void issueLink(s.id)}>
-                    {t("phase2_generate_link")}
-                  </Button>
                   <Input
                     className="max-w-48"
                     aria-label={`${t("phase2_returned_cash")} ${s.courierName}`}

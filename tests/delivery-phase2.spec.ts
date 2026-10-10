@@ -37,6 +37,8 @@ let item: Entity
 let shift: Entity
 let token: string
 let mobileToken: string
+let deliveryPassword: string
+const deliveryEmail = `delivery-${randomUUID()}@example.test`
 let cashOrder: string
 let prepaidOrder: string
 let server: Server
@@ -77,9 +79,9 @@ function jwt(role: string, tenantId?: string) {
   const unsigned = `${encode({ alg: "HS256", typ: "JWT" })}.${encode({ iss: jwtCfg.Issuer, aud: jwtCfg.Audience, sub: randomUUID(), role, ...(tenantId ? { tid: tenantId } : {}), exp: Math.floor(Date.now() / 1000) + 3600 })}`
   return `${unsigned}.${createHmac("sha256", jwtCfg.Secret).update(unsigned).digest("base64url")}`
 }
-async function session(page: Page, accessToken = token) {
+async function session(page: Page, accessToken = token, role = "BusinessAdmin") {
   await page.addInitScript(
-    ({ tenantId, accessToken }) =>
+    ({ tenantId, accessToken, role }) =>
       localStorage.setItem(
         "pos-manager-storage",
         JSON.stringify({
@@ -88,7 +90,7 @@ async function session(page: Page, accessToken = token) {
               accessToken,
               refreshToken: null,
               expiresAtUtc: new Date(Date.now() + 3600000).toISOString(),
-              user: { id: "e2e", email: "qa@example.test", fullName: "QA", role: "BusinessAdmin" },
+              user: { id: "e2e", email: "qa@example.test", fullName: "QA", role },
               tenantId,
               forcePasswordChange: false,
             },
@@ -100,7 +102,7 @@ async function session(page: Page, accessToken = token) {
           version: 0,
         })
       ),
-    { tenantId: tenant.tenantId, accessToken }
+    { tenantId: tenant.tenantId, accessToken, role }
   )
 }
 async function webhook(reference: string, extras: Record<string, unknown> = {}, status = "done", products?: object[]) {
@@ -205,10 +207,44 @@ test.beforeAll(async () => {
   )
   for (const module of modules.filter((m) => ["CLUVI", "ORDERS", "DOMICILIOS"].includes(m.moduleCode)))
     await check(await api.post(`/api/branches/${branch.id}/modules`, { data: { tenantModulePublicId: module.id } }))
-  courier = await json<Entity>(
-    await api.post("/api/couriers", { data: { name: "Ana QA", phone: "3002223344", branchId: branch.id } })
+  const deliveryUser = await json<Entity & { temporaryWebPassword: string }>(
+    await api.post("/api/users", {
+      data: {
+        firstName: "Ana",
+        lastName: "QA",
+        identificationTypeId: 1,
+        identificationNumber: `71${Date.now()}`,
+        email: deliveryEmail,
+        role: "DELIVERY",
+        phoneNumber: "3002223344",
+        deliveryBranchId: branch.id,
+        vehiclePlate: "QA123",
+      },
+    })
   )
-  otherCourier = await json<Entity>(await api.post("/api/couriers", { data: { name: "Luis QA", branchId: branch.id } }))
+  courier = deliveryUser
+  deliveryPassword = deliveryUser.temporaryWebPassword
+  otherCourier = await json<Entity>(
+    await api.post("/api/users", {
+      data: {
+        firstName: "Luis",
+        lastName: "QA",
+        identificationTypeId: 1,
+        identificationNumber: `72${Date.now()}`,
+        email: `other-${suffix}@example.test`,
+        role: "DELIVERY",
+        deliveryBranchId: branch.id,
+      },
+    })
+  )
+  mobileToken = (
+    await json<{ token: string }>(
+      await platform.post("/api/auth/login/admin", {
+        headers: { "X-Tenant-Id": tenant.tenantId },
+        data: { email: deliveryEmail, password: deliveryPassword },
+      })
+    )
+  ).token
   item = await json<Entity>(await api.post("/api/items", { data: { name: "Hamburguesa vinculada", sku: "CAT-QA" } }))
   await check(
     await api.post(`/api/branches/${branch.id}/items`, {
@@ -254,6 +290,91 @@ test.afterAll(async () => {
   await platform?.dispose()
 })
 
+test("DELIVERY entra por el login actual, cambia contraseña temporal y no recibe acceso administrativo", async ({
+  page,
+}) => {
+  const headers = { Authorization: `Bearer ${mobileToken}`, "X-Tenant-Id": tenant.tenantId }
+  expect((await platform.get("/api/delivery/me", { headers })).status()).toBe(403)
+  await page.goto("/login")
+  await page.locator('input[name="tenantPublicId"]').fill(tenant.tenantId)
+  await page.locator('input[name="email"]:visible').fill(deliveryEmail)
+  await page.locator('input[name="password"]:visible').fill(deliveryPassword)
+  await page.locator('form:visible button[type="submit"]').click()
+  await expect(page).toHaveURL(/\/delivery$/)
+  await page.locator('input[name="currentPassword"]').fill(deliveryPassword)
+  const newPassword = `QA-Delivery-${suffix}!9aA`
+  await page.locator('input[name="newPassword"]').fill(newPassword)
+  await page.locator('input[name="confirmPassword"]').fill(newPassword)
+  await page.getByRole("dialog").locator('button[type="submit"]').click()
+  await expect(page.getByRole("dialog")).toBeHidden()
+  await expect(page.getByRole("alert")).toContainText("turno activo")
+  deliveryPassword = newPassword
+  const login = await json<{ token: string }>(
+    await platform.post("/api/auth/login/admin", {
+      headers: { "X-Tenant-Id": tenant.tenantId },
+      data: { email: deliveryEmail, password: deliveryPassword },
+    })
+  )
+  mobileToken = login.token
+  const auth = { Authorization: `Bearer ${mobileToken}`, "X-Tenant-Id": tenant.tenantId }
+  for (const path of ["/api/users", "/api/items", "/api/couriers", "/api/delivery-operations"])
+    expect((await platform.get(path, { headers: auth })).status()).toBe(403)
+  expect([403, 404]).toContain(
+    (await platform.get("/api/delivery/me", { headers: { ...auth, "X-Tenant-Id": "posco-system" } })).status()
+  )
+  expect((await api.get("/api/delivery/me")).status()).toBe(403)
+  expect((await platform.get("/api/delivery/me")).status()).toBe(403)
+  await page.goto("/business/people/users")
+  await expect(page).toHaveURL(/\/unauthorized$/)
+  const retired = await platform.get(`/api/courier-mobile/${tenant.tenantId}`, {
+    headers: { "X-Courier-Token": "retired" },
+  })
+  expect(retired.status()).toBe(404)
+})
+
+test("Usuarios muestra DELIVERY y edita correo, sucursal y placa sin volverlo cajero", async ({ page }) => {
+  await session(page)
+  await page.goto("/business/people/users")
+  const row = page.getByRole("row").filter({ hasText: deliveryEmail })
+  await expect(row.getByText("Domiciliario (DELIVERY)", { exact: true })).toBeVisible()
+  await row.getByRole("button", { name: "Editar usuario" }).click()
+  await page.getByLabel("Placa del vehículo", { exact: true }).fill("QA456")
+  await page.getByRole("dialog").locator('button[type="submit"]').click()
+  await expect(page.getByRole("dialog")).toBeHidden()
+  const user = await json<{ role: string; deliveryBranchId: string; vehiclePlate: string }>(
+    await api.get(`/api/users/${courier.id}`)
+  )
+  expect(user.role).toBe("DELIVERY")
+  expect(user.deliveryBranchId).toBe(branch.id)
+  expect(user.vehiclePlate).toBe("QA456")
+})
+
+test("Usuarios crea domiciliario con rol DELIVERY y correo obligatorio", async ({ page }) => {
+  await session(page)
+  await page.goto("/business/people/users")
+  await page.getByRole("button", { name: "Nuevo usuario", exact: true }).click()
+  await page.locator('input[name="firstName"]').fill("UI")
+  await page.locator('input[name="lastName"]').fill("Delivery")
+  await page.locator('input[name="identificationNumber"]').fill(`73${Date.now()}`)
+  await page.getByRole("combobox", { name: "Rol", exact: true }).click()
+  await page.getByRole("option", { name: "Domiciliario (DELIVERY)", exact: true }).click()
+  await page.getByRole("dialog").locator('button[type="submit"]').click()
+  await expect(page.getByText("El domiciliario requiere un correo para ingresar.", { exact: true })).toBeVisible()
+  await page.locator('input[name="email"]').fill(`ui-delivery-${suffix}@example.test`)
+  await page.getByLabel("Sucursal del domiciliario", { exact: true }).selectOption(branch.id)
+  const created = page.waitForResponse(
+    (r) => /\/api\/Users$/i.test(new URL(r.url()).pathname) && r.request().method() === "POST"
+  )
+  await page.getByRole("dialog").locator('button[type="submit"]').click()
+  const response = await created
+  expect(response.status()).toBe(201)
+  const user = (await response.json()) as { role: string; deliveryBranchId: string; temporaryWebPassword: string }
+  expect(user.role).toBe("DELIVERY")
+  expect(user.deliveryBranchId).toBe(branch.id)
+  expect(user.temporaryWebPassword.length).toBeGreaterThanOrEqual(10)
+  await expect(page.getByRole("dialog").getByText(user.temporaryWebPassword, { exact: true })).toBeVisible()
+})
+
 test("Cluvi conserva cliente, teléfono, propina y notas; pickup no aparece en domicilios", async () => {
   cashOrder = (await webhook(`cash-${suffix}`)).orderId
   const ready = allOrders(await board()).find((o) => o.id === cashOrder)!
@@ -266,23 +387,20 @@ test("Cluvi conserva cliente, teléfono, propina y notas; pickup no aparece en d
   const pickup = await webhook(`pickup-${suffix}`, { service: "pickup" })
   expect(allOrders(await board()).some((o) => o.id === pickup.orderId)).toBe(false)
   const people = await json<{ totalCount: number }>(await api.get("/api/persons"))
-  expect(people.totalCount).toBe(1)
+  expect(people.totalCount).toBeGreaterThanOrEqual(3)
 })
 
-test("UI inicia un turno y genera enlace móvil", async ({ page }) => {
+test("UI inicia turno de un usuario DELIVERY sin enlaces anónimos", async ({ page }) => {
   await session(page)
   await page.goto("/business/orders/operations")
   await page.getByLabel("Sucursal", { exact: true }).selectOption(branch.id)
   await page.getByLabel("Selecciona un domiciliario", { exact: true }).selectOption(courier.id)
   await page.getByLabel("Base entregada", { exact: true }).fill("50000")
   await page.getByRole("button", { name: "Iniciar turno", exact: true }).click()
-  await expect(page.getByText("Ana QA · En turno", { exact: true })).toBeVisible()
-  await page.getByRole("button", { name: "Generar enlace móvil", exact: true }).click()
-  await expect(page.getByLabel("Enlace del domiciliario (vence en 24 horas)")).toHaveValue(/\/courier\/.*#.+/)
+  await expect(page.getByText("ANA QA · En turno", { exact: true })).toBeVisible()
+  await expect(page.getByRole("button", { name: "Generar enlace móvil", exact: true })).toHaveCount(0)
   const overview = await json<{ shifts: Entity[] }>(await api.get("/api/delivery-operations"))
   shift = overview.shifts[0]
-  mobileToken = (await json<{ token: string }>(await api.post(`/api/delivery-operations/shifts/${shift.id}/access`)))
-    .token
 })
 
 test("UI despacha con paga-con, muestra cambio y envía onWay de inmediato", async ({ page }) => {
@@ -304,8 +422,9 @@ test("UI despacha con paga-con, muestra cambio y envía onWay de inmediato", asy
 
 test("Móvil entrega líneas sin vincular y concilia efectivo con cambio", async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 })
-  await page.goto(`/courier/${tenant.tenantId}#${encodeURIComponent(mobileToken)}`)
-  await expect(page.getByRole("heading", { name: /Ana QA.*Mis domicilios/ })).toBeVisible()
+  await session(page, mobileToken, "Delivery")
+  await page.goto("/delivery")
+  await expect(page.getByRole("heading", { name: /ANA QA.*Mis domicilios/ })).toBeVisible()
   await expect(page.getByRole("link", { name: "+573001234567", exact: true })).toHaveAttribute(
     "href",
     "tel:+573001234567"
@@ -327,8 +446,8 @@ test("Móvil entrega líneas sin vincular y concilia efectivo con cambio", async
   )
   expect(preview.orders.find((o) => o.id === cashOrder)?.payments[0].changeAmount).toBe(3000)
   await check(
-    await platform.post(`/api/courier-mobile/${tenant.tenantId}/orders/${cashOrder}/deliver`, {
-      headers: { "X-Courier-Token": mobileToken },
+    await platform.post(`/api/delivery/me/orders/${cashOrder}/deliver`, {
+      headers: { Authorization: `Bearer ${mobileToken}`, "X-Tenant-Id": tenant.tenantId },
       data: { tenderedAmount: 30000 },
     })
   )
@@ -339,7 +458,8 @@ test("Prepagado muestra no cobrar, entrega sin efectivo y no aumenta caja", asyn
   await check(
     await api.post(`/api/delivery-operations/orders/${prepaidOrder}/dispatch`, { data: { courierId: courier.id } })
   )
-  await page.goto(`/courier/${tenant.tenantId}#${encodeURIComponent(mobileToken)}`)
+  await session(page, mobileToken, "Delivery")
+  await page.goto("/delivery")
   await expect(page.getByText("PAGADO, no cobrar", { exact: true })).toBeVisible()
   await page.getByRole("button", { name: "Entregado", exact: true }).click()
   await expect(page.getByLabel("Recibí en efectivo")).toHaveCount(0)
@@ -397,7 +517,7 @@ test("UI vincula pos_id una sola vez y mapea dataphone al catálogo", async ({ p
 })
 
 test("Cajero puede despachar, pero no administrar domiciliarios ni turnos", async ({ page }) => {
-  expect((await cashier.post("/api/couriers", { data: { name: "Forbidden" } })).status()).toBe(403)
+  expect((await cashier.post("/api/users", { data: { firstName: "Forbidden" } })).status()).toBe(403)
   expect(
     (
       await cashier.post("/api/delivery-operations/shifts", {
@@ -466,19 +586,22 @@ test("UI muestra fallo de sincronización y permite pausar/reanudar Cluvi", asyn
   await expect(page.getByText("Centro QA · Tienda pausada", { exact: true })).toBeVisible()
 })
 
-test("UI liquida turno y revoca enlace móvil", async ({ page }) => {
+test("UI liquida turno y DELIVERY ya no puede operar", async ({ page }) => {
   await session(page)
   await page.goto("/business/orders/operations")
-  await page.getByLabel("Efectivo devuelto Ana QA", { exact: true }).fill("77000")
+  await page.getByLabel("Efectivo devuelto ANA QA", { exact: true }).fill("77000")
   await page.getByRole("button", { name: "Liquidar turno", exact: true }).click()
-  await expect(page.getByText("Ana QA · Liquidado", { exact: true })).toBeVisible()
+  await expect(page.getByText("ANA QA · Liquidado", { exact: true })).toBeVisible()
   expect(
     (
-      await platform.get(`/api/courier-mobile/${tenant.tenantId}`, { headers: { "X-Courier-Token": mobileToken } })
+      await platform.get("/api/delivery/me", {
+        headers: { Authorization: `Bearer ${mobileToken}`, "X-Tenant-Id": tenant.tenantId },
+      })
     ).status()
-  ).toBe(401)
-  await page.goto(`/courier/${tenant.tenantId}#${encodeURIComponent(mobileToken)}`)
-  await expect(page.getByRole("alert")).toContainText(/revocado|liquidado/)
+  ).toBe(404)
+  await session(page, mobileToken, "Delivery")
+  await page.goto("/delivery")
+  await expect(page.getByRole("alert")).toContainText(/turno activo/)
 })
 
 test("E: UI configura zona circular y API protege administración y cobertura", async ({ page }) => {
@@ -581,7 +704,7 @@ test("E: lote inválido no despacha parcialmente; UI reordena dos paradas y desp
       data: { courierId: courier.id, branchId: branch.id, openingCash: 0 },
     })
   )
-  eToken = (await json<{ token: string }>(await api.post(`/api/delivery-operations/shifts/${eShift.id}/access`))).token
+  eToken = mobileToken
   await check(await api.put(`/api/orders/${manualOne}/status`, { data: { status: "Preparing" } }))
   await check(await api.put(`/api/orders/${manualOne}/status`, { data: { status: "Ready" } }))
   const bad = await api.post("/api/delivery-enhancements/runs", {
@@ -618,11 +741,11 @@ test("E: aviso manual prepara WhatsApp Desktop sin API ni envío real; Cluvi no 
   await page.getByLabel("Sucursal", { exact: true }).selectOption(branch.id)
   await page.getByRole("button", { name: "Avisar al cliente", exact: true }).first().click()
   const dialog = page.getByRole("dialog")
-  await expect(dialog.getByLabel("Mensaje", { exact: true })).toHaveValue(/va en camino con Ana QA/)
+  await expect(dialog.getByLabel("Mensaje", { exact: true })).toHaveValue(/va en camino con ANA QA/)
   const link = dialog.getByRole("link", { name: "Abrir WhatsApp Desktop", exact: true })
   const href = await link.getAttribute("href")
   expect(href).toMatch(/^whatsapp:\/\/send\?phone=573001234567&text=/)
-  expect(new URL(href!).searchParams.get("text")).toContain("Ana QA")
+  expect(new URL(href!).searchParams.get("text")).toContain("ANA QA")
   // Cancel external protocol navigation: no contact or real message is touched in QA.
   await link.evaluate((el) => el.addEventListener("click", (e) => e.preventDefault()))
   const external: string[] = []
@@ -642,7 +765,8 @@ test("E: móvil firma entrega, no permite firma sin consentimiento y prueba solo
   page,
 }) => {
   await page.setViewportSize({ width: 390, height: 844 })
-  await page.goto(`/courier/${tenant.tenantId}#${encodeURIComponent(eToken)}`)
+  await session(page, eToken, "Delivery")
+  await page.goto("/delivery")
   await page.getByRole("button", { name: "Entregado", exact: true }).first().click()
   await page.getByLabel("Recibí en efectivo", { exact: true }).fill("25000")
   await page.getByLabel("Tipo de prueba").selectOption("Signature")
@@ -692,8 +816,8 @@ test("E: foto válida se guarda atómicamente, formato falso no cobra y reintent
   const remaining = allOrders(await board()).find(
     (o) => [manualOne, manualTwo].includes(o.id) && o.status === "Shipped"
   )!
-  const url = `/api/courier-mobile/${tenant.tenantId}/orders/${remaining.id}/deliver`
-  const headers = { "X-Courier-Token": eToken }
+  const url = `/api/delivery/me/orders/${remaining.id}/deliver`
+  const headers = { Authorization: `Bearer ${eToken}`, "X-Tenant-Id": tenant.tenantId }
   const bad = await platform.post(url, {
     headers,
     data: { tenderedAmount: 25000, proof: { kind: "Photo", contentType: "image/png", data: "PHN2Zz48L3N2Zz4=" } },
@@ -705,7 +829,8 @@ test("E: foto válida se guarda atómicamente, formato falso no cobra y reintent
     proof: { kind: "Photo", contentType: "image/png", data: proofPng, receiverName: "Cliente foto" },
   }
   await page.setViewportSize({ width: 390, height: 844 })
-  await page.goto(`/courier/${tenant.tenantId}#${encodeURIComponent(eToken)}`)
+  await session(page, eToken, "Delivery")
+  await page.goto("/delivery")
   await page.getByRole("button", { name: "Entregado", exact: true }).click()
   await page.getByLabel("Recibí en efectivo", { exact: true }).fill("25000")
   await page.getByLabel("Tipo de prueba").selectOption("Photo")
@@ -729,4 +854,38 @@ test("E: foto válida se guarda atómicamente, formato falso no cobra y reintent
   )
   expect(summary.shifts.find((s) => s.id === eShift.id)?.expectedCash).toBe(47600)
   expect(summary.shifts.find((s) => s.id === eShift.id)?.deliveredCount).toBe(2)
+})
+
+test("DELIVERY no entrega pedidos ajenos y pierde acceso inmediato al desactivarse o cambiar de rol", async ({
+  page,
+}) => {
+  const auth = { Authorization: `Bearer ${mobileToken}`, "X-Tenant-Id": tenant.tenantId }
+  const foreign = (await webhook(`foreign-${suffix}`)).orderId
+  await check(await api.put(`/api/orders/${foreign}/courier`, { data: { courierId: otherCourier.id } }))
+  await check(await api.put(`/api/orders/${foreign}/status`, { data: { status: "Shipped" } }))
+  expect(
+    (
+      await platform.post(`/api/delivery/me/orders/${foreign}/deliver`, {
+        headers: auth,
+        data: { tenderedAmount: 30000 },
+      })
+    ).status()
+  ).toBe(403)
+  expect((await json<{ statusCode: string }>(await api.get(`/api/orders/${foreign}`))).statusCode).toBe("Shipped")
+  await check(
+    await api.put(`/api/users/${courier.id}`, {
+      data: { firstName: "Ana", lastName: "QA", role: "DELIVERY", isActive: false, deliveryBranchId: branch.id },
+    })
+  )
+  expect((await platform.get("/api/delivery/me", { headers: auth })).status()).toBe(403)
+  await session(page, mobileToken, "Delivery")
+  await page.goto("/delivery")
+  await expect(page.getByRole("alert")).toBeVisible()
+  await expect(page.getByRole("button", { name: "Entregado", exact: true })).toHaveCount(0)
+  await check(
+    await api.put(`/api/users/${courier.id}`, {
+      data: { firstName: "Ana", lastName: "QA", role: "CASHIER", isActive: true },
+    })
+  )
+  expect((await platform.get("/api/delivery/me", { headers: auth })).status()).toBe(403)
 })

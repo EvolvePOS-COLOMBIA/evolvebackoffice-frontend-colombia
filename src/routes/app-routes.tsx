@@ -25,7 +25,6 @@ import { RegistersPage } from "@/features/business/registers/pages/registers-pag
 import { OrdersPage } from "@/features/business/orders/pages/orders-page"
 import { OrderClosingPage } from "@/features/business/orders/pages/order-closing-page"
 import { DeliveriesPage } from "@/features/business/orders/pages/deliveries-page"
-import { CouriersPage } from "@/features/business/orders/pages/couriers-page"
 import { CourierMobilePage } from "@/features/business/orders/pages/courier-mobile-page"
 import { DeliveryOperationsPage } from "@/features/business/orders/pages/delivery-operations-page"
 import { DeliveryRoutesPage } from "@/features/business/orders/pages/delivery-routes-page"
@@ -61,7 +60,10 @@ function AppRoutesContent() {
 
   return (
     <Routes>
-      <Route path="/courier/:tenantId" element={<CourierMobilePage />} />
+      <Route path="/courier/:tenantId" element={<Navigate to="/login" replace />} />
+      <Route element={<ProtectedRoute allowedRoles={["Delivery"]} />}>
+        <Route path="/delivery" element={<CourierMobilePage />} />
+      </Route>
       <Route element={<PublicRoute redirectAuthenticated />}>
         <Route path="/" element={<MarketingPage />} />
         <Route path="/login" element={<LoginPage />} />
@@ -99,7 +101,7 @@ function AppRoutesContent() {
             <Route path="/business/orders" element={<OrdersPage />} />
             <Route path="/business/orders/closing" element={<OrderClosingPage />} />
             <Route path="/business/orders/deliveries" element={<DeliveriesPage />} />
-            <Route path="/business/orders/couriers" element={<CouriersPage />} />
+            <Route path="/business/orders/couriers" element={<Navigate to="/business/people/users" replace />} />
             <Route path="/business/orders/operations" element={<DeliveryOperationsPage />} />
             <Route path="/business/orders/routes" element={<DeliveryRoutesPage />} />
             <Route path="/business/items" element={<ItemsPage />} />

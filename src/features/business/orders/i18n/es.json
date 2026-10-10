@@ -321,6 +321,8 @@
   "phase2_external_payment": "Medio en Cluvi",
   "phase2_local_payment": "Medio del catálogo",
   "phase2_my_deliveries": "Mis domicilios",
+  "phase2_no_shift": "No tienes un turno activo. Solicita a caja iniciar tu turno.",
+  "delivery_logout": "Cerrar sesión",
   "phase2_link_invalid": "Enlace inválido o vencido. Solicite uno nuevo en caja.",
   "phase2_received_cash": "Recibí en efectivo",
   "phase2_confirm_delivery": "Confirmar entrega y cobro",

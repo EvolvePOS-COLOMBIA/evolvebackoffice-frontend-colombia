@@ -321,6 +321,8 @@
   "phase2_external_payment": "Cluvi payment method",
   "phase2_local_payment": "Catalog payment method",
   "phase2_my_deliveries": "My deliveries",
+  "phase2_no_shift": "No active shift. Ask the cashier to start your shift.",
+  "delivery_logout": "Sign out",
   "phase2_link_invalid": "Invalid or expired link. Ask the store for a new one.",
   "phase2_received_cash": "Cash received",
   "phase2_confirm_delivery": "Confirm delivery and collection",

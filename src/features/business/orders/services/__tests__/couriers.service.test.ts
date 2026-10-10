@@ -1,12 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from "vitest"
 
 import { api } from "@/config/axios-client"
-import {
-  assignOrderCourier,
-  getCouriers,
-  getDeliveryBoard,
-  setCourierActive,
-} from "@/features/business/orders/services/couriers.service"
+import { assignOrderCourier, getCouriers, getDeliveryBoard } from "@/features/business/orders/services/couriers.service"
 import { reconcileOrderPayments } from "@/features/business/orders/services/order-closings.service"
 import { updateOrderStatus } from "@/features/business/orders/services/orders.service"
 
@@ -38,14 +33,6 @@ describe("couriers.service", () => {
     mockedApi.get.mockResolvedValue({ data: null })
     const result = await getCouriers({})
     expect(result).toEqual({ data: [], totalCount: 0, totalPages: 0 })
-  })
-
-  it("setCourierActive usa activate/deactivate", async () => {
-    mockedApi.post.mockResolvedValue({})
-    await setCourierActive("c1", true)
-    await setCourierActive("c1", false)
-    expect(mockedApi.post).toHaveBeenNthCalledWith(1, "/api/couriers/c1/activate")
-    expect(mockedApi.post).toHaveBeenNthCalledWith(2, "/api/couriers/c1/deactivate")
   })
 
   it("assignOrderCourier envía null para quitar el domiciliario", async () => {

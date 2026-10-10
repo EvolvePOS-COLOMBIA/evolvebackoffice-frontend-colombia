@@ -23,15 +23,6 @@ export interface PagedCouriers {
   totalPages: number
 }
 
-export interface CourierPayload {
-  name: string
-  phone: string | null
-  documentNumber: string | null
-  vehiclePlate: string | null
-  notes: string | null
-  branchId: string | null
-}
-
 export interface DeliveryOrder {
   id: string
   reference: string

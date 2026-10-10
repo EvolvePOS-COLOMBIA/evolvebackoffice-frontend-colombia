@@ -1,5 +1,5 @@
 import { api } from "@/config/axios-client"
-import type { Courier, CourierPayload, DeliveryBoard, PagedCouriers } from "../types/delivery"
+import type { Courier, DeliveryBoard, PagedCouriers } from "../types/delivery"
 
 export async function getCouriers(params: {
   pageNumber?: number
@@ -21,20 +21,6 @@ export async function getCouriers(params: {
   const list = Array.isArray(data?.data) ? data.data : []
   const totalCount = typeof data?.totalCount === "number" ? data.totalCount : list.length
   return { data: list, totalCount, totalPages: Math.ceil(totalCount / pageSize) }
-}
-
-export async function createCourier(payload: CourierPayload): Promise<Courier> {
-  const { data } = await api.post<Courier>("/api/couriers", payload)
-  return data
-}
-
-export async function updateCourier(id: string, payload: CourierPayload): Promise<Courier> {
-  const { data } = await api.put<Courier>(`/api/couriers/${id}`, payload)
-  return data
-}
-
-export async function setCourierActive(id: string, active: boolean): Promise<void> {
-  await api.post(`/api/couriers/${id}/${active ? "activate" : "deactivate"}`)
 }
 
 /** Asigna (courierId) o quita (null) el domiciliario de un pedido Listo o En camino. */

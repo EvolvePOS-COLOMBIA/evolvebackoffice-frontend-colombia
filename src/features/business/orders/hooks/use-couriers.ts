@@ -1,14 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 
-import {
-  assignOrderCourier,
-  createCourier,
-  getCouriers,
-  getDeliveryBoard,
-  setCourierActive,
-  updateCourier,
-} from "../services/couriers.service"
-import type { CourierPayload } from "../types/delivery"
+import { assignOrderCourier, getCouriers, getDeliveryBoard } from "../services/couriers.service"
 import { ordersKeys } from "./use-orders"
 
 export const couriersKeys = {
@@ -24,33 +16,6 @@ export function useCouriers(branchId: string | null, includeInactive = false, se
     queryKey: couriersKeys.list(branchId, includeInactive, search),
     queryFn: () => getCouriers({ branchId, includeInactive, searchValue: search }),
     staleTime: 30_000,
-  })
-}
-
-export function useCreateCourier() {
-  const qc = useQueryClient()
-  return useMutation({
-    mutationFn: (payload: CourierPayload) => createCourier(payload),
-    onSuccess: () => qc.invalidateQueries({ queryKey: couriersKeys.all }),
-  })
-}
-
-export function useUpdateCourier() {
-  const qc = useQueryClient()
-  return useMutation({
-    mutationFn: ({ id, payload }: { id: string; payload: CourierPayload }) => updateCourier(id, payload),
-    onSuccess: () => {
-      qc.invalidateQueries({ queryKey: couriersKeys.all })
-      qc.invalidateQueries({ queryKey: ordersKeys.all })
-    },
-  })
-}
-
-export function useSetCourierActive() {
-  const qc = useQueryClient()
-  return useMutation({
-    mutationFn: ({ id, active }: { id: string; active: boolean }) => setCourierActive(id, active),
-    onSuccess: () => qc.invalidateQueries({ queryKey: couriersKeys.all }),
   })
 }
 

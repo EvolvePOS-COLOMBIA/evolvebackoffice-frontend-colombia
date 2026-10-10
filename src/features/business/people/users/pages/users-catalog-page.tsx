@@ -47,6 +47,9 @@ export function UsersCatalogPage() {
         phoneNumber: values.phoneNumber ?? null,
         email: values.email ?? null,
         role: values.role,
+        deliveryBranchId: values.deliveryBranchId ?? null,
+        vehiclePlate: values.vehiclePlate ?? null,
+        deliveryNotes: values.deliveryNotes ?? null,
       },
       {
         onSuccess: (result) => {
@@ -67,10 +70,22 @@ export function UsersCatalogPage() {
           firstName: values.firstName,
           lastName: values.lastName,
           phoneNumber: values.phoneNumber ?? null,
+          email: values.email ?? null,
+          role: values.role,
+          identificationTypeId: values.identificationTypeId,
+          identificationNumber: values.identificationNumber,
+          deliveryBranchId: values.deliveryBranchId ?? null,
+          vehiclePlate: values.vehiclePlate ?? null,
+          deliveryNotes: values.deliveryNotes ?? null,
+          isActive: values.isActive,
         },
       },
       {
-        onSuccess: () => {
+        onSuccess: (result) => {
+          if (result.temporaryWebPassword) {
+            setCreatedUser(result)
+            setCredentialsOpen(true)
+          }
           setFormOpen(false)
           setSelectedUser(null)
         },

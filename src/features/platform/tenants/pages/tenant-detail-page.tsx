@@ -68,7 +68,9 @@ export function TenantDetailPage() {
     enabled: Boolean(id),
   })
 
-  const tenantIdForModules = tenant?.tenantId
+  // X-Tenant-Id debe llevar el PublicId (GUID) del tenant, no el slug: el slug
+  // puede contener caracteres no ASCII (p. ej. "ñ") que el header HTTP mutila.
+  const tenantIdForModules = tenant?.id
 
   const {
     data: modules = [],
@@ -191,29 +193,22 @@ export function TenantDetailPage() {
       { id, values: pendingValues, token },
       {
         onSuccess: () => {
-          if (serialsToDecommission.length > 0) {
-            adjustSerialsMutation.mutate(
-              { tenantId: id, data: { newMaxRegisters: pendingValues.maxRegisters, serialsToDecommission } },
-              {
-                onSuccess: () => {
-                  notify.success(t("tenant_updated"))
-                  setAdjustDialogOpen(false)
-                  setPendingValues(null)
-                  setEditDialogOpen(false)
-                },
-                onError: (error) => {
-                  notify.error(error instanceof Error ? error.message : t("unable_to_save"))
-                  setAdjustDialogOpen(false)
-                  setPendingValues(null)
-                },
-              }
-            )
-          } else {
-            notify.success(t("tenant_updated"))
-            setAdjustDialogOpen(false)
-            setPendingValues(null)
-            setEditDialogOpen(false)
-          }
+          updateTenantMutation.mutate(
+            { id, values: pendingValues, token },
+            {
+              onSuccess: () => {
+                notify.success(t("tenant_updated"))
+                setAdjustDialogOpen(false)
+                setPendingValues(null)
+                setEditDialogOpen(false)
+              },
+              onError: (error) => {
+                notify.error(error instanceof Error ? error.message : t("unable_to_save"))
+                setAdjustDialogOpen(false)
+                setPendingValues(null)
+              },
+            }
+          )
         },
         onError: (error) => {
           notify.error(error instanceof Error ? error.message : t("unable_to_save"))

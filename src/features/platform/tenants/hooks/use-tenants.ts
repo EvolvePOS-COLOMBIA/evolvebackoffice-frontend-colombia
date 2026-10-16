@@ -96,6 +96,9 @@ export function useUpdateTenant() {
     mutationFn: ({ id, values, token }: { id: string; values: TenantFormValues; token: string }) =>
       updateTenant(id, toUpdateDto(values)).then(async (result) => {
         if (values.modules.length > 0) {
+          // X-Tenant-Id debe llevar el PublicId (GUID) del tenant: el slug puede
+          // contener caracteres no ASCII (p. ej. "ñ") que el header HTTP mutila,
+          // dejando la resolución de tenant en 404. El backend acepta el GUID.
           await bulkUpdateTenantModules(token, id, toBulkModuleItems(values.modules))
         }
         return result

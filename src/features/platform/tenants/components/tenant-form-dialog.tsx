@@ -126,7 +126,7 @@ export function TenantFormDialog({
 
     if (isEditMode && tenantToEdit && token) {
       queueMicrotask(() => setModulesState(defaultState))
-      getTenantModules(token, tenantToEdit.tenantId)
+      getTenantModules(token, tenantToEdit.id)
         .then((tenantModules) => {
           const merged = { ...defaultState }
           tenantModules.forEach((tm) => {

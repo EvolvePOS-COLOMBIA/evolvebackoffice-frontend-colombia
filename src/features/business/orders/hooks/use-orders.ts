@@ -6,8 +6,9 @@ import {
   createManualOrder,
   updateOrderDetails,
   retryOrderSync,
+  cancelOrder,
 } from "../services/orders.service"
-import type { CreateManualOrderDto, UpdateOrderDetailsDto } from "../types/api"
+import type { CreateManualOrderDto, UpdateOrderDetailsDto, CancelOrderDto } from "../types/api"
 
 export const ordersKeys = {
   all: ["orders"] as const,
@@ -77,6 +78,21 @@ export function useUpdateOrderDetails() {
 
   return useMutation({
     mutationFn: ({ id, payload }: { id: string; payload: UpdateOrderDetailsDto }) => updateOrderDetails(id, payload),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ordersKeys.all })
+    },
+  })
+}
+
+/**
+ * Cancela una orden especificando la disposición de inventario (Restocked/Waste)
+ * y motivo opcional. Invalida todas las queries de órdenes.
+ */
+export function useCancelOrder() {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: ({ id, payload }: { id: string; payload?: CancelOrderDto }) => cancelOrder(id, payload),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ordersKeys.all })
     },

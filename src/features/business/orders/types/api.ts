@@ -30,6 +30,22 @@ export interface OrderListItem {
   assignedAt?: string | null
   dispatchedAt?: string | null
   deliveredAt?: string | null
+  cancellationType?: CancellationType | null
+  wasteCost?: number | null
+  wastedAt?: string | null
+}
+
+export type CancellationType = "Restocked" | "Waste"
+
+export interface CancelOrderItemDispositionDto {
+  orderItemId: string
+  disposition: CancellationType
+}
+
+export interface CancelOrderDto {
+  reason?: string
+  cancellationType?: CancellationType
+  items?: CancelOrderItemDispositionDto[]
 }
 
 export interface OrderDetail {
@@ -77,6 +93,11 @@ export interface OrderDetail {
   assignedAt?: string | null
   dispatchedAt?: string | null
   deliveredAt?: string | null
+  cancellationType?: CancellationType | null
+  cancellationReason?: string | null
+  wasteCost?: number | null
+  wastedAt?: string | null
+  wastedBy?: string | null
 }
 
 export interface OrderItemDto {

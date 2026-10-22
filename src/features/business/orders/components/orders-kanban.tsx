@@ -6,30 +6,39 @@ import { Button } from "@/components/ui/button"
 import { useTranslation } from "@/i18n/use-i18n"
 import { KANBAN_COLUMNS, ORDER_STATUS_CONFIG } from "../types"
 import type { OrderListItem, OrderStatus } from "../types/api"
-import { Bike, Eye, Clock, MapPin } from "lucide-react"
+import { Bike, Eye, Clock, MapPin, Ban } from "lucide-react"
 
 interface OrdersKanbanProps {
   ordersByStatus: Record<string, OrderListItem[]>
   onDragEnd: (orderId: string, newStatus: OrderStatus) => void
   onViewDetail: (order: OrderListItem) => void
+  onCancelOrder?: (order: OrderListItem) => void
   /** En "todas las sucursales" cada tarjeta muestra su sucursal. */
   showBranch?: boolean
   selectedIds: ReadonlySet<string>
   onToggleSelection: (ids: string[]) => void
   disabled?: boolean
+  showCancelled?: boolean
 }
 
+/**
+ * Tablero Kanban de órdenes con columnas por estado, soporte de arrastrar y soltar (DnD),
+ * selección múltiple para acciones por lote y columna opcional de órdenes canceladas.
+ */
 export function OrdersKanban({
   ordersByStatus,
   onDragEnd,
   onViewDetail,
+  onCancelOrder,
   showBranch = false,
   selectedIds,
   onToggleSelection,
   disabled = false,
+  showCancelled = false,
 }: OrdersKanbanProps) {
   const { t } = useTranslation("business-orders")
 
+  /** Gestiona el evento de finalización del arrastre de una tarjeta en el tablero. */
   const handleDragEnd = (result: DropResult) => {
     if (!result.destination) return
     // Soltar en la misma columna no cambia el estado (evita un PUT inválido).
@@ -39,10 +48,12 @@ export function OrdersKanban({
     onDragEnd(orderId, newStatus)
   }
 
+  const columns = showCancelled ? ([...KANBAN_COLUMNS, "Cancelled"] as const) : KANBAN_COLUMNS
+
   return (
     <DragDropContext onDragEnd={handleDragEnd}>
       <div className="flex gap-4 overflow-x-auto pb-4">
-        {KANBAN_COLUMNS.map((status) => {
+        {columns.map((status) => {
           const config = ORDER_STATUS_CONFIG[status]
           const orders = ordersByStatus[status] ?? []
 
@@ -52,7 +63,7 @@ export function OrdersKanban({
                 <CardHeader className="pb-3">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2">
-                      {status !== "Delivered" && orders.length > 0 && (
+                      {status !== "Delivered" && status !== "Cancelled" && orders.length > 0 && (
                         <input
                           type="checkbox"
                           aria-label={t("bulk_select_column", { status: config?.label })}
@@ -86,7 +97,12 @@ export function OrdersKanban({
                         <p className="py-8 text-center text-xs text-muted-foreground">{t("no_orders")}</p>
                       )}
                       {orders.map((order, index) => (
-                        <Draggable key={order.id} draggableId={order.id} index={index} isDragDisabled={disabled}>
+                        <Draggable
+                          key={order.id}
+                          draggableId={order.id}
+                          index={index}
+                          isDragDisabled={disabled || status === "Cancelled" || order.statusCode === "Cancelled"}
+                        >
                           {(provided, snapshot) => (
                             <div
                               ref={provided.innerRef}
@@ -101,7 +117,7 @@ export function OrdersKanban({
                               }`}
                             >
                               <div className="mb-2 flex items-start justify-between gap-1">
-                                {status !== "Delivered" && (
+                                {status !== "Delivered" && status !== "Cancelled" && (
                                   <input
                                     type="checkbox"
                                     aria-label={t("bulk_select_order", {
@@ -130,6 +146,27 @@ export function OrdersKanban({
                               </div>
 
                               <p className="mb-1 text-sm font-medium">${order.total.toFixed(2)}</p>
+
+                              {order.statusCode === "Cancelled" && (
+                                <div className="mb-1 flex flex-wrap items-center gap-1.5">
+                                  {order.cancellationType && (
+                                    <Badge
+                                      tone={order.cancellationType === "Waste" ? "warning" : "info"}
+                                      className="px-1.5 py-0 text-[10px]"
+                                    >
+                                      {order.cancellationType === "Waste"
+                                        ? t("cancellation_type_waste")
+                                        : t("cancellation_type_restocked")}
+                                    </Badge>
+                                  )}
+                                  {order.wasteCost != null && order.wasteCost > 0 && (
+                                    <span className="font-mono text-[10px] font-medium text-destructive">
+                                      -${order.wasteCost.toFixed(2)}
+                                    </span>
+                                  )}
+                                </div>
+                              )}
+
                               <p className="mb-1 text-xs font-semibold">
                                 {order.paymentConfirmed
                                   ? t("phase2_paid")
@@ -158,19 +195,38 @@ export function OrdersKanban({
                                     minute: "2-digit",
                                   })}
                                 </div>
-                                <Button
-                                  aria-label={t("order_products")}
-                                  title={t("order_products")}
-                                  variant="ghost"
-                                  size="sm"
-                                  className="h-6 px-2"
-                                  onClick={(e) => {
-                                    e.stopPropagation()
-                                    onViewDetail(order)
-                                  }}
-                                >
-                                  <Eye className="h-3 w-3" />
-                                </Button>
+                                <div className="flex items-center gap-1">
+                                  {order.statusCode !== "Delivered" &&
+                                    order.statusCode !== "Cancelled" &&
+                                    onCancelOrder && (
+                                      <Button
+                                        aria-label={t("cancel_order")}
+                                        title={t("cancel_order")}
+                                        variant="ghost"
+                                        size="sm"
+                                        className="h-6 px-1.5 text-muted-foreground hover:bg-destructive/10 hover:text-destructive"
+                                        onClick={(e) => {
+                                          e.stopPropagation()
+                                          onCancelOrder(order)
+                                        }}
+                                      >
+                                        <Ban className="h-3 w-3" />
+                                      </Button>
+                                    )}
+                                  <Button
+                                    aria-label={t("order_products")}
+                                    title={t("order_products")}
+                                    variant="ghost"
+                                    size="sm"
+                                    className="h-6 px-2"
+                                    onClick={(e) => {
+                                      e.stopPropagation()
+                                      onViewDetail(order)
+                                    }}
+                                  >
+                                    <Eye className="h-3 w-3" />
+                                  </Button>
+                                </div>
                               </div>
                             </div>
                           )}

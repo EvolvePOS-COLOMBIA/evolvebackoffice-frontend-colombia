@@ -7,6 +7,7 @@ import type {
   NewOrdersUpdate,
   CreateManualOrderDto,
   UpdateOrderDetailsDto,
+  CancelOrderDto,
 } from "../types/api"
 
 function normalizePagedResponse(raw: unknown, pageSize: number): PagedOrders {
@@ -114,4 +115,12 @@ export async function createManualOrder(payload: CreateManualOrderDto): Promise<
  */
 export async function updateOrderDetails(id: string, payload: UpdateOrderDetailsDto): Promise<void> {
   await api.put(`/api/orders/${id}/details`, payload)
+}
+
+/**
+ * Cancela una orden. Permite indicar si los productos regresan al stock
+ * disponible (Restocked) o se registran como merma física (Waste), y el motivo.
+ */
+export async function cancelOrder(id: string, payload?: CancelOrderDto): Promise<void> {
+  await api.post(`/api/orders/${id}/cancel`, payload ?? {})
 }

@@ -48,3 +48,5 @@ tests/*
 !tests/delivery-phase2.spec.ts
 
 test-results/*
+
+.codebase-memory

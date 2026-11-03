@@ -1,5 +1,6 @@
 {
   "inventory": "Inventory",
+  "back_to_inventory": "Back to inventory",
   "stock_control": "Stock Control",
   "stock_control_desc": "Track every unit that enters or leaves your store. Monitor stock levels, manage suppliers, and keep costs under control.",
   "purchase_orders": "Purchase orders",

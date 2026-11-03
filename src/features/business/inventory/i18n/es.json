@@ -1,5 +1,6 @@
 {
   "inventory": "Inventario",
+  "back_to_inventory": "Volver a inventario",
   "stock_control": "Control de Stock",
   "stock_control_desc": "Rastrea cada unidad que entra o sale de tu tienda. Monitorea niveles de stock, administra proveedores y mantén los costos bajo control.",
   "purchase_orders": "Órdenes de compra",

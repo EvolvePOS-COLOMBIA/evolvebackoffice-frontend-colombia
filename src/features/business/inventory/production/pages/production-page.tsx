@@ -47,11 +47,8 @@ export function ProductionPage() {
   return (
     <Card className="overflow-hidden shadow-none">
       <CardContent className="space-y-6 p-4 sm:p-6 lg:p-8">
-        <BackLink to="/business/inventory">{t("inventory")}</BackLink>
+        <BackLink to="/business/inventory">{t("back_to_inventory")}</BackLink>
         <div className="relative flex flex-col gap-2">
-          <Badge className="max-w-fit" tone="primary">
-            {t("inventory")}
-          </Badge>
           <h1 className="text-xl font-semibold text-foreground sm:text-2xl">{t("production")}</h1>
           <p className="max-w-4xl text-sm leading-5 text-muted-foreground">{t("production_page_desc")}</p>
           <ChefHat

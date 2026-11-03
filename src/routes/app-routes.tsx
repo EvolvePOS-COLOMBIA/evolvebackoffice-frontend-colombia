@@ -18,7 +18,7 @@ import { ModifiersPage } from "@/features/business/items/modifiers/pages/modifie
 import { PeoplePage } from "@/features/business/people/pages/people-page"
 import { UsersCatalogPage } from "@/features/business/people/users/pages/users-catalog-page"
 import { CustomersPage } from "@/features/business/people/customers/pages/customers-page"
-import { SuppliersPage } from "@/features/business/inventory/suppliers/pages/suppliers-page"
+import { SuppliersPage } from "@/features/business/people/suppliers/pages/suppliers-page"
 import { StockPage } from "@/features/business/inventory/stock/pages/stock-page"
 import { PurchaseOrdersPage } from "@/features/business/inventory/purchase-orders/pages/purchase-orders-page"
 import { TransfersPage } from "@/features/business/inventory/transfers/pages/transfers-page"
@@ -128,7 +128,6 @@ function AppRoutesContent() {
             <Route path="/business/items/taxes" element={<TaxesPage />} />
             <Route path="/business/items/modifiers" element={<ModifiersPage />} />
             <Route path="/business/inventory" element={<InventoryPage />} />
-            <Route path="/business/inventory/suppliers" element={<SuppliersPage />} />
             <Route path="/business/inventory/stock" element={<StockPage />} />
             <Route path="/business/inventory/purchase-orders" element={<PurchaseOrdersPage />} />
             <Route path="/business/inventory/transfers" element={<TransfersPage />} />
@@ -136,6 +135,7 @@ function AppRoutesContent() {
             <Route path="/business/inventory/sales" element={<SalesPage />} />
             <Route path="/business/people" element={<PeoplePage />} />
             <Route path="/business/people/users" element={<UsersCatalogPage />} />
+            <Route path="/business/people/suppliers" element={<SuppliersPage />} />
             <Route path="/business/people/customers" element={<CustomersPage />} />
             <Route path="/business/reports" element={<ReportsPage />} />
             <Route path="/business/ai-chat" element={<AiChatPage />} />

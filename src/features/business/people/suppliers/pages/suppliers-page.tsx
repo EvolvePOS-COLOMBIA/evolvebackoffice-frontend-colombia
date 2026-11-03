@@ -111,7 +111,7 @@ export function SuppliersPage() {
   return (
     <>
       <EntityListLayout
-        back={{ to: "/business/inventory", label: t("back_to_inventory") }}
+        back={{ to: "/business/people", label: t("back_to_people") }}
         title={t("supplier_catalog")}
         description={t("supplier_catalog_desc")}
         stats={[

@@ -9,7 +9,6 @@ import {
   PackageX,
   Receipt,
   ShoppingCart,
-  Truck,
   Warehouse,
 } from "lucide-react"
 import { useNavigate } from "react-router-dom"
@@ -39,13 +38,6 @@ export function InventoryPage() {
       icon: Warehouse,
       disabled: false,
       onClick: () => navigate("/business/inventory/stock"),
-    },
-    {
-      name: t("suppliers"),
-      label: t("suppliers_desc"),
-      icon: Truck,
-      disabled: false,
-      onClick: () => navigate("/business/inventory/suppliers"),
     },
     {
       name: t("transfers"),

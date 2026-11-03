@@ -6,6 +6,8 @@
   "customers_desc": "Administra datos de contacto, historial de compras e información de lealtad para tus clientes.",
   "users": "Usuarios",
   "users_desc": "Controla cuentas de empleados, credenciales de inicio de sesión y configuraciones de acceso personal para el sistema.",
+  "suppliers": "Proveedores",
+  "suppliers_desc": "Administra información de contacto, acuerdos de precios y términos para todos los proveedores de productos.",
   "roles": "Roles",
   "roles_desc": "Define permisos y niveles de acceso para diferentes grupos de usuarios (ej: Gerente, Cajero, Admin).",
   "time_clock": "Reloj de Tiempo",

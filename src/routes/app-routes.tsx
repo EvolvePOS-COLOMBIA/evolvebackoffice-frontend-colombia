@@ -128,6 +128,10 @@ function AppRoutesContent() {
             <Route path="/business/items/taxes" element={<TaxesPage />} />
             <Route path="/business/items/modifiers" element={<ModifiersPage />} />
             <Route path="/business/inventory" element={<InventoryPage />} />
+            <Route
+              path="/business/inventory/suppliers"
+              element={<Navigate to="/business/people/suppliers" replace />}
+            />
             <Route path="/business/inventory/stock" element={<StockPage />} />
             <Route path="/business/inventory/purchase-orders" element={<PurchaseOrdersPage />} />
             <Route path="/business/inventory/transfers" element={<TransfersPage />} />

@@ -116,7 +116,9 @@ function renderStatsZone(stats: EntityListLayoutProps["stats"]): ReactNode {
       <div
         className={cn(
           // Móvil: chips en fila que fluyen (flex). sm+: grid con las columnas configuradas.
-          "z-10 flex shrink-0 flex-wrap gap-2 sm:grid sm:gap-2.5 xl:w-fit",
+          // max-w-full: dentro de la columna derecha (limitada en xl) la grilla se
+          // ajusta en vez de desbordar sobre el título.
+          "z-10 flex max-w-full shrink-0 flex-wrap gap-2 sm:grid sm:gap-2.5 xl:w-fit",
           statsGridColumns(stats.length)
         )}
       >
@@ -176,6 +178,7 @@ export function EntityListLayout(props: EntityListLayoutProps): ReactElement {
     stats,
     toolbar,
     tabs,
+    heroFooter,
     hero,
     decorative = true,
     className,
@@ -184,12 +187,13 @@ export function EntityListLayout(props: EntityListLayoutProps): ReactElement {
 
   const hasCustomHero = hero !== undefined && hero !== null && hero !== false
   const hasTabs = tabs !== undefined && tabs !== null && tabs !== false
+  const hasHeroFooter = heroFooter !== undefined && heroFooter !== null && heroFooter !== false
 
   let heroZone: ReactNode = null
   if (hasCustomHero) {
     heroZone = <Hero decorative={decorative}>{hero}</Hero>
-  } else if (eyebrow || back || title || description || hasTabs || hasStatsContent(stats)) {
-    const hasLeftContent = Boolean(eyebrow || back || title || description)
+  } else if (eyebrow || back || title || description || hasHeroFooter || hasTabs || hasStatsContent(stats)) {
+    const hasLeftContent = Boolean(eyebrow || back || title || description || hasHeroFooter)
     heroZone = (
       <Hero decorative={decorative}>
         <div className="flex flex-col gap-5 xl:flex-row xl:items-start xl:justify-between">
@@ -211,10 +215,11 @@ export function EntityListLayout(props: EntityListLayoutProps): ReactElement {
                   {description ? <ExpandableDescription text={description} /> : null}
                 </div>
               ) : null}
+              {hasHeroFooter ? heroFooter : null}
             </div>
           ) : null}
           {hasTabs || hasStatsContent(stats) ? (
-            <div className="flex shrink-0 flex-col items-start gap-3 xl:items-end">
+            <div className="flex shrink-0 flex-col items-start gap-3 xl:w-1/2 xl:items-end">
               {hasTabs ? tabs : null}
               {renderStatsZone(stats)}
             </div>

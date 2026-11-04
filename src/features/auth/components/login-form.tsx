@@ -36,7 +36,7 @@ export function LoginForm() {
     defaultValues: {
       tenantPublicId: "joaquin-4bb4e4d0",
       email: "joaquin@URSPOS.COM",
-      password: "8GxMhk#ngR5E@7Js",
+      password: "Guar123!",
     },
   })
 

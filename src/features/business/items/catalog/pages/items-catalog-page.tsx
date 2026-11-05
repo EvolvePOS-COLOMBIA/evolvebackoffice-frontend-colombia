@@ -121,7 +121,11 @@ export function ItemsCatalogPage() {
         {isGlobalView ? (
           <GlobalCatalogView onAssignToBranch={handleAssignToBranch} />
         ) : selectedBranchId ? (
-          <BranchCatalogView branchId={selectedBranchId} onAssignClick={handleAssignFromBranch} />
+          <BranchCatalogView
+            key={selectedBranchId}
+            branchId={selectedBranchId}
+            onAssignClick={handleAssignFromBranch}
+          />
         ) : null}
       </div>
 

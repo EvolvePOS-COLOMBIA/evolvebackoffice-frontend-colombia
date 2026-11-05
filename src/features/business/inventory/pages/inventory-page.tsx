@@ -40,6 +40,13 @@ export function InventoryPage() {
       onClick: () => navigate("/business/inventory/stock"),
     },
     {
+      name: t("sales"),
+      label: t("sales_desc"),
+      icon: Receipt,
+      disabled: false,
+      onClick: () => navigate("/business/inventory/sales"),
+    },
+    {
       name: t("transfers"),
       label: t("transfers_desc"),
       icon: ArrowRightLeft,
@@ -52,13 +59,6 @@ export function InventoryPage() {
       icon: ShoppingCart,
       disabled: false,
       onClick: () => navigate("/business/inventory/purchase-orders"),
-    },
-    {
-      name: t("sales"),
-      label: t("sales_desc"),
-      icon: Receipt,
-      disabled: false,
-      onClick: () => navigate("/business/inventory/sales"),
     },
     ...(hasProduction
       ? [

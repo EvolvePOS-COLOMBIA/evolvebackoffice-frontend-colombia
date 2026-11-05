@@ -1,10 +1,8 @@
 import { useEffect, useRef } from "react"
 import { useNavigate } from "react-router-dom"
-import { useQueryClient } from "@tanstack/react-query"
 import { BellRing } from "lucide-react"
 
 import { fetchNewOrders } from "../services/orders.service"
-import { invalidateOrderViews } from "./use-order-updates"
 import type { NewOrderNotice } from "../types/api"
 import { notify } from "@/hooks/use-notify"
 import { useTranslation } from "@/i18n/use-i18n"
@@ -33,8 +31,6 @@ function sleep(ms: number): Promise<void> {
  * - **Toast dentro de la página** → clic navega a `/business/orders`.
  * - **Notificación de escritorio** cuando la pestaña está minimizada/oculta
  *   (si el permiso fue concedido; se solicita al montar).
- * - **Refresco** de las vistas de órdenes abiertas (kanban, cierre, domicilios,
- *   dashboard) para que la orden aparezca sin recargar.
  *
  * El cursor parte de "ahora" para no disparar notificaciones por órdenes
  * históricas, y avanza con el `nowUtc` de cada respuesta (semántica sin
@@ -43,7 +39,6 @@ function sleep(ms: number): Promise<void> {
  */
 export function useNewOrderNotifications(enabled: boolean): void {
   const navigate = useNavigate()
-  const queryClient = useQueryClient()
   const { t } = useTranslation("business-orders")
 
   // Establecer en refs para no reiniciar el loop por cambios de identidad.
@@ -71,7 +66,6 @@ export function useNewOrderNotifications(enabled: boolean): void {
       const tt = tRef.current
 
       playOrderChime()
-      void invalidateOrderViews(queryClient)
 
       // Toast visual dentro de la página: clic → secciones de órdenes.
       notify.custom(
@@ -137,5 +131,5 @@ export function useNewOrderNotifications(enabled: boolean): void {
       cancelled = true
       controller.abort()
     }
-  }, [enabled, queryClient])
+  }, [enabled])
 }

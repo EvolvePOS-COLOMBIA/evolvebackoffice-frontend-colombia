@@ -60,9 +60,6 @@ export interface OrderDetail {
   customerName: string | null
   personId: string | null
   personName: string | null
-  customerPhone?: string | null
-  courierPhone?: string | null
-  isReconciled?: boolean
   statusCode: string
   statusName: string
   subTotal: number
@@ -102,13 +99,13 @@ export interface OrderDetail {
 
 export interface OrderItemDto {
   id: string
-  name: string
+  nameSnapshot: string
   quantity: number
   unitPrice: number
   subtotal: number
   tax: number
   discount: number
-  sku: string | null
+  skuSnapshot: string | null
   externalItemId: string | null
   modifiersJson: string | null
 }

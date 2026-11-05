@@ -1,26 +1,9 @@
 import { useEffect, useMemo, useState, type CSSProperties } from "react"
 import { useNavigate } from "react-router-dom"
 import { DragDropContext, Draggable, Droppable, type DropResult } from "@hello-pangea/dnd"
-import {
-  AlertTriangle,
-  ArrowLeft,
-  Bike,
-  CheckCircle2,
-  Clock3,
-  MapPinned,
-  Phone,
-  RefreshCw,
-  Search,
-  Send,
-  Timer,
-  UserPlus,
-  Users,
-  Wallet,
-} from "lucide-react"
+import { ArrowLeft, Bike, CheckCircle2, Phone, RefreshCw, Send, UserPlus, Users } from "lucide-react"
 
 import Spinner from "@/components/Spinner"
-import { StatTile } from "@/components/share"
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
@@ -91,7 +74,6 @@ export function DeliveriesPage() {
   const [tab, setTab] = useState<"assign" | "route">("assign")
   const [date, setDate] = useState<string>("")
   const [courierFilter, setCourierFilter] = useState<string>("__ALL__")
-  const [search, setSearch] = useState("")
   const { data: board, isLoading, refetch, isFetching } = useDeliveryBoard(branchId, date || null)
 
   // Reloj para los minutos transcurridos (se actualiza cada 30 s).
@@ -105,13 +87,6 @@ export function DeliveriesPage() {
   const assignCourier = useAssignCourier()
   const [picker, setPicker] = useState<PickerState>(null)
 
-  const searchTerm = search.trim().toLowerCase()
-  const matchesSearch = (order: DeliveryOrder) =>
-    !searchTerm ||
-    [order.reference, order.customerName, order.customerPhone, order.shippingStreet, order.shippingCity]
-      .filter(Boolean)
-      .some((value) => String(value).toLowerCase().includes(searchTerm))
-
   // Índices para la vista de asignación (siempre del día de hoy).
   const { readyOrders, shippedOrders, courierOf } = useMemo(() => {
     const ready: DeliveryOrder[] = [...(board?.unassigned ?? [])]
@@ -124,16 +99,10 @@ export function DeliveriesPage() {
         else if (order.status === "Shipped") shipped.push(order)
       }
     }
-    // Sin domiciliario primero (son los que hay que atender), luego por antigüedad.
-    ready.sort((a, b) => Number(owner.has(a.id)) - Number(owner.has(b.id)) || a.createdAt.localeCompare(b.createdAt))
+    ready.sort((a, b) => a.createdAt.localeCompare(b.createdAt))
     shipped.sort((a, b) => (a.dispatchedAt ?? "").localeCompare(b.dispatchedAt ?? ""))
     return { readyOrders: ready, shippedOrders: shipped, courierOf: owner }
   }, [board])
-
-  const visibleReady = readyOrders.filter(matchesSearch)
-  const visibleShipped = shippedOrders.filter(matchesSearch)
-  const firstAssignedIndex = visibleReady.findIndex((o) => courierOf.has(o.id))
-  const incidents = (board?.couriers ?? []).flatMap((g) => g.orders).filter((o) => o.cancelledWhileDispatched)
 
   const onError = (error: unknown) => notify.error(getApiErrorMessage(error, t("status_update_failed")))
 
@@ -168,7 +137,7 @@ export function DeliveriesPage() {
   const handleDragEnd = (result: DropResult) => {
     if (!result.destination) return
     if (result.source.droppableId !== COL_READY || result.destination.droppableId !== COL_SHIPPED) return
-    const order = visibleReady.find((o) => o.id === result.draggableId)
+    const order = readyOrders.find((o) => o.id === result.draggableId)
     if (!order) return
     // Siempre se confirma el domiciliario al enviar (preseleccionado si ya tiene).
     setPicker({ mode: "dispatch", order, courierId: courierOf.get(order.id)?.courierId ?? null })
@@ -192,49 +161,32 @@ export function DeliveriesPage() {
     )
   }
 
-  const routeGroups = (board?.couriers ?? [])
-    .filter((g) => courierFilter === "__ALL__" || g.courierId === courierFilter)
-    .map((g) => ({ ...g, orders: g.orders.filter(matchesSearch) }))
-    .filter((g) => g.orders.length > 0 || !search.trim())
+  const routeGroups = (board?.couriers ?? []).filter(
+    (g) => courierFilter === "__ALL__" || g.courierId === courierFilter
+  )
   const totalPending = (board?.couriers ?? []).reduce((acc, g) => acc + g.pendingToCollect, 0)
 
   return (
     <Card className="overflow-hidden shadow-none">
       <CardContent className="p-4 sm:p-6 lg:p-8">
-        <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
-          <div className="flex flex-col gap-2">
-            <Badge className="max-w-fit" tone="primary">
-              {t("orders")}
-            </Badge>
-            <h1 className="text-xl font-semibold text-foreground sm:text-2xl">{t("deliveries_title")}</h1>
-            <p className="max-w-3xl text-sm leading-5 text-muted-foreground">{t("deliveries_desc")}</p>
-          </div>
-          <div className="flex flex-wrap items-center gap-2">
-            <Button variant="outline" size="sm" onClick={() => navigate("/business/orders")}>
-              <ArrowLeft className="mr-2 size-4" />
-              {t("orders")}
+        <div className="relative flex flex-col gap-2">
+          <Badge className="max-w-fit" tone="primary">
+            {t("orders")}
+          </Badge>
+          <h1 className="text-xl font-semibold text-foreground sm:text-2xl">{t("deliveries_title")}</h1>
+          <Button variant="outline" className="w-fit" onClick={() => navigate("/business/orders/routes")}>
+            {t("e_routes")}
+          </Button>
+          {canManage && (
+            <Button variant="outline" className="w-fit" onClick={() => navigate("/business/orders/operations")}>
+              {t("phase2_operations")}
             </Button>
-            <Button variant="outline" size="sm" onClick={() => navigate("/business/orders/routes")}>
-              <MapPinned className="mr-2 size-4" />
-              {t("e_routes")}
-            </Button>
-            {canManage && (
-              <>
-                <Button variant="outline" size="sm" onClick={() => navigate("/business/orders/operations")}>
-                  <Timer className="mr-2 size-4" />
-                  {t("phase2_operations")}
-                </Button>
-                <Button variant="outline" size="sm" onClick={() => navigate("/business/orders/couriers")}>
-                  <Users className="mr-2 size-4" />
-                  {t("couriers_title")}
-                </Button>
-              </>
-            )}
-            <Button variant="outline" size="sm" onClick={() => refetch()} disabled={isFetching}>
-              <RefreshCw className={`mr-2 size-4 ${isFetching ? "animate-spin" : ""}`} />
-              {t("refresh")}
-            </Button>
-          </div>
+          )}
+          <p className="max-w-4xl text-sm leading-5 text-muted-foreground">{t("deliveries_desc")}</p>
+          <Bike
+            color="#58626b"
+            className="absolute -top-10 -right-20 -z-10 size-50 shrink-0 animate-float opacity-5 md:-top-10 md:-right-10 md:size-70 lg:-top-20 lg:-right-30 lg:size-100"
+          />
         </div>
 
         <div className="mt-6 flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
@@ -246,63 +198,33 @@ export function DeliveriesPage() {
             selectedId={branchId}
             onSelect={handleBranchChange}
           />
-          <div className="relative w-full lg:w-96">
-            <Search className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground" />
-            <Input
-              type="search"
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              placeholder={t("deliveries_search")}
-              aria-label={t("deliveries_search")}
-              className="pl-9"
-            />
+          <div className="flex flex-wrap items-center gap-2">
+            <Button variant="outline" size="sm" onClick={() => navigate("/business/orders")}>
+              <ArrowLeft className="mr-2 size-4" />
+              {t("orders")}
+            </Button>
+            {canManage && (
+              <Button variant="outline" size="sm" onClick={() => navigate("/business/orders/couriers")}>
+                <Users className="mr-2 size-4" />
+                {t("couriers_title")}
+              </Button>
+            )}
+            <Button variant="outline" size="sm" onClick={() => refetch()} disabled={isFetching}>
+              <RefreshCw className={`mr-2 size-4 ${isFetching ? "animate-spin" : ""}`} />
+              {t("refresh")}
+            </Button>
           </div>
         </div>
 
-        <div className="mt-4 grid grid-cols-2 gap-2 lg:grid-cols-4">
-          <StatTile
-            label={t("deliveries_to_assign")}
-            value={board?.unassigned.length ?? 0}
-            icon={Clock3}
-            tone={(board?.unassigned.length ?? 0) > 0 ? "warning" : "muted"}
-          />
-          <StatTile label={t("shipped")} value={shippedOrders.length} icon={Bike} tone="primary" />
-          <StatTile
+        <div className="mt-4 grid grid-cols-2 gap-2 sm:grid-cols-4">
+          <Figure label={t("deliveries_to_assign")} value={String(board?.unassigned.length ?? 0)} accent />
+          <Figure label={t("shipped")} value={String(shippedOrders.length)} />
+          <Figure
             label={t("delivered")}
-            value={(board?.couriers ?? []).reduce((acc, g) => acc + g.deliveredCount, 0)}
-            icon={CheckCircle2}
-            tone="success"
+            value={String((board?.couriers ?? []).reduce((acc, g) => acc + g.deliveredCount, 0))}
           />
-          <StatTile label={t("deliveries_pending_collect")} value={formatCurrency(totalPending)} icon={Wallet} />
+          <Figure label={t("deliveries_pending_collect")} value={formatCurrency(totalPending)} />
         </div>
-
-        {incidents.length > 0 && (
-          <Alert
-            variant="danger"
-            className="mt-4"
-            role="region"
-            aria-label={t("deliveries_incidents_title", { count: incidents.length })}
-          >
-            <AlertTriangle />
-            <AlertTitle>{t("deliveries_incidents_title", { count: incidents.length })}</AlertTitle>
-            <AlertDescription>
-              <p>{t("deliveries_incidents_desc")}</p>
-              <div className="mt-3 grid gap-2 md:grid-cols-2">
-                {incidents.map((o) => (
-                  <DeliveryOrderCard
-                    key={o.id}
-                    order={o}
-                    now={now}
-                    showStatus
-                    courierName={courierOf.get(o.id)?.name ?? null}
-                    courierPhone={courierOf.get(o.id)?.phone ?? null}
-                    actions={<DeliveryIncidentActions order={o} />}
-                  />
-                ))}
-              </div>
-            </AlertDescription>
-          </Alert>
-        )}
 
         <Tabs value={tab} onValueChange={(v) => setTab(v as "assign" | "route")} className="mt-4">
           <TabsList className="max-w-full flex-wrap gap-1">
@@ -326,16 +248,15 @@ export function DeliveriesPage() {
               <TabsContent value="assign" className="mt-4">
                 {date && <p className="mb-3 text-xs text-muted-foreground">{t("deliveries_assign_today_only")}</p>}
                 <DragDropContext onDragEnd={handleDragEnd}>
-                  <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                  <div className="grid gap-4 md:grid-cols-2">
                     <BoardColumn
                       id={COL_READY}
                       title={t("ready")}
                       tone="success"
-                      count={visibleReady.length}
+                      count={readyOrders.length}
                       hint={t("deliveries_drag_hint")}
-                      emptyLabel={search.trim() ? t("deliveries_no_results") : undefined}
                     >
-                      {visibleReady.map((order, index) => {
+                      {readyOrders.map((order, index) => {
                         const group = courierOf.get(order.id)
                         return (
                           <Draggable key={order.id} draggableId={order.id} index={index}>
@@ -347,19 +268,11 @@ export function DeliveriesPage() {
                                 style={provided.draggableProps.style as CSSProperties}
                                 className={snapshot.isDragging ? "opacity-90 shadow-md" : ""}
                               >
-                                {(index === 0 || index === firstAssignedIndex) && (
-                                  <p className="pt-1 pb-2 text-[11px] font-semibold tracking-wider text-muted-foreground uppercase">
-                                    {group
-                                      ? `${t("deliveries_group_assigned")} (${visibleReady.length - firstAssignedIndex})`
-                                      : `${t("deliveries_group_unassigned")} (${firstAssignedIndex === -1 ? visibleReady.length : firstAssignedIndex})`}
-                                  </p>
-                                )}
                                 <DeliveryOrderCard
                                   order={order}
                                   now={now}
                                   showBranch={showAllBranches}
                                   courierName={group?.name ?? null}
-                                  courierPhone={group?.phone ?? null}
                                   actions={
                                     <>
                                       <Button
@@ -397,18 +310,16 @@ export function DeliveriesPage() {
                       id={COL_SHIPPED}
                       title={t("shipped")}
                       tone="primary"
-                      count={visibleShipped.length}
+                      count={shippedOrders.length}
                       hint={t("deliveries_shipped_hint")}
-                      emptyLabel={search.trim() ? t("deliveries_no_results") : undefined}
                     >
-                      {visibleShipped.map((order) => (
+                      {shippedOrders.map((order) => (
                         <DeliveryOrderCard
                           key={order.id}
                           order={order}
                           now={now}
                           showBranch={showAllBranches}
                           courierName={courierOf.get(order.id)?.name ?? null}
-                          courierPhone={courierOf.get(order.id)?.phone ?? null}
                           actions={
                             <>
                               <Button
@@ -484,11 +395,9 @@ export function DeliveriesPage() {
                 </div>
 
                 {routeGroups.length === 0 ? (
-                  <p className="py-8 text-center text-sm text-muted-foreground">
-                    {search.trim() ? t("deliveries_no_results") : t("deliveries_route_empty")}
-                  </p>
+                  <p className="py-8 text-center text-sm text-muted-foreground">{t("deliveries_route_empty")}</p>
                 ) : (
-                  <div className="grid grid-cols-1 gap-4 lg:grid-cols-2 2xl:grid-cols-3">
+                  <div className="grid gap-4 lg:grid-cols-2 2xl:grid-cols-3">
                     {routeGroups.map((group) => (
                       <CourierRouteCard
                         key={group.courierId}
@@ -535,6 +444,14 @@ export function DeliveriesPage() {
             onSubmit={(id, tendered, promised) => dispatch(picker.order, id, tendered, promised)}
           />
         )}
+        {(board?.couriers ?? [])
+          .flatMap((g) => g.orders)
+          .filter((o) => o.cancelledWhileDispatched)
+          .map((o) => (
+            <div className="mt-4" key={o.id}>
+              <DeliveryOrderCard order={o} now={now} showStatus actions={<DeliveryIncidentActions order={o} />} />
+            </div>
+          ))}
       </CardContent>
     </Card>
   )
@@ -546,7 +463,6 @@ function BoardColumn({
   tone,
   count,
   hint,
-  emptyLabel,
   children,
 }: {
   id: string
@@ -554,12 +470,11 @@ function BoardColumn({
   tone: "success" | "primary"
   count: number
   hint: string
-  emptyLabel?: string
   children: React.ReactNode
 }) {
   const { t } = useTranslation("business-orders")
   return (
-    <Card className="h-full min-w-0">
+    <Card className="h-full">
       <CardHeader className="pb-3">
         <div className="flex items-center justify-between">
           <CardTitle className="text-sm font-semibold">{title}</CardTitle>
@@ -574,9 +489,7 @@ function BoardColumn({
             {...provided.droppableProps}
             className={`min-h-[200px] space-y-2 transition-colors ${snapshot.isDraggingOver ? "bg-primary/5" : ""}`}
           >
-            {count === 0 && (
-              <p className="py-8 text-center text-xs text-muted-foreground">{emptyLabel ?? t("no_orders")}</p>
-            )}
+            {count === 0 && <p className="py-8 text-center text-xs text-muted-foreground">{t("no_orders")}</p>}
             {children}
             {provided.placeholder}
           </CardContent>
@@ -608,7 +521,7 @@ function CourierRouteCard({
   const orders = [...group.orders].sort((a, b) => (rank[a.status] ?? 9) - (rank[b.status] ?? 9))
 
   return (
-    <Card className="h-full min-w-0">
+    <Card className="h-full">
       <CardHeader className="pb-3">
         <div className="flex items-start justify-between gap-2">
           <div className="min-w-0">
@@ -654,7 +567,6 @@ function CourierRouteCard({
             showBranch={showBranch}
             showStatus
             courierName={group.name}
-            courierPhone={group.phone}
             actions={
               order.status === "Ready" ? (
                 <Button size="sm" className="h-7 text-xs" onClick={() => onDispatch(order)} disabled={isPending}>
@@ -680,5 +592,14 @@ function CourierRouteCard({
         ))}
       </CardContent>
     </Card>
+  )
+}
+
+function Figure({ label, value, accent = false }: { label: string; value: string; accent?: boolean }) {
+  return (
+    <div className="rounded-xl border border-border/60 p-3 text-center">
+      <p className="text-[10px] font-semibold tracking-wider text-muted-foreground uppercase">{label}</p>
+      <p className={`text-base font-bold tabular-nums ${accent ? "text-primary" : "text-foreground"}`}>{value}</p>
+    </div>
   )
 }

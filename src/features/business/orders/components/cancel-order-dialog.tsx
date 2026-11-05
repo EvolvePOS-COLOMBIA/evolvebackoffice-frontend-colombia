@@ -81,7 +81,7 @@ function CancelOrderForm({ order, items, onOpenChange, onSuccess }: CancelOrderF
   const handlePresetBeveragesStock = () => {
     const updated: Record<string, CancellationType> = {}
     items.forEach((item) => {
-      updated[item.id] = isBeverage(item.name) ? "Restocked" : "Waste"
+      updated[item.id] = isBeverage(item.nameSnapshot) ? "Restocked" : "Waste"
     })
     setItemDispositions(updated)
     setCustomPerItem(true)
@@ -251,7 +251,7 @@ function CancelOrderForm({ order, items, onOpenChange, onSuccess }: CancelOrderF
           {/* Lista interactiva de productos */}
           <div className="max-h-56 space-y-2 overflow-y-auto rounded-2xl border border-border/70 bg-card/60 p-3">
             {items.map((item) => {
-              const beverage = isBeverage(item.name)
+              const beverage = isBeverage(item.nameSnapshot)
               const itemDisp = itemDispositions[item.id] ?? cancellationType
 
               return (
@@ -271,7 +271,7 @@ function CancelOrderForm({ order, items, onOpenChange, onSuccess }: CancelOrderF
                     </div>
                     <div className="min-w-0 flex-1">
                       <p className="truncate text-xs font-semibold">
-                        {item.quantity}× {item.name}
+                        {item.quantity}× {item.nameSnapshot}
                       </p>
                       <p className="text-[11px] text-muted-foreground">
                         {beverage ? t("cancellation_item_beverage") : t("cancellation_item_food")}

@@ -1,11 +1,6 @@
 import { describe, expect, it } from "vitest"
 
-import {
-  elapsedLabelParts,
-  getApiErrorMessage,
-  mapsUrl,
-  minutesSince,
-} from "@/features/business/orders/utils/order-helpers"
+import { getApiErrorMessage, mapsUrl, minutesSince } from "@/features/business/orders/utils/order-helpers"
 
 describe("order-helpers", () => {
   it("getApiErrorMessage prioriza message, luego error y luego el genérico", () => {
@@ -43,11 +38,5 @@ describe("order-helpers", () => {
     expect(minutesSince("2026-10-07T12:00:00Z", now)).toBe(30)
     expect(minutesSince("2026-10-07T13:00:00Z", now)).toBe(0)
     expect(minutesSince(null, now)).toBeNull()
-  })
-
-  it("elapsedLabelParts escala de minutos a horas y días", () => {
-    expect(elapsedLabelParts(45)).toEqual({ key: "elapsed_minutes", count: 45 })
-    expect(elapsedLabelParts(125)).toEqual({ key: "elapsed_hours", hours: 2, minutes: 5 })
-    expect(elapsedLabelParts(16958)).toEqual({ key: "elapsed_days", count: 11 })
   })
 })

@@ -102,17 +102,6 @@ export interface OrderClosingOrderRow {
   payments?: OrderPayment[] | null
   courierId?: string | null
   courierName?: string | null
-  /** De un periodo anterior que no entró a ningún cierre (arrastrada). */
-  carriedOver?: boolean
-  /** Sin cierre asociado: se puede resolver/conciliar. */
-  editable?: boolean
-}
-
-/** Estados finales: solo estas órdenes entran al cierre. */
-export const FINAL_ORDER_STATUSES = ["Delivered", "Cancelled", "Refunded"] as const
-
-export function isFinalOrderStatus(status: string): boolean {
-  return (FINAL_ORDER_STATUSES as readonly string[]).includes(status)
 }
 
 export interface OrderClosingPreview {
@@ -126,14 +115,10 @@ export interface OrderClosingPreview {
   alreadyClosedCount: number
   date?: string
   status?: string
-  /** El periodo actual aún no se ha cerrado. */
+  /** Periodo actual o inmediatamente anterior: se puede conciliar. */
   editable?: boolean
   paymentTotals?: PaymentTotalsRow[] | null
   courierSettlements?: CourierSettlementRow[] | null
-  /** Pendientes de periodos anteriores arrastradas al actual. */
-  carriedOverCount?: number
-  /** Pendientes sin estado final: no entran al cierre. */
-  unresolvedCount?: number
 }
 
 export interface OrderClosing {

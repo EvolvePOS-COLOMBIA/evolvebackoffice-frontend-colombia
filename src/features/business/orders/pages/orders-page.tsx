@@ -29,7 +29,6 @@ import { getBranchModules } from "@/features/business/branches/services/branch-m
 import { BranchSelector } from "@/features/business/items/catalog/components/branch-selector"
 import { useBranchIntegrations } from "@/features/business/branches/hooks/use-branch-integrations"
 import { useOrders, useUpdateOrderStatus } from "../hooks/use-orders"
-import { useOrderUpdates } from "../hooks/use-order-updates"
 import { OrdersKanban } from "../components/orders-kanban"
 import { BulkOrderStatusDialog } from "../components/bulk-order-status-dialog"
 import { MAX_BULK_ORDERS } from "../utils/bulk-status"
@@ -132,8 +131,6 @@ export function OrdersPage() {
     isLoading,
     refetch,
   } = useOrders(1, 100, branchId ? { branchId } : undefined, !!branchId || showAllBranches)
-  // Pedidos nuevos o actualizados (webhook de Cluvi, otro usuario) aparecen sin recargar.
-  useOrderUpdates(branchId)
   const updateStatusMutation = useUpdateOrderStatus()
 
   // Memoizado para que los useMemo dependientes (filtros/conteos) no se

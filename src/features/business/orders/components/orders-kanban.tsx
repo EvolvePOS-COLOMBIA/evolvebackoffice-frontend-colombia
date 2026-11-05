@@ -214,8 +214,6 @@ export function OrdersKanban({
                                       </Button>
                                     )}
                                   <Button
-                                    aria-label={t("order_products")}
-                                    title={t("order_products")}
                                     variant="ghost"
                                     size="sm"
                                     className="h-6 px-2"

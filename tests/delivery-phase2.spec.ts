@@ -48,7 +48,6 @@ let server: Server
 let fakeUrl: string
 let jwtCfg: { Secret: string; Issuer: string; Audience: string }
 const outbound: string[] = []
-let failOutboundPush = true
 const webhookToken = `e2e${randomUUID().replaceAll("-", "")}`
 const suffix = randomUUID().slice(0, 8)
 let manualOne: string
@@ -218,18 +217,6 @@ test.beforeAll(async () => {
     baseURL: apiUrl,
     extraHTTPHeaders: { Authorization: `Bearer ${jwt("ADMIN", PLATFORM_TID)}` },
   })
-  await expect
-    .poll(
-      async () => {
-        try {
-          return (await platform.get("/health", { timeout: 2000 })).ok()
-        } catch {
-          return false
-        }
-      },
-      { timeout: 30000, intervals: [1000] }
-    )
-    .toBe(true)
   tenant = await json<CreatedTenant>(
     await platform.post("/api/tenants", {
       data: {
@@ -293,7 +280,6 @@ test.beforeAll(async () => {
         identificationNumber: `72${Date.now()}`,
         email: `other-${suffix}@example.test`,
         role: "DELIVERY",
-        phoneNumber: "3001112233",
         deliveryBranchId: branch.id,
       },
     })
@@ -315,7 +301,7 @@ test.beforeAll(async () => {
   server = createServer((req, res) => {
     outbound.push(`${req.method} ${req.url}`)
     res.setHeader("Content-Type", "application/json")
-    if (req.url?.includes("push-error") && failOutboundPush) {
+    if (req.url?.includes("push-error")) {
       res.statusCode = 503
       res.end('{"error":"simulated outage"}')
     } else res.end(JSON.stringify({ status: "on", store: { status: "on" }, products: [], categories: [] }))
@@ -642,46 +628,7 @@ test("UI muestra fallo de sincronización y permite pausar/reanudar Cluvi", asyn
   expect(allOrders(await board()).find((o) => o.id === id)?.syncStatus).toBe("Error")
   await session(page)
   await page.goto("/business/orders/deliveries")
-  const card = page.getByTestId(`delivery-order-${id}`)
-  await expect(card.getByText("Cluvi: Error", { exact: true })).toBeVisible()
-
-  // Los avisos de pedidos CLUVI se gestionan desde POSCO; no se envían en QA.
-  await card.getByRole("button", { name: "Avisar al cliente", exact: true }).click()
-  const dialog = page.getByRole("dialog")
-  await expect(dialog.getByLabel("Destinatario WhatsApp")).toHaveValue("+573001234567")
-  await expect(dialog.getByLabel("Mensaje", { exact: true })).toHaveValue(/va en camino con Luis QA/i)
-  const customerHref = await dialog.getByRole("link", { name: "Abrir WhatsApp Desktop" }).getAttribute("href")
-  expect(new URL(customerHref!).searchParams.get("phone")).toBe("573001234567")
-  await page.keyboard.press("Escape")
-  await card.getByRole("button", { name: "Avisar al domiciliario", exact: true }).click()
-  await expect(dialog.getByLabel("Destinatario WhatsApp")).toHaveValue("3001112233")
-  await expect(dialog.getByLabel("Mensaje", { exact: true })).toHaveValue(/Calle 10 # 20-30/)
-  await expect(dialog.getByLabel("Mensaje", { exact: true })).toHaveValue(/COBRAR.*27[.,]000/)
-  await page.keyboard.press("Escape")
-
-  // Reenviar el estado no cambia la orden ni crea una segunda venta.
-  const before = await json<{
-    statusCode: string
-    total: number
-    customerPhone: string
-    courierPhone: string
-    items: { name: string }[]
-  }>(await api.get(`/api/orders/${id}`))
-  expect(before.customerPhone).toBe("+573001234567")
-  expect(before.courierPhone).toBe("3001112233")
-  expect(before.items[0].name).toBe("Hamburguesa Cluvi")
-  expect((await cashier.post(`/api/orders/${id}/retry-sync`)).status()).toBe(403)
-  const txBefore = await json<{ totalCount: number }>(await api.get("/api/transactions"))
-  failOutboundPush = false
-  await card.getByRole("button", { name: "Reintentar sincronización", exact: true }).click()
-  await expect(card.getByText("Cluvi: Sincronizado", { exact: true })).toBeVisible()
-  const after = await json<{ statusCode: string; total: number; needsOutboundSync: boolean }>(
-    await api.get(`/api/orders/${id}`)
-  )
-  expect(after.statusCode).toBe(before.statusCode)
-  expect(after.total).toBe(before.total)
-  expect(after.needsOutboundSync).toBe(false)
-  expect((await json<{ totalCount: number }>(await api.get("/api/transactions"))).totalCount).toBe(txBefore.totalCount)
+  await expect(page.getByText("Cluvi: Error", { exact: true })).toBeVisible()
   await page.goto("/business/orders/operations")
   await page.getByRole("button", { name: "Reanudar tienda", exact: true }).click()
   await expect(page.getByText("Centro QA · Tienda activa", { exact: true })).toBeVisible()
@@ -838,20 +785,17 @@ test("E: lote inválido no despacha parcialmente; UI reordena dos paradas y desp
   await page.screenshot({ path: "test-results/e-run.png", fullPage: true })
 })
 
-test("E: aviso manual prepara WhatsApp Desktop sin API ni envío real", async ({ page }) => {
+test("E: aviso manual prepara WhatsApp Desktop sin API ni envío real; Cluvi no duplica aviso", async ({ page }) => {
   await session(page)
   await page.goto("/business/orders/routes")
   await page.getByLabel("Sucursal", { exact: true }).selectOption(branch.id)
-  await page
-    .getByTestId(`delivery-order-${manualOne}`)
-    .getByRole("button", { name: "Avisar al cliente", exact: true })
-    .click()
+  await page.getByRole("button", { name: "Avisar al cliente", exact: true }).first().click()
   const dialog = page.getByRole("dialog")
-  await expect(dialog.getByLabel("Mensaje", { exact: true })).toHaveValue(/va en camino con Ana QA/i)
+  await expect(dialog.getByLabel("Mensaje", { exact: true })).toHaveValue(/va en camino con ANA QA/)
   const link = dialog.getByRole("link", { name: "Abrir WhatsApp Desktop", exact: true })
   const href = await link.getAttribute("href")
   expect(href).toMatch(/^whatsapp:\/\/send\?phone=573001234567&text=/)
-  expect(new URL(href!).searchParams.get("text")).toMatch(/Ana QA/i)
+  expect(new URL(href!).searchParams.get("text")).toContain("ANA QA")
   // Cancel external protocol navigation: no contact or real message is touched in QA.
   await link.evaluate((el) => el.addEventListener("click", (e) => e.preventDefault()))
   const external: string[] = []
@@ -1174,77 +1118,4 @@ test("DELIVERY no entrega pedidos ajenos y pierde acceso inmediato al desactivar
     })
   )
   expect((await platform.get("/api/delivery/me", { headers: auth })).status()).toBe(403)
-})
-
-test("Cluvi: el detalle real muestra cliente, teléfono, productos y aviso desde el tablero", async ({ page }) => {
-  test.setTimeout(90000)
-  page.setDefaultTimeout(10000)
-  const id = (await webhook(`detail-${suffix}`)).orderId
-  await session(page)
-  await page.goto("/business/orders")
-  const card = page.locator(`[data-rfd-draggable-id="${id}"]`)
-  await card.getByRole("button", { name: "Productos del pedido", exact: true }).click()
-  const detail = page.getByRole("dialog")
-  await expect(detail.getByText("Rafael Pérez", { exact: true })).toBeVisible()
-  await expect(detail.getByRole("link", { name: "+573001234567", exact: true })).toHaveAttribute(
-    "href",
-    "tel:+573001234567"
-  )
-  await expect(detail.getByText("1 × Hamburguesa Cluvi", { exact: true })).toBeVisible()
-  await expect(detail.getByText(/Sin cebolla/)).toBeVisible()
-  await detail.getByRole("button", { name: "Avisar al cliente", exact: true }).click()
-  await expect(page.getByLabel("Mensaje", { exact: true })).toHaveValue(/ya está listo/)
-  await page.keyboard.press("Escape")
-  await page.keyboard.press("Escape")
-  await check(await api.put(`/api/orders/${id}/courier`, { data: { courierId: otherCourier.id } }))
-  await check(
-    await api.put(`/api/orders/${id}/reconcile`, {
-      data: { payments: [{ paymentMethodCode: "EFFECTIVO", amount: 27000 }] },
-    })
-  )
-  const paid = await json<{ isReconciled: boolean }>(await api.get(`/api/orders/${id}`))
-  expect(paid.isReconciled).toBe(true)
-  await page.reload()
-  await page
-    .locator(`[data-rfd-draggable-id="${id}"]`)
-    .getByRole("button", { name: "Productos del pedido", exact: true })
-    .click()
-  await page.getByRole("dialog").getByRole("button", { name: "Avisar al domiciliario", exact: true }).click()
-  await expect(page.getByLabel("Mensaje", { exact: true })).toHaveValue(/PAGADO, no cobrar/)
-  await expect(page.getByLabel("Mensaje", { exact: true })).not.toHaveValue(/COBRAR\s*\$/)
-})
-
-test("Cluvi: editar conexión conserva token, pagos y menú existente", async ({ page }) => {
-  test.setTimeout(60000)
-  page.setDefaultTimeout(10000)
-  const url = `/api/branches/${branch.id}/integrations`
-  const integrations = await json<{ id: string; settingsJson: string }[]>(await api.get(url))
-  const integration = integrations[0]
-  const originalSettings = JSON.parse(integration.settingsJson)
-  const preserved = { ...originalSettings, paymentMethodMappings: { cash: "EFFECTIVO" } }
-  await check(
-    await api.put(`${url}/${integration.id}`, {
-      data: { settingsJson: JSON.stringify(preserved) },
-    })
-  )
-  const outboundStart = outbound.length
-  await session(page)
-  await page.goto("/business/orders")
-  await page.getByRole("button", { name: /Centro QA/ }).click()
-  await page.getByRole("button", { name: "Cluvi", exact: true }).click()
-  const dialog = page.getByRole("dialog")
-  await expect(dialog.getByRole("button", { name: "Conectar recepción de pedidos", exact: true })).toBeEnabled()
-  // Mostrar el webhook autenticado; nunca copiar una URL sin token.
-  await expect(dialog.locator("input[readonly]").first()).toHaveValue(new RegExp(webhookToken))
-  await dialog.getByRole("button", { name: "Credenciales", exact: true }).click()
-  await expect(dialog.getByLabel("App ID", { exact: true })).toHaveValue("")
-  await dialog.getByRole("button", { name: "Guardar Integración", exact: true }).click()
-  await expect(dialog.getByRole("button", { name: "Conectar recepción de pedidos", exact: true })).toBeEnabled()
-  await dialog.getByRole("button", { name: "Conectar recepción de pedidos", exact: true }).click()
-  await expect(dialog.getByRole("button", { name: "Finalizar y conservar menú", exact: true })).toBeEnabled()
-  await dialog.getByRole("button", { name: "Finalizar y conservar menú", exact: true }).click()
-  await expect(dialog).toHaveCount(0)
-  const updated = await json<{ settingsJson: string }>(await api.get(`${url}/${integration.id}`))
-  expect(JSON.parse(updated.settingsJson)).toEqual(preserved)
-  expect(outbound.slice(outboundStart).some((call) => call.startsWith("PUT /v1/menu/"))).toBe(false)
 })

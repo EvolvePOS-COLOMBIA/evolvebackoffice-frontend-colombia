@@ -41,15 +41,6 @@ export async function getOrderById(id: string): Promise<OrderDetail> {
   return data
 }
 
-export async function retryOrderSync(
-  id: string
-): Promise<{ success: boolean; pending: boolean; message: string | null }> {
-  const { data } = await api.post<{ success: boolean; pending: boolean; message: string | null }>(
-    `/api/orders/${id}/retry-sync`
-  )
-  return data
-}
-
 /**
  * Cambia el estado. `courierId` asigna el domiciliario en el mismo paso: el
  * backend lo exige para pasar un pedido a domicilio a En camino.

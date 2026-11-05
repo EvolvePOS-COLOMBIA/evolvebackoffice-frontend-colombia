@@ -35,10 +35,6 @@ type ReconcilePaymentsDialogProps = {
   methods: PaymentMethodResponseDto[]
   isPending?: boolean
   onSubmit: (payments: ReconcilePaymentLine[]) => void
-  /** Textos del encabezado/acción (p. ej. al resolver una orden como entregada). */
-  title?: string
-  description?: string
-  submitLabel?: string
 }
 
 /**
@@ -85,9 +81,6 @@ function ReconcilePaymentsDialogInner({
   methods,
   isPending = false,
   onSubmit,
-  title,
-  description,
-  submitLabel,
 }: ReconcilePaymentsDialogProps & { order: OrderClosingOrderRow }) {
   const { t } = useTranslation("business-orders")
   const { formatCurrency } = useLocaleFormat()
@@ -152,9 +145,8 @@ function ReconcilePaymentsDialogInner({
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Wallet className="size-5 text-primary" />
-            {title ?? t("reconcile_title")}
+            {t("reconcile_title")}
           </DialogTitle>
-          {description && <p className="text-sm text-muted-foreground">{description}</p>}
           <DialogDescription>
             #{order.reference} · {order.customerName ?? "—"} · {t("order_total")}{" "}
             <span className="font-semibold text-foreground">{formatCurrency(order.total)}</span>
@@ -290,7 +282,7 @@ function ReconcilePaymentsDialogInner({
             {t("cancel")}
           </Button>
           <Button onClick={handleSubmit} disabled={errors.length > 0 || isPending}>
-            {submitLabel ?? t("reconcile_action")}
+            {t("reconcile_action")}
           </Button>
         </DialogFooter>
       </DialogContent>

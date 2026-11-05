@@ -1,12 +1,14 @@
 import { useState } from "react"
 import { useMutation, useQueryClient } from "@tanstack/react-query"
+import { AlertTriangle, CheckCircle2, DollarSign, Package, PowerOff } from "lucide-react"
 import toast from "react-hot-toast"
 
-import { EntityListLayout } from "@/components/share"
+import { EntityListLayout, type StatConfig } from "@/components/share"
 import { Skeleton } from "@/components/ui/skeleton"
 import { useTranslation } from "@/i18n/use-i18n"
 import { useBranches } from "@/features/business/branches/hooks/use-branches"
 import { useItems } from "../hooks/use-items"
+import { useBranchItems } from "../hooks/use-branch-items"
 import { createBranchItem } from "../services/branch-items.service"
 import { BranchSelector, type BranchSelectorOption } from "../components/branch-selector"
 import { GlobalCatalogView } from "../components/global-catalog-view"
@@ -38,6 +40,30 @@ export function ItemsCatalogPage() {
 
   const selectedBranch = branches.find((b) => b.id === selectedBranchId)
   const isGlobalView = selectedBranchId === null
+
+  // Stats del catálogo global: total (con inactivos) e activos (query por defecto).
+  const { data: totalItemsData } = useItems({ pageNumber: 1, pageSize: 1, includeInactive: true })
+  const totalItems = totalItemsData?.totalCount ?? 0
+  const activeItems = globalItemsData?.totalCount ?? 0
+  const inactiveItems = Math.max(totalItems - activeItems, 0)
+
+  // Stats de la sucursal: asignados, sin precio y bajo mínimo sobre la lista completa (tope 200).
+  const { data: branchStatsData } = useBranchItems(selectedBranchId, { pageNumber: 1, pageSize: 200 })
+  const branchStatsItems = branchStatsData?.data ?? []
+  const noPriceCount = branchStatsItems.filter((item) => item.price === 0).length
+  const lowStockCount = branchStatsItems.filter((item) => item.quantity <= item.reorderPoint).length
+
+  const stats: StatConfig[] = isGlobalView
+    ? [
+        { icon: Package, tone: "primary", label: t("stat_products"), value: totalItems },
+        { icon: CheckCircle2, tone: "success", label: t("stat_active"), value: activeItems },
+        { icon: PowerOff, tone: "muted", label: t("stat_inactive"), value: inactiveItems },
+      ]
+    : [
+        { icon: Package, tone: "primary", label: t("stat_assigned"), value: branchStatsData?.totalCount ?? 0 },
+        { icon: DollarSign, tone: "warning", label: t("stat_no_price"), value: noPriceCount },
+        { icon: AlertTriangle, tone: "danger", label: t("stat_low_stock"), value: lowStockCount },
+      ]
 
   // Mutation for creating branch items — dynamic branchId
   const createBranchItemMutation = useMutation({
@@ -115,6 +141,7 @@ export function ItemsCatalogPage() {
           <BranchSelector options={selectorOptions} selectedId={selectedBranchId} onSelect={handleBranchSelect} />
         )
       }
+      stats={stats}
     >
       {/* Content - children handle their own scroll */}
       <div className="min-h-0 flex-1">

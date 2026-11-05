@@ -58,6 +58,10 @@ features quedan **temporalmente sin UI** (la API sigue funcionando):
    subnav, centro de notificaciones, lookup de cliente, picker de producto, manual-order mejoras.
 5. **Kanban**: selección múltiple/lote/filtros rápidos/asa de arrastre (`dde80e1`, `bad3224`).
 6. **Fix de la gráfica pie de ai-chat** (`b121912`) y **defaults del login** (`f511044`).
+   ⚠️ **Desviación**: el fix de la gráfica **no se pudo eliminar por completo** — el código
+   previo (`entry.label`) no compila con los tipos de Recharts 3.8 (`tsc -b` fallaba). Se
+   **reimplementó de forma independiente** (`label={({ name }) => \`${name}\`}`) en el commit
+`73095f0`, sin conservar el código original de su commit. Su test de regresión sí se eliminó.
 7. **Las 6 suites e2e** (`tests/*.spec.ts`, todas creadas por él) → `tests/` queda vacío
    (la config `playwright.config.ts` es de Carlos y se conserva; no hay script npm de e2e).
 8. **Sidebar**: ítem "Domicilios" eliminado (revert limpio: nadie tocó el sidebar después de él).
@@ -214,6 +218,14 @@ Entrega: MR `revert/jhonatan` → `main` (GitHub Actions/CI del repo).
 
 ## 6. Registro de ejecución
 
-| Fecha | Paso | Commit | Resultado / conflictos |
-| ----- | ---- | ------ | ---------------------- |
-| —     | —    | —      | _(pendiente)_          |
+| Fecha      | Paso                  | Commit    | Resultado / conflictos                                                                                                                                                                                                                                                                                                                                                          |
+| ---------- | --------------------- | --------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 2026-11-04 | Paso 0                | —         | `backup/main-pre-revert` = `ac334f8`; rama `revert/jhonatan`. Línea base: typecheck ✓ · lint ✓ · format ✗ (2 archivos suyos) · test ✗ 15 fallos (5 de delivery)                                                                                                                                                                                                                 |
+| 2026-11-04 | Paso 1 (revert PR#16) | `db41da8` | 9 conflictos (i18n/servicios branches + catalog). Se conserva `isSupplier` de Joaquin; se quitan `latitude/longitude` y `config_step_*` suyos. `branch-selector` restaurado a versión previa (se pierde el fix de colapso de Carlos por quedar sin base). WhatsApp/Evolution y tracking fuera. Tests: 10 fallos previos, 0 nuevos                                               |
+| 2026-11-04 | Paso 2 (revert PR#12) | `b46eb1b` | 6 conflictos (menos de los 19 medidos: el Paso 1 ya limpió archivos delivery). Se conserva todo lo de fernando (cancelación por producto); sale su UX de cierres/retry/avisos. Adaptación: `item.name` → `item.nameSnapshot` en código y fixtures de fernando (rename de él revertido). Tests: 10 fallos previos, 0 nuevos                                                      |
+| 2026-11-04 | Paso 3 (revert PR#9)  | `1ff2330` | 9 conflictos (menos de los 43 medidos) + 2 modify/delete: `order-helpers.ts` queda solo con los helpers de fernando (`getApiErrorMessage` reapuntado a `@/utils/api-error`) y `users-table.tsx` restaurado. Domicilios v1, reconcile multipago, bulk kanban y los 6 specs e2e fuera. Tests: 8 fallos previos, 0 nuevos (los 2 de `delivery-auth` desaparecieron con su archivo) |
+| 2026-11-04 | Paso 4                | —         | Verificación ✅: `tests/` vacío, sus archivos fuera, sin `carried/resolve-delivered/retry-sync`. Coincidencias restantes de courier/delivery/whatsapp benignas o de otros autores (`origin_whatsapp`, `role_delivery` de Carlos, `pinDeliveryError`, share de inventario de Joaquin)                                                                                            |
+| 2026-11-04 | Paso 5                | `73095f0` | typecheck ✓ · lint ✓ · **format ✓** (mejor que la línea base) · build ✓ · test: 8 fallos **preexistentes** (tenant-detail ×5, product-lines ×1, chat-panel ×2), sin regresiones. Desviación única: etiqueta de gráfica pie reimplementada (ver §2.6)                                                                                                                            |
+
+**Estado final**: 4 commits en `revert/jhonatan` sobre `ac334f8`. Pendiente: MR a `main` +
+coordinar con el revert del backend (`BackendPOS/docs/revert-domicilios-plan.md`).

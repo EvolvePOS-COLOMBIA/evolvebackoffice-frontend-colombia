@@ -1,8 +1,10 @@
 {
   "items": "Items",
+  "back_to_items": "Back to items",
   "product_catalog": "Product Catalog",
-  "product_catalog_in_branch": "Product Catalog in {{name}}",
-  "product_catalog_desc": "Browse, search, and manage every product in your store.",
+  "product_catalog_in_branch": "Products in {{name}}",
+  "product_catalog_desc": "Create and manage master products: name, SKU, department, and status. Assign them to each branch when ready.",
+  "branch_catalog_desc": "Adjust prices, stock, and status for each product in this branch. Activate or remove them when needed.",
   "new_item": "New product",
   "edit_item": "Edit product",
   "create_item": "Create product",

@@ -1,8 +1,10 @@
 {
   "items": "Artículos",
-  "product_catalog": "Catálogo de Productos",
-  "product_catalog_in_branch": "Catálogo de Productos en {{name}}",
-  "product_catalog_desc": "Busca, explora y administra cada producto en tu tienda.",
+  "back_to_items": "Volver a artículos",
+  "product_catalog": "Catálogo de productos",
+  "product_catalog_in_branch": "Productos en {{name}}",
+  "product_catalog_desc": "Crea y administra los productos maestros: nombre, SKU, departamento y estado. Asígnalos a cada sucursal cuando estén listos.",
+  "branch_catalog_desc": "Ajusta precios, existencias y estado de cada producto de esta sucursal. Actívalos o quítalos cuando haga falta.",
   "new_item": "Nuevo producto",
   "edit_item": "Editar producto",
   "create_item": "Crear producto",

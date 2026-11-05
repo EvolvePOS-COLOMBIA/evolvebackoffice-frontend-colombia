@@ -1,9 +1,17 @@
 import { keepPreviousData, useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 
-import { createSale, getMargins, getSale, getSales, voidSale } from "../services/sales.service"
+import { createSale, getMargins, getSale, getSales, getSalesStats, voidSale } from "../services/sales.service"
 
 /** Las ventas cambian márgenes, saldos y lo que se pide a la proveedora. */
-const SALES_KEYS = ["inventory-margins", "sales", "sale", "inventory-stock", "inventory-movements", "inventory-inbox"]
+const SALES_KEYS = [
+  "inventory-margins",
+  "sales",
+  "sales-stats",
+  "sale",
+  "inventory-stock",
+  "inventory-movements",
+  "inventory-inbox",
+]
 
 function useInvalidateSales() {
   const queryClient = useQueryClient()
@@ -40,4 +48,12 @@ export function useCreateSale() {
 export function useVoidSale() {
   const invalidate = useInvalidateSales()
   return useMutation({ mutationFn: voidSale, onSuccess: invalidate })
+}
+
+export function useSalesStats(branchId: string | null) {
+  return useQuery({
+    queryKey: ["sales-stats", branchId],
+    queryFn: () => getSalesStats(branchId!),
+    enabled: Boolean(branchId),
+  })
 }

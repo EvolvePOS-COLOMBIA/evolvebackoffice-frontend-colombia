@@ -42,8 +42,6 @@ import { useAppStore } from "@/store/app-store"
 import { formatDateTime } from "@/utils/format"
 import { useTranslation } from "@/i18n/use-i18n"
 import Spinner from "@/components/Spinner"
-import { cluviWebhookUrl, withCluviStoreId } from "@/features/business/orders/utils/cluvi-settings"
-import { CluviOperationsPanel } from "@/features/business/orders/components/cluvi-operations-panel"
 
 import {
   useActivateBranchIntegrationStore,
@@ -152,17 +150,16 @@ export function IntegrationPanel({ branchId, platform }: Props) {
   // URL del webhook que este backend expone para recibir pedidos (la misma
   // que activate-store registra en Cluvi) y su ping de salud.
   const tenantId = useAppStore((s) => s.session?.tenantId)
-  const defaultWebhookUrl = cluviWebhookUrl(
-    appConfig.apiBaseUrl,
-    tenantId,
-    withCluviStoreId(existingIntegration?.settingsJson, storeId ?? "")
-  )
+  const defaultWebhookUrl =
+    tenantId && storeId
+      ? `${appConfig.apiBaseUrl}/api/webhooks/cluvi/${tenantId}?storeId=${encodeURIComponent(storeId)}`
+      : null
   const defaultPingUrl = `${appConfig.apiBaseUrl}/health`
   const webhookUrl = registeredUrls?.newOrder ?? defaultWebhookUrl
   const pingUrl = registeredUrls?.ping ?? defaultPingUrl
 
   const steps = isCluvi
-    ? [t("config_step_credentials"), t("config_step_verify"), t("config_step_menu"), t("config_step_operation")]
+    ? [t("config_step_credentials"), t("config_step_verify"), t("config_step_menu")]
     : [t("config_step_credentials"), t("config_step_verify")]
 
   const handleTestConnection = () => {
@@ -184,13 +181,8 @@ export function IntegrationPanel({ branchId, platform }: Props) {
   // estado real de la tienda en Cluvi vía Prueba de Conexión.
   useEffect(() => {
     if (!existingIntegration || statusCheckedRef.current) return
-    // Defer until the effect remains mounted: StrictMode's setup/cleanup replay
-    // otherwise detaches the mutation observer and leaves the form pending.
-    const timer = setTimeout(() => {
-      statusCheckedRef.current = true
-      handleTestConnection()
-    }, 0)
-    return () => clearTimeout(timer)
+    statusCheckedRef.current = true
+    handleTestConnection()
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [existingIntegration?.id])
 
@@ -205,10 +197,9 @@ export function IntegrationPanel({ branchId, platform }: Props) {
 
   const onSubmit = (values: FormValues) => {
     if (!branchId) return
-    const settingsJson = isCluvi ? withCluviStoreId(existingIntegration?.settingsJson, values.storeId ?? "") : undefined
+    const settingsJson = isCluvi ? JSON.stringify({ storeId: values.storeId ?? "" }) : undefined
 
     const onSuccess = () => {
-      setRegisteredUrls(null)
       notify.success(isNew ? t("integration_create_success") : t("integration_save_success"))
       if (isNew) setStepOverride(1)
     }
@@ -378,27 +369,17 @@ export function IntegrationPanel({ branchId, platform }: Props) {
       )}
 
       {/* Step indicator */}
-      <div className="flex flex-wrap items-center justify-center gap-2">
+      <div className="flex items-center justify-center gap-2">
         {steps.map((label, i) => (
           <div key={label} className="flex items-center gap-2">
-            {/* Con la integración creada se puede saltar a cualquier paso. */}
-            <button
-              type="button"
-              title={label}
-              aria-label={t("config_step_goto", { n: i + 1, label })}
-              aria-current={i === step ? "step" : undefined}
-              disabled={!existingIntegration && i > 0}
-              onClick={() => setStepOverride(i)}
-              className={`flex size-8 items-center justify-center rounded-full text-xs font-bold disabled:cursor-not-allowed ${
+            <div
+              className={`flex size-8 items-center justify-center rounded-full text-xs font-bold ${
                 i <= step ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground"
               }`}
             >
               {i < step ? <CheckCircle className="size-4" /> : i + 1}
-            </button>
-            <span className={`hidden text-xs sm:inline ${i === step ? "font-semibold" : "text-muted-foreground"}`}>
-              {label}
-            </span>
-            {i < steps.length - 1 && <div className={`h-0.5 w-8 ${i < step ? "bg-primary" : "bg-muted"}`} />}
+            </div>
+            {i < steps.length - 1 && <div className={`h-0.5 w-12 ${i < step ? "bg-primary" : "bg-muted"}`} />}
           </div>
         ))}
       </div>
@@ -731,28 +712,10 @@ export function IntegrationPanel({ branchId, platform }: Props) {
               </Button>
             </CardContent>
           </Card>
-          <div className="flex justify-end gap-2">
+          <div className="flex justify-end">
             <Button variant="outline" onClick={() => setStepOverride(1)}>
               <ArrowLeft className="mr-2 size-4" />
               {t("config_step_verify")}
-            </Button>
-            <Button onClick={() => setStepOverride(3)} disabled={!existingIntegration}>
-              {t("config_step_operation")}
-              <ArrowRight className="ml-2 size-4" />
-            </Button>
-          </div>
-        </div>
-      )}
-
-      {/* Step 3: Operación diaria (Cluvi only): recepción, tienda, productos y pagos */}
-      {step === 3 && isCluvi && (
-        <div className="space-y-4">
-          <p className="text-sm text-muted-foreground">{t("config_step_operation_desc")}</p>
-          <CluviOperationsPanel branchId={branchId} integrationId={existingIntegration?.id} />
-          <div className="flex justify-end">
-            <Button variant="outline" onClick={() => setStepOverride(2)}>
-              <ArrowLeft className="mr-2 size-4" />
-              {t("config_step_menu")}
             </Button>
           </div>
         </div>

@@ -55,7 +55,7 @@ export function LoginForm() {
         // Siempre ir al dashboard. El OnboardingGate se encargará de redirigir
         // al onboarding si es necesario, y el modal de cambio de contraseña
         // aparecerá si forcePasswordChange es true.
-        navigate(session.user.role === "Delivery" ? "/delivery" : "/business/dashboard")
+        navigate("/business/dashboard")
       },
       onError: (error) => {
         const message = error instanceof Error ? error.message : t("sign_in_error")

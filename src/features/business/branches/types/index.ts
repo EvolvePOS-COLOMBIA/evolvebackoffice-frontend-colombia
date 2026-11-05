@@ -13,8 +13,6 @@ export interface Branch {
   adminUserName: string
   createdAt: string
   isSupplier: boolean
-  latitude: number | null
-  longitude: number | null
 }
 
 export interface PagedBranches {

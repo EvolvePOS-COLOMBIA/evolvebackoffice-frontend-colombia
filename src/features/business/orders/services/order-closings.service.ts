@@ -1,19 +1,12 @@
 import { api } from "@/config/axios-client"
-import type {
-  BranchSchedule,
-  OrderClosing,
-  OrderClosingDetail,
-  OrderClosingPreview,
-  ReconcileOrderResponse,
-  ReconcilePaymentLine,
-} from "../types/closing"
+import type { BranchSchedule, OrderClosing, OrderClosingDetail, OrderClosingPreview } from "../types/closing"
 
 export async function getBranchSchedule(branchId: string): Promise<BranchSchedule> {
   const { data } = await api.get<BranchSchedule>(`/api/branches/${branchId}/schedule`)
   return data
 }
 
-/** Preview del periodo actual + pendientes arrastradas de periodos anteriores (Manager/Admin). */
+/** Preview: ventana actual + órdenes pendientes de cerrar (rol Manager/Admin). */
 export async function previewOrderClosing(branchId: string): Promise<OrderClosingPreview> {
   const { data } = await api.get<OrderClosingPreview>(`/api/branches/${branchId}/order-closing/preview`)
   return data
@@ -37,32 +30,17 @@ export async function getOrderClosing(closingId: string): Promise<OrderClosingDe
   return data
 }
 
-/**
- * Conciliación progresiva de una orden con varios medios de pago (la suma
- * debe dar el total). En efectivo puede enviarse el efectivo recibido: el
- * backend calcula el cambio. Lista vacía = desconciliar.
- */
-export async function reconcileOrderPayments(
+/** Marca/desmarca una orden del cierre como conciliada con su medio de cobro. */
+export async function reconcileOrder(
+  closingId: string,
   orderId: string,
-  payments: ReconcilePaymentLine[]
-): Promise<ReconcileOrderResponse> {
-  const { data } = await api.put<ReconcileOrderResponse>(`/api/orders/${orderId}/reconcile`, { payments })
-  return data
-}
-
-/** Resolución desde el cierre: la orden olvidada se marca como Entregada (genera la venta). */
-export async function resolveOrderDelivered(orderId: string): Promise<void> {
-  await api.post(`/api/orders/${orderId}/resolve-delivered`)
-}
-
-/** Resolución desde el cierre: la orden olvidada se cancela con motivo y disposición de inventario. */
-export async function cancelOrderFromClosing(
-  orderId: string,
-  reason?: string,
-  cancellationType?: "Restocked" | "Waste"
-): Promise<void> {
-  await api.post(`/api/orders/${orderId}/cancel`, {
-    reason: reason || null,
-    cancellationType: cancellationType ?? null,
+  reconciled: boolean,
+  paymentMethodCode?: string
+): Promise<OrderClosingDetail> {
+  const { data } = await api.put<OrderClosingDetail>(`/api/order-closings/${closingId}/reconcile`, {
+    orderId,
+    reconciled,
+    paymentMethodCode: paymentMethodCode ?? null,
   })
+  return data
 }

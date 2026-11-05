@@ -1,34 +1,6 @@
 import { api } from "@/config/axios-client"
-import type { BulkOrderStatusRequest, BulkOrderStatusResult } from "../types/bulk-status"
-
-export class BulkStatusNetworkError extends Error {
-  constructor(
-    public readonly completed: BulkOrderStatusResult,
-    public readonly cause: unknown
-  ) {
-    super("bulk_network_failed")
-    this.name = "BulkStatusNetworkError"
-  }
-}
-
-/** Stop on an uncertain HTTP result and retain successes from completed batches. */
-export async function updateOrderStatusBatches(batches: BulkOrderStatusRequest[]): Promise<BulkOrderStatusResult> {
-  const completed: BulkOrderStatusResult = { results: [], successCount: 0, failureCount: 0 }
-  for (const batch of batches) {
-    try {
-      const result = await bulkUpdateOrderStatus(batch)
-      completed.results.push(...result.results)
-      completed.successCount += result.successCount
-      completed.failureCount += result.failureCount
-    } catch (error) {
-      throw new BulkStatusNetworkError(completed, error)
-    }
-  }
-  return completed
-}
 import type {
   PagedOrders,
-  OrderFilters,
   OrderDetail,
   OrderStockCheck,
   NewOrdersUpdate,
@@ -50,19 +22,15 @@ function normalizePagedResponse(raw: unknown, pageSize: number): PagedOrders {
   return { data: [], totalCount: 0, totalPages: 0 }
 }
 
-export async function getOrders(pageNumber: number, pageSize: number, filters?: OrderFilters): Promise<PagedOrders> {
+export async function getOrders(
+  pageNumber: number,
+  pageSize: number,
+  filters?: { branchId?: string; status?: string; platform?: string }
+): Promise<PagedOrders> {
   const params: Record<string, unknown> = { pageNumber, pageSize }
   if (filters?.branchId) params.branchId = filters.branchId
   if (filters?.status) params.status = filters.status
   if (filters?.platform) params.platform = filters.platform
-  if (filters?.from) params.from = filters.from
-  if (filters?.to) params.to = filters.to
-  if (filters?.courierId) params.courierId = filters.courierId
-  if (filters?.search) params.search = filters.search
-  if (filters?.fulfillmentType) params.fulfillmentType = filters.fulfillmentType
-  if (filters?.origin) params.origin = filters.origin
-  if (filters?.paymentState) params.paymentState = filters.paymentState
-  if (filters?.syncAlert) params.syncAlert = filters.syncAlert
   const { data } = await api.get("/api/orders", { params })
   return normalizePagedResponse(data, pageSize)
 }
@@ -72,27 +40,8 @@ export async function getOrderById(id: string): Promise<OrderDetail> {
   return data
 }
 
-export async function retryOrderSync(
-  id: string
-): Promise<{ success: boolean; pending: boolean; message: string | null }> {
-  const { data } = await api.post<{ success: boolean; pending: boolean; message: string | null }>(
-    `/api/orders/${id}/retry-sync`
-  )
-  return data
-}
-
-/**
- * Cambia el estado. `courierId` asigna el domiciliario en el mismo paso: el
- * backend lo exige para pasar un pedido a domicilio a En camino.
- */
-export async function updateOrderStatus(id: string, status: string, courierId?: string | null): Promise<void> {
-  await api.put(`/api/orders/${id}/status`, courierId ? { status, courierId } : { status })
-}
-
-export async function bulkUpdateOrderStatus(request: BulkOrderStatusRequest): Promise<BulkOrderStatusResult> {
-  // Cada pedido puede hacer un push externo de hasta 8s; no cortar un lote válido.
-  const { data } = await api.put<BulkOrderStatusResult>("/api/orders/status/bulk", request, { timeout: 600000 })
-  return data
+export async function updateOrderStatus(id: string, status: string): Promise<void> {
+  await api.put(`/api/orders/${id}/status`, { status })
 }
 
 /** Inventario de la orden contra la sucursal. Solo informativo, nunca bloquea. */

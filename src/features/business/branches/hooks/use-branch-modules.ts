@@ -24,21 +24,6 @@ export function useTenantModules(enabled = true) {
   })
 }
 
-/**
- * Licencias de integraciones externas del tenant. Cluvi y WooCommerce son
- * independientes: cada una se expone solo si su propio módulo está
- * habilitado, y ambas pueden estar activas a la vez.
- */
-export function useTenantPlatformModules(enabled = true) {
-  const { data: tenantModules = [], isLoading } = useTenantModules(enabled)
-  const isEnabled = (code: string) => tenantModules.some((m) => m.moduleCode === code && m.isEnabled)
-  return {
-    hasCluvi: !isLoading && isEnabled("CLUVI"),
-    hasWooCommerce: !isLoading && isEnabled("WOOCOMMERCE"),
-    isLoading,
-  }
-}
-
 /** Modules currently assigned to a specific branch. */
 export function useBranchModules(branchId: string | null | undefined, enabled = true) {
   return useQuery<BranchModuleResponseDto[]>({

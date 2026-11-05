@@ -1,99 +1,55 @@
-import { useOrderPresentation } from "../hooks/use-order-presentation"
-import { shortOrderReference } from "../utils/order-presentation"
-import { NEXT_ORDER_STEP } from "../utils/order-status"
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog"
+import { useState } from "react"
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Separator } from "@/components/ui/separator"
 import { useTranslation } from "@/i18n/use-i18n"
 import { useLocaleFormat } from "@/hooks/use-locale-format"
 import { ORDER_STATUS_CONFIG, ORDER_ORIGIN_LABEL_KEY } from "../types"
-import type { OrderListItem, OrderStatus } from "../types/api"
-import { ArrowRight, Ban, Clock, Copy, CreditCard, MapPin, Phone, SquarePen, Tag, User } from "lucide-react"
-import { notify } from "@/hooks/use-notify"
+import type { OrderListItem } from "../types/api"
+import { MapPin, Clock, CreditCard, FileText, SquarePen, Tag, Ban } from "lucide-react"
 import { useOrderDetail } from "../hooks/use-orders"
-import { OrderWhatsAppDialog } from "./order-whatsapp-dialog"
-import { OrderTimeline } from "./order-timeline"
-import { OrderTrackingLink } from "./order-tracking-link"
-import { OrderSyncAction } from "./order-sync-action"
+import { CancelOrderDialog } from "./cancel-order-dialog"
 
 interface OrderDetailDialogProps {
   open: boolean
   onOpenChange: (open: boolean) => void
   order: OrderListItem | null
+  /** Abre el formulario de edición de detalles (notas/dirección/envío). */
   onEdit?: () => void
-  onAdvanceStatus?: (order: OrderListItem, nextStatus: OrderStatus) => void
-  onRequestCancel?: (order: OrderListItem) => void
 }
 
 /**
  * Diálogo modal para visualizar el detalle completo de un pedido, su historial de estados,
  * productos, trazabilidad de entrega y datos de cancelación/merma si aplica.
  */
-export function OrderDetailDialog({
-  open,
-  onOpenChange,
-  order,
-  onEdit,
-  onAdvanceStatus,
-  onRequestCancel,
-}: OrderDetailDialogProps) {
+export function OrderDetailDialog({ open, onOpenChange, order, onEdit }: OrderDetailDialogProps) {
   const { t } = useTranslation("business-orders")
-  const { formatCurrency, formatDateTime } = useLocaleFormat()
-  const { collectionLabel, paymentLabel, statusLabel } = useOrderPresentation()
-  const { data: detail, isLoading, isError, refetch } = useOrderDetail(open ? (order?.id ?? "") : "")
+  const { formatCurrency } = useLocaleFormat()
+  const { data: detail } = useOrderDetail(open ? (order?.id ?? "") : "")
+  const [cancelDialogOpen, setCancelDialogOpen] = useState(false)
+
   if (!order) return null
+
   const current = { ...order, ...detail }
-  const nextStep = NEXT_ORDER_STEP[current.statusCode]
-  const canCancel = !["Delivered", "Cancelled", "Refunded"].includes(current.statusCode)
-  const contact = {
-    id: current.id,
-    branchId: current.branchId,
-    reference: shortOrderReference(current.externalOrderId, current.id),
-    status: current.statusCode,
-    customerName: detail?.personName ?? current.customerName ?? null,
-    customerPhone: current.customerPhone ?? null,
-    shippingStreet: current.shippingStreet,
-    shippingCity: current.shippingCity,
-    total: current.total,
-    paymentConfirmed: current.paymentConfirmed,
-    isReconciled: current.isReconciled,
-  }
+  const statusConfig = ORDER_STATUS_CONFIG[current.statusCode]
+  const canCancel =
+    current.statusCode !== "Delivered" && current.statusCode !== "Cancelled" && current.statusCode !== "Refunded"
+  const canEdit = current.statusCode !== "Cancelled" && current.statusCode !== "Refunded"
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="flex max-h-[92dvh] w-[min(96vw,960px)] max-w-4xl flex-col gap-0 overflow-hidden p-0">
-        <DialogHeader className="shrink-0 border-b px-5 py-4 pr-16 sm:px-6 sm:pr-16">
-          <div className="flex flex-wrap items-center gap-2">
-            <DialogTitle className="min-w-0 break-words">
-              {t("order_number")} #{contact.reference}
+      <DialogContent className="max-w-md">
+        <DialogHeader>
+          <div className="flex items-center justify-between">
+            <DialogTitle>
+              {t("order_number")} #{order.externalOrderId?.slice(0, 8) ?? order.id.slice(0, 8)}
             </DialogTitle>
-            <Badge tone={ORDER_STATUS_CONFIG[current.statusCode]?.color}>{statusLabel(current.statusCode)}</Badge>
+            <Badge tone={statusConfig?.color}>{statusConfig?.label ?? order.statusName}</Badge>
           </div>
-          <DialogDescription>{t("order_detail_description")}</DialogDescription>
-          <Button
-            type="button"
-            variant="ghost"
-            className="h-auto min-h-8 w-fit justify-start gap-2 px-0 text-xs"
-            onClick={async () => {
-              try {
-                await navigator.clipboard.writeText(current.externalOrderId || current.id)
-                notify.success(t("reference_copied"))
-              } catch {
-                notify.error(t("reference_copy_failed"))
-              }
-            }}
-          >
-            <Copy className="size-3.5" />
-            {t("copy_full_reference")}
-          </Button>
         </DialogHeader>
 
-        <div
-          role="region"
-          aria-label={t("order_detail_content")}
-          className="min-h-0 flex-1 space-y-5 overflow-y-auto overscroll-contain p-5 sm:p-6"
-        >
+        <div className="space-y-4">
           {/* Tarjeta de información de orden cancelada */}
           {current.statusCode === "Cancelled" && (
             <div className="space-y-2.5 rounded-xl border border-destructive/30 bg-destructive/5 p-3.5 text-sm">
@@ -139,209 +95,106 @@ export function OrderDetailDialog({
             </div>
           )}
 
-          {isLoading && <p role="status">{t("loading")}</p>}
-          {isError && (
-            <div role="alert" className="space-y-2 rounded-xl border border-destructive/40 p-3">
-              <p>{t("order_detail_failed")}</p>
-              <Button variant="outline" onClick={() => void refetch()}>
-                {t("refresh")}
-              </Button>
-            </div>
-          )}
-
-          <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-primary/15 bg-primary/5 p-4">
-            <div>
-              <p className="text-xs font-medium text-muted-foreground">{t("total")}</p>
-              <p className="text-3xl font-bold tabular-nums">{formatCurrency(current.total)}</p>
-            </div>
-            <Badge
-              tone={canCancel && !current.paymentConfirmed && !current.isReconciled ? "warning" : "neutral"}
-              className="max-w-full whitespace-normal"
-            >
-              {collectionLabel(current)}
-            </Badge>
+          {/* Total */}
+          <div className="rounded-lg bg-primary/5 p-4 text-center">
+            <p className="text-sm text-muted-foreground">{t("total")}</p>
+            <p className="text-3xl font-bold">{formatCurrency(order.total)}</p>
           </div>
 
-          <div className="grid min-w-0 gap-5 md:grid-cols-[minmax(0,1.25fr)_minmax(0,1fr)]">
-            <div className="min-w-0 space-y-5">
-              <section className="space-y-3 rounded-2xl border p-4">
-                <p className="flex items-start gap-2 font-semibold">
-                  <User className="mt-0.5 size-4 shrink-0 text-muted-foreground" />
-                  <span className="break-words">{contact.customerName ?? "—"}</span>
-                </p>
-                {current.customerPhone && (
-                  <a href={"tel:" + current.customerPhone} className="flex min-h-8 items-center gap-2 text-sm">
-                    <Phone className="size-4 text-muted-foreground" />
-                    {current.customerPhone}
-                  </a>
-                )}
-                {detail && (
-                  <div className="flex flex-wrap gap-2">
-                    <OrderWhatsAppDialog order={contact} />
-                    <OrderWhatsAppDialog order={contact} courierPhone={detail.courierPhone} recipient="courier" />
-                  </div>
-                )}
-                {detail?.notes && <p className="text-sm break-words whitespace-pre-wrap">{detail.notes}</p>}
-                {detail?.shippingNotes && (
-                  <p className="text-sm break-words whitespace-pre-wrap">{detail.shippingNotes}</p>
-                )}
-              </section>
-
-              {detail && (
-                <section className="min-w-0 space-y-2 rounded-2xl border p-4">
-                  <h3 className="text-sm font-semibold">{t("order_products")}</h3>
-                  <div className="divide-y">
-                    {detail.items.map((item) => (
-                      <div key={item.id} className="flex items-start justify-between gap-3 py-3 text-sm">
-                        <span className="min-w-0 break-words">
-                          <span className="font-semibold">{item.quantity} × </span>
-                          {item.name}
-                        </span>
-                        <span className="shrink-0 font-mono tabular-nums">{formatCurrency(item.subtotal)}</span>
-                      </div>
-                    ))}
-                  </div>
-                </section>
-              )}
+          {/* Info */}
+          <div className="space-y-3">
+            <div className="flex items-center gap-3 text-sm">
+              <CreditCard className="h-4 w-4 text-muted-foreground" />
+              <span className="text-muted-foreground">{t("payment_method")}:</span>
+              <span className="font-medium">{order.paymentMethod ?? "—"}</span>
             </div>
 
-            <aside className="min-w-0 space-y-5">
-              <section className="space-y-4 rounded-2xl border p-4 text-sm">
-                <div className="flex items-start gap-3">
-                  <MapPin className="mt-0.5 size-4 shrink-0 text-muted-foreground" />
-                  <div className="min-w-0">
-                    <p className="text-xs text-muted-foreground">{t("address")}</p>
-                    <p className="font-medium break-words">
-                      {[current.shippingStreet, current.shippingCity].filter(Boolean).join(", ") ||
-                        t("fulfillment_pickup")}
-                    </p>
-                    {detail?.courierName && (
-                      <p className="mt-1 text-xs">
-                        {t("courier")}: {detail.courierName}
-                      </p>
-                    )}
-                  </div>
-                </div>
-                <div className="flex items-start gap-3">
-                  <CreditCard className="mt-0.5 size-4 shrink-0 text-muted-foreground" />
-                  <div>
-                    <p className="text-xs text-muted-foreground">{t("payment_method")}</p>
-                    <p className="font-medium">{paymentLabel(current.paymentMethod)}</p>
-                  </div>
-                </div>
-                {current.origin && (
-                  <div className="flex items-start gap-3">
-                    <Tag className="mt-0.5 size-4 shrink-0 text-muted-foreground" />
-                    <div>
-                      <p className="text-xs text-muted-foreground">{t("origin")}</p>
-                      <p className="font-medium">
-                        {ORDER_ORIGIN_LABEL_KEY[current.origin]
-                          ? t(ORDER_ORIGIN_LABEL_KEY[current.origin])
-                          : current.origin}
-                      </p>
-                    </div>
-                  </div>
-                )}
-                <div className="flex items-start gap-3">
-                  <Clock className="mt-0.5 size-4 shrink-0 text-muted-foreground" />
-                  <div>
-                    <p className="text-xs text-muted-foreground">{t("created_at")}</p>
-                    <p className="font-medium">{formatDateTime(current.externalCreatedAt || current.createdAt)}</p>
-                  </div>
-                </div>
-              </section>
-              <section className="space-y-3 rounded-2xl border p-4 text-sm">
-                <div className="flex justify-between gap-3">
-                  <span className="text-muted-foreground">{t("detail_subtotal")}</span>
-                  <span className="tabular-nums">{formatCurrency(current.subTotal)}</span>
-                </div>
-                <div className="flex justify-between gap-3">
-                  <span className="text-muted-foreground">{t("detail_shipping")}</span>
-                  <span className="tabular-nums">{formatCurrency(current.shippingCost)}</span>
-                </div>
-                {!!current.tipAmount && (
-                  <div className="flex justify-between gap-3">
-                    <span className="text-muted-foreground">{t("phase2_tip")}</span>
-                    <span className="tabular-nums">{formatCurrency(current.tipAmount)}</span>
-                  </div>
-                )}
-                <div className="flex justify-between gap-3">
-                  <span className="text-muted-foreground">{t("detail_discount")}</span>
-                  <span className="tabular-nums">
-                    {current.discount > 0 ? "− " + formatCurrency(current.discount) : formatCurrency(0)}
-                  </span>
-                </div>
-                <Separator />
-                <div className="flex justify-between gap-3 font-semibold">
-                  <span>{t("total")}</span>
-                  <span className="tabular-nums">{formatCurrency(current.total)}</span>
-                </div>
-              </section>
-            </aside>
+            {order.origin ? (
+              <div className="flex items-center gap-3 text-sm">
+                <Tag className="h-4 w-4 text-muted-foreground" />
+                <span className="text-muted-foreground">{t("origin")}:</span>
+                <span className="font-medium">
+                  {ORDER_ORIGIN_LABEL_KEY[order.origin] ? t(ORDER_ORIGIN_LABEL_KEY[order.origin]) : order.origin}
+                </span>
+              </div>
+            ) : null}
+
+            <div className="flex items-center gap-3 text-sm">
+              <MapPin className="h-4 w-4 text-muted-foreground" />
+              <span className="text-muted-foreground">{t("address")}:</span>
+              <span className="font-medium">{order.shippingStreet ?? "—"}</span>
+            </div>
+
+            <div className="flex items-center gap-3 text-sm">
+              <Clock className="h-4 w-4 text-muted-foreground" />
+              <span className="text-muted-foreground">{t("created_at")}:</span>
+              <span className="font-medium">{new Date(order.externalCreatedAt).toLocaleString("es-CO")}</span>
+            </div>
+
+            <div className="flex items-center gap-3 text-sm">
+              <FileText className="h-4 w-4 text-muted-foreground" />
+              <span className="text-muted-foreground">{t("status")}:</span>
+              <span className="font-medium">{order.statusName}</span>
+            </div>
           </div>
 
-          {detail && (detail.needsOutboundSync || detail.outboundSyncError) && detail.platformCode !== "POSCO" && (
-            <div className="space-y-2 rounded-xl border border-amber-400/40 p-3">
-              <p role="alert" className="text-sm text-amber-600">
-                {detail.outboundSyncError ?? t("phase2_sync_pending")}
-              </p>
-              <OrderSyncAction orderId={detail.id} />
+          <Separator />
+
+          {/* Breakdown */}
+          <div className="space-y-2 text-sm">
+            <div className="flex justify-between">
+              <span className="text-muted-foreground">Subtotal</span>
+              <span>{formatCurrency(order.subTotal)}</span>
             </div>
-          )}
-          {detail?.shippingStreet && <OrderTrackingLink key={detail.id} order={contact} />}
-          {open && <OrderTimeline key={order.id} orderId={order.id} />}
+            <div className="flex justify-between">
+              <span className="text-muted-foreground">Envío</span>
+              <span>{formatCurrency(order.shippingCost)}</span>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-muted-foreground">Descuento</span>
+              <span>{order.discount > 0 ? `− ${formatCurrency(order.discount)}` : formatCurrency(0)}</span>
+            </div>
+            <Separator />
+            <div className="flex justify-between font-semibold">
+              <span>{t("total")}</span>
+              <span>{formatCurrency(order.total)}</span>
+            </div>
+          </div>
+
+          {/* Acciones de la orden (Editar detalles / Cancelar orden) */}
+          {(onEdit && canEdit) || canCancel ? (
+            <div className="flex flex-col gap-2 sm:flex-row">
+              {onEdit && canEdit ? (
+                <Button type="button" variant="outline" className="flex-1" onClick={onEdit}>
+                  <SquarePen className="mr-2 size-4" />
+                  {t("edit_order")}
+                </Button>
+              ) : null}
+              {canCancel ? (
+                <Button
+                  type="button"
+                  variant="destructive"
+                  className={onEdit && canEdit ? "flex-1" : "w-full"}
+                  onClick={() => setCancelDialogOpen(true)}
+                >
+                  <Ban className="mr-2 size-4" />
+                  {t("cancel_order")}
+                </Button>
+              ) : null}
+            </div>
+          ) : null}
         </div>
-
-        {(onEdit || onAdvanceStatus || onRequestCancel) && (
-          <div
-            role="group"
-            aria-label={t("order_detail_actions")}
-            className="flex shrink-0 flex-wrap items-center gap-2 border-t bg-card px-5 py-3 sm:px-6"
-          >
-            {canCancel && onRequestCancel && (
-              <Button
-                type="button"
-                variant="outline"
-                className="min-h-11 text-destructive hover:text-destructive"
-                disabled={isLoading || isError}
-                onClick={() => {
-                  onOpenChange(false)
-                  onRequestCancel(current)
-                }}
-              >
-                <Ban className="mr-1.5 size-4" />
-                {t("cancel")}
-              </Button>
-            )}
-            {onEdit && !["Cancelled", "Refunded"].includes(current.statusCode) && (
-              <Button
-                type="button"
-                variant="ghost"
-                className="min-h-11"
-                disabled={isLoading || isError}
-                onClick={onEdit}
-              >
-                <SquarePen className="mr-1.5 size-4" />
-                {t("edit_order")}
-              </Button>
-            )}
-            {nextStep && onAdvanceStatus && (
-              <Button
-                type="button"
-                className="ml-auto min-h-11 gap-2"
-                disabled={isLoading || isError}
-                onClick={() => {
-                  onOpenChange(false)
-                  onAdvanceStatus(current, nextStep.next)
-                }}
-              >
-                {t(nextStep.labelKey).replace(/\s*→\s*$/, "")}
-                <ArrowRight className="size-4" />
-              </Button>
-            )}
-          </div>
-        )}
       </DialogContent>
+
+      <CancelOrderDialog
+        open={cancelDialogOpen}
+        onOpenChange={setCancelDialogOpen}
+        order={current}
+        onSuccess={() => {
+          setCancelDialogOpen(false)
+          onOpenChange(false)
+        }}
+      />
     </Dialog>
   )
 }

@@ -1,15 +1,12 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 
 import {
-  cancelOrderFromClosing,
   closeOrders,
   getOrderClosing,
   listOrderClosings,
   previewOrderClosing,
-  reconcileOrderPayments,
-  resolveOrderDelivered,
+  reconcileOrder,
 } from "../services/order-closings.service"
-import type { ReconcilePaymentLine } from "../types/closing"
 
 export function useOrderClosingPreview(branchId: string | null) {
   return useQuery({
@@ -53,35 +50,18 @@ export function useCloseOrders() {
   })
 }
 
-/** Concilia una orden con varios medios de pago (efectivo con cambio incluido). */
-export function useReconcileOrderPayments() {
+export function useReconcileOrder(closingId: string | null) {
   const invalidate = useClosingInvalidation()
   return useMutation({
-    mutationFn: ({ orderId, payments }: { orderId: string; payments: ReconcilePaymentLine[] }) =>
-      reconcileOrderPayments(orderId, payments),
+    mutationFn: ({
+      orderId,
+      reconciled,
+      paymentMethodCode,
+    }: {
+      orderId: string
+      reconciled: boolean
+      paymentMethodCode?: string
+    }) => reconcileOrder(closingId!, orderId, reconciled, paymentMethodCode),
     onSuccess: invalidate,
-  })
-}
-
-/**
- * Resuelve una orden sin estado final desde el cierre: entregada (primero se
- * concilian sus pagos para que la venta use el medio real) o cancelada.
- */
-export function useResolveClosingOrder() {
-  const invalidate = useClosingInvalidation()
-  return useMutation({
-    mutationFn: async (
-      input:
-        | { orderId: string; outcome: "delivered"; payments: ReconcilePaymentLine[] }
-        | { orderId: string; outcome: "cancelled"; reason?: string; cancellationType?: "Restocked" | "Waste" }
-    ) => {
-      if (input.outcome === "cancelled") {
-        return cancelOrderFromClosing(input.orderId, input.reason, input.cancellationType)
-      }
-      await reconcileOrderPayments(input.orderId, input.payments)
-      await resolveOrderDelivered(input.orderId)
-    },
-    // También en error: si la conciliación quedó aplicada, la vista debe reflejarlo.
-    onSettled: invalidate,
   })
 }

@@ -15,7 +15,6 @@ import {
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form"
 import { useBranches } from "@/features/business/branches/hooks/use-branches"
 import { Input } from "@/components/ui/input"
-import { PhoneInput } from "@/components/ui/phone-input"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { notify } from "@/hooks/use-notify"
 import { useTranslation } from "@/i18n/use-i18n"
@@ -175,10 +174,10 @@ export function UserFormDialog({
                 <FormItem>
                   <FormLabel>{t("phone")}</FormLabel>
                   <FormControl>
-                    <PhoneInput
+                    <Input
                       placeholder={t("phone_placeholder")}
                       value={field.value ?? ""}
-                      onChange={(value) => field.onChange(value || null)}
+                      onChange={(e) => field.onChange(e.target.value)}
                     />
                   </FormControl>
                   <FormMessage />

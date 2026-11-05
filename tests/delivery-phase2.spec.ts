@@ -451,28 +451,17 @@ test("Cluvi conserva cliente, teléfono, propina y notas; pickup no aparece en d
   expect(people.totalCount).toBeGreaterThanOrEqual(3)
 })
 
-test("El turno se abre al iniciar sesión y la UI corrige la base sin enlaces anónimos", async ({ page }) => {
-  // El login (ya con contraseña definitiva) abrió el turno automáticamente con base 0.
-  const opened = await json<{ shifts: (Entity & { courierId: string; openingCash: number })[] }>(
-    await api.get("/api/delivery-operations")
-  )
-  const auto = opened.shifts.find((s) => s.courierId === courier.id)
-  expect(auto?.openingCash).toBe(0)
+test("UI inicia turno de un usuario DELIVERY sin enlaces anónimos", async ({ page }) => {
   await session(page)
   await page.goto("/business/orders/operations")
   await page.getByLabel("Sucursal", { exact: true }).selectOption(branch.id)
+  await page.getByLabel("Selecciona un domiciliario", { exact: true }).selectOption(courier.id)
+  await page.getByLabel("Base entregada", { exact: true }).fill("50000")
+  await page.getByRole("button", { name: "Iniciar turno", exact: true }).click()
   await expect(page.getByText("ANA QA · En turno", { exact: true })).toBeVisible()
-  await page.getByLabel("Base entregada ANA QA", { exact: true }).fill("50000")
-  const corrected = page.waitForResponse((r) => r.url().includes("/opening-cash") && r.request().method() === "PUT")
-  await page.getByRole("button", { name: "Corregir base", exact: true }).click()
-  expect((await corrected).ok()).toBe(true)
   await expect(page.getByRole("button", { name: "Generar enlace móvil", exact: true })).toHaveCount(0)
-  const overview = await json<{ shifts: (Entity & { courierId: string; openingCash: number })[] }>(
-    await api.get("/api/delivery-operations")
-  )
-  shift = overview.shifts.find((s) => s.courierId === courier.id)!
-  expect(shift.id).toBe(auto!.id)
-  expect(overview.shifts.find((s) => s.id === shift.id)?.openingCash).toBe(50000)
+  const overview = await json<{ shifts: Entity[] }>(await api.get("/api/delivery-operations"))
+  shift = overview.shifts[0]
 })
 
 test("UI despacha con paga-con, muestra cambio y envía onWay de inmediato", async ({ page }) => {
@@ -572,9 +561,7 @@ test("No entregado permite retorno y reenvío; cancelación Cluvi avisa al despa
 test("UI vincula pos_id una sola vez y mapea dataphone al catálogo", async ({ page }) => {
   const id = (await webhook(`link-${suffix}`)).orderId
   await session(page)
-  // Vincular productos y mapear pagos vive en el asistente de Cluvi (paso Operación).
-  await page.goto(`/business/branches/${branch.id}/config?tab=cluvi`)
-  await page.getByRole("button", { name: "Paso 4: Operación", exact: true }).click()
+  await page.goto("/business/orders/operations")
   const row = page
     .locator("div.rounded-lg.border.p-3")
     .filter({ hasText: `unlinked-link-${suffix}` })
@@ -614,8 +601,7 @@ test("Cajero puede despachar, pero no administrar domiciliarios ni turnos", asyn
   await check(await cashier.put(`/api/orders/${id}/status`, { data: { status: "Delivered" } }))
   await session(page, jwt("CASHIER", tenant.id))
   await page.goto("/business/orders/deliveries")
-  await expect(page.getByRole("link", { name: "Turnos", exact: true })).toHaveCount(0)
-  await expect(page.getByRole("link", { name: "Configurar", exact: true })).toHaveCount(0)
+  await expect(page.getByRole("link", { name: "Turnos y Cluvi", exact: true })).toHaveCount(0)
   await page.goto("/business/orders/operations")
   await expect(page.getByRole("alert")).toContainText("Solo administradores y gerentes")
 })
@@ -662,13 +648,15 @@ test("UI muestra fallo de sincronización y permite pausar/reanudar Cluvi", asyn
   // Los avisos de pedidos CLUVI se gestionan desde POSCO; no se envían en QA.
   await card.getByRole("button", { name: "Avisar al cliente", exact: true }).click()
   const dialog = page.getByRole("dialog")
-  await expect(dialog.getByRole("button", { name: "Enviar por Evolution API", exact: true })).toBeDisabled()
-  await expect(dialog.locator('a[href^="whatsapp:"], a[href*="wa.me"]')).toHaveCount(0)
-  await expect(dialog.getByText(/No elegible:/)).toBeVisible()
+  await expect(dialog.getByLabel("Destinatario WhatsApp")).toHaveValue("+573001234567")
+  await expect(dialog.getByLabel("Mensaje", { exact: true })).toHaveValue(/va en camino con Luis QA/i)
+  const customerHref = await dialog.getByRole("link", { name: "Abrir WhatsApp Desktop" }).getAttribute("href")
+  expect(new URL(customerHref!).searchParams.get("phone")).toBe("573001234567")
   await page.keyboard.press("Escape")
   await card.getByRole("button", { name: "Avisar al domiciliario", exact: true }).click()
-  await expect(dialog.getByRole("button", { name: "Enviar por Evolution API", exact: true })).toBeDisabled()
-  await expect(dialog.getByText(/No elegible:/)).toBeVisible()
+  await expect(dialog.getByLabel("Destinatario WhatsApp")).toHaveValue("3001112233")
+  await expect(dialog.getByLabel("Mensaje", { exact: true })).toHaveValue(/Calle 10 # 20-30/)
+  await expect(dialog.getByLabel("Mensaje", { exact: true })).toHaveValue(/COBRAR.*27[.,]000/)
   await page.keyboard.press("Escape")
 
   // Reenviar el estado no cambia la orden ni crea una segunda venta.
@@ -694,34 +682,18 @@ test("UI muestra fallo de sincronización y permite pausar/reanudar Cluvi", asyn
   expect(after.total).toBe(before.total)
   expect(after.needsOutboundSync).toBe(false)
   expect((await json<{ totalCount: number }>(await api.get("/api/transactions"))).totalCount).toBe(txBefore.totalCount)
-  // Turnos solo avisa (tienda pausada) y enlaza al asistente de Cluvi, donde se reanuda.
   await page.goto("/business/orders/operations")
-  await expect(page.getByRole("alert").filter({ hasText: "Cluvi necesita atención" })).toBeVisible()
-  await page
-    .getByRole("link", { name: /^Cluvi · / })
-    .first()
-    .click()
-  await expect(page).toHaveURL(/\/config\?tab=cluvi/)
-  await page.getByRole("button", { name: "Paso 4: Operación", exact: true }).click()
-  // Al abrir la pestaña, "Probar conexión" automático puede refrescar el estado real de la tienda.
-  await expect(page.getByRole("button", { name: /^(Reanudar|Pausar) tienda$/ })).toBeVisible()
-  if (await page.getByRole("button", { name: "Reanudar tienda", exact: true }).isVisible()) {
-    await page.getByRole("button", { name: "Reanudar tienda", exact: true }).click()
-    await expect(page.getByText("Tienda activa", { exact: true })).toBeVisible()
-  }
-  await page.getByRole("button", { name: "Pausar tienda", exact: true }).click()
-  await expect(page.getByText("Tienda pausada", { exact: true })).toBeVisible()
   await page.getByRole("button", { name: "Reanudar tienda", exact: true }).click()
-  await expect(page.getByText("Tienda activa", { exact: true })).toBeVisible()
+  await expect(page.getByText("Centro QA · Tienda activa", { exact: true })).toBeVisible()
+  await page.getByRole("button", { name: "Pausar tienda", exact: true }).click()
+  await expect(page.getByText("Centro QA · Tienda pausada", { exact: true })).toBeVisible()
 })
 
 test("UI liquida turno y DELIVERY ya no puede operar", async ({ page }) => {
   await session(page)
   await page.goto("/business/orders/operations")
-  // Luis también tiene turno (se abrió solo al despacharle un pedido): se liquida solo el de Ana.
-  const anaShift = page.locator("div.rounded-lg.border.p-3").filter({ hasText: "ANA QA · En turno" })
-  await anaShift.getByLabel("Efectivo devuelto ANA QA", { exact: true }).fill("77000")
-  await anaShift.getByRole("button", { name: "Liquidar turno", exact: true }).click()
+  await page.getByLabel("Efectivo devuelto ANA QA", { exact: true }).fill("77000")
+  await page.getByRole("button", { name: "Liquidar turno", exact: true }).click()
   await expect(page.getByText("ANA QA · Liquidado", { exact: true })).toBeVisible()
   expect(
     (
@@ -736,30 +708,23 @@ test("UI liquida turno y DELIVERY ya no puede operar", async ({ page }) => {
 })
 
 test("E: UI configura zona circular y API protege administración y cobertura", async ({ page }) => {
-  // Las zonas se centran en la ubicación de la sucursal (Órdenes → Configurar).
-  await check(await api.put(`/api/branches/${branch.id}/location`, { data: { latitude: 4.61, longitude: -74.08 } }))
   await session(page)
   await page.goto("/business/orders/routes")
   await page.getByLabel("Sucursal", { exact: true }).selectOption(branch.id)
-  await page.getByRole("link", { name: "Configurar", exact: true }).last().click()
-  await page.getByLabel("Sucursal", { exact: true }).selectOption(branch.id)
-  const zones = page.locator("#zones")
-  await zones.getByLabel("Nombre de zona", { exact: true }).fill("Centro E")
-  await zones.getByRole("slider").fill("2.5")
-  await expect(zones.getByText("Radio: 2.5 km", { exact: true })).toBeVisible()
-  await zones.getByLabel("Tarifa de envío", { exact: true }).fill("3800")
-  await zones.getByText("Opciones avanzadas", { exact: true }).click()
-  await zones.getByLabel("Prioridad", { exact: true }).fill("1")
+  await expect(page.getByRole("region", { name: "Mapa de domicilios pendientes" })).toHaveCount(2)
+  await page.getByLabel("Nombre de zona", { exact: true }).fill("Centro E")
+  await page.getByLabel("Latitud", { exact: true }).fill("4.61")
+  await page.getByLabel("Longitud", { exact: true }).fill("-74.08")
+  await page.getByLabel("Radio (metros)", { exact: true }).fill("2500")
+  await page.getByLabel("Tarifa de envío", { exact: true }).fill("3800")
+  await page.getByLabel("Prioridad", { exact: true }).fill("1")
   const saved = page.waitForResponse(
     (r) => r.url().includes("/delivery-enhancements/zones") && r.request().method() === "POST"
   )
-  await zones.getByRole("button", { name: "Agregar zona", exact: true }).click()
+  await page.getByRole("button", { name: "Agregar zona", exact: true }).click()
   eZone = await (await saved).json()
   expect(eZone.shippingCost).toBe(3800)
-  expect(eZone.radiusMeters).toBe(2500)
-  expect(eZone.priority).toBe(1)
-  expect(eZone.latitude).toBeCloseTo(4.61, 6)
-  await expect(zones.getByRole("button", { name: "Desactivar zona", exact: true })).toBeVisible()
+  await expect(page.getByRole("button", { name: "Desactivar zona", exact: true })).toBeVisible()
   expect(
     (await cashier.post("/api/delivery-enhancements/zones", { data: { ...eZone, name: "No permitido" } })).status()
   ).toBe(403)
@@ -783,13 +748,11 @@ test("E: UI crea pedido manual con destinatario y tarifa automática; servidor i
   await page.goto("/business/orders")
   await page.getByRole("button", { name: "Crear Orden", exact: true }).click()
   const dialog = page.getByRole("dialog")
-  await dialog.getByRole("radio", { name: "Domicilio", exact: true }).check()
   await dialog.getByLabel("Productos", { exact: true }).click()
   await page.getByRole("option", { name: /Hamburguesa vinculada/i }).click()
   await dialog.getByLabel("Nombre del cliente", { exact: true }).fill("Cliente E")
   await dialog.getByLabel("Teléfono", { exact: true }).fill("+573001234567")
   await dialog.getByLabel("Dirección", { exact: true }).fill("Calle 10 #20-30")
-  await dialog.getByText("Elegir ubicaci\u00f3n en el mapa / coordenadas", { exact: true }).click()
   await dialog.getByLabel("Latitud", { exact: true }).fill("4.61")
   await dialog.getByLabel("Longitud", { exact: true }).fill("-74.08")
   await dialog.getByLabel("Calcular tarifa automáticamente por zona", { exact: true }).check()
@@ -875,7 +838,7 @@ test("E: lote inválido no despacha parcialmente; UI reordena dos paradas y desp
   await page.screenshot({ path: "test-results/e-run.png", fullPage: true })
 })
 
-test("E: avisos usan exclusivamente Evolution API y bloquean canal deshabilitado", async ({ page }) => {
+test("E: aviso manual prepara WhatsApp Desktop sin API ni envío real", async ({ page }) => {
   await session(page)
   await page.goto("/business/orders/routes")
   await page.getByLabel("Sucursal", { exact: true }).selectOption(branch.id)
@@ -884,12 +847,24 @@ test("E: avisos usan exclusivamente Evolution API y bloquean canal deshabilitado
     .getByRole("button", { name: "Avisar al cliente", exact: true })
     .click()
   const dialog = page.getByRole("dialog")
-  await expect(dialog.getByText(/No elegible:/)).toBeVisible()
-  await expect(dialog.getByRole("button", { name: "Enviar por Evolution API", exact: true })).toBeDisabled()
-  await expect(dialog.locator('a[href^="whatsapp:"], a[href*="wa.me"]')).toHaveCount(0)
-  await expect(dialog.getByText(/WhatsApp Desktop/)).toHaveCount(0)
-  await expect(dialog.getByRole("textbox", { name: "Mensaje", exact: true })).toHaveCount(0)
-  await page.screenshot({ path: "test-results/e-whatsapp-api.png" })
+  await expect(dialog.getByLabel("Mensaje", { exact: true })).toHaveValue(/va en camino con Ana QA/i)
+  const link = dialog.getByRole("link", { name: "Abrir WhatsApp Desktop", exact: true })
+  const href = await link.getAttribute("href")
+  expect(href).toMatch(/^whatsapp:\/\/send\?phone=573001234567&text=/)
+  expect(new URL(href!).searchParams.get("text")).toMatch(/Ana QA/i)
+  // Cancel external protocol navigation: no contact or real message is touched in QA.
+  await link.evaluate((el) => el.addEventListener("click", (e) => e.preventDefault()))
+  const external: string[] = []
+  page.on("request", (r) => {
+    if (/whatsapp|wa\.me/i.test(r.url())) external.push(r.url())
+  })
+  await link.click()
+  expect(external).toEqual([])
+  await expect(dialog.getByText(/no lo envía automáticamente/)).toBeVisible()
+  await dialog.getByLabel("Destinatario WhatsApp").fill("javascript:alert(1)")
+  await expect(link).toHaveCount(0)
+  await expect(dialog.getByRole("alert")).toContainText("teléfono internacional válido")
+  await page.screenshot({ path: "test-results/e-whatsapp.png" })
 })
 
 test("E: móvil firma entrega, no permite firma sin consentimiento y prueba solo visible con autorización", async ({
@@ -1029,20 +1004,15 @@ test("Lote: UI selecciona dos pedidos, los mueve con botón y arrastra el grupo"
     await expect(select(order)).not.toBeChecked()
     await select(order).check()
   }
-  // Usuario de teclado: desde la casilla del pedido, Tab llega al asa "Arrastrar pedido"
-  // (al enfocarla con teclado el tablero se centra en la tarjeta).
-  const handle = page
-    .locator(`[data-rfd-draggable-id="${first.id}"]`)
-    .getByRole("button", { name: /^Arrastrar pedido/ })
-  await select(first).focus()
-  await page.keyboard.press("Tab")
-  await expect(handle).toBeFocused()
-  await handle.press("Space")
+  const card = page.locator(`[data-rfd-draggable-id="${first.id}"]`)
+  await page.getByText("Listo", { exact: true }).scrollIntoViewIfNeeded()
+  await card.focus()
+  await card.press("Space")
   const announcement = page.locator('[id^="rfd-announcement-"]')
   await expect(announcement).toContainText("You have lifted")
-  await handle.press("ArrowRight")
+  await card.press("ArrowRight")
   await expect(announcement).toContainText("Ready")
-  await handle.press("Space")
+  await card.press("Space")
   await expect(page.getByRole("dialog")).toBeVisible()
   await expect(page.getByRole("combobox", { name: "Estado destino" })).toHaveValue("Ready")
   await page.getByRole("button", { name: "Aplicar cambio", exact: true }).click()
@@ -1223,13 +1193,7 @@ test("Cluvi: el detalle real muestra cliente, teléfono, productos y aviso desde
   await expect(detail.getByText("1 × Hamburguesa Cluvi", { exact: true })).toBeVisible()
   await expect(detail.getByText(/Sin cebolla/)).toBeVisible()
   await detail.getByRole("button", { name: "Avisar al cliente", exact: true }).click()
-  await expect(
-    page
-      .getByRole("dialog")
-      .last()
-      .getByText(/ya está listo/)
-  ).toBeVisible()
-  await expect(page.getByRole("dialog").last().getByRole("textbox", { name: "Mensaje", exact: true })).toHaveCount(0)
+  await expect(page.getByLabel("Mensaje", { exact: true })).toHaveValue(/ya está listo/)
   await page.keyboard.press("Escape")
   await page.keyboard.press("Escape")
   await check(await api.put(`/api/orders/${id}/courier`, { data: { courierId: otherCourier.id } }))
@@ -1246,19 +1210,8 @@ test("Cluvi: el detalle real muestra cliente, teléfono, productos y aviso desde
     .getByRole("button", { name: "Productos del pedido", exact: true })
     .click()
   await page.getByRole("dialog").getByRole("button", { name: "Avisar al domiciliario", exact: true }).click()
-  await expect(
-    page.getByRole("dialog").last().getByRole("combobox", { name: "Plantilla a enviar", exact: true })
-  ).toHaveValue("CourierAssigned")
-  await expect(
-    page
-      .getByRole("dialog")
-      .last()
-      .getByText(/No elegible:/)
-  ).toBeVisible()
-  await expect(page.getByRole("dialog").last().locator('a[href^="whatsapp:"], a[href*="wa.me"]')).toHaveCount(0)
-  await expect(
-    page.getByRole("dialog").last().getByRole("button", { name: "Enviar por Evolution API", exact: true })
-  ).toBeDisabled()
+  await expect(page.getByLabel("Mensaje", { exact: true })).toHaveValue(/PAGADO, no cobrar/)
+  await expect(page.getByLabel("Mensaje", { exact: true })).not.toHaveValue(/COBRAR\s*\$/)
 })
 
 test("Cluvi: editar conexión conserva token, pagos y menú existente", async ({ page }) => {
@@ -1279,24 +1232,18 @@ test("Cluvi: editar conexión conserva token, pagos y menú existente", async ({
   await page.goto("/business/orders")
   await page.getByRole("button", { name: /Centro QA/ }).click()
   await page.getByRole("button", { name: "Cluvi", exact: true }).click()
-  await expect(page).toHaveURL(new RegExp(`/business/branches/${branch.id}/config`))
-  await expect(page.getByRole("button", { name: "Setear URL", exact: true })).toBeEnabled()
+  const dialog = page.getByRole("dialog")
+  await expect(dialog.getByRole("button", { name: "Conectar recepción de pedidos", exact: true })).toBeEnabled()
   // Mostrar el webhook autenticado; nunca copiar una URL sin token.
-  await expect(page.locator("input[readonly]").first()).toHaveValue(new RegExp(webhookToken))
-  await page.getByRole("button", { name: "Credenciales", exact: true }).click()
-  await expect(page.getByLabel("App ID", { exact: true })).toHaveValue("")
-  const saved = page.waitForResponse(
-    (r) => r.url().endsWith(`${url}/${integration.id}`) && r.request().method() === "PUT"
-  )
-  await page.getByRole("button", { name: "Guardar configuración", exact: true }).click()
-  expect((await saved).ok()).toBe(true)
-  await page.getByRole("button", { name: "Cerrar", exact: true }).click()
-  await expect(page.getByRole("button", { name: "Setear URL", exact: true })).toBeEnabled()
-  const connected = page.waitForResponse(
-    (r) => r.url().endsWith(`/integrations/${integration.id}/activate-store`) && r.request().method() === "POST"
-  )
-  await page.getByRole("button", { name: "Setear URL", exact: true }).click()
-  expect((await connected).ok()).toBe(true)
+  await expect(dialog.locator("input[readonly]").first()).toHaveValue(new RegExp(webhookToken))
+  await dialog.getByRole("button", { name: "Credenciales", exact: true }).click()
+  await expect(dialog.getByLabel("App ID", { exact: true })).toHaveValue("")
+  await dialog.getByRole("button", { name: "Guardar Integración", exact: true }).click()
+  await expect(dialog.getByRole("button", { name: "Conectar recepción de pedidos", exact: true })).toBeEnabled()
+  await dialog.getByRole("button", { name: "Conectar recepción de pedidos", exact: true }).click()
+  await expect(dialog.getByRole("button", { name: "Finalizar y conservar menú", exact: true })).toBeEnabled()
+  await dialog.getByRole("button", { name: "Finalizar y conservar menú", exact: true }).click()
+  await expect(dialog).toHaveCount(0)
   const updated = await json<{ settingsJson: string }>(await api.get(`${url}/${integration.id}`))
   expect(JSON.parse(updated.settingsJson)).toEqual(preserved)
   expect(outbound.slice(outboundStart).some((call) => call.startsWith("PUT /v1/menu/"))).toBe(false)

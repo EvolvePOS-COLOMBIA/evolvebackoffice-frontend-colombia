@@ -117,6 +117,7 @@
   "toast_error_stock": "Error al ajustar el stock",
   "toast_item_removed_from_branch": "\"{{name}}\" removido de la sucursal",
   "toast_error_remove": "Error al remover el producto",
+  "assign_products": "Asignar productos",
   "department_none": "Sin departamento",
   "department_placeholder": "Selecciona un departamento",
   "item_type_standard": "Estándar",
@@ -285,6 +286,5 @@
   "suggest_applied_images_one": "Completamos los campos vacíos; su imagen se copiará al crear el producto.",
   "suggest_applied_images_other": "Completamos los campos vacíos; sus {{count}} imágenes se copiarán al crear el producto.",
   "suggest_dismiss": "Descartar sugerencia",
-  "suggest_images_error": "El producto se creó, pero no se pudieron copiar las imágenes sugeridas",
-  "branch_selector": "Sucursal"
+  "suggest_images_error": "El producto se creó, pero no se pudieron copiar las imágenes sugeridas"
 }

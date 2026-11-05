@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from "vitest"
 import { api } from "@/config/axios-client"
-import { BulkStatusNetworkError, bulkUpdateOrderStatus, updateOrderStatusBatches } from "../orders.service"
-import { bulkStockWarnings, isDeliveryOrder, MAX_BULK_ORDERS, nextStatusBatches } from "../../utils/bulk-status"
+import { bulkUpdateOrderStatus } from "../orders.service"
+import { bulkStockWarnings, isDeliveryOrder, MAX_BULK_ORDERS } from "../../utils/bulk-status"
 import type { OrderListItem, OrderStockItem } from "../../types/api"
 
 vi.mock("@/config/axios-client", () => ({ api: { put: vi.fn() } }))
@@ -19,52 +19,6 @@ const stock = (requested: number, available = 5): OrderStockItem => ({
 
 describe("bulk order status", () => {
   beforeEach(() => vi.clearAllMocks())
-  it("advances mixed statuses once and groups only matching targets", () => {
-    expect(
-      nextStatusBatches([
-        { ...order("a"), statusCode: "Pending" },
-        { ...order("b"), statusCode: "Confirmed" },
-        { ...order("c"), statusCode: "Pending" },
-        { ...order("d"), statusCode: "Delivered" },
-      ])
-    ).toEqual([
-      { orderIds: ["a", "c"], status: "Confirmed", courierId: null },
-      { orderIds: ["b"], status: "Preparing", courierId: null },
-    ])
-  })
-  it("separates dispatch courier choices by branch without assigning them to other transitions", () => {
-    expect(
-      nextStatusBatches(
-        [
-          { ...order("a"), statusCode: "Ready" },
-          { ...order("b", "b2"), statusCode: "Ready" },
-          { ...order("c"), statusCode: "Shipped" },
-        ],
-        { b1: "courier-1", b2: "courier-2" }
-      )
-    ).toEqual([
-      { orderIds: ["a"], status: "Shipped", courierId: "courier-1" },
-      { orderIds: ["b"], status: "Shipped", courierId: "courier-2" },
-      { orderIds: ["c"], status: "Delivered", courierId: null },
-    ])
-  })
-  it("stops after an uncertain request and preserves completed results instead of replaying them", async () => {
-    const completed = {
-      results: [{ orderId: "a", succeeded: true, statusCode: 204, message: null }],
-      successCount: 1,
-      failureCount: 0,
-    }
-    mockApi.put.mockResolvedValueOnce({ data: completed }).mockRejectedValueOnce(new Error("offline"))
-    const batches = nextStatusBatches([
-      { ...order("a"), statusCode: "Pending" },
-      { ...order("b"), statusCode: "Confirmed" },
-      { ...order("c"), statusCode: "Preparing" },
-    ])
-    const failure = await updateOrderStatusBatches(batches).catch((error) => error)
-    expect(failure).toBeInstanceOf(BulkStatusNetworkError)
-    expect(failure.completed).toEqual(completed)
-    expect(mockApi.put).toHaveBeenCalledTimes(2)
-  })
   it("uses the tenant JWT API and returns per-order results", async () => {
     const result = {
       results: [{ orderId: "o1", succeeded: true, statusCode: 204, message: null }],

@@ -1,8 +1,6 @@
 import { z } from "zod"
 import type { TFunction } from "i18next"
 
-import { isFormPhoneValid } from "@/lib/phone"
-
 export const createUserSchema = (t: TFunction) =>
   z
     .object({
@@ -11,7 +9,7 @@ export const createUserSchema = (t: TFunction) =>
       email: z.string().email(t("email_invalid")).nullable().optional(),
       identificationTypeId: z.coerce.number().min(1).max(2),
       identificationNumber: z.string().min(1, t("document_required")),
-      phoneNumber: z.string().nullable().optional().refine(isFormPhoneValid, t("common:phone_required_valid")),
+      phoneNumber: z.string().nullable().optional(),
       role: z.string().min(1, t("role_required")),
       deliveryBranchId: z.string().uuid().nullable().optional(),
       vehiclePlate: z.string().max(30).nullable().optional(),
@@ -32,7 +30,7 @@ export const updateUserSchema = (t: TFunction) =>
   z.object({
     firstName: z.string().min(1, t("first_name_required")),
     lastName: z.string().min(1, t("last_name_required")),
-    phoneNumber: z.string().nullable().optional().refine(isFormPhoneValid, t("common:phone_required_valid")),
+    phoneNumber: z.string().nullable().optional(),
   })
 
 export type CreateUserFormValues = z.infer<ReturnType<typeof createUserSchema>>

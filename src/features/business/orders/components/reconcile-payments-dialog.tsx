@@ -1,4 +1,3 @@
-import { shortOrderReference } from "../utils/order-presentation"
 import { useState } from "react"
 import { Plus, Trash2, Wallet } from "lucide-react"
 
@@ -157,7 +156,7 @@ function ReconcilePaymentsDialogInner({
           </DialogTitle>
           {description && <p className="text-sm text-muted-foreground">{description}</p>}
           <DialogDescription>
-            #{shortOrderReference(order.reference, order.id)} · {order.customerName ?? "—"} · {t("order_total")}{" "}
+            #{order.reference} · {order.customerName ?? "—"} · {t("order_total")}{" "}
             <span className="font-semibold text-foreground">{formatCurrency(order.total)}</span>
           </DialogDescription>
         </DialogHeader>

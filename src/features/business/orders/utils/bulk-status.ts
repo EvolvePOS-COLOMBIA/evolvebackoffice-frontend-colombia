@@ -1,27 +1,6 @@
 import type { OrderListItem, OrderStockCheck, OrderStockItem } from "../types/api"
-import type { BulkOrderStatusRequest } from "../types/bulk-status"
-import { NEXT_ORDER_STEP } from "./order-status"
 
 export const MAX_BULK_ORDERS = 50
-
-/** Each selected order advances once; courier choices apply only to dispatches. */
-export function nextStatusBatches(
-  orders: OrderListItem[],
-  couriersByBranch: Record<string, string> = {}
-): BulkOrderStatusRequest[] {
-  const groups = new Map<string, BulkOrderStatusRequest>()
-  for (const order of orders) {
-    const status = NEXT_ORDER_STEP[order.statusCode]?.next
-    if (!status) continue
-    const courierId = status === "Shipped" ? couriersByBranch[order.branchId ?? ""] || null : null
-    const key = `${status}:${courierId ?? ""}`
-    const batch = groups.get(key)
-    if (batch) batch.orderIds.push(order.id)
-    else groups.set(key, { orderIds: [order.id], status, courierId })
-  }
-  const flow = ["Confirmed", "Preparing", "Ready", "Shipped", "Delivered"]
-  return [...groups.values()].sort((a, b) => flow.indexOf(a.status) - flow.indexOf(b.status))
-}
 
 /** Advertencia conjunta: dos pedidos pueden agotar stock aunque cada uno por separado quepa. */
 export function bulkStockWarnings(orders: OrderListItem[], checks: OrderStockCheck[]): OrderStockItem[] {

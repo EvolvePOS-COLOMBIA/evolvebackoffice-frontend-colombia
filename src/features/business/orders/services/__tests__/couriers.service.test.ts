@@ -2,19 +2,8 @@ import { beforeEach, describe, expect, it, vi } from "vitest"
 
 import { api } from "@/config/axios-client"
 import { assignOrderCourier, getCouriers, getDeliveryBoard } from "@/features/business/orders/services/couriers.service"
-import { deleteDeliveryZone } from "@/features/business/orders/services/delivery-enhancements.service"
-import {
-  cancelOrderFromClosing,
-  reconcileOrderPayments,
-} from "@/features/business/orders/services/order-closings.service"
-import { cancelOrder, getOrders, updateOrderStatus } from "@/features/business/orders/services/orders.service"
-import {
-  connectBranchWhatsAppChannel,
-  getBranchWhatsAppQr,
-  resendOrderWhatsAppMessage,
-  retryOrderWhatsAppMessage,
-  sendOrderWhatsAppNotification,
-} from "@/features/business/orders/services/whatsapp.service"
+import { reconcileOrderPayments } from "@/features/business/orders/services/order-closings.service"
+import { updateOrderStatus } from "@/features/business/orders/services/orders.service"
 
 vi.mock("@/config/axios-client", () => ({
   api: { get: vi.fn(), post: vi.fn(), put: vi.fn(), delete: vi.fn() },
@@ -83,106 +72,5 @@ describe("estado y conciliación con domiciliario", () => {
     const result = await reconcileOrderPayments("o1", payments)
     expect(mockedApi.put).toHaveBeenCalledWith("/api/orders/o1/reconcile", { payments })
     expect(result.reconciled).toBe(true)
-  })
-
-  it("cancelOrderFromClosing y cancelOrder envían reason y cancellationType en el body JSON", async () => {
-    mockedApi.post.mockResolvedValue({})
-    await cancelOrderFromClosing("o1", "Cliente no contestó", "Waste")
-    await cancelOrder("o2", { reason: "Error de captura", cancellationType: "Restocked" })
-    expect(mockedApi.post).toHaveBeenNthCalledWith(1, "/api/orders/o1/cancel", {
-      reason: "Cliente no contestó",
-      cancellationType: "Waste",
-    })
-    expect(mockedApi.post).toHaveBeenNthCalledWith(2, "/api/orders/o2/cancel", {
-      reason: "Error de captura",
-      cancellationType: "Restocked",
-    })
-  })
-
-  it("getOrders transmite filtros enriquecidos y omite valores vacíos", async () => {
-    mockedApi.get.mockResolvedValue({ data: { data: [], totalCount: 0 } })
-    await getOrders(1, 20, {
-      branchId: "b1",
-      search: "ORD-101",
-      fulfillmentType: "delivery",
-      origin: "Cluvi",
-      paymentState: "pending",
-      syncAlert: "error",
-    })
-    expect(mockedApi.get).toHaveBeenCalledWith("/api/orders", {
-      params: {
-        pageNumber: 1,
-        pageSize: 20,
-        branchId: "b1",
-        search: "ORD-101",
-        fulfillmentType: "delivery",
-        origin: "Cluvi",
-        paymentState: "pending",
-        syncAlert: "error",
-      },
-    })
-  })
-
-  it("deleteDeliveryZone invoca DELETE /api/delivery-enhancements/zones/{id}", async () => {
-    mockedApi.delete.mockResolvedValue({})
-    await deleteDeliveryZone("zone-123")
-    expect(mockedApi.delete).toHaveBeenCalledWith("/api/delivery-enhancements/zones/zone-123")
-  })
-})
-
-describe("whatsapp.service", () => {
-  beforeEach(() => {
-    vi.clearAllMocks()
-  })
-
-  it("getBranchWhatsAppQr retorna null en 204", async () => {
-    mockedApi.get.mockResolvedValue({ status: 204, data: null })
-    const qr = await getBranchWhatsAppQr("b1")
-    expect(qr).toBeNull()
-  })
-
-  it("connect, send, retry y resend incluyen header Idempotency-Key", async () => {
-    mockedApi.post
-      .mockResolvedValueOnce({ data: { id: "channel1", templates: [] } })
-      .mockResolvedValue({ data: { id: "m1", status: "Sent" } })
-
-    await connectBranchWhatsAppChannel("b1", "idem-connect-1")
-    await sendOrderWhatsAppNotification(
-      "o1",
-      { recipientType: "Customer", templateCode: "OrderReady", previewVersion: "v1" },
-      "idem-send-1"
-    )
-    await retryOrderWhatsAppMessage("o1", "m1", "idem-retry-1")
-    await resendOrderWhatsAppMessage(
-      "o1",
-      "m1",
-      { acknowledgeDuplicateRisk: true, reason: "Cliente solicitó reenvío" },
-      "idem-resend-1"
-    )
-
-    expect(mockedApi.post).toHaveBeenNthCalledWith(
-      1,
-      "/api/branches/b1/whatsapp/connect",
-      {},
-      { headers: { "Idempotency-Key": "idem-connect-1" } }
-    )
-    expect(mockedApi.post).toHaveBeenNthCalledWith(
-      2,
-      "/api/orders/o1/whatsapp/notifications",
-      { recipientType: "Customer", templateCode: "OrderReady", previewVersion: "v1" },
-      { headers: { "Idempotency-Key": "idem-send-1" } }
-    )
-    expect(mockedApi.post).toHaveBeenNthCalledWith(
-      3,
-      "/api/orders/o1/whatsapp/messages/m1/retry",
-      {},
-      { headers: { "Idempotency-Key": "idem-retry-1" } }
-    )
-    expect(mockedApi.post).toHaveBeenNthCalledWith(
-      4,
-      "/api/orders/o1/whatsapp/messages/m1/resend",
-      { acknowledgeDuplicateRisk: true, reason: "Cliente solicitó reenvío" },
-      { headers: { "Idempotency-Key": "idem-resend-1" } }
-    )
   })
 })

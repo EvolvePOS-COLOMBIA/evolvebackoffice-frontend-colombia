@@ -1,9 +1,8 @@
-import { shortOrderReference } from "../utils/order-presentation"
-import { useOrderPresentation } from "../hooks/use-order-presentation"
 import { useCallback, useMemo, useState } from "react"
 import { Link } from "react-router-dom"
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { Button } from "@/components/ui/button"
+import { Input } from "@/components/ui/input"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { useBranches } from "@/features/business/branches/hooks/use-branches"
 import { useTranslation } from "@/i18n/use-i18n"
@@ -11,27 +10,24 @@ import { useLocaleFormat } from "@/hooks/use-locale-format"
 import { useDeliveryBoard } from "../hooks/use-couriers"
 import { useCanManageDeliveries, useDeliveryOperations } from "../hooks/use-delivery-operations"
 import { useDeliveryUpdates } from "../hooks/use-delivery-updates"
-import { createDeliveryRun, getDeliveryRuns } from "../services/delivery-enhancements.service"
+import {
+  createDeliveryRun,
+  getDeliveryRuns,
+  getDeliveryZones,
+  saveDeliveryZone,
+} from "../services/delivery-enhancements.service"
 import { DeliveryMap } from "../components/delivery-map"
 import { DeliveryOrderCard } from "../components/delivery-order-card"
-import { OrdersSubnav } from "../components/orders-subnav"
 import { getApiErrorMessage } from "../utils/order-helpers"
+import type { DeliveryZone } from "../types/enhancements"
 
 export function DeliveryRoutesPage() {
   const { t } = useTranslation("business-orders")
   const { formatCurrency } = useLocaleFormat()
-  const { statusLabel } = useOrderPresentation()
   const canManage = useCanManageDeliveries()
   const qc = useQueryClient()
   const { data: branches } = useBranches(1, 100)
-  const [branchId, setBranchId] = useState(() => {
-    try {
-      const saved = localStorage.getItem("business.orders.branchId")
-      return saved && saved !== "__ALL__" ? saved : ""
-    } catch {
-      return ""
-    }
-  })
+  const [branchId, setBranchId] = useState("")
   const [shiftId, setShiftId] = useState("")
   const [selected, setSelected] = useState<string[]>([])
   const { data: board, error: boardError } = useDeliveryBoard(branchId || null, null)
@@ -65,15 +61,6 @@ export function DeliveryRoutesPage() {
       ])
     },
   })
-  const handleToggleOrderStop = useCallback(
-    (orderId: string) => {
-      if (run.isPending) return
-      setSelected((ids) =>
-        ids.includes(orderId) ? ids.filter((id) => id !== orderId) : ids.length < 20 ? [...ids, orderId] : ids
-      )
-    },
-    [run.isPending]
-  )
   function move(index: number, offset: number) {
     setSelected((ids) => {
       const next = [...ids]
@@ -83,7 +70,6 @@ export function DeliveryRoutesPage() {
   }
   return (
     <main className="space-y-5 p-4 sm:p-6">
-      <OrdersSubnav />
       <div className="flex flex-wrap items-center justify-between gap-3">
         <h1 className="text-2xl font-semibold">{t("e_routes")}</h1>
         <Button asChild variant="outline">
@@ -98,13 +84,7 @@ export function DeliveryRoutesPage() {
           disabled={run.isPending}
           value={branchId}
           onChange={(e) => {
-            const nextBranch = e.target.value
-            setBranchId(nextBranch)
-            try {
-              localStorage.setItem("business.orders.branchId", nextBranch || "__ALL__")
-            } catch {
-              // Ignore storage error
-            }
+            setBranchId(e.target.value)
             setSelected([])
             setShiftId("")
             run.reset()
@@ -125,10 +105,7 @@ export function DeliveryRoutesPage() {
           {(boardError || runsError) && (
             <p role="alert">{getApiErrorMessage(boardError ?? runsError, t("status_update_failed"))}</p>
           )}
-          <DeliveryMap
-            orders={selectedOrders.length ? selectedOrders : pending}
-            onToggleOrderStop={handleToggleOrderStop}
-          />
+          <DeliveryMap orders={selectedOrders.length ? selectedOrders : pending} />
           <div className="grid gap-5 xl:grid-cols-2">
             <Card>
               <CardHeader>
@@ -173,7 +150,7 @@ export function DeliveryRoutesPage() {
                         }
                       />
                       <span>
-                        #{shortOrderReference(o.reference, o.id)} · {o.shippingStreet} · {formatCurrency(o.total)}
+                        #{o.reference} · {o.shippingStreet} · {formatCurrency(o.total)}
                       </span>
                     </label>
                   ))}
@@ -222,7 +199,7 @@ export function DeliveryRoutesPage() {
                     <ol className="list-inside list-decimal">
                       {r.stops.map((s) => (
                         <li key={s.orderId}>
-                          {shortOrderReference(s.reference, s.orderId)} · {statusLabel(s.status)}
+                          {s.reference} · {s.status}
                         </li>
                       ))}
                     </ol>
@@ -248,16 +225,138 @@ export function DeliveryRoutesPage() {
               </CardContent>
             </Card>
           </div>
-          {canManage && (
-            <p className="text-sm text-muted-foreground">
-              {t("routes_zones_moved")}{" "}
-              <Link className="font-medium text-primary underline" to="/business/orders/setup#zones">
-                {t("subnav_setup")}
-              </Link>
-            </p>
-          )}
+          {canManage && <DeliveryZones key={branchId} branchId={branchId} />}
         </>
       )}
     </main>
+  )
+}
+
+function DeliveryZones({ branchId }: { branchId: string }) {
+  const { t } = useTranslation("business-orders")
+  const { formatCurrency } = useLocaleFormat()
+  const qc = useQueryClient()
+  const { data: zones = [], error } = useQuery({
+    queryKey: ["delivery-zones", branchId],
+    queryFn: () => getDeliveryZones(branchId),
+  })
+  const blank = {
+    name: "",
+    latitude: "4.61",
+    longitude: "-74.08",
+    radiusMeters: "2000",
+    shippingCost: "",
+    priority: "0",
+  }
+  const [form, setForm] = useState(blank)
+  const [editing, setEditing] = useState<DeliveryZone | null>(null)
+  const pick = useCallback(
+    (lat: number, lon: number) => setForm((f) => ({ ...f, latitude: String(lat), longitude: String(lon) })),
+    []
+  )
+  const save = useMutation({
+    mutationFn: (zone: { data: Omit<DeliveryZone, "id">; id?: string }) => saveDeliveryZone(zone.data, zone.id),
+    onSuccess: async () => {
+      setEditing(null)
+      setForm(blank)
+      await qc.invalidateQueries({ queryKey: ["delivery-zones"] })
+    },
+  })
+  const fields = ["name", "latitude", "longitude", "radiusMeters", "shippingCost", "priority"] as const
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle>{t("e_zones")}</CardTitle>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        <p className="text-sm text-muted-foreground">{t("e_zone_help")}</p>
+        <DeliveryMap zones={zones} onPick={pick} />
+        <form
+          className="grid gap-3 sm:grid-cols-3"
+          onSubmit={(e) => {
+            e.preventDefault()
+            save.mutate({
+              id: editing?.id,
+              data: {
+                branchId,
+                name: form.name,
+                latitude: Number(form.latitude),
+                longitude: Number(form.longitude),
+                radiusMeters: Number(form.radiusMeters),
+                shippingCost: Number(form.shippingCost),
+                priority: Number(form.priority),
+                isActive: editing?.isActive ?? true,
+              },
+            })
+          }}
+        >
+          {fields.map((field) => (
+            <label key={field} className="space-y-1">
+              {t(`e_zone_${field}`)}
+              <Input
+                required
+                aria-label={t(`e_zone_${field}`)}
+                type={field === "name" ? "text" : "number"}
+                step={field === "priority" ? "1" : "any"}
+                value={form[field]}
+                onChange={(e) => setForm((f) => ({ ...f, [field]: e.target.value }))}
+                maxLength={field === "name" ? 100 : undefined}
+              />
+            </label>
+          ))}
+          <Button type="submit" disabled={save.isPending}>
+            {t(editing ? "save" : "e_add_zone")}
+          </Button>
+          {editing && (
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => {
+                setEditing(null)
+                setForm(blank)
+              }}
+            >
+              {t("cancel")}
+            </Button>
+          )}
+        </form>
+        {(save.error || error) && (
+          <p role="alert">{getApiErrorMessage(save.error ?? error, t("status_update_failed"))}</p>
+        )}
+        {zones.map((z) => (
+          <div key={z.id} className="flex flex-wrap items-center gap-3 rounded border p-3">
+            <span className="flex-1">
+              {z.name} · {formatCurrency(z.shippingCost)} · {z.radiusMeters}m · {t(z.isActive ? "active" : "inactive")}
+            </span>
+            <Button
+              variant="outline"
+              size="sm"
+              disabled={save.isPending}
+              onClick={() => {
+                setEditing(z)
+                setForm({
+                  name: z.name,
+                  latitude: String(z.latitude),
+                  longitude: String(z.longitude),
+                  radiusMeters: String(z.radiusMeters),
+                  shippingCost: String(z.shippingCost),
+                  priority: String(z.priority),
+                })
+              }}
+            >
+              {t("e_edit_zone")}
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              disabled={save.isPending}
+              onClick={() => save.mutate({ id: z.id, data: { ...z, isActive: !z.isActive } })}
+            >
+              {t(z.isActive ? "e_disable_zone" : "e_enable_zone")}
+            </Button>
+          </div>
+        ))}
+      </CardContent>
+    </Card>
   )
 }

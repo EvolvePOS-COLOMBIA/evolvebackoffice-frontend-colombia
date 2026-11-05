@@ -1,7 +1,6 @@
 import { useEffect, useRef } from "react"
 import { useNavigate } from "react-router-dom"
 import { useQueryClient } from "@tanstack/react-query"
-import { create } from "zustand"
 import { BellRing } from "lucide-react"
 
 import { fetchNewOrders } from "../services/orders.service"
@@ -13,115 +12,6 @@ import { playOrderChime } from "@/utils/order-chime"
 
 const ORDERS_ROUTE = "/business/orders"
 const RETRY_DELAY_MS = 8_000
-const SESSION_NOTIFICATIONS_KEY = "business.orders.notifications"
-const LOCAL_MUTED_KEY = "business.orders.notifications.muted"
-const MAX_NOTIFICATIONS = 50
-
-export type OrderNotificationKind = "new_order" | "sync_error" | "cancelled_dispatched"
-
-export interface OrderNotificationItem {
-  id: string
-  orderId: string
-  externalOrderId: string | null
-  customerName: string | null
-  total: number
-  status: string
-  createdAt: string
-  read: boolean
-  kind: OrderNotificationKind
-}
-
-function loadSessionNotifications(): OrderNotificationItem[] {
-  try {
-    const raw = sessionStorage.getItem(SESSION_NOTIFICATIONS_KEY)
-    if (!raw) return []
-    const parsed = JSON.parse(raw)
-    return Array.isArray(parsed) ? (parsed as OrderNotificationItem[]) : []
-  } catch {
-    return []
-  }
-}
-
-function saveSessionNotifications(items: OrderNotificationItem[]) {
-  try {
-    sessionStorage.setItem(SESSION_NOTIFICATIONS_KEY, JSON.stringify(items.slice(0, MAX_NOTIFICATIONS)))
-  } catch {
-    // Ignore storage quota errors
-  }
-}
-
-function loadMutedPreference(): boolean {
-  try {
-    return localStorage.getItem(LOCAL_MUTED_KEY) === "true"
-  } catch {
-    return false
-  }
-}
-
-interface OrderNotificationsState {
-  notifications: OrderNotificationItem[]
-  muted: boolean
-  addNotifications: (items: Omit<OrderNotificationItem, "id" | "read">[]) => void
-  markAsRead: (id: string) => void
-  markAllAsRead: () => void
-  clearAll: () => void
-  toggleMute: () => void
-  testSound: () => void
-}
-
-export const useOrderNotificationsStore = create<OrderNotificationsState>((set) => ({
-  notifications: loadSessionNotifications(),
-  muted: loadMutedPreference(),
-  addNotifications: (items) =>
-    set((state) => {
-      const existingKeys = new Set(state.notifications.map((n) => `${n.kind}:${n.orderId}:${n.status}`))
-      const fresh: OrderNotificationItem[] = []
-      for (const item of items) {
-        const key = `${item.kind}:${item.orderId}:${item.status}`
-        if (existingKeys.has(key)) continue
-        existingKeys.add(key)
-        fresh.push({
-          ...item,
-          id: `${item.kind}-${item.orderId}-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
-          read: false,
-        })
-      }
-      if (fresh.length === 0) return state
-      const next = [...fresh, ...state.notifications].slice(0, MAX_NOTIFICATIONS)
-      saveSessionNotifications(next)
-      return { notifications: next }
-    }),
-  markAsRead: (id) =>
-    set((state) => {
-      const next = state.notifications.map((n) => (n.id === id ? { ...n, read: true } : n))
-      saveSessionNotifications(next)
-      return { notifications: next }
-    }),
-  markAllAsRead: () =>
-    set((state) => {
-      const next = state.notifications.map((n) => ({ ...n, read: true }))
-      saveSessionNotifications(next)
-      return { notifications: next }
-    }),
-  clearAll: () =>
-    set(() => {
-      saveSessionNotifications([])
-      return { notifications: [] }
-    }),
-  toggleMute: () =>
-    set((state) => {
-      const nextMuted = !state.muted
-      try {
-        localStorage.setItem(LOCAL_MUTED_KEY, String(nextMuted))
-      } catch {
-        // Ignore storage errors
-      }
-      return { muted: nextMuted }
-    }),
-  testSound: () => {
-    playOrderChime()
-  },
-}))
 
 function prettyPlatform(code: string): string {
   const upper = code.toUpperCase()
@@ -137,14 +27,24 @@ function sleep(ms: number): Promise<void> {
 
 /**
  * Escucha en tiempo real la llegada de órdenes nuevas (Cluvi, WooCommerce o
- * manuales) mediante long-poll contra `GET /api/orders/updates` y mantiene
- * el centro de notificaciones de la sesión.
+ * manuales) mediante long-poll contra `GET /api/orders/updates`:
+ *
+ * - **Sonido** (ding-dong Web Audio) siempre que llega una orden.
+ * - **Toast dentro de la página** → clic navega a `/business/orders`.
+ * - **Notificación de escritorio** cuando la pestaña está minimizada/oculta
+ *   (si el permiso fue concedido; se solicita al montar).
+ * - **Refresco** de las vistas de órdenes abiertas (kanban, cierre, domicilios,
+ *   dashboard) para que la orden aparezca sin recargar.
+ *
+ * El cursor parte de "ahora" para no disparar notificaciones por órdenes
+ * históricas, y avanza con el `nowUtc` de cada respuesta (semántica sin
+ * pérdida ni duplicados definida en el backend). En error se reintenta con
+ * backoff; al desmontar se aborta la petición en vuelo.
  */
-export function useNewOrderNotifications(enabled: boolean) {
+export function useNewOrderNotifications(enabled: boolean): void {
   const navigate = useNavigate()
   const queryClient = useQueryClient()
   const { t } = useTranslation("business-orders")
-  const store = useOrderNotificationsStore()
 
   // Establecer en refs para no reiniciar el loop por cambios de identidad.
   const navigateRef = useRef(navigate)
@@ -170,21 +70,7 @@ export function useNewOrderNotifications(enabled: boolean) {
       const platforms = [...new Set(orders.map((o) => prettyPlatform(o.platformCode)))].join(", ")
       const tt = tRef.current
 
-      useOrderNotificationsStore.getState().addNotifications(
-        orders.map((o) => ({
-          orderId: o.id,
-          externalOrderId: o.externalOrderId,
-          customerName: o.customerName,
-          total: o.total,
-          status: o.status,
-          createdAt: o.createdAt || new Date().toISOString(),
-          kind: "new_order" as const,
-        }))
-      )
-
-      if (!useOrderNotificationsStore.getState().muted) {
-        playOrderChime()
-      }
+      playOrderChime()
       void invalidateOrderViews(queryClient)
 
       // Toast visual dentro de la página: clic → secciones de órdenes.
@@ -224,7 +110,7 @@ export function useNewOrderNotifications(enabled: boolean) {
             navigateRef.current(ORDERS_ROUTE)
           }
         } catch {
-          // Algunos navegadores exigen una acción de usuario previa: el toast
+          // Algunos navegores exigen una acción de usuario previa: el toast
           // y el sonido siguen siendo la vía principal.
         }
       }
@@ -239,7 +125,7 @@ export function useNewOrderNotifications(enabled: boolean) {
           if (result.data.length > 0) handleOrders(result.data)
         } catch {
           if (cancelled || controller.signal.aborted) return
-          // Error de red, 401 por sesión vencida, etc. → backoff y reintento.
+          // Error de red,401 por sesión vencida, etc. → backoff y reintento.
           await sleep(RETRY_DELAY_MS)
         }
       }
@@ -252,10 +138,4 @@ export function useNewOrderNotifications(enabled: boolean) {
       controller.abort()
     }
   }, [enabled, queryClient])
-
-  const unreadCount = store.notifications.filter((n) => !n.read).length
-  return {
-    ...store,
-    unreadCount,
-  }
 }

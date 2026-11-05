@@ -65,16 +65,6 @@ export function useAuth() {
   }
 
   const logout = () => {
-    try {
-      Object.keys(sessionStorage)
-        .filter(
-          (key) =>
-            key.startsWith("whatsapp-draft:") || key.startsWith("order-draft:") || key.startsWith("order-search:")
-        )
-        .forEach((key) => sessionStorage.removeItem(key))
-    } catch {
-      /* Storage may be disabled. */
-    }
     storeLogout()
     queryClient.clear()
     navigate("/login")

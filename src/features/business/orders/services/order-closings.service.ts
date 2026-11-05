@@ -55,14 +55,7 @@ export async function resolveOrderDelivered(orderId: string): Promise<void> {
   await api.post(`/api/orders/${orderId}/resolve-delivered`)
 }
 
-/** Resolución desde el cierre: la orden olvidada se cancela con motivo y disposición de inventario. */
-export async function cancelOrderFromClosing(
-  orderId: string,
-  reason?: string,
-  cancellationType?: "Restocked" | "Waste"
-): Promise<void> {
-  await api.post(`/api/orders/${orderId}/cancel`, {
-    reason: reason || null,
-    cancellationType: cancellationType ?? null,
-  })
+/** Resolución desde el cierre: la orden olvidada se cancela con motivo. */
+export async function cancelOrderFromClosing(orderId: string, reason?: string): Promise<void> {
+  await api.post(`/api/orders/${orderId}/cancel`, null, { params: reason ? { reason } : undefined })
 }

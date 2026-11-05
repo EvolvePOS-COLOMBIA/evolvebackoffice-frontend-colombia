@@ -29,7 +29,3 @@ export async function collectDelivery(
 ): Promise<void> {
   await api.post(`/api/delivery/me/orders/${id}/deliver`, { tenderedAmount, proof })
 }
-
-export async function recordDeliveryIncident(orderId: string, reason: string, returnedToStore = false): Promise<void> {
-  await api.post(`/api/delivery-operations/orders/${orderId}/incident`, { reason, returnedToStore })
-}

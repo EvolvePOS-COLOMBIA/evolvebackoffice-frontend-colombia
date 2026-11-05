@@ -7,8 +7,6 @@ export interface CourierAvailability {
   load: number
   deliveredCount: number
   averageDeliveryMinutes: number | null
-  /** Base sugerida para abrir turno: la del último turno del domiciliario. */
-  suggestedOpeningCash?: number
 }
 export interface CourierShift {
   id: string

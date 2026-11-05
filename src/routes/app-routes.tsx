@@ -1,5 +1,5 @@
 import { useEffect } from "react"
-import { BrowserRouter, Navigate, Route, Routes, useLocation } from "react-router-dom"
+import { BrowserRouter, Navigate, Route, Routes } from "react-router-dom"
 
 import { AppLayout } from "@/components/layout/app-layout"
 import { UnauthorizedPage } from "@/features/auth/pages/unauthorized-page"
@@ -33,10 +33,7 @@ import { OrderClosingPage } from "@/features/business/orders/pages/order-closing
 import { DeliveriesPage } from "@/features/business/orders/pages/deliveries-page"
 import { CourierMobilePage } from "@/features/business/orders/pages/courier-mobile-page"
 import { DeliveryOperationsPage } from "@/features/business/orders/pages/delivery-operations-page"
-import { DeliverySetupPage } from "@/features/business/orders/pages/delivery-setup-page"
 import { DeliveryRoutesPage } from "@/features/business/orders/pages/delivery-routes-page"
-import { DeliveryTrackingPage } from "@/features/business/orders/pages/delivery-tracking-page"
-import { PublicDeliveryTrackingPage } from "@/features/business/orders/pages/public-delivery-tracking-page"
 import { BranchTerminalSettingsPage } from "@/features/business/branches/pages/branch-terminal-settings-page"
 import { BranchConfigPage } from "@/features/business/branches/pages/branch-config-page"
 import { BranchesPage } from "@/features/business/branches/pages/branches-page"
@@ -60,19 +57,17 @@ import i18n from "@/i18n"
 
 function AppRoutesContent() {
   const { defaultRoute, isAuthenticated, logout, session } = useAuth()
-  const location = useLocation()
 
   useEffect(() => {
-    if (location.pathname !== "/track" && session && new Date(session.expiresAtUtc).getTime() <= Date.now()) {
+    if (session && new Date(session.expiresAtUtc).getTime() <= Date.now()) {
       const t = i18n.getFixedT(null, "auth")
       notify.info(t("session_expired"))
       logout()
     }
-  }, [logout, session, location.pathname])
+  }, [logout, session])
 
   return (
     <Routes>
-      <Route path="/track" element={<PublicDeliveryTrackingPage />} />
       <Route path="/courier/:tenantId" element={<Navigate to="/login" replace />} />
       <Route element={<ProtectedRoute allowedRoles={["Delivery"]} />}>
         <Route path="/delivery" element={<CourierMobilePage />} />
@@ -117,9 +112,7 @@ function AppRoutesContent() {
             <Route path="/business/orders/deliveries" element={<DeliveriesPage />} />
             <Route path="/business/orders/couriers" element={<Navigate to="/business/people/users" replace />} />
             <Route path="/business/orders/operations" element={<DeliveryOperationsPage />} />
-            <Route path="/business/orders/setup" element={<DeliverySetupPage />} />
             <Route path="/business/orders/routes" element={<DeliveryRoutesPage />} />
-            <Route path="/business/orders/tracking" element={<DeliveryTrackingPage />} />
             <Route path="/business/items" element={<ItemsPage />} />
             <Route path="/business/items/catalog" element={<ItemsCatalogPage />} />
             <Route path="/business/items/catalog/new" element={<ItemFormPage />} />

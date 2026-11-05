@@ -3,23 +3,28 @@ import {
   getOrders,
   getOrderById,
   updateOrderStatus,
-  cancelOrder,
   createManualOrder,
   updateOrderDetails,
   retryOrderSync,
+  cancelOrder,
 } from "../services/orders.service"
-import type { CreateManualOrderDto, OrderFilters, UpdateOrderDetailsDto, CancelOrderDto } from "../types/api"
+import type { CreateManualOrderDto, UpdateOrderDetailsDto, CancelOrderDto } from "../types/api"
 
 export const ordersKeys = {
   all: ["orders"] as const,
-  list: (page: number, pageSize: number, filters?: OrderFilters) =>
+  list: (page: number, pageSize: number, filters?: Record<string, string>) =>
     ["orders", "list", page, pageSize, filters] as const,
   detail: (id: string) => ["orders", "detail", id] as const,
 }
 
-export function useOrders(page: number, pageSize: number, filters?: OrderFilters, enabled = true) {
+export function useOrders(
+  page: number,
+  pageSize: number,
+  filters?: { branchId?: string; status?: string; platform?: string },
+  enabled = true
+) {
   return useQuery({
-    queryKey: ordersKeys.list(page, pageSize, filters),
+    queryKey: ordersKeys.list(page, pageSize, filters as Record<string, string>),
     queryFn: () => getOrders(page, pageSize, filters),
     enabled,
   })

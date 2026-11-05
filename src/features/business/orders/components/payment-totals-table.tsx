@@ -1,4 +1,3 @@
-import { useOrderPresentation } from "../hooks/use-order-presentation"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { useLocaleFormat } from "@/hooks/use-locale-format"
 import { useTranslation } from "@/i18n/use-i18n"
@@ -7,7 +6,6 @@ import type { PaymentTotalsRow } from "../types/closing"
 /** Cuadre por medio de pago: lo declarado por el cliente vs lo conciliado. */
 export function PaymentTotalsTable({ rows }: { rows: PaymentTotalsRow[] }) {
   const { t } = useTranslation("business-orders")
-  const { paymentLabel } = useOrderPresentation()
   const { formatCurrency } = useLocaleFormat()
   // El catálogo trae todos los medios activos; se ocultan los que están en cero.
   const visible = rows.filter((r) => r.expectedAmount !== 0 || r.currentAmount !== 0)
@@ -30,7 +28,7 @@ export function PaymentTotalsTable({ rows }: { rows: PaymentTotalsRow[] }) {
         <TableBody>
           {visible.map((r) => (
             <TableRow key={r.paymentMethodCode}>
-              <TableCell className="font-medium">{paymentLabel(r.paymentMethodName)}</TableCell>
+              <TableCell className="font-medium">{r.paymentMethodName}</TableCell>
               <TableCell className="text-right font-mono text-muted-foreground tabular-nums">
                 {formatCurrency(r.expectedAmount)} <span className="text-[11px]">({r.expectedCount})</span>
               </TableCell>

@@ -11,7 +11,7 @@ export default defineConfig({
     baseURL: "http://localhost:5173",
     trace: "on-first-retry",
     screenshot: "on",
-    headless: true,
+    headless: false,
   },
   projects: [
     {
@@ -20,8 +20,7 @@ export default defineConfig({
     },
   ],
   webServer: {
-    command: "bun run dev",
-    env: { VITE_API_URL: process.env.E2E_API_URL ?? "http://localhost:5285" },
+    command: "npm run dev",
     url: "http://localhost:5173",
     reuseExistingServer: true,
     timeout: 120000,

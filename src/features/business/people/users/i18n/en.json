@@ -24,12 +24,6 @@
   "role_admin": "Admin",
   "role_manager": "Manager",
   "role_cashier": "Cashier",
-  "role_delivery": "Delivery (DELIVERY)",
-  "delivery_email_required": "Delivery users need an email to sign in.",
-  "delivery_branch": "Delivery branch",
-  "delivery_all_branches": "All branches",
-  "delivery_plate": "Vehicle plate",
-  "delivery_notes": "Delivery notes",
   "status": "Status",
   "active": "Active",
   "inactive": "Inactive",
@@ -62,6 +56,5 @@
   "web_password": "Web Password",
   "credentials_warning": "These credentials will NEVER BE SHOWN again from the system. Make sure to write them down or print them.",
   "credentials_confirm": "I have delivered the credentials to the user",
-  "go_to_list": "Go to user list",
-  "user_email_required": "The user needs an email address."
+  "go_to_list": "Go to user list"
 }

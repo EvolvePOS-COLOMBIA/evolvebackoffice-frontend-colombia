@@ -14,22 +14,11 @@ export interface OrderListItem {
   shippingCost: number
   total: number
   paymentMethod: string | null
-  fulfillmentType?: string | null
-  paymentConfirmed?: boolean
-  tipAmount?: number
-  mappedPaymentMethodCode?: string | null
-  outboundSyncError?: string | null
   externalCreatedAt: string
   externalUpdatedAt: string | null
   createdAt: string
   shippingCity: string | null
   shippingStreet: string | null
-  /** Domiciliario asignado (null = sin asignar). */
-  courierId?: string | null
-  courierName?: string | null
-  assignedAt?: string | null
-  dispatchedAt?: string | null
-  deliveredAt?: string | null
   cancellationType?: CancellationType | null
   wasteCost?: number | null
   wastedAt?: string | null
@@ -68,11 +57,6 @@ export interface OrderDetail {
   shippingCost: number
   total: number
   paymentMethod: string | null
-  fulfillmentType?: string | null
-  paymentConfirmed?: boolean
-  tipAmount?: number
-  mappedPaymentMethodCode?: string | null
-  outboundSyncError?: string | null
   notes: string | null
   shippingStreet: string | null
   shippingCity: string | null
@@ -85,11 +69,6 @@ export interface OrderDetail {
   externalUpdatedAt: string | null
   needsOutboundSync: boolean
   items: OrderItemDto[]
-  courierId?: string | null
-  courierName?: string | null
-  assignedAt?: string | null
-  dispatchedAt?: string | null
-  deliveredAt?: string | null
   cancellationType?: CancellationType | null
   cancellationReason?: string | null
   wasteCost?: number | null
@@ -214,9 +193,6 @@ export interface CreateManualOrderItemDto {
 
 /** Payload de POST /api/orders (creación manual: caja / domicilio). */
 export interface CreateManualOrderDto {
-  automaticShipping?: boolean
-  customerName?: string | null
-  customerPhone?: string | null
   branchId: string
   customerId: string | null
   personId: string | null

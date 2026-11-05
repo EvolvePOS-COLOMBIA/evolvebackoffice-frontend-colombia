@@ -16,7 +16,8 @@ import { useNotify } from "@/hooks/use-notify"
 import { ORDER_STATUS_CONFIG } from "../types"
 import type { OrderListItem, OrderDetail, CancellationType, OrderItemDto } from "../types"
 import { useCancelOrder, useOrderDetail } from "../hooks/use-orders"
-import { getApiErrorMessage, isBeverage, buildCancellationInitialState } from "../utils/order-helpers"
+import { getApiErrorMessage } from "@/utils/api-error"
+import { isBeverage, buildCancellationInitialState } from "../utils/order-helpers"
 import { RotateCcw, Trash2, AlertTriangle, Loader2, Coffee, Utensils, Sparkles } from "lucide-react"
 
 /** Propiedades del componente CancelOrderDialog. */

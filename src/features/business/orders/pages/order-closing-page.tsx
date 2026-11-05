@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react"
-import { Bike, CalendarClock, ClipboardCheck, Lock, Undo2, Wallet } from "lucide-react"
+import { CalendarClock, Check, ClipboardCheck, Lock, Undo2 } from "lucide-react"
 
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
@@ -18,12 +18,9 @@ import {
   useOrderClosingDetail,
   useOrderClosingPreview,
   useOrderClosings,
-  useReconcileOrderPayments,
+  useReconcileOrder,
 } from "../hooks/use-order-closings"
-import { CourierSettlementsTable } from "../components/courier-settlements-table"
-import { ReconcilePaymentsDialog } from "../components/reconcile-payments-dialog"
-import type { OrderClosingOrderRow, ReconcilePaymentLine } from "../types/closing"
-import { getApiErrorMessage } from "../utils/order-helpers"
+import type { OrderClosingOrderRow } from "../types/closing"
 
 /**
  * F6 — Cierre de órdenes: cuadre administrativo por ventana
@@ -69,7 +66,7 @@ export function OrderClosingPage() {
           setDetailId(null)
           notify.success(t("closed_ok"))
         },
-        onError: (error) => notify.error(getApiErrorMessage(error)),
+        onError: (error) => notify.error(getErrorMessage(error)),
       }
     )
   }
@@ -180,23 +177,13 @@ export function OrderClosingPage() {
               )}
             </section>
 
-            {/* Valores por domiciliario (lo que cada uno devuelve a caja) */}
-            <section className="space-y-2">
-              <p className="flex items-center gap-1.5 text-xs font-semibold tracking-wide text-muted-foreground uppercase">
-                <Bike className="size-3.5" />
-                {t("settlement_title")}
-              </p>
-              <p className="text-xs text-muted-foreground">{t("settlement_hint")}</p>
-              <CourierSettlementsTable rows={preview.courierSettlements ?? []} />
-            </section>
-
             {/* Órdenes pendientes */}
             <section className="space-y-2">
               <p className="text-xs font-semibold tracking-wide text-muted-foreground uppercase">{t("orders_list")}</p>
               {preview.orders.length === 0 ? (
                 <p className="text-sm text-muted-foreground">{t("closing_empty")}</p>
               ) : (
-                <OrderRowsTable orders={preview.orders} showReconcile={preview.editable ?? true} />
+                <OrderRowsTable orders={preview.orders} showReconcile={false} closingId={null} />
               )}
             </section>
 
@@ -213,17 +200,11 @@ export function OrderClosingPage() {
                   onChange={(e) => setNotes(e.target.value)}
                 />
               </div>
-              <Button
-                onClick={handleClose}
-                disabled={closeMutation.isPending || preview.ordersCount === 0 || preview.status === "Closed"}
-              >
+              <Button onClick={handleClose} disabled={closeMutation.isPending || preview.ordersCount === 0}>
                 <Lock className="mr-2 size-4" />
                 {t("close_action")}
               </Button>
             </section>
-            {preview.status === "Closed" && (
-              <p className="text-xs text-muted-foreground">{t("closing_already_closed")}</p>
-            )}
 
             {/* Historial */}
             <section className="space-y-2">
@@ -273,16 +254,7 @@ export function OrderClosingPage() {
                               </p>
                             ))}
                           </div>
-                          {(detail.closing.courierSettlements?.length ?? 0) > 0 && (
-                            <div className="space-y-2">
-                              <p className="flex items-center gap-1.5 text-xs font-semibold tracking-wide text-muted-foreground uppercase">
-                                <Bike className="size-3.5" />
-                                {t("settlement_title")}
-                              </p>
-                              <CourierSettlementsTable rows={detail.closing.courierSettlements ?? []} />
-                            </div>
-                          )}
-                          <OrderRowsTable orders={detail.orders} showReconcile={detail.closing.editable ?? false} />
+                          <OrderRowsTable orders={detail.orders} showReconcile closingId={detail.closing.id} />
                         </div>
                       )}
                     </div>
@@ -306,7 +278,15 @@ function Figure({ label, value, accent = false }: { label: string; value: string
   )
 }
 
-function OrderRowsTable({ orders, showReconcile }: { orders: OrderClosingOrderRow[]; showReconcile: boolean }) {
+function OrderRowsTable({
+  orders,
+  showReconcile,
+  closingId,
+}: {
+  orders: OrderClosingOrderRow[]
+  showReconcile: boolean
+  closingId: string | null
+}) {
   const { t } = useTranslation("business-orders")
   const { formatCurrency } = useLocaleFormat()
   const { data: methods } = useQuery({
@@ -314,33 +294,24 @@ function OrderRowsTable({ orders, showReconcile }: { orders: OrderClosingOrderRo
     queryFn: getActivePaymentMethods,
     enabled: showReconcile,
   })
-  const reconcileMutation = useReconcileOrderPayments()
-  const [editing, setEditing] = useState<OrderClosingOrderRow | null>(null)
+  const reconcileMutation = useReconcileOrder(closingId)
 
-  /** Concilia con varios medios (lista vacía = deshacer la conciliación). */
-  const savePayments = (order: OrderClosingOrderRow, payments: ReconcilePaymentLine[]) => {
+  const [selected, setSelected] = useState<Record<string, string>>({})
+
+  const handleReconcile = (order: OrderClosingOrderRow, reconciled: boolean) => {
+    const code = reconciled ? selected[order.id] : undefined
+    if (reconciled && !code) {
+      notify.error(t("reconcile_method"))
+      return
+    }
     reconcileMutation.mutate(
-      { orderId: order.id, payments },
+      { orderId: order.id, reconciled, paymentMethodCode: code },
       {
-        onSuccess: () => {
-          setEditing(null)
-          notify.success(payments.length > 0 ? t("reconciled_ok") : t("unreconciled_ok"))
-        },
-        onError: (error) => notify.error(getApiErrorMessage(error)),
+        onSuccess: () => notify.success(reconciled ? t("reconciled_ok") : t("unreconciled_ok")),
+        onError: (error) => notify.error(getErrorMessage(error)),
       }
     )
   }
-
-  /** Resumen de los pagos de la orden: "Efectivo 50.000 (cambio 5.000) + Tarjeta 20.000". */
-  const paymentsSummary = (order: OrderClosingOrderRow) =>
-    (order.payments ?? [])
-      .map((p) => {
-        const base = `${p.paymentMethodName ?? p.paymentMethodCode} ${formatCurrency(p.amount)}`
-        return p.changeAmount > 0
-          ? `${base} (${t("reconcile_change").toLowerCase()} ${formatCurrency(p.changeAmount)})`
-          : base
-      })
-      .join(" + ")
 
   return (
     <div className="w-full overflow-x-auto">
@@ -352,7 +323,6 @@ function OrderRowsTable({ orders, showReconcile }: { orders: OrderClosingOrderRo
             <TableHead>{t("breakdown_origin")}</TableHead>
             <TableHead className="hidden md:table-cell">{t("breakdown_status")}</TableHead>
             <TableHead className="hidden md:table-cell">{t("breakdown_method")}</TableHead>
-            <TableHead className="hidden lg:table-cell">{t("settlement_courier")}</TableHead>
             <TableHead className="text-right">{t("order_total")}</TableHead>
             <TableHead>{t("reconciled_state")}</TableHead>
           </TableRow>
@@ -369,65 +339,67 @@ function OrderRowsTable({ orders, showReconcile }: { orders: OrderClosingOrderRo
               <TableCell className="hidden text-muted-foreground md:table-cell">
                 {o.declaredPaymentMethod ?? "—"}
               </TableCell>
-              <TableCell className="hidden text-muted-foreground lg:table-cell">{o.courierName ?? "—"}</TableCell>
               <TableCell className="text-right font-mono tabular-nums">{formatCurrency(o.total)}</TableCell>
               <TableCell>
-                {o.status === "Cancelled" ? (
-                  <Badge tone="neutral">{t("cancelled")}</Badge>
-                ) : o.reconciled ? (
+                {o.reconciled ? (
                   <div className="flex items-center gap-1.5">
                     <Badge tone="success">
                       {t("state_reconciled")} · {o.reconcilePaymentMethodCode}
                     </Badge>
                     {showReconcile && (
-                      <>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          className="size-7"
-                          title={t("reconcile_edit")}
-                          onClick={() => setEditing(o)}
-                        >
-                          <Wallet className="size-3.5" />
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          className="size-7"
-                          title={t("unreconcile_action")}
-                          onClick={() => savePayments(o, [])}
-                          disabled={reconcileMutation.isPending}
-                        >
-                          <Undo2 className="size-3.5" />
-                        </Button>
-                      </>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="size-7"
+                        title={t("unreconcile_action")}
+                        onClick={() => handleReconcile(o, false)}
+                      >
+                        <Undo2 className="size-3.5" />
+                      </Button>
                     )}
                   </div>
                 ) : showReconcile ? (
-                  <Button size="sm" className="h-8" onClick={() => setEditing(o)}>
-                    <Wallet className="mr-1.5 size-3.5" />
-                    {t("reconcile_action")}
-                  </Button>
+                  <div className="flex items-center gap-1.5">
+                    <Select
+                      value={selected[o.id] ?? ""}
+                      onValueChange={(v) => setSelected((s) => ({ ...s, [o.id]: v }))}
+                    >
+                      <SelectTrigger className="h-8 w-36 text-xs">
+                        <SelectValue placeholder={t("reconcile_placeholder")} />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {(methods ?? []).map((m) => (
+                          <SelectItem key={m.id} value={m.code}>
+                            {m.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <Button
+                      size="sm"
+                      className="h-8"
+                      onClick={() => handleReconcile(o, true)}
+                      disabled={reconcileMutation.isPending}
+                    >
+                      <Check className="size-3.5" />
+                    </Button>
+                  </div>
                 ) : (
                   <Badge tone="warning">{t("state_pending")}</Badge>
-                )}
-                {o.reconciled && (o.payments?.length ?? 0) > 0 && (
-                  <p className="mt-1 max-w-72 text-[11px] leading-4 text-muted-foreground">{paymentsSummary(o)}</p>
                 )}
               </TableCell>
             </TableRow>
           ))}
         </TableBody>
       </Table>
-
-      <ReconcilePaymentsDialog
-        open={editing !== null}
-        onOpenChange={(open) => !open && setEditing(null)}
-        order={editing}
-        methods={methods ?? []}
-        isPending={reconcileMutation.isPending}
-        onSubmit={(payments) => editing && savePayments(editing, payments)}
-      />
     </div>
   )
+}
+
+function getErrorMessage(error: unknown): string {
+  if (error && typeof error === "object" && "response" in error) {
+    const response = (error as { response?: { data?: { message?: string; error?: string } } }).response
+    return response?.data?.message ?? response?.data?.error ?? "Error"
+  }
+  return "Error"
 }

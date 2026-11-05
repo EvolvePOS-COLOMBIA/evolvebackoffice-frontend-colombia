@@ -17,7 +17,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
-import { RefreshCw, Truck, Store, ShoppingCart, AlertTriangle, Plus, Lock, Bike, Ban } from "lucide-react"
+import { RefreshCw, Truck, Store, ShoppingCart, AlertTriangle, Plus, Lock, Ban } from "lucide-react"
 import { useQueries } from "@tanstack/react-query"
 import { useBranches } from "@/features/business/branches/hooks/use-branches"
 import {
@@ -30,13 +30,10 @@ import { BranchSelector } from "@/features/business/items/catalog/components/bra
 import { useBranchIntegrations } from "@/features/business/branches/hooks/use-branch-integrations"
 import { useOrders, useUpdateOrderStatus } from "../hooks/use-orders"
 import { OrdersKanban } from "../components/orders-kanban"
-import { BulkOrderStatusDialog } from "../components/bulk-order-status-dialog"
-import { MAX_BULK_ORDERS } from "../utils/bulk-status"
 import { OrderDetailDialog } from "../components/order-detail-dialog"
 import { CancelOrderDialog } from "../components/cancel-order-dialog"
 import { ManualOrderDialog } from "../components/manual-order-dialog"
 import { EditOrderDialog } from "../components/edit-order-dialog"
-import { CourierPickerDialog } from "../components/courier-picker-dialog"
 import { KANBAN_COLUMNS, ORDER_STATUS_CONFIG } from "../types"
 import { checkOrderStock } from "../services/orders.service"
 import type { OrderListItem, OrderStatus, OrderStockItem } from "../types/api"
@@ -60,8 +57,6 @@ export function OrdersPage() {
   const [createOrderOpen, setCreateOrderOpen] = useState(false)
   const [editOrderOpen, setEditOrderOpen] = useState(false)
   const [platformFilter, setPlatformFilter] = useState<PlatformFilter>("all")
-  const [selection, setSelection] = useState<{ scope: string; ids: string[] }>({ scope: "", ids: [] })
-  const [bulkRequest, setBulkRequest] = useState<{ orders: OrderListItem[]; status?: OrderStatus } | null>(null)
   const [cancellingOrder, setCancellingOrder] = useState<OrderListItem | null>(null)
   const [showCancelled, setShowCancelled] = useState(false)
 
@@ -101,7 +96,6 @@ export function OrdersPage() {
     const value = id ?? ALL_BRANCHES
     localStorage.setItem(ORDERS_BRANCH_STORAGE_KEY, value)
     setSelectedBranchId(value)
-    setSelection({ scope: "", ids: [] })
   }
 
   const { data: branchModules } = useBranchModules(branchId)
@@ -130,7 +124,7 @@ export function OrdersPage() {
     data: ordersData,
     isLoading,
     refetch,
-  } = useOrders(1, 100, branchId ? { branchId } : undefined, !!branchId || showAllBranches)
+  } = useOrders(1, 500, branchId ? { branchId } : undefined, !!branchId || showAllBranches)
   const updateStatusMutation = useUpdateOrderStatus()
 
   // Memoizado para que los useMemo dependientes (filtros/conteos) no se
@@ -141,28 +135,6 @@ export function OrdersPage() {
     if (platformFilter === "all") return allOrders
     return allOrders.filter((o) => o.platformCode === platformFilter)
   }, [allOrders, platformFilter])
-
-  const selectionScope = `${branchId}:${showAllBranches}:${platformFilter}`
-  const selectableOrders = filteredOrders.filter(
-    (order) => order.statusCode !== "Delivered" && KANBAN_COLUMNS.some((status) => status === order.statusCode)
-  )
-  const visibleIds = new Set(selectableOrders.map((order) => order.id))
-  const selectedIds = new Set(
-    selection.scope === selectionScope ? selection.ids.filter((id) => visibleIds.has(id)) : []
-  )
-  /** Alterna la selección de una lista de identificadores de órdenes para acciones por lote. */
-  const toggleSelection = (ids: string[]) => {
-    const next = new Set(selectedIds)
-    if (ids.every((id) => next.has(id))) ids.forEach((id) => next.delete(id))
-    else {
-      ids.forEach((id) => {
-        if (next.size < MAX_BULK_ORDERS) next.add(id)
-      })
-      if (ids.some((id) => !next.has(id))) notify.error(t("bulk_limit", { count: MAX_BULK_ORDERS }))
-    }
-    setSelection({ scope: selectionScope, ids: [...next] })
-  }
-  const selectedOrders = selectableOrders.filter((order) => selectedIds.has(order.id))
 
   const cancelledOrdersCount = useMemo(
     () => filteredOrders.filter((o) => o.statusCode === "Cancelled").length,
@@ -193,19 +165,13 @@ export function OrdersPage() {
   )
 
   const [stockWarning, setStockWarning] = useState<OrderStockItem[] | null>(null)
-  // Pedido a domicilio soltado en "En camino": se pide el domiciliario antes de enviarlo.
-  const [dispatchOrder, setDispatchOrder] = useState<OrderListItem | null>(null)
   const pendingConfirmRef = useRef<{ orderId: string; status: OrderStatus } | null>(null)
 
-  /** Aplica un cambio de estado a una orden y opcionalmente asigna un repartidor. */
-  const applyStatus = (orderId: string, newStatus: OrderStatus, courierId?: string | null) => {
+  const applyStatus = (orderId: string, newStatus: OrderStatus) => {
     updateStatusMutation.mutate(
-      { id: orderId, status: newStatus, courierId },
+      { id: orderId, status: newStatus },
       {
-        onSuccess: () => {
-          setDispatchOrder(null)
-          notify.success(t("status") + " → " + (ORDER_STATUS_CONFIG[newStatus]?.label ?? newStatus))
-        },
+        onSuccess: () => notify.success(t("status") + " → " + (ORDER_STATUS_CONFIG[newStatus]?.label ?? newStatus)),
         onError: (error: unknown) => {
           const message = (error as { response?: { data?: { message?: string } } })?.response?.data?.message
           notify.error(message || t("status_update_failed"))
@@ -220,24 +186,11 @@ export function OrdersPage() {
    * bloquea la orden, solo se avisa antes de enviar el cambio.
    */
   const handleDragEnd = async (orderId: string, newStatus: OrderStatus) => {
-    if (bulkRequest || updateStatusMutation.isPending) return
     // Cancelar requiere seleccionar tipo de disposición (Restocked / Waste) y motivo individualizado
     if (newStatus === "Cancelled") {
       const order = allOrders.find((o) => o.id === orderId)
       if (order) setCancellingOrder(order)
       return
-    }
-    if (selectedIds.has(orderId) && selectedOrders.length > 1) {
-      setBulkRequest({ orders: selectedOrders, status: newStatus })
-      return
-    }
-    // Un pedido a domicilio no sale sin domiciliario: se elige (o confirma) al enviarlo.
-    if (newStatus === "Shipped") {
-      const order = allOrders.find((o) => o.id === orderId)
-      if (order?.shippingStreet) {
-        setDispatchOrder(order)
-        return
-      }
     }
     if (newStatus === "Confirmed") {
       try {
@@ -300,10 +253,6 @@ export function OrdersPage() {
             <RefreshCw className="mr-2 h-4 w-4" />
             {t("refresh")}
           </Button>
-          <Button variant="outline" size="sm" onClick={() => navigate("/business/orders/deliveries")}>
-            <Bike className="mr-2 h-4 w-4" />
-            {t("deliveries_entry")}
-          </Button>
           <Button variant="outline" size="sm" onClick={() => navigate("/business/orders/closing")}>
             <Lock className="mr-2 h-4 w-4" />
             {t("closing_entry")}
@@ -351,13 +300,7 @@ export function OrdersPage() {
       {/* Filtros de plataforma + kanban/lista */}
       <div className="flex flex-wrap items-center justify-between gap-3">
         {/* Platform Filter Tabs */}
-        <Tabs
-          value={platformFilter}
-          onValueChange={(v) => {
-            setPlatformFilter(v as PlatformFilter)
-            setSelection({ scope: "", ids: [] })
-          }}
-        >
+        <Tabs value={platformFilter} onValueChange={(v) => setPlatformFilter(v as PlatformFilter)}>
           <TabsList className="max-w-full flex-wrap gap-1">
             <TabsTrigger value="all" className="gap-1.5">
               <ShoppingCart className="h-3.5 w-3.5" />
@@ -402,39 +345,6 @@ export function OrdersPage() {
         </Button>
       </div>
 
-      {selectableOrders.length > 0 && (
-        <div className="flex flex-wrap items-center gap-2 rounded-lg border p-3">
-          <Button
-            variant="outline"
-            size="sm"
-            disabled={!!bulkRequest || updateStatusMutation.isPending}
-            onClick={() => toggleSelection(selectableOrders.map((order) => order.id))}
-          >
-            {t("bulk_select_visible")}
-          </Button>
-          <span className="text-sm" aria-live="polite">
-            {t("bulk_selected", { count: selectedOrders.length })}
-          </span>
-          <Button
-            size="sm"
-            disabled={selectedOrders.length === 0 || !!bulkRequest || updateStatusMutation.isPending}
-            onClick={() => setBulkRequest({ orders: selectedOrders })}
-          >
-            {t("bulk_move")}
-          </Button>
-          {selectedOrders.length > 0 && (
-            <Button
-              variant="ghost"
-              size="sm"
-              disabled={!!bulkRequest}
-              onClick={() => setSelection({ scope: selectionScope, ids: [] })}
-            >
-              {t("bulk_clear")}
-            </Button>
-          )}
-        </div>
-      )}
-
       {/* Kanban Board (los encabezados con conteo viven en la columna, sin fila de títulos duplicada) */}
       {isLoading ? (
         <div className="flex justify-center py-16">
@@ -447,24 +357,7 @@ export function OrdersPage() {
           onViewDetail={handleViewDetail}
           onCancelOrder={(order) => setCancellingOrder(order)}
           showBranch={showAllBranches}
-          selectedIds={selectedIds}
-          onToggleSelection={toggleSelection}
-          disabled={!!bulkRequest || updateStatusMutation.isPending}
           showCancelled={showCancelled}
-        />
-      )}
-
-      {bulkRequest && (
-        <BulkOrderStatusDialog
-          orders={bulkRequest.orders}
-          initialStatus={bulkRequest.status}
-          onClose={() => setBulkRequest(null)}
-          onResults={(result) => {
-            const successes = new Set(result.results.filter((r) => r.succeeded).map((r) => r.orderId))
-            setSelection((previous) => ({ ...previous, ids: previous.ids.filter((id) => !successes.has(id)) }))
-            if (result.failureCount === 0) notify.success(t("bulk_success", { count: result.successCount }))
-            else notify.error(t("bulk_result", { success: result.successCount, failed: result.failureCount }))
-          }}
         />
       )}
 
@@ -521,19 +414,6 @@ export function OrdersPage() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
-
-      {/* Domiciliario al pasar un pedido a domicilio a "En camino" */}
-      <CourierPickerDialog
-        open={dispatchOrder !== null}
-        onOpenChange={(open) => !open && setDispatchOrder(null)}
-        branchId={dispatchOrder?.branchId ?? null}
-        title={t("delivery_dispatch_title")}
-        description={t("delivery_dispatch_desc")}
-        confirmLabel={t("delivery_dispatch")}
-        defaultCourierId={dispatchOrder?.courierId ?? null}
-        isPending={updateStatusMutation.isPending}
-        onConfirm={(courierId) => dispatchOrder && applyStatus(dispatchOrder.id, "Shipped", courierId)}
-      />
 
       {/* Creación manual de órdenes (venta de caja / domicilio) */}
       <ManualOrderDialog open={createOrderOpen} onOpenChange={setCreateOrderOpen} branchId={branchId || null} />

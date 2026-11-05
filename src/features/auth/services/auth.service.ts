@@ -69,9 +69,7 @@ function mapAuthResponseToSession(
   // Map backend role to frontend AppRole
   const backendRole = response.user.role?.toUpperCase()
   let mappedRole: AppRole = role
-  if (role === "BusinessAdmin" && backendRole === "DELIVERY") {
-    mappedRole = "Delivery"
-  } else if (backendRole === "SUBADMIN") {
+  if (backendRole === "SUBADMIN") {
     mappedRole = "PlatformSubAdmin"
   } else if (backendRole === "SUPERVISOR") {
     mappedRole = "PlatformSupervisor"

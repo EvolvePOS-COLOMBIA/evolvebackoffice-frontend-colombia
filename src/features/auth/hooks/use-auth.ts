@@ -95,8 +95,6 @@ function getDefaultRoute(role?: AppRole) {
     return "/platform/dashboard"
   }
 
-  if (role === "Delivery") return "/delivery"
-
   if (role === "BusinessAdmin") {
     return "/business/dashboard"
   }

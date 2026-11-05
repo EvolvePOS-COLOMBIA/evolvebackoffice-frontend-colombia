@@ -1,9 +1,9 @@
 import { useState } from "react"
 import { useMutation, useQueryClient } from "@tanstack/react-query"
-import { Package } from "lucide-react"
 import toast from "react-hot-toast"
 
-import { Card } from "@/components/ui/card"
+import { EntityListLayout } from "@/components/share"
+import { Skeleton } from "@/components/ui/skeleton"
 import { useTranslation } from "@/i18n/use-i18n"
 import { useBranches } from "@/features/business/branches/hooks/use-branches"
 import { useItems } from "../hooks/use-items"
@@ -23,7 +23,7 @@ export function ItemsCatalogPage() {
   const [itemsToAssign, setItemsToAssign] = useState<ItemResponseDto[]>([])
 
   // Fetch branches for the selector
-  const { data: branchesData } = useBranches(1, 100)
+  const { data: branchesData, isLoading: branchesLoading } = useBranches(1, 100)
   const branches = branchesData?.data ?? []
 
   // Fetch all global items (for assign-from-branch flow)
@@ -104,25 +104,18 @@ export function ItemsCatalogPage() {
   }
 
   return (
-    <Card className="flex h-[calc(100vh-5.5rem)] flex-col gap-4 overflow-hidden px-4 py-4 pb-2 shadow-none sm:px-6 sm:pb-4 md:h-[calc(100vh-6.5rem)]">
-      {/* Header - fixed, not scrollable */}
-      <header className="relative flex shrink-0 flex-row items-end justify-between gap-2 pb-2 sm:pb-4">
-        <div className="min-w-0">
-          <h1 className="truncate text-lg font-semibold text-foreground sm:text-2xl">
-            {selectedBranch ? t("product_catalog_in_branch", { name: selectedBranch.name }) : t("product_catalog")}
-          </h1>
-          <p className="hidden text-sm leading-5 text-muted-foreground sm:block">{t("product_catalog_desc")}</p>
-        </div>
-
-        {/* Branch Selector */}
-        <BranchSelector options={selectorOptions} selectedId={selectedBranchId} onSelect={handleBranchSelect} />
-
-        <Package
-          color="#58626b"
-          className="absolute -top-10 -right-20 -z-10 size-50 shrink-0 animate-float opacity-5 md:-top-10 md:-right-10 md:size-70 lg:-top-20 lg:-right-30 lg:size-100"
-        />
-      </header>
-
+    <EntityListLayout
+      back={{ to: "/business/items", label: t("back_to_items") }}
+      title={selectedBranch ? t("product_catalog_in_branch", { name: selectedBranch.name }) : t("product_catalog")}
+      description={selectedBranch ? t("branch_catalog_desc") : t("product_catalog_desc")}
+      tabs={
+        branchesLoading ? (
+          <Skeleton className="h-10 w-64" />
+        ) : branches.length === 0 ? undefined : (
+          <BranchSelector options={selectorOptions} selectedId={selectedBranchId} onSelect={handleBranchSelect} />
+        )
+      }
+    >
       {/* Content - children handle their own scroll */}
       <div className="min-h-0 flex-1">
         {isGlobalView ? (
@@ -144,6 +137,6 @@ export function ItemsCatalogPage() {
         onConfirm={handleAssignConfirm}
         isSubmitting={createBranchItemMutation.isPending}
       />
-    </Card>
+    </EntityListLayout>
   )
 }

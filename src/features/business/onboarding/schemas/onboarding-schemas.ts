@@ -29,6 +29,32 @@ export const businessSchema = (t: TFunction) =>
     address: z.string(),
   })
 
+/**
+ * Coordenada opcional: vacía o, si tiene contenido, un número finito dentro
+ * del rango geográfico indicado (`min`..`max`).
+ */
+const coordinateField = (
+  min: number,
+  max: number,
+  t: TFunction,
+  invalidKey: "latitude_invalid" | "longitude_invalid",
+  rangeKey: "latitude_range" | "longitude_range"
+) =>
+  z
+    .string()
+    .trim()
+    .refine((value) => value === "" || Number.isFinite(Number(value)), {
+      message: t(invalidKey),
+    })
+    .refine(
+      (value) => {
+        if (value === "") return true
+        const coordinate = Number(value)
+        return coordinate >= min && coordinate <= max
+      },
+      { message: t(rangeKey) }
+    )
+
 export const branchSchema = (t: TFunction) =>
   z.object({
     name: z.string().min(1, t("branch_name_required")),
@@ -38,6 +64,8 @@ export const branchSchema = (t: TFunction) =>
     email: z.string().refine((value) => !value || EMAIL_PATTERN.test(value), {
       message: t("email_invalid"),
     }),
+    latitude: coordinateField(-90, 90, t, "latitude_invalid", "latitude_range"),
+    longitude: coordinateField(-180, 180, t, "longitude_invalid", "longitude_range"),
     adminUserId: z.string(),
   })
 

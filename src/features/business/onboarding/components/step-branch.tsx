@@ -1,17 +1,27 @@
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
-import { Store } from "lucide-react"
+import { MapPin, Store } from "lucide-react"
 
+import { Button } from "@/components/ui/button"
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form"
 import { Input } from "@/components/ui/input"
 import { Switch } from "@/components/ui/switch"
 import { cn } from "@/lib/utils"
 import { useTranslation } from "@/i18n/use-i18n"
+import { notify } from "@/hooks/use-notify"
+import { useGeolocation, type GeolocationErrorCode } from "@/hooks/use-geolocation"
 
 import { branchSchema, type BranchFormValues } from "../schemas/onboarding-schemas"
 import type { BranchStepValues, TenantSettings } from "../types"
 import { StepCard, StepFooter } from "./step-frame"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+
+const GEOLOCATION_ERROR_KEYS: Record<GeolocationErrorCode, string> = {
+  unsupported: "geolocation_unsupported",
+  permission_denied: "geolocation_denied",
+  unavailable: "geolocation_unavailable",
+  timeout: "geolocation_timeout",
+}
 
 type StepBranchProps = {
   initialValues: BranchStepValues | null
@@ -37,6 +47,7 @@ export function StepBranch({
   onSubmit,
 }: StepBranchProps) {
   const { t } = useTranslation("business-onboarding")
+  const { isLocating, requestLocation } = useGeolocation()
 
   const form = useForm<BranchFormValues>({
     resolver: zodResolver(branchSchema(t)) as never,
@@ -46,9 +57,24 @@ export function StepBranch({
       address: initialValues?.address ?? "",
       phone: initialValues?.phone ?? "",
       email: initialValues?.email ?? "",
+      latitude: initialValues?.latitude ?? "",
+      longitude: initialValues?.longitude ?? "",
       adminUserId: initialValues?.adminUserId ?? adminUserId,
     },
   })
+
+  /** Rellena únicamente latitud y longitud con la posición del navegador. */
+  const handleUseCurrentLocation = async () => {
+    const outcome = await requestLocation()
+
+    if (!outcome.ok) {
+      notify.error(t(GEOLOCATION_ERROR_KEYS[outcome.code]))
+      return
+    }
+
+    form.setValue("latitude", String(Number(outcome.latitude.toFixed(7))), { shouldValidate: true })
+    form.setValue("longitude", String(Number(outcome.longitude.toFixed(7))), { shouldValidate: true })
+  }
 
   /** Copia dirección, teléfono y correo del negocio a la sede, o los limpia. */
   const handleToggleSame = (checked: boolean) => {
@@ -167,6 +193,57 @@ export function StepBranch({
                 </FormItem>
               )}
             />
+
+            <FormField
+              control={form.control}
+              name="latitude"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>{t("latitude")}</FormLabel>
+                  <FormControl>
+                    <Input
+                      className="bg-white dark:bg-secondary"
+                      inputMode="decimal"
+                      placeholder={t("latitude_placeholder")}
+                      {...field}
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="longitude"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>{t("longitude")}</FormLabel>
+                  <FormControl>
+                    <Input
+                      className="bg-white dark:bg-secondary"
+                      inputMode="decimal"
+                      placeholder={t("longitude_placeholder")}
+                      {...field}
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <div className="sm:col-span-2">
+              <Button
+                type="button"
+                variant="outline"
+                className="w-full"
+                disabled={isLocating}
+                onClick={handleUseCurrentLocation}
+              >
+                <MapPin className="size-4" />
+                {isLocating ? t("geolocation_locating") : t("geolocation_use")}
+              </Button>
+            </div>
 
             <FormField
               control={form.control}

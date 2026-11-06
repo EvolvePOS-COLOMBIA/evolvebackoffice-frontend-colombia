@@ -79,6 +79,12 @@
   "branch_identification_placeholder": "Branch code or tax ID",
   "email": "Email",
   "branch_email_placeholder": "branch@business.com",
+  "latitude": "Latitude",
+  "longitude": "Longitude",
+  "latitude_placeholder": "4.60971",
+  "longitude_placeholder": "-74.082",
+  "geolocation_use": "Use my current location",
+  "geolocation_locating": "Getting location…",
   "branch_admin": "Responsible administrator",
   "branch_admin_you": "{{name}} — you",
   "branch_admin_hint": "You can assign another user once you create more accounts.",
@@ -130,9 +136,17 @@
   "business_name_required": "Legal name is required.",
   "branch_name_required": "Branch name is required.",
   "branch_address_required": "Branch address is required.",
+  "latitude_invalid": "Must be a number.",
+  "latitude_range": "Latitude must be between -90 and 90.",
+  "longitude_invalid": "Must be a number.",
+  "longitude_range": "Longitude must be between -180 and 180.",
 
   "error_saving": "Could not save. Try again.",
   "error_creating_branch": "Could not create the branch.",
   "error_no_session": "Session is unavailable. Please sign in again.",
-  "error_no_branch": "The branch has to be created first."
+  "error_no_branch": "The branch has to be created first.",
+  "geolocation_unsupported": "Your browser does not support geolocation.",
+  "geolocation_denied": "Location permission denied.",
+  "geolocation_unavailable": "We could not get your location.",
+  "geolocation_timeout": "Timed out while getting your location."
 }

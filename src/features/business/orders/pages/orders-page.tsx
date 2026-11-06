@@ -1,12 +1,14 @@
-import { useState, useMemo, useRef } from "react"
+import { useState, useEffect, useMemo, useRef } from "react"
 import { useNavigate } from "react-router-dom"
 import { useTranslation } from "@/i18n/use-i18n"
 import { useNotify } from "@/hooks/use-notify"
+import { useAppStore } from "@/store/app-store"
 import Spinner from "@/components/Spinner"
 import { Button } from "@/components/ui/button"
+import { Input } from "@/components/ui/input"
+import { ExpandableTabs } from "@/components/ui/expandable-tabs"
 import { Badge } from "@/components/ui/badge"
 import { Card, CardContent } from "@/components/ui/card"
-import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import {
   AlertDialog,
   AlertDialogAction,
@@ -17,7 +19,18 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
-import { RefreshCw, Truck, Store, ShoppingCart, AlertTriangle, Plus, Lock, Ban } from "lucide-react"
+import {
+  ShoppingCart,
+  AlertTriangle,
+  Plus,
+  Lock,
+  Maximize2,
+  Minimize2,
+  Search,
+  SlidersHorizontal,
+  ShoppingCartIcon,
+  Menu,
+} from "lucide-react"
 import { useQueries } from "@tanstack/react-query"
 import { useBranches } from "@/features/business/branches/hooks/use-branches"
 import {
@@ -34,6 +47,7 @@ import { OrderDetailDialog } from "../components/order-detail-dialog"
 import { CancelOrderDialog } from "../components/cancel-order-dialog"
 import { ManualOrderDialog } from "../components/manual-order-dialog"
 import { EditOrderDialog } from "../components/edit-order-dialog"
+import { OrdersFiltersDialog, type OrdersSortOrder } from "../components/orders-filters-dialog"
 import { KANBAN_COLUMNS, ORDER_STATUS_CONFIG } from "../types"
 import { checkOrderStock } from "../services/orders.service"
 import type { OrderListItem, OrderStatus, OrderStockItem } from "../types/api"
@@ -42,6 +56,21 @@ type PlatformFilter = "all" | "CLUVI" | "WOOCOMMERCE" | "POSCO"
 
 /** Clave de localStorage para recordar la sucursal consultada en Órdenes. */
 const ORDERS_BRANCH_STORAGE_KEY = "business.orders.branchId"
+
+/** Etiquetas legibles de plataforma para búsqueda (POSCO se busca como "local"). */
+const PLATFORM_SEARCH_LABELS: Record<string, string> = {
+  POSCO: "local",
+  CLUVI: "cluvi",
+  WOOCOMMERCE: "woocommerce",
+}
+
+/** Formatea una fecha ISO a dd/MM/yyyy para que también pueda buscarse así. */
+const formatSearchDate = (iso: string): string => {
+  const date = new Date(iso)
+  if (Number.isNaN(date.getTime())) return ""
+  const pad = (value: number) => String(value).padStart(2, "0")
+  return `${pad(date.getDate())}/${pad(date.getMonth() + 1)}/${date.getFullYear()}`
+}
 
 /**
  * Página principal de gestión de pedidos en tablero Kanban.
@@ -59,6 +88,24 @@ export function OrdersPage() {
   const [platformFilter, setPlatformFilter] = useState<PlatformFilter>("all")
   const [cancellingOrder, setCancellingOrder] = useState<OrderListItem | null>(null)
   const [showCancelled, setShowCancelled] = useState(false)
+  // Búsqueda en cliente por # de orden / dirección y modal de filtros.
+  const [searchQuery, setSearchQuery] = useState("")
+  const [sortOrder, setSortOrder] = useState<OrdersSortOrder>("recent")
+  const [filtersOpen, setFiltersOpen] = useState(false)
+
+  // Modo maximizado (estilo Jira): oculta navbar y sidebar desde AppLayout.
+  const isMaximized = useAppStore((s) => s.isMaximized)
+  const setIsMaximized = useAppStore((s) => s.setIsMaximized)
+
+  // Escape sale del modo maximizado (el AppLayout lo restablece al navegar).
+  useEffect(() => {
+    if (!isMaximized) return
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setIsMaximized(false)
+    }
+    window.addEventListener("keydown", handleKeyDown)
+    return () => window.removeEventListener("keydown", handleKeyDown)
+  }, [isMaximized, setIsMaximized])
 
   // Sucursal consultada: selección visible con persistencia local.
   // (Antes se tomaba branches[0] a ciegas y no se veía cuál era.)
@@ -132,9 +179,43 @@ export function OrdersPage() {
   const allOrders = useMemo(() => ordersData?.data ?? [], [ordersData])
 
   const filteredOrders = useMemo(() => {
-    if (platformFilter === "all") return allOrders
-    return allOrders.filter((o) => o.platformCode === platformFilter)
-  }, [allOrders, platformFilter])
+    const query = searchQuery.trim().toLowerCase()
+    // Fragmento numérico para buscar por precio ("$22.000" o "22000" → "22000").
+    const priceQuery = query.replace(/[^\d.]/g, "")
+
+    return allOrders.filter((order) => {
+      if (platformFilter !== "all" && order.platformCode !== platformFilter) return false
+      if (!query) return true
+
+      // Precio: total, subtotal y costo de envío (coincidencia parcial).
+      if (priceQuery) {
+        const prices = [order.total, order.subTotal, order.shippingCost]
+        const priceMatches = prices.some(
+          (price) => price != null && (String(price).includes(priceQuery) || price.toFixed(2).includes(priceQuery))
+        )
+        if (priceMatches) return true
+      }
+
+      // Casi todo lo demás: # de orden, plataforma, estado, sucursal, origen,
+      // método de pago, dirección y fechas (ISO y dd/MM/yyyy).
+      const searchableFields = [
+        order.externalOrderId,
+        order.id,
+        order.platformCode,
+        PLATFORM_SEARCH_LABELS[order.platformCode],
+        order.origin,
+        order.branchName,
+        order.statusCode,
+        order.statusName,
+        order.paymentMethod,
+        order.shippingStreet,
+        order.shippingCity,
+        order.createdAt,
+        formatSearchDate(order.createdAt),
+      ]
+      return searchableFields.some((field) => field?.toLowerCase().includes(query))
+    })
+  }, [allOrders, platformFilter, searchQuery])
 
   const cancelledOrdersCount = useMemo(
     () => filteredOrders.filter((o) => o.statusCode === "Cancelled").length,
@@ -148,7 +229,11 @@ export function OrdersPage() {
 
   const ordersByStatus = kanbanStatusKeys.reduce(
     (acc, status) => {
-      acc[status] = filteredOrders.filter((o) => o.statusCode === status)
+      const orders = filteredOrders.filter((o) => o.statusCode === status)
+      // Orden dentro de cada columna según el modal de filtros.
+      acc[status] = orders.sort((a, b) =>
+        sortOrder === "recent" ? b.createdAt.localeCompare(a.createdAt) : a.createdAt.localeCompare(b.createdAt)
+      )
       return acc
     },
     {} as Record<string, OrderListItem[]>
@@ -228,15 +313,14 @@ export function OrdersPage() {
   }
 
   return (
-    <div className="space-y-6">
+    <section className="flex min-h-0 shrink-0 grow flex-col gap-3 overflow-hidden border-border/80 shadow-none">
       {/* Header */}
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+      <header className="flex flex-col gap-3 border-b border-border/70 pb-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h1 className="text-2xl font-bold tracking-tight">{t("orders")}</h1>
           <p className="text-muted-foreground">{t("orders_desc")}</p>
         </div>
         <div className="flex flex-wrap items-center justify-start gap-2 sm:justify-end">
-          <span className="hidden text-sm text-muted-foreground md:inline">{t("viewing_branch")}</span>
           <BranchSelector
             options={[
               { id: null, name: t("all_branches") },
@@ -245,7 +329,8 @@ export function OrdersPage() {
             selectedId={showAllBranches ? null : branchId || null}
             onSelect={handleBranchChange}
           />
-          <Button size="sm" onClick={() => setCreateOrderOpen(true)} disabled={!branchId}>
+
+          {/* <Button size="sm" onClick={() => setCreateOrderOpen(true)} disabled={!branchId}>
             <Plus className="mr-2 h-4 w-4" />
             {t("create_order")}
           </Button>
@@ -256,7 +341,8 @@ export function OrdersPage() {
           <Button variant="outline" size="sm" onClick={() => navigate("/business/orders/closing")}>
             <Lock className="mr-2 h-4 w-4" />
             {t("closing_entry")}
-          </Button>
+          </Button> */}
+          {/*           
           {hasCluviModule && (
             <Button
               variant="outline"
@@ -280,9 +366,9 @@ export function OrdersPage() {
             <Store className="mr-2 h-4 w-4" />
             WooCommerce
             {!showAllBranches && <StatusDot state={integrationState("WOOCOMMERCE")} />}
-          </Button>
+          </Button> */}
         </div>
-      </div>
+      </header>
 
       {/* Warning if ORDERS module not active */}
       {!hasOrdersModule && (
@@ -297,41 +383,86 @@ export function OrdersPage() {
         </Card>
       )}
 
-      {/* Filtros de plataforma + kanban/lista */}
+      {/* Filtros de plataforma + búsqueda + kanban/lista */}
       <div className="flex flex-wrap items-center justify-between gap-3">
-        {/* Platform Filter Tabs */}
-        <Tabs value={platformFilter} onValueChange={(v) => setPlatformFilter(v as PlatformFilter)}>
-          <TabsList className="max-w-full flex-wrap gap-1">
-            <TabsTrigger value="all" className="gap-1.5">
-              <ShoppingCart className="h-3.5 w-3.5" />
-              Todas
-              <Badge tone="neutral" className="ml-1 text-[10px]">
-                {platformCounts.all}
-              </Badge>
-            </TabsTrigger>
-            <TabsTrigger value="POSCO" className="gap-1.5">
-              Local
-              <Badge tone="neutral" className="ml-1 text-[10px]">
-                {platformCounts.POSCO}
-              </Badge>
-            </TabsTrigger>
-            <TabsTrigger value="CLUVI" className="gap-1.5">
-              Cluvi
-              <Badge tone="neutral" className="ml-1 text-[10px]">
-                {platformCounts.CLUVI}
-              </Badge>
-            </TabsTrigger>
-            <TabsTrigger value="WOOCOMMERCE" className="gap-1.5">
-              WooCommerce
-              <Badge tone="neutral" className="ml-1 text-[10px]">
-                {platformCounts.WOOCOMMERCE}
-              </Badge>
-            </TabsTrigger>
-          </TabsList>
-        </Tabs>
+        <div className="flex flex-wrap items-center gap-2">
+          {/* Búsqueda en cliente (# de orden / dirección) */}
+          <div className="relative">
+            <Search className="pointer-events-none absolute top-1/2 left-2.5 size-4 -translate-y-1/2 text-muted-foreground" />
+            <Input
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              placeholder={t("search_orders")}
+              aria-label={t("search_orders")}
+              className="h-9 w-96 bg-background/90 pl-8"
+            />
+          </div>
+
+          {/* Modal de filtros (canceladas + orden) */}
+          <Button
+            variant="outline"
+            className="relative"
+            onClick={() => setFiltersOpen(true)}
+            aria-label={t("filters")}
+            title={t("filters")}
+          >
+            <SlidersHorizontal className="size-4" />
+            {t("filters")}
+            {showCancelled && (
+              <span className="absolute -top-1 -right-1 size-2 rounded-full bg-primary" aria-hidden="true" />
+            )}
+          </Button>
+
+          {/* Platform Filter Tabs: colapsables (solo la seleccionada + expandir) */}
+          <ExpandableTabs
+            value={platformFilter}
+            onValueChange={(v) => setPlatformFilter(v as PlatformFilter)}
+            expandLabel={t("expand_platform_filters")}
+            collapseLabel={t("collapse_platform_filters")}
+            options={[
+              {
+                value: "all",
+                label: "Todas",
+                icon: <ShoppingCart className="h-3.5 w-3.5" />,
+                badge: (
+                  <Badge tone="neutral" className="ml-1 text-[10px]">
+                    {platformCounts.all}
+                  </Badge>
+                ),
+              },
+              {
+                value: "POSCO",
+                label: "Local",
+                badge: (
+                  <Badge tone="neutral" className="ml-1 text-[10px]">
+                    {platformCounts.POSCO}
+                  </Badge>
+                ),
+              },
+              {
+                value: "CLUVI",
+                label: "Cluvi",
+                badge: (
+                  <Badge tone="neutral" className="ml-1 text-[10px]">
+                    {platformCounts.CLUVI}
+                  </Badge>
+                ),
+              },
+              {
+                value: "WOOCOMMERCE",
+                label: "WooCommerce",
+                badge: (
+                  <Badge tone="neutral" className="ml-1 text-[10px]">
+                    {platformCounts.WOOCOMMERCE}
+                  </Badge>
+                ),
+              },
+            ]}
+          />
+        </div>
 
         {/* Botón para ver/ocultar órdenes canceladas */}
-        <Button
+        {/* <Button
           variant={showCancelled ? "secondary" : "outline"}
           size="sm"
           onClick={() => setShowCancelled(!showCancelled)}
@@ -342,7 +473,35 @@ export function OrdersPage() {
           <Badge tone="neutral" className="ml-0.5 text-[10px]">
             {cancelledOrdersCount}
           </Badge>
-        </Button>
+        </Button> */}
+
+        <div className="flex items-center gap-2">
+          <Button size="sm" onClick={() => setCreateOrderOpen(true)} disabled={!branchId}>
+            <ShoppingCartIcon className="size-4" />
+            {t("create_order")}
+          </Button>
+
+          <div className="flex items-center gap-2 rounded-xl border border-border/70 bg-background/90 p-1">
+            <Button
+              variant="outline"
+              size="sm"
+              aria-label={isMaximized ? t("minimize_view") : t("maximize_view")}
+              title={isMaximized ? t("minimize_view") : t("maximize_view")}
+            >
+              <Menu />
+            </Button>
+
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setIsMaximized(!isMaximized)}
+              aria-label={isMaximized ? t("minimize_view") : t("maximize_view")}
+              title={isMaximized ? t("minimize_view") : t("maximize_view")}
+            >
+              {isMaximized ? <Minimize2 /> : <Maximize2 />}
+            </Button>
+          </div>
+        </div>
       </div>
 
       {/* Kanban Board (los encabezados con conteo viven en la columna, sin fila de títulos duplicada) */}
@@ -379,6 +538,20 @@ export function OrdersPage() {
         }}
       />
       <EditOrderDialog open={editOrderOpen} onOpenChange={setEditOrderOpen} orderId={selectedOrder?.id ?? null} />
+
+      {/* Modal de filtros (canceladas + orden) */}
+      <OrdersFiltersDialog
+        open={filtersOpen}
+        onOpenChange={setFiltersOpen}
+        showCancelled={showCancelled}
+        onShowCancelledChange={setShowCancelled}
+        sortOrder={sortOrder}
+        onSortOrderChange={setSortOrder}
+        onClear={() => {
+          setShowCancelled(false)
+          setSortOrder("recent")
+        }}
+      />
 
       {/* Advertencia de inventario insuficiente antes de confirmar la orden */}
       <AlertDialog
@@ -417,7 +590,7 @@ export function OrdersPage() {
 
       {/* Creación manual de órdenes (venta de caja / domicilio) */}
       <ManualOrderDialog open={createOrderOpen} onOpenChange={setCreateOrderOpen} branchId={branchId || null} />
-    </div>
+    </section>
   )
 }
 

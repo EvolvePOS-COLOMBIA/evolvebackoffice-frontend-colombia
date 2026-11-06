@@ -62,6 +62,12 @@ export function BranchesPage() {
   const isMutating =
     createMutation.isPending || updateMutation.isPending || deactivateMutation.isPending || activateMutation.isPending
 
+  /** Convierte una coordenada del formulario a número; vacío → null (opcional en el backend). */
+  const toCoordinate = (value: string): number | null => {
+    const trimmed = value.trim()
+    return trimmed === "" ? null : Number(trimmed)
+  }
+
   const toPayload = (values: BranchFormValues): CreateBranchDto => ({
     name: values.name,
     adminUserId: values.adminUserId || null,
@@ -69,6 +75,8 @@ export function BranchesPage() {
     address: values.address || null,
     phone: values.phone || null,
     email: values.email || null,
+    latitude: toCoordinate(values.latitude),
+    longitude: toCoordinate(values.longitude),
     isSupplier: values.isSupplier,
   })
 

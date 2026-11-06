@@ -1,7 +1,7 @@
 import { zodResolver } from "@hookform/resolvers/zod"
 import { useEffect, useMemo } from "react"
 import { useForm, type Resolver } from "react-hook-form"
-import { Building2 } from "lucide-react"
+import { Building2, MapPin } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
 import {
@@ -19,9 +19,18 @@ import { Switch } from "@/components/ui/switch"
 import { branchFormSchema, type BranchFormSchemaValues } from "@/features/business/branches/schemas/branch-schema"
 import type { Branch, BranchFormValues } from "@/features/business/branches/types"
 import { getUserDisplayName, type UserResponseDto } from "@/features/business/people/users/types"
+import { notify } from "@/hooks/use-notify"
+import { useGeolocation, type GeolocationErrorCode } from "@/hooks/use-geolocation"
 import { useTranslation } from "@/i18n/use-i18n"
 
 const AUTOMATIC_ADMIN = "automatic-admin"
+
+const GEOLOCATION_ERROR_KEYS: Record<GeolocationErrorCode, string> = {
+  unsupported: "geolocation_unsupported",
+  permission_denied: "geolocation_denied",
+  unavailable: "geolocation_unavailable",
+  timeout: "geolocation_timeout",
+}
 
 const defaultValues: BranchFormValues = {
   name: "",
@@ -29,6 +38,8 @@ const defaultValues: BranchFormValues = {
   address: "",
   phone: "",
   email: "",
+  latitude: "",
+  longitude: "",
   adminUserId: "",
   isSupplier: false,
 }
@@ -53,12 +64,26 @@ export function BranchFormDialog({
   onSubmit,
 }: BranchFormDialogProps) {
   const { t } = useTranslation("business-branches")
+  const { isLocating, requestLocation } = useGeolocation()
   const isEditMode = Boolean(branchToEdit)
   const schema = useMemo(() => branchFormSchema(t), [t])
   const form = useForm<BranchFormSchemaValues>({
     resolver: zodResolver(schema) as Resolver<BranchFormSchemaValues>,
     defaultValues,
   })
+
+  /** Rellena únicamente latitud y longitud con la posición del navegador. */
+  const handleUseCurrentLocation = async () => {
+    const outcome = await requestLocation()
+
+    if (!outcome.ok) {
+      notify.error(t(GEOLOCATION_ERROR_KEYS[outcome.code]))
+      return
+    }
+
+    form.setValue("latitude", String(Number(outcome.latitude.toFixed(7))), { shouldValidate: true })
+    form.setValue("longitude", String(Number(outcome.longitude.toFixed(7))), { shouldValidate: true })
+  }
 
   const eligibleUsers = useMemo(
     () => users.filter((user) => user.isActive && ["Admin", "Manager"].includes(user.role ?? "")),
@@ -76,6 +101,8 @@ export function BranchFormDialog({
             address: branchToEdit.address,
             phone: branchToEdit.phone,
             email: branchToEdit.email,
+            latitude: branchToEdit.latitude,
+            longitude: branchToEdit.longitude,
             adminUserId: branchToEdit.adminUserId,
             isSupplier: branchToEdit.isSupplier,
           }
@@ -176,6 +203,49 @@ export function BranchFormDialog({
                     </FormItem>
                   )}
                 />
+
+                <div className="grid gap-4 sm:grid-cols-2">
+                  <FormField
+                    control={form.control}
+                    name="latitude"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>{t("latitude_label")}</FormLabel>
+                        <FormControl>
+                          <Input inputMode="decimal" placeholder={t("latitude_placeholder")} {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={form.control}
+                    name="longitude"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>{t("longitude_label")}</FormLabel>
+                        <FormControl>
+                          <Input inputMode="decimal" placeholder={t("longitude_placeholder")} {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <div className="sm:col-span-2">
+                    <Button
+                      type="button"
+                      variant="outline"
+                      className="w-full"
+                      disabled={isLocating}
+                      onClick={handleUseCurrentLocation}
+                    >
+                      <MapPin className="size-4" />
+                      {isLocating ? t("geolocation_locating") : t("geolocation_use")}
+                    </Button>
+                  </div>
+                </div>
               </div>
               <div className="flex w-full flex-col gap-4 lg:max-w-sm">
                 <FormField

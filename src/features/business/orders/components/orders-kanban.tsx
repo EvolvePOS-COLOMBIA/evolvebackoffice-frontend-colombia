@@ -1,6 +1,5 @@
 import type { CSSProperties } from "react"
 import { DragDropContext, Droppable, Draggable, type DropResult } from "@hello-pangea/dnd"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { useTranslation } from "@/i18n/use-i18n"
@@ -44,26 +43,29 @@ export function OrdersKanban({
 
   return (
     <DragDropContext onDragEnd={handleDragEnd}>
-      <div className="flex gap-4 overflow-x-auto pb-4">
+      {/* grow: ocupa el alto restante de la columna del layout (evita depender
+          de h-full porcentual, que no resuelve contra alturas dadas por flex) */}
+      <div className="flex grow gap-4 overflow-x-auto">
         {columns.map((status) => {
           const config = ORDER_STATUS_CONFIG[status]
           const orders = ordersByStatus[status] ?? []
 
           return (
-            <div key={status} className="min-w-[270px] flex-1 sm:min-w-[300px]">
-              <Card className="h-full">
-                <CardHeader className="pb-3">
+            <section key={status} className="min-w-67.5 flex-1 sm:min-w-75">
+              <div className="h-full rounded-xl border border-border/70 bg-card px-4 pb-4 text-card-foreground shadow-[0_24px_70px_rgba(15,23,42,0.14)] backdrop-blur-sm">
+                <header className="my-3 border-b border-border/70 pb-2">
                   <div className="flex items-center justify-between">
-                    <CardTitle className="text-sm font-semibold">{config?.label}</CardTitle>
+                    <h2 className="text-sm font-semibold">{config?.label}</h2>
+
                     <Badge tone={config?.color}>{orders.length}</Badge>
                   </div>
-                </CardHeader>
+                </header>
                 <Droppable droppableId={status}>
                   {(provided, snapshot) => (
-                    <CardContent
+                    <section
                       ref={provided.innerRef}
                       {...provided.droppableProps}
-                      className={`min-h-[200px] space-y-2 transition-colors ${
+                      className={`min-h-50 space-y-2 transition-colors ${
                         snapshot.isDraggingOver ? "bg-primary/5" : ""
                       }`}
                     >
@@ -81,7 +83,7 @@ export function OrdersKanban({
                               // como CSSProperties para compatibilidad con los
                               // index signatures de custom properties (--radix-*).
                               style={provided.draggableProps.style as CSSProperties}
-                              className={`rounded-lg border bg-card p-3 shadow-sm transition-shadow ${
+                              className={`rounded-lg border bg-primary/5 p-3 shadow-sm transition-shadow ${
                                 snapshot.isDragging ? "shadow-md" : ""
                               }`}
                             >
@@ -174,11 +176,11 @@ export function OrdersKanban({
                         </Draggable>
                       ))}
                       {provided.placeholder}
-                    </CardContent>
+                    </section>
                   )}
                 </Droppable>
-              </Card>
-            </div>
+              </div>
+            </section>
           )
         })}
       </div>

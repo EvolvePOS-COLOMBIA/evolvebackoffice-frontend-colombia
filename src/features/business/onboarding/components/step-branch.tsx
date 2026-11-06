@@ -1,6 +1,6 @@
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
-import { MapPin, Store } from "lucide-react"
+import { CheckSquare, Loader2, Square, Store } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form"
@@ -76,6 +76,8 @@ export function StepBranch({
     form.setValue("longitude", String(Number(outcome.longitude.toFixed(7))), { shouldValidate: true })
   }
 
+  const hasLocation = Boolean(form.watch("latitude")) && Boolean(form.watch("longitude"))
+
   /** Copia dirección, teléfono y correo del negocio a la sede, o los limpia. */
   const handleToggleSame = (checked: boolean) => {
     onToggleSameAsBusiness(checked)
@@ -132,20 +134,6 @@ export function StepBranch({
 
             <FormField
               control={form.control}
-              name="address"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>{t("address")}</FormLabel>
-                  <FormControl>
-                    <Input className="bg-white dark:bg-secondary" placeholder={t("address_placeholder")} {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            <FormField
-              control={form.control}
               name="identification"
               render={({ field }) => (
                 <FormItem>
@@ -164,23 +152,9 @@ export function StepBranch({
 
             <FormField
               control={form.control}
-              name="phone"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>{t("phone")}</FormLabel>
-                  <FormControl>
-                    <Input className="bg-white dark:bg-secondary" placeholder={t("landline_placeholder")} {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            <FormField
-              control={form.control}
               name="email"
               render={({ field }) => (
-                <FormItem>
+                <FormItem className="flex-1">
                   <FormLabel>{t("email")}</FormLabel>
                   <FormControl>
                     <Input
@@ -196,60 +170,23 @@ export function StepBranch({
 
             <FormField
               control={form.control}
-              name="latitude"
+              name="phone"
               render={({ field }) => (
-                <FormItem>
-                  <FormLabel>{t("latitude")}</FormLabel>
+                <FormItem className="flex-1">
+                  <FormLabel>{t("phone")}</FormLabel>
                   <FormControl>
-                    <Input
-                      className="bg-white dark:bg-secondary"
-                      inputMode="decimal"
-                      placeholder={t("latitude_placeholder")}
-                      {...field}
-                    />
+                    <Input className="bg-white dark:bg-secondary" placeholder={t("landline_placeholder")} {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
               )}
             />
-
-            <FormField
-              control={form.control}
-              name="longitude"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>{t("longitude")}</FormLabel>
-                  <FormControl>
-                    <Input
-                      className="bg-white dark:bg-secondary"
-                      inputMode="decimal"
-                      placeholder={t("longitude_placeholder")}
-                      {...field}
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            <div className="sm:col-span-2">
-              <Button
-                type="button"
-                variant="outline"
-                className="w-full"
-                disabled={isLocating}
-                onClick={handleUseCurrentLocation}
-              >
-                <MapPin className="size-4" />
-                {isLocating ? t("geolocation_locating") : t("geolocation_use")}
-              </Button>
-            </div>
 
             <FormField
               control={form.control}
               name="adminUserId"
               render={({ field }) => (
-                <FormItem>
+                <FormItem className="flex-1">
                   <FormLabel>{t("branch_admin")}</FormLabel>
                   <Select onValueChange={field.onChange} value={field.value}>
                     <FormControl>
@@ -265,6 +202,86 @@ export function StepBranch({
                 </FormItem>
               )}
             />
+
+            <FormField
+              control={form.control}
+              name="address"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>{t("address")}</FormLabel>
+                  <FormControl>
+                    <Input className="bg-white dark:bg-secondary" placeholder={t("address_placeholder")} {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <div
+              className={cn(
+                "flex items-center gap-5 rounded-2xl border bg-white px-4 py-3 transition-colors dark:bg-secondary"
+              )}
+            >
+              <div className="min-w-0 flex-1">
+                <p className="text-sm font-medium">{t("geolocation_use")}</p>
+                <p className="text-[13px] leading-4.5 text-muted-foreground">{t("geolocation_hint")}</p>
+              </div>
+              <Button
+                type="button"
+                size="icon"
+                variant={hasLocation ? "default" : "outline"}
+                disabled={isLocating}
+                onClick={handleUseCurrentLocation}
+              >
+                {isLocating ? (
+                  <Loader2 className="size-5 animate-spin text-primary" />
+                ) : hasLocation ? (
+                  <CheckSquare className="size-5" />
+                ) : (
+                  <Square className="size-5 text-muted-foreground" />
+                )}
+              </Button>
+            </div>
+
+            <div className="flex gap-4">
+              <FormField
+                control={form.control}
+                name="latitude"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>{t("latitude")}</FormLabel>
+                    <FormControl>
+                      <Input
+                        className="bg-white dark:bg-secondary"
+                        inputMode="decimal"
+                        placeholder={t("latitude_placeholder")}
+                        {...field}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="longitude"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>{t("longitude")}</FormLabel>
+                    <FormControl>
+                      <Input
+                        className="bg-white dark:bg-secondary"
+                        inputMode="decimal"
+                        placeholder={t("longitude_placeholder")}
+                        {...field}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
           </div>
         </StepCard>
 

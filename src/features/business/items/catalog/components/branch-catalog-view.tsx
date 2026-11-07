@@ -1,8 +1,9 @@
-import { useState } from "react"
-import { Pencil, Power, Trash2, Package } from "lucide-react"
+import { useRef, useState } from "react"
+import { Pencil, Power, Trash2, Package, SearchX } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
+import { Input } from "@/components/ui/input"
 import {
   Pagination,
   PaginationContent,
@@ -30,14 +31,33 @@ type BranchCatalogViewProps = {
 export function BranchCatalogView({ branchId, onAssignClick }: BranchCatalogViewProps) {
   const { t } = useTranslation("business-items-catalog")
   const [page, setPage] = useState(1)
+  const [search, setSearch] = useState("")
+  const [debouncedSearch, setDebouncedSearch] = useState("")
+  const searchTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
   const [editDialogOpen, setEditDialogOpen] = useState(false)
   const [selectedItemId, setSelectedItemId] = useState<string | null>(null)
   const [confirmDeactivate, setConfirmDeactivate] = useState<BranchItemResponseDto | null>(null)
   const [confirmRemove, setConfirmRemove] = useState<BranchItemResponseDto | null>(null)
 
-  const { data, isLoading } = useBranchItems(branchId, { pageNumber: page, pageSize: 20 })
+  const { data, isLoading } = useBranchItems(branchId, {
+    pageNumber: page,
+    pageSize: 20,
+    search: debouncedSearch.trim() || undefined,
+  })
   const deleteBranchItem = useDeleteBranchItem(branchId)
   const setActive = useSetBranchItemActive(branchId)
+
+  // Búsqueda server-side (mismo debounce que el catálogo global).
+  const handleSearchChange = (value: string) => {
+    setSearch(value)
+    if (searchTimer.current) clearTimeout(searchTimer.current)
+    searchTimer.current = setTimeout(() => {
+      setDebouncedSearch(value)
+      setPage(1)
+    }, 350)
+  }
+
+  const hasSearch = search.trim().length > 0
 
   const items = data?.data ?? []
   // Selección derivada de la query: refresca los flags (global/personalizado)
@@ -71,8 +91,15 @@ export function BranchCatalogView({ branchId, onAssignClick }: BranchCatalogView
   return (
     <div className="flex h-full flex-col gap-4">
       {/* Toolbar */}
-      <div className="flex shrink-0 items-center justify-end">
-        <Button size="sm" onClick={onAssignClick} className="h-8 px-2 text-xs sm:h-9 sm:px-3 sm:text-sm">
+      <div className="flex shrink-0 flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+        <Input
+          type="text"
+          placeholder={t("search_items")}
+          value={search}
+          onChange={(e) => handleSearchChange(e.target.value)}
+          className="h-8 w-full max-w-sm px-3 text-sm sm:h-9"
+        />
+        <Button size="sm" onClick={onAssignClick} className="h-8 w-fit px-2 text-xs sm:h-9 sm:px-3 sm:text-sm">
           <span className="sm:hidden">{t("assign")}</span>
           <span className="hidden sm:inline">{t("assign_products")}</span>
         </Button>
@@ -109,17 +136,26 @@ export function BranchCatalogView({ branchId, onAssignClick }: BranchCatalogView
                 <TableRow>
                   <TableCell colSpan={8}>
                     <div className="flex flex-col items-center justify-center py-8 text-muted-foreground sm:py-12">
-                      <Package className="mb-2 size-8 opacity-40 sm:mb-3 sm:size-10" />
-                      <p className="text-xs sm:text-sm">{t("no_branch_items")}</p>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        className="mt-3 h-8 px-2 text-xs sm:mt-4"
-                        onClick={onAssignClick}
-                      >
-                        <span className="sm:hidden">{t("assign")}</span>
-                        <span className="hidden sm:inline">{t("assign_products")}</span>
-                      </Button>
+                      {hasSearch ? (
+                        <>
+                          <SearchX className="mb-2 size-8 opacity-40 sm:mb-3 sm:size-10" />
+                          <p className="text-xs sm:text-sm">{t("no_results_for_search", { search })}</p>
+                        </>
+                      ) : (
+                        <>
+                          <Package className="mb-2 size-8 opacity-40 sm:mb-3 sm:size-10" />
+                          <p className="text-xs sm:text-sm">{t("no_branch_items")}</p>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="mt-3 h-8 px-2 text-xs sm:mt-4"
+                            onClick={onAssignClick}
+                          >
+                            <span className="sm:hidden">{t("assign")}</span>
+                            <span className="hidden sm:inline">{t("assign_products")}</span>
+                          </Button>
+                        </>
+                      )}
                     </div>
                   </TableCell>
                 </TableRow>

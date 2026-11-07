@@ -1,12 +1,14 @@
 import { useState } from "react"
 import { useMutation, useQueryClient } from "@tanstack/react-query"
-import { Package } from "lucide-react"
+import { AlertTriangle, CheckCircle2, DollarSign, Package, PowerOff } from "lucide-react"
 import toast from "react-hot-toast"
 
-import { Card } from "@/components/ui/card"
+import { EntityListLayout, type StatConfig } from "@/components/share"
+import { Skeleton } from "@/components/ui/skeleton"
 import { useTranslation } from "@/i18n/use-i18n"
 import { useBranches } from "@/features/business/branches/hooks/use-branches"
 import { useItems } from "../hooks/use-items"
+import { useBranchItems } from "../hooks/use-branch-items"
 import { createBranchItem } from "../services/branch-items.service"
 import { BranchSelector, type BranchSelectorOption } from "../components/branch-selector"
 import { GlobalCatalogView } from "../components/global-catalog-view"
@@ -23,7 +25,7 @@ export function ItemsCatalogPage() {
   const [itemsToAssign, setItemsToAssign] = useState<ItemResponseDto[]>([])
 
   // Fetch branches for the selector
-  const { data: branchesData } = useBranches(1, 100)
+  const { data: branchesData, isLoading: branchesLoading } = useBranches(1, 100)
   const branches = branchesData?.data ?? []
 
   // Fetch all global items (for assign-from-branch flow)
@@ -38,6 +40,30 @@ export function ItemsCatalogPage() {
 
   const selectedBranch = branches.find((b) => b.id === selectedBranchId)
   const isGlobalView = selectedBranchId === null
+
+  // Stats del catálogo global: total (con inactivos) e activos (query por defecto).
+  const { data: totalItemsData } = useItems({ pageNumber: 1, pageSize: 1, includeInactive: true })
+  const totalItems = totalItemsData?.totalCount ?? 0
+  const activeItems = globalItemsData?.totalCount ?? 0
+  const inactiveItems = Math.max(totalItems - activeItems, 0)
+
+  // Stats de la sucursal: asignados, sin precio y bajo mínimo sobre la lista completa (tope 200).
+  const { data: branchStatsData } = useBranchItems(selectedBranchId, { pageNumber: 1, pageSize: 200 })
+  const branchStatsItems = branchStatsData?.data ?? []
+  const noPriceCount = branchStatsItems.filter((item) => item.price === 0).length
+  const lowStockCount = branchStatsItems.filter((item) => item.quantity <= item.reorderPoint).length
+
+  const stats: StatConfig[] = isGlobalView
+    ? [
+        { icon: Package, tone: "primary", label: t("stat_products"), value: totalItems },
+        { icon: CheckCircle2, tone: "success", label: t("stat_active"), value: activeItems },
+        { icon: PowerOff, tone: "muted", label: t("stat_inactive"), value: inactiveItems },
+      ]
+    : [
+        { icon: Package, tone: "primary", label: t("stat_assigned"), value: branchStatsData?.totalCount ?? 0 },
+        { icon: DollarSign, tone: "warning", label: t("stat_no_price"), value: noPriceCount },
+        { icon: AlertTriangle, tone: "danger", label: t("stat_low_stock"), value: lowStockCount },
+      ]
 
   // Mutation for creating branch items — dynamic branchId
   const createBranchItemMutation = useMutation({
@@ -104,31 +130,29 @@ export function ItemsCatalogPage() {
   }
 
   return (
-    <Card className="flex h-[calc(100vh-5.5rem)] flex-col gap-4 overflow-hidden px-4 py-4 pb-2 shadow-none sm:px-6 sm:pb-4 md:h-[calc(100vh-6.5rem)]">
-      {/* Header - fixed, not scrollable */}
-      <header className="relative flex shrink-0 flex-row items-end justify-between gap-2 pb-2 sm:pb-4">
-        <div className="min-w-0">
-          <h1 className="truncate text-lg font-semibold text-foreground sm:text-2xl">
-            {selectedBranch ? t("product_catalog_in_branch", { name: selectedBranch.name }) : t("product_catalog")}
-          </h1>
-          <p className="hidden text-sm leading-5 text-muted-foreground sm:block">{t("product_catalog_desc")}</p>
-        </div>
-
-        {/* Branch Selector */}
-        <BranchSelector options={selectorOptions} selectedId={selectedBranchId} onSelect={handleBranchSelect} />
-
-        <Package
-          color="#58626b"
-          className="absolute -top-10 -right-20 -z-10 size-50 shrink-0 animate-float opacity-5 md:-top-10 md:-right-10 md:size-70 lg:-top-20 lg:-right-30 lg:size-100"
-        />
-      </header>
-
+    <EntityListLayout
+      back={{ to: "/business/items", label: t("back_to_items") }}
+      title={selectedBranch ? t("product_catalog_in_branch", { name: selectedBranch.name }) : t("product_catalog")}
+      description={selectedBranch ? t("branch_catalog_desc") : t("product_catalog_desc")}
+      tabs={
+        branchesLoading ? (
+          <Skeleton className="h-10 w-64" />
+        ) : branches.length === 0 ? undefined : (
+          <BranchSelector options={selectorOptions} selectedId={selectedBranchId} onSelect={handleBranchSelect} />
+        )
+      }
+      stats={stats}
+    >
       {/* Content - children handle their own scroll */}
       <div className="min-h-0 flex-1">
         {isGlobalView ? (
           <GlobalCatalogView onAssignToBranch={handleAssignToBranch} />
         ) : selectedBranchId ? (
-          <BranchCatalogView branchId={selectedBranchId} onAssignClick={handleAssignFromBranch} />
+          <BranchCatalogView
+            key={selectedBranchId}
+            branchId={selectedBranchId}
+            onAssignClick={handleAssignFromBranch}
+          />
         ) : null}
       </div>
 
@@ -144,6 +168,6 @@ export function ItemsCatalogPage() {
         onConfirm={handleAssignConfirm}
         isSubmitting={createBranchItemMutation.isPending}
       />
-    </Card>
+    </EntityListLayout>
   )
 }

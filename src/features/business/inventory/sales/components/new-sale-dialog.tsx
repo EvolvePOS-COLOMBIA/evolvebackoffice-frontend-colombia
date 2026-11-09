@@ -15,7 +15,8 @@ import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Textarea } from "@/components/ui/textarea"
 import type { Branch } from "@/features/business/branches/types"
-import { useCustomers } from "@/features/business/people/customers/hooks/use-customers"
+import { useUsers } from "@/features/business/people/users/hooks/use-users"
+import { getUserDisplayName } from "@/features/business/people/users/types"
 import { notify } from "@/hooks/use-notify"
 import { useTranslation } from "@/i18n/use-i18n"
 import { getApiErrorMessage } from "@/utils/api-error"
@@ -26,7 +27,7 @@ import type { WholesaleSaleDto } from "../../types/sales"
 import { linesAreValid, toLineInputs } from "../../utils/lines"
 import { formatMoney } from "../../utils/units"
 
-const NO_CUSTOMER = "none"
+const NO_EMPLOYEE = "none"
 
 type NewSaleDialogProps = {
   branch: Branch
@@ -34,17 +35,18 @@ type NewSaleDialogProps = {
   onCreated: (sale: WholesaleSaleDto) => void
 }
 
-/** Cliente → productos (con el precio de la sucursal ya propuesto) → Registrar venta. */
+/** Empleado → productos (con el precio de la sucursal ya propuesto) → Registrar venta. */
 export function NewSaleDialog({ branch, onOpenChange, onCreated }: NewSaleDialogProps) {
   const { t } = useTranslation("business-inventory")
-  const { data: customersData } = useCustomers()
+  const { data: usersData } = useUsers()
   const createSale = useCreateSale()
-  const [customerId, setCustomerId] = useState(NO_CUSTOMER)
-  const [customerName, setCustomerName] = useState("")
+  const [employeeId, setEmployeeId] = useState(NO_EMPLOYEE)
+  const [employeeName, setEmployeeName] = useState("")
   const [notes, setNotes] = useState("")
   const [lines, setLines] = useState<ProductLine[]>([])
 
-  const customers = (customersData?.items ?? []).filter((c) => c.isActive)
+  const employees = (usersData ?? []).filter((u) => u.isActive)
+  const selectedEmployee = employees.find((u) => u.id === employeeId) ?? null
   const total = lines.reduce((sum, l) => sum + (Number(l.quantity.amount) || 0) * (Number(l.unitCost) || 0), 0)
   const canSubmit = linesAreValid(lines, true) && !createSale.isPending
 
@@ -54,8 +56,10 @@ export function NewSaleDialog({ branch, onOpenChange, onCreated }: NewSaleDialog
     createSale.mutate(
       {
         branchId: branch.id,
-        customerId: customerId === NO_CUSTOMER ? null : customerId,
-        customerName: customerId === NO_CUSTOMER ? customerName.trim() || null : null,
+        // El DTO del backend solo ofrece customerId (uuid de Customers) o customerName;
+        // no existe campo para el id de usuario, así que va el nombre del empleado.
+        customerId: null,
+        customerName: selectedEmployee ? getUserDisplayName(selectedEmployee) : employeeName.trim() || null,
         notes: notes.trim() || null,
         lines: inputs.map((input, i) => ({ ...input, unitPrice: Number(lines[i].unitCost) })),
       },
@@ -87,30 +91,30 @@ export function NewSaleDialog({ branch, onOpenChange, onCreated }: NewSaleDialog
         <div className="space-y-4">
           <div className="grid gap-4 sm:grid-cols-2">
             <div className="space-y-2">
-              <Label htmlFor="venta-cliente">{t("sale_customer")}</Label>
-              <Select value={customerId} onValueChange={setCustomerId}>
-                <SelectTrigger id="venta-cliente">
+              <Label htmlFor="venta-empleado">{t("sale_customer")}</Label>
+              <Select value={employeeId} onValueChange={setEmployeeId}>
+                <SelectTrigger id="venta-empleado">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value={NO_CUSTOMER}>{t("sale_customer_free")}</SelectItem>
-                  {customers.map((c) => (
-                    <SelectItem key={c.id} value={c.id}>
-                      {[c.firstName, c.lastName].filter(Boolean).join(" ")}
+                  <SelectItem value={NO_EMPLOYEE}>{t("sale_customer_free")}</SelectItem>
+                  {employees.map((u) => (
+                    <SelectItem key={u.id} value={u.id}>
+                      {getUserDisplayName(u)}
                     </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
             </div>
-            {customerId === NO_CUSTOMER ? (
+            {employeeId === NO_EMPLOYEE ? (
               <div className="space-y-2">
-                <Label htmlFor="venta-cliente-nombre">{t("sale_customer_name")}</Label>
+                <Label htmlFor="venta-empleado-nombre">{t("sale_customer_name")}</Label>
                 <Input
-                  id="venta-cliente-nombre"
-                  value={customerName}
+                  id="venta-empleado-nombre"
+                  value={employeeName}
                   maxLength={200}
                   placeholder={t("sale_customer_name_placeholder")}
-                  onChange={(e) => setCustomerName(e.target.value)}
+                  onChange={(e) => setEmployeeName(e.target.value)}
                 />
               </div>
             ) : null}

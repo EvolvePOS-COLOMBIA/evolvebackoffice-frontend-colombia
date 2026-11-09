@@ -18,6 +18,7 @@
   "courier_phone": "Phone",
   "courier_no_phone": "No phone",
   "shift_base": "Shift base",
+  "default_base": "Default base",
   "opened_at": "Shift opened at",
   "no_shift": "No open shift",
   "last_shift": "Last shift",

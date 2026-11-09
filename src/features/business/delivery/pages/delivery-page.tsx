@@ -252,6 +252,11 @@ export function DeliveryPage() {
                   {filteredCouriers.map((courier) => {
                     const shift = shiftOf(courier)
                     const isActive = courier.status === "active"
+                    // Con turno: la base del turno abierto. Sin turno: la base
+                    // configurada en la sucursal, que es la que se precarga al
+                    // activar (el `baseAmount` del DTO es la del último turno
+                    // cerrado, solo visible en Turnos → Cerrados).
+                    const baseAmount = isActive ? courier.baseAmount : (settings?.baseAmount ?? null)
                     return (
                       <div
                         key={courier.userId}
@@ -276,10 +281,8 @@ export function DeliveryPage() {
 
                         <div className="mt-3 grid grid-cols-2 gap-2 text-xs">
                           <div>
-                            <p className="text-muted-foreground">{t("shift_base")}</p>
-                            <p className="font-semibold">
-                              {courier.baseAmount != null ? formatCurrency(courier.baseAmount) : "—"}
-                            </p>
+                            <p className="text-muted-foreground">{isActive ? t("shift_base") : t("default_base")}</p>
+                            <p className="font-semibold">{baseAmount != null ? formatCurrency(baseAmount) : "—"}</p>
                           </div>
                           <div>
                             <p className="text-muted-foreground">{isActive ? t("opened_at") : t("last_shift")}</p>

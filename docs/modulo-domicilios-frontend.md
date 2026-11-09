@@ -74,7 +74,10 @@ AppLayout`, import directo como el resto — el proyecto no usa lazy loading).
   configuración de sucursales.
 - **Resumen** (`StatTile`): domiciliarios activos, turnos abiertos, dinero esperado en
   mano (suma de turnos abiertos), pedidos en camino.
-- **Domiciliarios**: tarjetas con filtro Todos / Activos / Inactivos. Inactivo →
+- **Domiciliarios**: tarjetas con filtro Todos / Activos / Inactivos. La tarjeta muestra
+  la **base del turno abierto**; sin turno muestra la **base por defecto** de la sucursal
+  (la misma que se precarga en el diálogo _Activar_; el `baseAmount` del DTO es la del
+  último turno cerrado, visible en Turnos → Cerrados). Inactivo →
   _Activar_ (abre turno con base editable). Activo → _Ver turno_, _Más base_, _Recogida_,
   _Entregar pedidos_, _Cerrar turno_.
 - **Turnos**: tabla con filtro Abiertos / Cerrados; fila → detalle con movimientos y

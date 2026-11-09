@@ -18,6 +18,7 @@
   "courier_phone": "Teléfono",
   "courier_no_phone": "Sin teléfono",
   "shift_base": "Base del turno",
+  "default_base": "Base por defecto",
   "opened_at": "Turno abierto desde",
   "no_shift": "Sin turno abierto",
   "last_shift": "Último turno",

@@ -24,6 +24,8 @@
   "role_admin": "Admin",
   "role_manager": "Manager",
   "role_cashier": "Cashier",
+  "role_delivery": "Courier",
+  "phone_required_delivery": "Phone is required for the Courier role.",
   "status": "Status",
   "active": "Active",
   "inactive": "Inactive",

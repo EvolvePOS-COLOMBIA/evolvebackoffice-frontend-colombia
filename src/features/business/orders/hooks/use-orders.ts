@@ -3,11 +3,18 @@ import {
   getOrders,
   getOrderById,
   updateOrderStatus,
+  bulkUpdateOrderStatus,
   createManualOrder,
   updateOrderDetails,
   cancelOrder,
 } from "../services/orders.service"
-import type { CreateManualOrderDto, UpdateOrderDetailsDto, CancelOrderDto } from "../types/api"
+import type {
+  CreateManualOrderDto,
+  UpdateOrderDetailsDto,
+  CancelOrderDto,
+  BulkUpdateOrderStatusDto,
+  BulkOrderStatusResultDto,
+} from "../types/api"
 
 export const ordersKeys = {
   all: ["orders"] as const,
@@ -40,7 +47,20 @@ export function useOrderDetail(id: string) {
 export function useUpdateOrderStatus() {
   const qc = useQueryClient()
   return useMutation({
-    mutationFn: ({ id, status }: { id: string; status: string }) => updateOrderStatus(id, status),
+    mutationFn: ({ id, status, deliveryUserId }: { id: string; status: string; deliveryUserId?: string | null }) =>
+      updateOrderStatus(id, status, deliveryUserId),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ordersKeys.all }),
+  })
+}
+
+/**
+ * Cambio de estado múltiple (varios pedidos a "En camino" con el mismo
+ * domiciliario). Devuelve el resultado por pedido para resumirlo en un toast.
+ */
+export function useBulkUpdateOrderStatus() {
+  const qc = useQueryClient()
+  return useMutation<BulkOrderStatusResultDto, Error, BulkUpdateOrderStatusDto>({
+    mutationFn: bulkUpdateOrderStatus,
     onSuccess: () => qc.invalidateQueries({ queryKey: ordersKeys.all }),
   })
 }

@@ -2,15 +2,27 @@ import { z } from "zod"
 import type { TFunction } from "i18next"
 
 export const createUserSchema = (t: TFunction) =>
-  z.object({
-    firstName: z.string().min(1, t("first_name_required")),
-    lastName: z.string().min(1, t("last_name_required")),
-    email: z.string().email(t("email_invalid")).nullable().optional(),
-    identificationTypeId: z.coerce.number().min(1).max(2),
-    identificationNumber: z.string().min(1, t("document_required")),
-    phoneNumber: z.string().nullable().optional(),
-    role: z.string().min(1, t("role_required")),
-  })
+  z
+    .object({
+      firstName: z.string().min(1, t("first_name_required")),
+      lastName: z.string().min(1, t("last_name_required")),
+      email: z.string().email(t("email_invalid")).nullable().optional(),
+      identificationTypeId: z.coerce.number().min(1).max(2),
+      identificationNumber: z.string().min(1, t("document_required")),
+      phoneNumber: z.string().nullable().optional(),
+      role: z.string().min(1, t("role_required")),
+    })
+    .superRefine((values, ctx) => {
+      // El rol Delivery (domiciliario) exige teléfono de contacto: es la única
+      // forma de ubicarlo en la entrega (misma regla que valida el backend).
+      if (values.role?.toLowerCase() === "delivery" && !values.phoneNumber?.trim()) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          path: ["phoneNumber"],
+          message: t("phone_required_delivery"),
+        })
+      }
+    })
 
 export const updateUserSchema = (t: TFunction) =>
   z.object({

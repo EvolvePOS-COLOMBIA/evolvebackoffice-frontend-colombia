@@ -22,6 +22,7 @@ import {
 import {
   ShoppingCart,
   AlertTriangle,
+  Bike,
   Plus,
   Lock,
   Maximize2,
@@ -41,7 +42,9 @@ import {
 import { getBranchModules } from "@/features/business/branches/services/branch-modules.service"
 import { BranchSelector } from "@/features/business/items/catalog/components/branch-selector"
 import { useBranchIntegrations } from "@/features/business/branches/hooks/use-branch-integrations"
-import { useOrders, useUpdateOrderStatus } from "../hooks/use-orders"
+import { SelectionActionBar } from "@/components/share/selection-action-bar"
+import { AssignDeliveryUserDialog } from "@/features/business/delivery/components/assign-delivery-user-dialog"
+import { useOrders, useUpdateOrderStatus, useBulkUpdateOrderStatus } from "../hooks/use-orders"
 import { OrdersKanban } from "../components/orders-kanban"
 import { OrderDetailDialog } from "../components/order-detail-dialog"
 import { CancelOrderDialog } from "../components/cancel-order-dialog"
@@ -116,7 +119,7 @@ export function OrdersPage() {
   )
   const showAllBranches = selectedBranchId === ALL_BRANCHES
   const { data: branchesData } = useBranches(1, 50)
-  const branches = branchesData?.data ?? []
+  const branches = useMemo(() => branchesData?.data ?? [], [branchesData])
 
   // Módulos de cada sucursal (misma query key que useBranchModules → caché compartida)
   const moduleQueries = useQueries({
@@ -173,6 +176,40 @@ export function OrdersPage() {
     refetch,
   } = useOrders(1, 500, branchId ? { branchId } : undefined, !!branchId || showAllBranches)
   const updateStatusMutation = useUpdateOrderStatus()
+  const bulkStatusMutation = useBulkUpdateOrderStatus()
+
+  // ───── Asignación de domiciliarios (módulo DOMICILIOS) ─────
+  // Licencia del tenant y sucursales con el módulo asignado (misma caché de
+  // branchModulesKeys que usa el selector de sucursales).
+  const hasDeliveryLicense =
+    !tenantModulesLoading && tenantModules.some((m) => m.moduleCode === "DOMICILIOS" && m.isEnabled)
+  const branchesWithDeliveryModule = useMemo(
+    () =>
+      new Set(
+        branches
+          .filter((_, i) => moduleQueries[i]?.data?.some((m) => m.moduleCode === "DOMICILIOS" && m.isEnabled) ?? false)
+          .map((b) => b.id)
+      ),
+    [branches, moduleQueries]
+  )
+  /** Con DOMICILIOS habilitado el pedido exige domiciliario al pasar a En camino. */
+  const orderNeedsCourier = (order: OrderListItem) => {
+    const bid = order.branchId ?? branchId
+    return Boolean(bid && branchesWithDeliveryModule.has(bid))
+  }
+
+  // Selección múltiple en la columna "Listo" (para asignar varios a la vez).
+  const [selectedReadyIds, setSelectedReadyIds] = useState<Set<string>>(new Set())
+  const [assignTargets, setAssignTargets] = useState<OrderListItem[]>([])
+
+  const toggleSelect = (orderId: string) => {
+    setSelectedReadyIds((prev) => {
+      const next = new Set(prev)
+      if (next.has(orderId)) next.delete(orderId)
+      else next.add(orderId)
+      return next
+    })
+  }
 
   // Memoizado para que los useMemo dependientes (filtros/conteos) no se
   // recalculen en cada render por una referencia nueva.
@@ -239,6 +276,13 @@ export function OrdersPage() {
     {} as Record<string, OrderListItem[]>
   )
 
+  // Pedidos seleccionados realmente visibles en "Listo" (la selección se limpia
+  // sola cuando las tarjetas cambian de columna o se refresca el tablero).
+  const selectedReadyOrders = useMemo(
+    () => (ordersByStatus["Ready"] ?? []).filter((o) => selectedReadyIds.has(o.id)),
+    [ordersByStatus, selectedReadyIds]
+  )
+
   const platformCounts = useMemo(
     () => ({
       all: allOrders.length,
@@ -252,9 +296,9 @@ export function OrdersPage() {
   const [stockWarning, setStockWarning] = useState<OrderStockItem[] | null>(null)
   const pendingConfirmRef = useRef<{ orderId: string; status: OrderStatus } | null>(null)
 
-  const applyStatus = (orderId: string, newStatus: OrderStatus) => {
+  const applyStatus = (orderId: string, newStatus: OrderStatus, deliveryUserId?: string | null) => {
     updateStatusMutation.mutate(
-      { id: orderId, status: newStatus },
+      { id: orderId, status: newStatus, deliveryUserId: deliveryUserId ?? null },
       {
         onSuccess: () => notify.success(t("status") + " → " + (ORDER_STATUS_CONFIG[newStatus]?.label ?? newStatus)),
         onError: (error: unknown) => {
@@ -269,13 +313,23 @@ export function OrdersPage() {
    * Al pasar la orden a "Confirmado" se consulta el inventario de la sucursal.
    * Si falta stock se muestra la advertencia y el usuario decide: nunca se
    * bloquea la orden, solo se avisa antes de enviar el cambio.
+   * Con DOMICILIOS habilitado en la sucursal, pasar a "En camino" abre el
+   * diálogo de asignación de domiciliario (requisito del backend).
    */
   const handleDragEnd = async (orderId: string, newStatus: OrderStatus) => {
+    const order = allOrders.find((o) => o.id === orderId)
+    // Arrastre dentro de la misma columna: no cambia nada.
+    if (!order || order.statusCode === newStatus) return
     // Cancelar requiere seleccionar tipo de disposición (Restocked / Waste) y motivo individualizado
     if (newStatus === "Cancelled") {
-      const order = allOrders.find((o) => o.id === orderId)
-      if (order) setCancellingOrder(order)
+      setCancellingOrder(order)
       return
+    }
+    if (newStatus === "Shipped") {
+      if (orderNeedsCourier(order)) {
+        setAssignTargets([order])
+        return
+      }
     }
     if (newStatus === "Confirmed") {
       try {
@@ -298,6 +352,54 @@ export function OrdersPage() {
     pendingConfirmRef.current = null
     setStockWarning(null)
     if (pending) applyStatus(pending.orderId, pending.status)
+  }
+
+  /**
+   * Confirma la asignación del domiciliario elegido: un pedido pasa a "En camino"
+   * con `deliveryUserId`; varios usan el cambio de estado múltiple y se resume el
+   * resultado por pedido en un toast.
+   */
+  const handleAssignConfirm = (userId: string) => {
+    if (assignTargets.length === 1) {
+      const order = assignTargets[0]
+      updateStatusMutation.mutate(
+        { id: order.id, status: "Shipped", deliveryUserId: userId },
+        {
+          onSuccess: () => {
+            notify.success(t("status") + " → " + (ORDER_STATUS_CONFIG.Shipped?.label ?? "Shipped"))
+            setAssignTargets([])
+            setSelectedReadyIds((prev) => {
+              const next = new Set(prev)
+              next.delete(order.id)
+              return next
+            })
+          },
+          onError: (error: unknown) => {
+            const message = (error as { response?: { data?: { message?: string } } })?.response?.data?.message
+            notify.error(message || t("status_update_failed"))
+          },
+        }
+      )
+      return
+    }
+    bulkStatusMutation.mutate(
+      { ids: assignTargets.map((o) => o.id), status: "Shipped", deliveryUserId: userId },
+      {
+        onSuccess: (result) => {
+          const ok = result.results.filter((r) => r.success).length
+          const failed = result.results.length - ok
+          if (failed === 0) notify.success(t("assign_done"))
+          else if (ok === 0) notify.error(t("assign_failed"))
+          else notify.info(t("assign_partial", { ok, failed }))
+          setAssignTargets([])
+          setSelectedReadyIds(new Set())
+        },
+        onError: (error: unknown) => {
+          const message = (error as { response?: { data?: { message?: string } } })?.response?.data?.message
+          notify.error(message || t("assign_failed"))
+        },
+      }
+    )
   }
 
   /** Abre el modal con el detalle completo de la orden seleccionada. */
@@ -517,8 +619,37 @@ export function OrdersPage() {
           onCancelOrder={(order) => setCancellingOrder(order)}
           showBranch={showAllBranches}
           showCancelled={showCancelled}
+          selectableStatus={hasDeliveryLicense ? "Ready" : undefined}
+          selectedIds={selectedReadyIds}
+          onToggleSelect={toggleSelect}
         />
       )}
+
+      {/* Barra de acciones de la selección múltiple en «Listo» (asignar domiciliario) */}
+      <SelectionActionBar
+        count={selectedReadyOrders.length}
+        label={t("selection_label")}
+        onClear={() => setSelectedReadyIds(new Set())}
+        actions={[
+          {
+            label: t("assign_courier"),
+            icon: Bike,
+            variant: "default",
+            onClick: () => setAssignTargets(selectedReadyOrders),
+          },
+        ]}
+      />
+
+      {/* Asignación de domiciliario: individual (arrastre a «En camino») o múltiple (selección) */}
+      <AssignDeliveryUserDialog
+        open={assignTargets.length > 0}
+        onOpenChange={(open) => {
+          if (!open) setAssignTargets([])
+        }}
+        orders={assignTargets.map((o) => ({ id: o.id, branchId: (o.branchId ?? branchId) || null }))}
+        onConfirm={handleAssignConfirm}
+        isPending={updateStatusMutation.isPending || bulkStatusMutation.isPending}
+      />
 
       <OrderDetailDialog
         open={detailOpen}

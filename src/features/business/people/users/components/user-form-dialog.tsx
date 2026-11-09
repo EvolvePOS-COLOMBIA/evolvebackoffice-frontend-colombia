@@ -54,6 +54,12 @@ export function UserFormDialog({
   const { lookup, isLooking } = usePersonLookup()
   const [foundPerson, setFoundPerson] = useState<PersonResponseDto | null>(null)
 
+  /** Normaliza el rol del backend (puede venir en mayúsculas) al valor del Select. */
+  const normalizeRole = (role: string | null | undefined): string => {
+    const raw = (role ?? "Cashier").toLowerCase()
+    return raw.charAt(0).toUpperCase() + raw.slice(1)
+  }
+
   const form = useForm<CreateUserFormValues>({
     resolver: zodResolver(createUserSchema(t)) as never,
     defaultValues,
@@ -108,7 +114,7 @@ export function UserFormDialog({
         identificationTypeId: userToEdit.identificationTypeId || IdentificationType.CedulaCiudadania,
         identificationNumber: userToEdit.identificationNumber ?? "",
         phoneNumber: userToEdit.phoneNumber,
-        role: userToEdit.role ?? "Cashier",
+        role: normalizeRole(userToEdit.role),
       })
       return
     }
@@ -279,6 +285,7 @@ export function UserFormDialog({
                           <SelectItem value="Admin">{t("role_admin")}</SelectItem>
                           <SelectItem value="Manager">{t("role_manager")}</SelectItem>
                           <SelectItem value="Cashier">{t("role_cashier")}</SelectItem>
+                          <SelectItem value="Delivery">{t("role_delivery")}</SelectItem>
                         </SelectContent>
                       </Select>
                       <FormMessage />

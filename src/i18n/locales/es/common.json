@@ -72,5 +72,9 @@
   "person_found_confirm": "Entendido",
   "person_not_found": "No se encontró una persona con esa identificación. Puedes continuar llenando el formulario.",
   "person_lookup": "Buscar persona",
-  "person_looking": "Buscando..."
+  "person_looking": "Buscando...",
+  "saving": "Guardando...",
+  "search_placeholder": "Buscar...",
+  "clear_selection": "Limpiar selección",
+  "delivery": "Domicilios"
 }

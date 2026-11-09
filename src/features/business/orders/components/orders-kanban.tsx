@@ -2,6 +2,7 @@ import type { CSSProperties } from "react"
 import { DragDropContext, Droppable, Draggable, type DropResult } from "@hello-pangea/dnd"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
+import { Checkbox } from "@/components/ui/checkbox"
 import { useTranslation } from "@/i18n/use-i18n"
 import { KANBAN_COLUMNS, ORDER_STATUS_CONFIG } from "../types"
 import type { OrderListItem, OrderStatus } from "../types/api"
@@ -15,6 +16,11 @@ interface OrdersKanbanProps {
   /** En "todas las sucursales" cada tarjeta muestra su sucursal. */
   showBranch?: boolean
   showCancelled?: boolean
+  /** Estado cuyas tarjetas muestran checkbox de selección múltiple (p. ej. "Ready"). */
+  selectableStatus?: OrderStatus
+  /** Ids seleccionados (selección múltiple para acciones por lote). */
+  selectedIds?: Set<string>
+  onToggleSelect?: (orderId: string) => void
 }
 
 /**
@@ -28,6 +34,9 @@ export function OrdersKanban({
   onCancelOrder,
   showBranch = false,
   showCancelled = false,
+  selectableStatus,
+  selectedIds,
+  onToggleSelect,
 }: OrdersKanbanProps) {
   const { t } = useTranslation("business-orders")
 
@@ -88,6 +97,21 @@ export function OrdersKanban({
                               }`}
                             >
                               <div className="mb-2 flex items-start justify-between gap-1">
+                                {selectableStatus === status && onToggleSelect ? (
+                                  // stopPropagation evita que mousedown en el
+                                  // checkbox dispare el arrastre de la tarjeta.
+                                  <span
+                                    className="mr-1 -ml-1 flex shrink-0 items-center pt-0.5"
+                                    onMouseDown={(e) => e.stopPropagation()}
+                                    onClick={(e) => e.stopPropagation()}
+                                  >
+                                    <Checkbox
+                                      checked={selectedIds?.has(order.id) ?? false}
+                                      onCheckedChange={() => onToggleSelect(order.id)}
+                                      aria-label={`#${order.externalOrderId?.slice(0, 8) ?? order.id.slice(0, 8)}`}
+                                    />
+                                  </span>
+                                ) : null}
                                 <span className="min-w-0 truncate font-mono text-xs text-muted-foreground">
                                   #{order.externalOrderId?.slice(0, 8) ?? order.id.slice(0, 8)}
                                 </span>

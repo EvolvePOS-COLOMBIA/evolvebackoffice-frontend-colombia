@@ -200,5 +200,10 @@
   "copy_failed": "No se pudo copiar la URL",
   "checking_store": "Verificando estado de la tienda...",
   "store_status_unknown": "Estado de la tienda sin verificar",
-  "check_status": "Verificar"
+  "check_status": "Verificar",
+  "selection_label": "pedidos en «Listo» seleccionados",
+  "assign_courier": "Asignar domiciliario",
+  "assign_done": "Pedidos asignados correctamente.",
+  "assign_partial": "{{ok}} pedido(s) asignado(s); {{failed}} no se pudieron asignar.",
+  "assign_failed": "No se pudo asignar ningún pedido."
 }

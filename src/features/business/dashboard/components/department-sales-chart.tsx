@@ -1,4 +1,4 @@
-import { Bar, BarChart, XAxis, YAxis, CartesianGrid } from "recharts"
+import { Bar, BarChart, Cell, XAxis, YAxis, CartesianGrid } from "recharts"
 import { Printer, Save } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
@@ -23,14 +23,18 @@ interface DepartmentSalesChartProps {
 }
 
 const chartConfig = {
-  sales: { label: "Sales" },
-  grocery: { label: "BEBIDAS", color: CHART_PRIMARY },
-  soda: { label: "PLATOS", color: CHART_PRIMARY_DARK },
-  tax: { label: "ACOMPAÑAMIENTOS", color: CHART_PRIMARY_LIGHT },
-  hba: { label: "POSTRES", color: CHART_SECONDARY },
-  tobacco: { label: "ALCOHOL", color: CHART_SECONDARY_DARK },
-  sopa: { label: "PORCIONES", color: CHART_SECONDARY_LIGHT },
+  sales: { label: "Sales", color: CHART_PRIMARY },
 } satisfies ChartConfig
+
+/** Paleta cíclica por barra — la data real no trae color, lo asigna el chart. */
+const BAR_PALETTE = [
+  CHART_PRIMARY,
+  CHART_PRIMARY_DARK,
+  CHART_PRIMARY_LIGHT,
+  CHART_SECONDARY,
+  CHART_SECONDARY_DARK,
+  CHART_SECONDARY_LIGHT,
+]
 
 export function DepartmentSalesChart({ data, dateRange, onPrint, onSave }: DepartmentSalesChartProps) {
   const { t } = useTranslation("business-dashboard")
@@ -83,7 +87,7 @@ export function DepartmentSalesChart({ data, dateRange, onPrint, onSave }: Depar
               animationEasing="ease-out"
             >
               {data.map((entry, index) => (
-                <rect key={`cell-${index}`} fill={entry.fill} />
+                <Cell key={`cell-${index}`} fill={entry.fill || BAR_PALETTE[index % BAR_PALETTE.length]} />
               ))}
             </Bar>
           </BarChart>

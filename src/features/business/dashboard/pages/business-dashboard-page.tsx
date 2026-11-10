@@ -160,7 +160,7 @@ export function BusinessDashboardPage() {
           {/* Department Sales */}
           <div>
             <DepartmentSalesChart
-              data={(departmentSales ?? []).map((d) => ({ ...d, fill: "" }))}
+              data={departmentSales ?? []}
               dateRange={dateRange}
               onPrint={handlePrint}
               onSave={handleSave}

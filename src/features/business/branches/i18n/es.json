@@ -250,8 +250,5 @@
   "terminals_breadcrumb_config": "Configuración",
   "supplier_label": "Sucursal proveedora",
   "supplier_hint": "Abastece a otras sucursales: recibe sus pedidos y les envía mercancía. Puede enviar a cualquier sucursal sin pedido; las demás solo le pueden enviar a una proveedora.",
-  "supplier_badge": "Proveedora",
-  "config_step_operation": "Operación",
-  "config_step_operation_desc": "Recepción de pedidos, tienda abierta o pausada, productos sin vincular y medios de pago: todo lo de Cluvi en un solo lugar.",
-  "config_step_goto": "Paso {{n}}: {{label}}"
+  "supplier_badge": "Proveedora"
 }

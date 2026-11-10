@@ -26,8 +26,6 @@ function mapBranchResponseToBranch(dto: BranchResponseDto): Branch {
     adminUserName: dto.adminUserName ?? "",
     createdAt: dto.createdAt,
     isSupplier: dto.isSupplier ?? false,
-    latitude: dto.latitude ?? null,
-    longitude: dto.longitude ?? null,
   }
 }
 
@@ -92,12 +90,6 @@ export async function createBranch(payload: CreateBranchDto): Promise<Branch> {
 
 export async function updateBranch(id: string, payload: UpdateBranchDto): Promise<Branch> {
   const { data } = await api.put<BranchResponseDto>(`/api/Branches/${id}`, payload)
-  return mapBranchResponseToBranch(data)
-}
-
-/** Guarda la ubicación de la sucursal en el mapa (centro de zonas y origen de rutas). */
-export async function setBranchLocation(id: string, latitude: number, longitude: number): Promise<Branch> {
-  const { data } = await api.put<BranchResponseDto>(`/api/Branches/${id}/location`, { latitude, longitude })
   return mapBranchResponseToBranch(data)
 }
 

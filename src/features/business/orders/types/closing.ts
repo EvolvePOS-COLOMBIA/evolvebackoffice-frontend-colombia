@@ -26,67 +26,6 @@ export interface OrderClosingBreakdownRow {
   total: number
 }
 
-/** Pago (medio de cobro) asignado a una orden al conciliar. */
-export interface OrderPayment {
-  id: string
-  paymentMethodCode: string
-  paymentMethodName: string | null
-  amount: number
-  reference: string | null
-  createdAt: string
-  /** Efectivo que entregó el cliente (solo medios en efectivo). */
-  tenderedAmount: number | null
-  /** Cambio devuelto: tenderedAmount − amount. */
-  changeAmount: number
-}
-
-/** Línea enviada al conciliar una orden (la suma debe dar el total). */
-export interface ReconcilePaymentLine {
-  paymentMethodCode: string
-  amount: number
-  reference?: string | null
-  tenderedAmount?: number | null
-}
-
-/** Totales por medio de pago del periodo (esperado / antes / actual). */
-export interface PaymentTotalsRow {
-  paymentMethodCode: string
-  paymentMethodName: string
-  expectedAmount: number
-  expectedCount: number
-  baselineAmount: number
-  baselineCount: number
-  currentAmount: number
-  currentCount: number
-}
-
-/** Lo que cada domiciliario debe devolver a caja en el periodo. */
-export interface CourierSettlementRow {
-  /** null = pedidos a domicilio sin domiciliario asignado. */
-  courierId: string | null
-  courierName: string
-  ordersCount: number
-  deliveredCount: number
-  ordersTotal: number
-  /** Informativo. */
-  shippingTotal: number
-  /** Efectivo conciliado que entrega en caja (el cambio ya se devolvió al cliente). */
-  cashToReturn: number
-  changeGiven: number
-  otherMethodsTotal: number
-  unreconciledTotal: number
-  tipsTotal?: number
-  prepaidTotal?: number
-}
-
-export interface ReconcileOrderResponse {
-  orderId: string
-  reconciled: boolean
-  reconcilePaymentMethodCode: string | null
-  payments: OrderPayment[]
-  totals: PaymentTotalsRow[]
-}
-
 export interface OrderClosingOrderRow {
   id: string
   reference: string
@@ -99,20 +38,6 @@ export interface OrderClosingOrderRow {
   reconciled: boolean
   reconcilePaymentMethodCode: string | null
   reconciledAt: string | null
-  payments?: OrderPayment[] | null
-  courierId?: string | null
-  courierName?: string | null
-  /** De un periodo anterior que no entró a ningún cierre (arrastrada). */
-  carriedOver?: boolean
-  /** Sin cierre asociado: se puede resolver/conciliar. */
-  editable?: boolean
-}
-
-/** Estados finales: solo estas órdenes entran al cierre. */
-export const FINAL_ORDER_STATUSES = ["Delivered", "Cancelled", "Refunded"] as const
-
-export function isFinalOrderStatus(status: string): boolean {
-  return (FINAL_ORDER_STATUSES as readonly string[]).includes(status)
 }
 
 export interface OrderClosingPreview {
@@ -124,16 +49,6 @@ export interface OrderClosingPreview {
   breakdown: OrderClosingBreakdownRow[]
   orders: OrderClosingOrderRow[]
   alreadyClosedCount: number
-  date?: string
-  status?: string
-  /** El periodo actual aún no se ha cerrado. */
-  editable?: boolean
-  paymentTotals?: PaymentTotalsRow[] | null
-  courierSettlements?: CourierSettlementRow[] | null
-  /** Pendientes de periodos anteriores arrastradas al actual. */
-  carriedOverCount?: number
-  /** Pendientes sin estado final: no entran al cierre. */
-  unresolvedCount?: number
 }
 
 export interface OrderClosing {
@@ -149,10 +64,6 @@ export interface OrderClosing {
   notes: string | null
   closedBy: string
   closedAt: string
-  status?: string
-  editable?: boolean
-  paymentTotals?: PaymentTotalsRow[] | null
-  courierSettlements?: CourierSettlementRow[] | null
 }
 
 export interface OrderClosingDetail {

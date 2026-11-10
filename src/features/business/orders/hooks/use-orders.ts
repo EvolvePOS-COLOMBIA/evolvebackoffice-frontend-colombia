@@ -3,23 +3,27 @@ import {
   getOrders,
   getOrderById,
   updateOrderStatus,
-  cancelOrder,
   createManualOrder,
   updateOrderDetails,
-  retryOrderSync,
+  cancelOrder,
 } from "../services/orders.service"
-import type { CreateManualOrderDto, OrderFilters, UpdateOrderDetailsDto, CancelOrderDto } from "../types/api"
+import type { CreateManualOrderDto, UpdateOrderDetailsDto, CancelOrderDto } from "../types/api"
 
 export const ordersKeys = {
   all: ["orders"] as const,
-  list: (page: number, pageSize: number, filters?: OrderFilters) =>
+  list: (page: number, pageSize: number, filters?: Record<string, string>) =>
     ["orders", "list", page, pageSize, filters] as const,
   detail: (id: string) => ["orders", "detail", id] as const,
 }
 
-export function useOrders(page: number, pageSize: number, filters?: OrderFilters, enabled = true) {
+export function useOrders(
+  page: number,
+  pageSize: number,
+  filters?: { branchId?: string; status?: string; platform?: string },
+  enabled = true
+) {
   return useQuery({
-    queryKey: ordersKeys.list(page, pageSize, filters),
+    queryKey: ordersKeys.list(page, pageSize, filters as Record<string, string>),
     queryFn: () => getOrders(page, pageSize, filters),
     enabled,
   })
@@ -36,19 +40,11 @@ export function useOrderDetail(id: string) {
 export function useUpdateOrderStatus() {
   const qc = useQueryClient()
   return useMutation({
-    mutationFn: ({ id, status, courierId }: { id: string; status: string; courierId?: string | null }) =>
-      updateOrderStatus(id, status, courierId),
+    mutationFn: ({ id, status }: { id: string; status: string }) => updateOrderStatus(id, status),
     onSuccess: () => qc.invalidateQueries({ queryKey: ordersKeys.all }),
   })
 }
 
-export function useRetryOrderSync() {
-  const qc = useQueryClient()
-  return useMutation({
-    mutationFn: retryOrderSync,
-    onSettled: () => qc.invalidateQueries({ queryKey: ordersKeys.all }),
-  })
-}
 /**
  * Crea una orden manual (venta de caja / domicilio). Refresca la lista de
  * órdenes; el toast de éxito/error lo dispara el formulario.

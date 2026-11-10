@@ -90,8 +90,8 @@ describe("buildCancellationInitialState helper", () => {
   } as unknown as OrderListItem
 
   const items = [
-    { id: "item-1", name: "Hamburguesa Doble", quantity: 1 },
-    { id: "item-2", name: "Coca Cola Zero", quantity: 1 },
+    { id: "item-1", nameSnapshot: "Hamburguesa Doble", quantity: 1 },
+    { id: "item-2", nameSnapshot: "Coca Cola Zero", quantity: 1 },
   ] as unknown as OrderItemDto[]
 
   it("inicializa como Restocked cuando la orden está en estado Pending", () => {

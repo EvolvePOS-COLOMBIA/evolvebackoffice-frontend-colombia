@@ -184,12 +184,13 @@ export function StockPage() {
               previous: t("previous"),
               next: t("next"),
               paginationTotal: (count) => t("stock_count", { count }),
+              paginationProgress: (count, total) => t("stock_progress", { count, total }),
             }}
           />
         ) : tab === "movements" ? (
-          <div className="min-h-0 flex-1 space-y-4 overflow-y-auto">
+          <div className="flex min-h-0 flex-1 flex-col gap-4">
             {historyItem ? (
-              <div className="flex items-center gap-2">
+              <div className="flex shrink-0 items-center gap-2">
                 <Badge tone="info">{historyItem.itemName}</Badge>
                 <Button variant="ghost" size="sm" onClick={() => setHistoryItem(null)}>
                   <X className="size-4" />
@@ -199,11 +200,9 @@ export function StockPage() {
             ) : null}
             <MovementsTable branchId={branchId} itemId={historyItem?.itemId} />
           </div>
-        ) : (
-          <div className="min-h-0 flex-1 overflow-y-auto">
-            {branch ? <MarginsTable key={branch.id} branch={branch} /> : null}
-          </div>
-        )}
+        ) : branch ? (
+          <MarginsTable key={branch.id} branch={branch} />
+        ) : null}
       </EntityListLayout>
 
       {branchId && action?.type === "writeoff" ? (

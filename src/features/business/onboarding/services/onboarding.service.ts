@@ -64,6 +64,12 @@ export async function saveBusinessProfile(values: BusinessStepValues): Promise<T
  * Paso 3 — Primera sucursal.  Disponible en el backend hoy.
  * ------------------------------------------------------------------ */
 
+/** Convierte una coordenada del formulario a número; vacío → null (opcional en el backend). */
+function toCoordinate(value: string): number | null {
+  const trimmed = value.trim()
+  return trimmed === "" ? null : Number(trimmed)
+}
+
 export async function createFirstBranch(values: BranchStepValues, adminUserId: string): Promise<Branch> {
   const payload: CreateBranchDto = {
     name: values.name,
@@ -72,6 +78,8 @@ export async function createFirstBranch(values: BranchStepValues, adminUserId: s
     address: values.address || null,
     phone: values.phone || null,
     email: values.email || null,
+    latitude: toCoordinate(values.latitude),
+    longitude: toCoordinate(values.longitude),
   }
 
   return createBranch(payload)

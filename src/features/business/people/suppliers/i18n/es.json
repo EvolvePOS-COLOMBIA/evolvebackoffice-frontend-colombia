@@ -44,6 +44,7 @@
   "stats_active": "Activos",
   "stats_inactive": "Inactivos",
   "list_total": "{{total}} proveedores",
+  "list_progress": "{{count}} de {{total}} proveedores",
   "loading": "Cargando...",
   "saving": "Guardando...",
   "cancel": "Cancelar",

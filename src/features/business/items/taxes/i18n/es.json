@@ -12,6 +12,7 @@
   "previous": "Anterior",
   "next": "Siguiente",
   "list_total": "{{total}} tasas de impuesto",
+  "list_progress": "{{count}} de {{total}} tasas de impuesto",
   "results": "resultado(s)",
   "no_results": "No se encontraron tasas de impuesto.",
   "search_desc": "Prueba con otro término.",

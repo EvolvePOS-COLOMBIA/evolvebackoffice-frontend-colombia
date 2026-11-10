@@ -1,8 +1,10 @@
-import { useState } from "react"
-import { Outlet } from "react-router-dom"
+import { useState, useEffect } from "react"
+import { Outlet, useLocation } from "react-router-dom"
 
 import { Navbar } from "@/components/layout/navbar"
 import { Sidebar } from "@/components/layout/sidebar"
+import { useAppStore } from "@/store/app-store"
+import { cn } from "@/lib/utils"
 import { useAuth } from "@/features/auth/hooks/use-auth"
 import { ChangePasswordDialog } from "@/features/auth/components/change-password-dialog"
 import { useNewOrderNotifications } from "@/features/business/orders/hooks/use-new-order-notifications"
@@ -12,6 +14,16 @@ export function AppLayout() {
   const { session } = useAuth()
   const [passwordChanged, setPasswordChanged] = useState(false)
   const [isCollapsed, setIsCollapsed] = useState(false)
+  const { pathname } = useLocation()
+
+  // Modo maximizado (estilo Jira): lo controla la página activa y se
+  // restablece automáticamente al navegar a otra ruta.
+  const isMaximized = useAppStore((s) => s.isMaximized)
+  const setIsMaximized = useAppStore((s) => s.setIsMaximized)
+
+  useEffect(() => {
+    setIsMaximized(false)
+  }, [pathname, setIsMaximized])
 
   // Notificaciones en tiempo real de órdenes nuevas (solo sesiones de tenant:
   // la sesión de plataforma no tiene tenantId). Sonido + toast + escritorio.
@@ -27,15 +39,37 @@ export function AppLayout() {
       </div>
 
       <div className="relative flex h-full">
-        {/* Pasamos el estado de colapsado al Sidebar */}
+        {/* Sidebar: colapsa suavemente a ancho 0 en modo maximizado */}
         <Sidebar isCollapsed={isCollapsed} />
 
-        <section className="flex min-w-0 flex-1 flex-col overflow-hidden">
-          {/* Pasamos la función para alternar al Navbar */}
-          <Navbar isCollapsed={isCollapsed} onToggleCollapse={() => setIsCollapsed(!isCollapsed)} />
+        <section className="flex h-full min-w-0 flex-1 flex-col overflow-hidden">
+          {/* Navbar: colapsa suavemente a altura 0 (grid-rows 1fr → 0fr) */}
+          <div
+            className={cn(
+              "grid overflow-hidden transition-all duration-300 ease-out",
+              isMaximized ? "grid-rows-[0fr] opacity-0" : "grid-rows-[1fr] opacity-100"
+            )}
+          >
+            <div className="overflow-hidden">
+              <Navbar isCollapsed={isCollapsed} onToggleCollapse={() => setIsCollapsed(!isCollapsed)} />
+            </div>
+          </div>
 
-          <div className="min-h-0 flex-1 overflow-y-auto">
-            <div className="w-full p-3 sm:p-4 lg:p-5">
+          {/* El padding vive en el scroller (no en el wrapper) para que el
+              espacio inferior exista también al final del scroll en páginas
+              más altas que el viewport. */}
+          <div className={cn("min-h-0 flex-1 overflow-y-auto", isMaximized ? "p-6" : "p-3 sm:p-4 lg:p-5")}>
+            <div
+              className={cn(
+                // flex + h-full: el outlet ocupa exactamente el alto visible
+                // (sin alturas mágicas de 100vh en cada página). La altura
+                // definitiva hace que grow/h-full de las páginas (kanban)
+                // resuelvan de verdad; si una página crece más, su contenido
+                // se desborda visible y el scroll lo hace este contenedor.
+                "flex h-full w-full flex-col transition-all duration-300 ease-out",
+                isMaximized && "animate-in duration-300 fade-in-0 zoom-in-95"
+              )}
+            >
               <Outlet />
             </div>
           </div>

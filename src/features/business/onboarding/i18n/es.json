@@ -79,6 +79,13 @@
   "branch_identification_placeholder": "Código o NIT de la sede",
   "email": "Correo",
   "branch_email_placeholder": "sede@negocio.com",
+  "latitude": "Latitud",
+  "longitude": "Longitud",
+  "latitude_placeholder": "4.60971",
+  "longitude_placeholder": "-74.082",
+  "geolocation_use": "Usar mi ubicación actual",
+  "geolocation_hint": "Se completa latitud y longitud automáticamente.",
+  "geolocation_locating": "Obteniendo ubicación…",
   "branch_admin": "Administrador responsable",
   "branch_admin_you": "{{name}} — tú",
   "branch_admin_hint": "Podrás asignar otro usuario cuando crees más cuentas.",
@@ -130,9 +137,17 @@
   "business_name_required": "La razón social es requerida.",
   "branch_name_required": "El nombre de la sucursal es requerido.",
   "branch_address_required": "La dirección de la sucursal es requerida.",
+  "latitude_invalid": "Debe ser un número.",
+  "latitude_range": "La latitud debe estar entre -90 y 90.",
+  "longitude_invalid": "Debe ser un número.",
+  "longitude_range": "La longitud debe estar entre -180 y 180.",
 
   "error_saving": "No se pudo guardar. Intenta de nuevo.",
   "error_creating_branch": "No se pudo crear la sucursal.",
   "error_no_session": "La sesión no está disponible. Vuelve a iniciar sesión.",
-  "error_no_branch": "Primero hay que crear la sucursal."
+  "error_no_branch": "Primero hay que crear la sucursal.",
+  "geolocation_unsupported": "Tu navegador no soporta la geolocalización.",
+  "geolocation_denied": "Permiso de ubicación denegado.",
+  "geolocation_unavailable": "No pudimos obtener tu ubicación.",
+  "geolocation_timeout": "Se agotó el tiempo para obtener tu ubicación."
 }

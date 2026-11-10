@@ -19,6 +19,7 @@ import {
 import { Link, NavLink, useLocation } from "react-router-dom"
 import { useState } from "react"
 
+import { useAppStore } from "@/store/app-store"
 import { Separator } from "@/components/ui/separator"
 import {
   AlertDialog,
@@ -74,11 +75,15 @@ interface SidebarProps {
 }
 
 export function Sidebar({ isCollapsed = false }: SidebarProps) {
+  // En modo maximizado el aside colapsa a ancho 0 con transición en vez de
+  // desmontarse, para que la salida sea suave (estilo Jira).
+  const isMaximized = useAppStore((s) => s.isMaximized)
+
   return (
     <aside
       className={cn(
-        "hidden h-svh shrink-0 border-r border-border/70 bg-sidebar/90 transition-all duration-300 lg:block",
-        isCollapsed ? "w-20" : "w-70"
+        "hidden h-svh shrink-0 overflow-hidden border-r border-border/70 bg-sidebar/90 transition-all duration-300 ease-out lg:block",
+        isMaximized ? "w-0 border-r-0" : isCollapsed ? "w-20" : "w-70"
       )}
     >
       <SidebarContent isCollapsed={isCollapsed} />

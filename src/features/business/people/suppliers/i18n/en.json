@@ -44,6 +44,7 @@
   "stats_active": "Active",
   "stats_inactive": "Inactive",
   "list_total": "{{total}} suppliers",
+  "list_progress": "{{count}} of {{total}} suppliers",
   "loading": "Loading...",
   "saving": "Saving...",
   "cancel": "Cancel",

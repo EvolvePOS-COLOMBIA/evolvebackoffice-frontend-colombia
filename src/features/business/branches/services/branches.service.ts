@@ -26,6 +26,8 @@ function mapBranchResponseToBranch(dto: BranchResponseDto): Branch {
     adminUserName: dto.adminUserName ?? "",
     createdAt: dto.createdAt,
     isSupplier: dto.isSupplier ?? false,
+    latitude: dto.latitude == null ? "" : String(dto.latitude),
+    longitude: dto.longitude == null ? "" : String(dto.longitude),
   }
 }
 

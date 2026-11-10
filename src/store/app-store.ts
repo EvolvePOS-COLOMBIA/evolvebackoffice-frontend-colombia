@@ -28,8 +28,16 @@ type AppState = {
    * al cerrar sesión y al recargar la página.
    */
   pendingPassword: string | null
+  /**
+   * Modo maximizado (estilo Jira): oculta navbar y sidebar para que la
+   * página activa aproveche todo el viewport. Solo en memoria (fuera de
+   * `partialize`): se restablece al recargar y al navegar fuera de la
+   * página que lo activó.
+   */
+  isMaximized: boolean
 
   setSession: (session: AuthSession | null) => void
+  setIsMaximized: (isMaximized: boolean) => void
   setTheme: (theme: ThemeMode) => void
   setLocale: (locale: Locale) => void
   setAppLocale: (lang: Locale) => void
@@ -51,10 +59,13 @@ export const useAppStore = create<AppState>()(
       onboardingCompleted: {},
       onboardingDrafts: {},
       pendingPassword: null,
+      isMaximized: false,
 
       setSession: (session) => {
         set({ session })
       },
+
+      setIsMaximized: (isMaximized) => set({ isMaximized }),
 
       setTheme: (theme) => set({ theme }),
 
@@ -95,7 +106,7 @@ export const useAppStore = create<AppState>()(
         set((state) => (state.session ? { session: { ...state.session, forcePasswordChange: false } } : {})),
 
       logout: () => {
-        set({ session: null, pendingPassword: null })
+        set({ session: null, pendingPassword: null, isMaximized: false })
       },
     }),
     {

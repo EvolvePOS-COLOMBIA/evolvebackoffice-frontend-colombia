@@ -33,6 +33,7 @@
   "action_writeoff": "Write off",
   "action_correction": "Correct balance",
   "stock_count": "{{count}} products",
+  "stock_progress": "{{count}} of {{total}} products",
   "show_all": "Show all",
   "status_negative": "Negative",
   "status_below_min": "Below minimum",
@@ -54,6 +55,7 @@
   "cost": "Cost",
   "user": "User",
   "movements_count": "{{count}} movements",
+  "movements_progress": "{{count}} of {{total}} movements",
   "movement_PurchaseReceipt": "Supplier receipt",
   "movement_TransferOut": "Sent to branch",
   "movement_TransferIn": "Received from branch",
@@ -436,5 +438,6 @@
   "filter_total_cost": "Total cost",
   "filter_more": "More filters",
   "filter_less": "Fewer filters",
-  "filter_clear": "Clear filters"
+  "filter_clear": "Clear filters",
+  "filters_title": "Filters"
 }

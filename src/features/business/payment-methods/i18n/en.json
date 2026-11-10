@@ -52,6 +52,7 @@
   "previous": "Previous",
   "next": "Next",
   "list_total": "{{total}} payment methods",
+  "list_progress": "{{count}} of {{total}} payment methods",
   "loading": "Loading...",
   "saving": "Saving...",
   "cancel": "Cancel",

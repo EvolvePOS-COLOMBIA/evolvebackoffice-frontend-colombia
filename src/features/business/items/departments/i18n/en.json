@@ -28,6 +28,7 @@
   "previous": "Previous",
   "next": "Next",
   "list_total": "{{total}} departments",
+  "list_progress": "{{count}} of {{total}} departments",
   "empty_title": "No departments yet",
   "empty_desc": "Create the first one to classify your products.",
   "search_title": "No departments found",

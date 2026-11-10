@@ -32,7 +32,8 @@ export interface StatsData {
 export interface DepartmentSale {
   department: string
   sales: number
-  fill: string
+  /** Opcional: la data de API no trae color; el chart asigna paleta si falta. */
+  fill?: string
 }
 
 export interface TenderEntry {

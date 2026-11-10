@@ -1,20 +1,14 @@
 import { useMemo, useState } from "react"
-import { Plus, Trash2 } from "lucide-react"
+import { ChevronDown, Minus, Plus, Search, ShoppingBasket, Trash2 } from "lucide-react"
 
+import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog"
+import { Dialog, DialogContent, DialogDescription, DialogTitle } from "@/components/ui/dialog"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Textarea } from "@/components/ui/textarea"
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { useBranchItems } from "@/features/business/items/catalog/hooks/use-branch-items"
 import { useCreateManualOrder } from "../hooks/use-orders"
 import { ORDER_ORIGIN_LABEL_KEY } from "../types"
@@ -56,6 +50,10 @@ function apiErrorMessage(error: unknown): string | null {
  * enlazado desde la cabecera de Órdenes. Usa los productos activos de la
  * sucursal seleccionada con su precio de sucursal (editable por línea).
  *
+ * Layout de dos columnas tipo carrito: a la izquierda el buscador de
+ * productos y las líneas; a la derecha el resumen fijo con los datos de la
+ * venta, el domicilio y las notas.
+ *
  * No envía `tax`: en Colombia el backend cobra el precio rotulado (IVA
  * incluido) y declara el IVA extraído; en otros países agrega la tasa
  * configurada del tenant.
@@ -70,7 +68,8 @@ export function ManualOrderDialog({ open, onOpenChange, branchId }: ManualOrderD
   })
 
   const [lines, setLines] = useState<OrderLine[]>([])
-  const [selectedItem, setSelectedItem] = useState("")
+  const [productQuery, setProductQuery] = useState("")
+  const [pickerOpen, setPickerOpen] = useState(false)
   const [paymentMethod, setPaymentMethod] = useState("CASH")
   const [status, setStatus] = useState("Confirmed")
   const [origin, setOrigin] = useState("")
@@ -84,7 +83,8 @@ export function ManualOrderDialog({ open, onOpenChange, branchId }: ManualOrderD
     setPrevOpen(open)
     if (!open) {
       setLines([])
-      setSelectedItem("")
+      setProductQuery("")
+      setPickerOpen(false)
       setPaymentMethod("CASH")
       setStatus("Confirmed")
       setOrigin("")
@@ -96,6 +96,15 @@ export function ManualOrderDialog({ open, onOpenChange, branchId }: ManualOrderD
   }
 
   const selectableItems = useMemo(() => (branchItems?.data ?? []).filter((i) => !i.inactive), [branchItems])
+
+  /** Productos filtrados por nombre o SKU según lo escrito en el buscador. */
+  const filteredItems = useMemo(() => {
+    const query = productQuery.trim().toLowerCase()
+    if (!query) return selectableItems
+    return selectableItems.filter(
+      (i) => i.itemName?.toLowerCase().includes(query) || i.itemSku?.toLowerCase().includes(query)
+    )
+  }, [selectableItems, productQuery])
 
   const addLine = (itemPublicId: string) => {
     const item = selectableItems.find((i) => i.itemPublicId === itemPublicId)
@@ -119,9 +128,10 @@ export function ManualOrderDialog({ open, onOpenChange, branchId }: ManualOrderD
         },
       ]
     })
-    // Reiniciar para poder volver a elegir el mismo producto (Radix Select
-    // no dispara onValueChange si el valor no cambia).
-    setSelectedItem("")
+    // Cerrar el popover y limpiar la búsqueda para poder volver a elegir
+    // el mismo producto sin reescribir el filtro.
+    setPickerOpen(false)
+    setProductQuery("")
   }
 
   const updateLine = (key: string, patch: Partial<OrderLine>) => {
@@ -183,214 +193,331 @@ export function ManualOrderDialog({ open, onOpenChange, branchId }: ManualOrderD
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-h-[85vh] max-w-3xl overflow-x-hidden overflow-y-auto">
-        <DialogHeader>
-          <DialogTitle>{t("create_order")}</DialogTitle>
-          <DialogDescription>{t("manual_order_desc")}</DialogDescription>
-        </DialogHeader>
+      <DialogContent
+        showCloseButton={false}
+        className="flex max-h-[90vh] w-[min(94vw,64rem)] flex-col gap-0 overflow-hidden p-0"
+      >
+        {/* Cabecera */}
+        <header className="flex items-start gap-3 border-b border-border/70 px-6 py-4">
+          <span className="mt-0.5 inline-flex size-9 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary">
+            <ShoppingBasket className="size-5" />
+          </span>
+          <div className="min-w-0">
+            <DialogTitle>{t("create_order")}</DialogTitle>
+            <DialogDescription>{t("manual_order_desc")}</DialogDescription>
+          </div>
+        </header>
 
-        {/* Selector de producto de la sucursal */}
-        <div className="space-y-1.5">
-          <Label htmlFor="manual-order-item">{t("items")}</Label>
-          <Select value={selectedItem} onValueChange={addLine}>
-            <SelectTrigger id="manual-order-item" className="w-full">
-              <SelectValue placeholder={t("select_item_placeholder")} />
-            </SelectTrigger>
-            <SelectContent>
-              {selectableItems.map((item) => (
-                <SelectItem key={item.itemPublicId} value={item.itemPublicId}>
-                  {item.itemName ?? item.itemPublicId}
-                  {item.itemSku ? ` (${item.itemSku})` : ""} — {formatCurrency(item.price)}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-          {!itemsLoading && selectableItems.length === 0 ? (
-            <p className="text-xs text-muted-foreground">{t("no_branch_items")}</p>
-          ) : null}
-        </div>
+        {/* Dos columnas: carrito a la izquierda, resumen/datos a la derecha */}
+        <div className="grid min-h-0 flex-1 grid-cols-1 md:grid-cols-[minmax(0,1fr)_21rem]">
+          {/* Izquierda: productos + líneas */}
+          <div className="flex min-h-0 flex-col overflow-y-auto px-6 py-4">
+            {/* Buscador de productos (combobox) */}
+            <Popover open={pickerOpen} onOpenChange={setPickerOpen}>
+              <PopoverTrigger asChild>
+                <Button
+                  type="button"
+                  variant="outline"
+                  className="w-full justify-between gap-2 font-normal text-muted-foreground"
+                >
+                  <span className="flex min-w-0 items-center gap-2">
+                    <Search className="size-4 shrink-0" />
+                    <span className="truncate">{t("select_item_placeholder")}</span>
+                  </span>
+                  <ChevronDown className="size-4 shrink-0" />
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-[var(--radix-popover-trigger-width)] p-0" align="start">
+                <div className="border-b border-border/70 p-2">
+                  <Input
+                    value={productQuery}
+                    onChange={(e) => setProductQuery(e.target.value)}
+                    placeholder={t("search_products")}
+                    aria-label={t("search_products")}
+                    className="h-8"
+                    autoFocus
+                  />
+                </div>
+                <div className="max-h-64 overflow-y-auto p-1">
+                  {itemsLoading ? (
+                    <p className="px-2 py-3 text-center text-xs text-muted-foreground">{t("loading_products")}</p>
+                  ) : filteredItems.length === 0 ? (
+                    <p className="px-2 py-3 text-center text-xs text-muted-foreground">
+                      {productQuery ? t("no_product_results") : t("no_branch_items")}
+                    </p>
+                  ) : (
+                    filteredItems.map((item) => (
+                      <button
+                        key={item.itemPublicId}
+                        type="button"
+                        onClick={() => addLine(item.itemPublicId)}
+                        className="flex w-full cursor-pointer items-center justify-between gap-3 rounded-lg px-2 py-1.5 text-left text-sm transition-colors hover:bg-accent"
+                      >
+                        <span className="min-w-0">
+                          <span className="block truncate font-medium">{item.itemName ?? item.itemPublicId}</span>
+                          {item.itemSku ? (
+                            <span className="block text-xs text-muted-foreground">{item.itemSku}</span>
+                          ) : null}
+                        </span>
+                        <span className="shrink-0 text-muted-foreground tabular-nums">
+                          {formatCurrency(item.price)}
+                        </span>
+                      </button>
+                    ))
+                  )}
+                </div>
+              </PopoverContent>
+            </Popover>
 
-        {/* Líneas de la orden */}
-        {lines.length > 0 ? (
-          <div className="overflow-hidden rounded-xl border border-border/70">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>{t("items")}</TableHead>
-                  <TableHead className="w-28">{t("unit_price")}</TableHead>
-                  <TableHead className="w-24">{t("quantity")}</TableHead>
-                  <TableHead className="w-32 text-right">{t("line_amount")}</TableHead>
-                  <TableHead className="w-10" />
-                </TableRow>
-              </TableHeader>
-              <TableBody>
+            {/* Carrito de líneas */}
+            {lines.length > 0 ? (
+              <div className="mt-4 space-y-2">
+                <div className="flex items-center justify-between">
+                  <p className="text-xs font-semibold tracking-wide text-muted-foreground uppercase">{t("items")}</p>
+                  <Badge tone="neutral" className="text-[10px]">
+                    {t("items_count", { count: lines.length })}
+                  </Badge>
+                </div>
+
                 {lines.map((line) => (
-                  <TableRow key={line.key}>
-                    <TableCell className="font-medium">
-                      {line.name}
-                      {line.sku ? <span className="ml-1 text-xs text-muted-foreground">({line.sku})</span> : null}
-                    </TableCell>
-                    <TableCell>
-                      <Input
-                        type="number"
-                        min={0}
-                        step="0.01"
-                        inputMode="decimal"
-                        className="h-8"
-                        value={line.price}
-                        onChange={(e) =>
-                          updateLine(line.key, {
-                            price: e.target.value === "" ? 0 : Number(e.target.value),
-                          })
-                        }
-                      />
-                    </TableCell>
-                    <TableCell>
-                      <Input
-                        type="number"
-                        min={1}
-                        step="1"
-                        inputMode="numeric"
-                        className="h-8"
-                        value={line.quantity}
-                        onChange={(e) =>
-                          updateLine(line.key, {
-                            quantity: e.target.value === "" ? 1 : Math.max(1, Math.floor(Number(e.target.value))),
-                          })
-                        }
-                      />
-                    </TableCell>
-                    <TableCell className="text-right tabular-nums">
-                      {formatCurrency(line.price * line.quantity)}
-                    </TableCell>
-                    <TableCell>
+                  <div
+                    key={line.key}
+                    className="rounded-xl border border-border/70 bg-card p-3 shadow-[0_10px_30px_rgba(15,23,42,0.06)]"
+                  >
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="min-w-0">
+                        <p className="truncate text-sm font-medium">{line.name}</p>
+                        <p className="text-xs text-muted-foreground">
+                          {line.sku ? `${line.sku} · ` : ""}
+                          {t("per_unit", { price: formatCurrency(line.price) })}
+                        </p>
+                      </div>
                       <Button
                         type="button"
                         variant="ghost"
                         size="icon"
-                        className="size-7"
+                        className="size-7 shrink-0"
                         aria-label={t("remove_line")}
                         onClick={() => removeLine(line.key)}
                       >
                         <Trash2 className="size-4 text-red-500" />
                       </Button>
-                    </TableCell>
-                  </TableRow>
+                    </div>
+
+                    <div className="mt-2 flex items-center justify-between gap-3">
+                      {/* Stepper de cantidad */}
+                      <div className="flex items-center gap-1 rounded-lg border border-border/70 p-0.5">
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="icon"
+                          className="size-6"
+                          aria-label={`${t("quantity")} −`}
+                          disabled={line.quantity <= 1}
+                          onClick={() => updateLine(line.key, { quantity: Math.max(1, line.quantity - 1) })}
+                        >
+                          <Minus className="size-3.5" />
+                        </Button>
+                        <Input
+                          type="number"
+                          min={1}
+                          step="1"
+                          inputMode="numeric"
+                          aria-label={t("quantity")}
+                          className="h-6 w-10 border-0 bg-transparent px-0 text-center text-sm tabular-nums shadow-none [&::-webkit-inner-spin-button]:appearance-none"
+                          value={line.quantity}
+                          onChange={(e) =>
+                            updateLine(line.key, {
+                              quantity: e.target.value === "" ? 1 : Math.max(1, Math.floor(Number(e.target.value))),
+                            })
+                          }
+                        />
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="icon"
+                          className="size-6"
+                          aria-label={`${t("quantity")} +`}
+                          onClick={() => updateLine(line.key, { quantity: line.quantity + 1 })}
+                        >
+                          <Plus className="size-3.5" />
+                        </Button>
+                      </div>
+
+                      {/* Precio unitario editable */}
+                      <div className="flex items-center gap-1.5">
+                        <Label htmlFor={`price-${line.key}`} className="text-xs text-muted-foreground">
+                          {t("unit_price")}
+                        </Label>
+                        <Input
+                          id={`price-${line.key}`}
+                          type="number"
+                          min={0}
+                          step="0.01"
+                          inputMode="decimal"
+                          className="h-7 w-24 text-right text-sm tabular-nums"
+                          value={line.price}
+                          onChange={(e) =>
+                            updateLine(line.key, {
+                              price: e.target.value === "" ? 0 : Number(e.target.value),
+                            })
+                          }
+                        />
+                      </div>
+
+                      {/* Importe de la línea */}
+                      <span className="shrink-0 text-sm font-semibold tabular-nums">
+                        {formatCurrency(line.price * line.quantity)}
+                      </span>
+                    </div>
+                  </div>
                 ))}
-              </TableBody>
-            </Table>
-          </div>
-        ) : null}
+              </div>
+            ) : (
+              <div className="flex flex-1 flex-col items-center justify-center gap-2 py-10 text-center">
+                <span className="inline-flex size-12 items-center justify-center rounded-2xl bg-muted">
+                  <ShoppingBasket className="size-6 text-muted-foreground" />
+                </span>
+                <p className="text-sm font-medium">{t("cart_empty_title")}</p>
+                <p className="max-w-56 text-xs text-muted-foreground">{t("cart_empty_desc")}</p>
+              </div>
+            )}
 
-        {/* Datos de la venta */}
-        <div className="grid gap-3 sm:grid-cols-3">
-          <div className="space-y-1.5">
-            <Label>{t("payment_method")}</Label>
-            <Select value={paymentMethod} onValueChange={setPaymentMethod}>
-              <SelectTrigger className="w-full">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="CASH">{t("pay_cash")}</SelectItem>
-                <SelectItem value="CARD">{t("pay_card")}</SelectItem>
-                <SelectItem value="TRANSFER">{t("pay_transfer")}</SelectItem>
-                <SelectItem value="MIXED">{t("pay_mixed")}</SelectItem>
-              </SelectContent>
-            </Select>
+            {!itemsLoading && selectableItems.length === 0 ? (
+              <p className="mt-2 text-xs text-muted-foreground">{t("no_branch_items")}</p>
+            ) : null}
           </div>
 
-          <div className="space-y-1.5">
-            <Label>{t("initial_status")}</Label>
-            <Select value={status} onValueChange={setStatus}>
-              <SelectTrigger className="w-full">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="Confirmed">{t("confirmed")}</SelectItem>
-                <SelectItem value="Pending">{t("pending")}</SelectItem>
-                <SelectItem value="NeedsReview">{t("st_review")}</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
+          {/* Derecha: resumen + datos de la venta */}
+          <aside className="flex min-h-0 flex-col gap-4 overflow-y-auto border-t border-border/70 bg-muted/30 px-6 py-4 md:border-t-0 md:border-l">
+            {/* Resumen */}
+            <section className="space-y-1.5 rounded-xl border border-border/70 bg-card p-3">
+              <p className="text-xs font-semibold tracking-wide text-muted-foreground uppercase">
+                {t("order_summary")}
+              </p>
+              <div className="flex justify-between text-sm text-muted-foreground">
+                <span>{t("subtotal")}</span>
+                <span className="tabular-nums">{formatCurrency(subtotal)}</span>
+              </div>
+              <div className="flex justify-between text-sm text-muted-foreground">
+                <span>{t("shipping_cost")}</span>
+                <span className="tabular-nums">{formatCurrency(shipping)}</span>
+              </div>
+              <div className="flex items-center justify-between border-t border-border/70 pt-1.5">
+                <span className="text-sm font-semibold">{t("total")}</span>
+                <span className="text-lg font-bold tabular-nums">{formatCurrency(total)}</span>
+              </div>
+            </section>
 
-          {/* Origen controlado (enum OrderOrigin) — para filtrar reportes junto
-              con Cluvi/WooCommerce (que se marcan automáticamente). */}
-          <div className="space-y-1.5">
-            <Label>{t("origin")}</Label>
-            <Select value={origin || "none"} onValueChange={(v) => setOrigin(v === "none" ? "" : v)}>
-              <SelectTrigger className="w-full">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="none">{t("origin_none")}</SelectItem>
-                {MANUAL_ORIGINS.map((o) => (
-                  <SelectItem key={o} value={o}>
-                    {t(ORDER_ORIGIN_LABEL_KEY[o])}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-        </div>
+            {/* Datos de la venta */}
+            <section className="space-y-3">
+              <p className="text-xs font-semibold tracking-wide text-muted-foreground uppercase">{t("sale_details")}</p>
+              <div className="space-y-1.5">
+                <Label>{t("payment_method")}</Label>
+                <Select value={paymentMethod} onValueChange={setPaymentMethod}>
+                  <SelectTrigger className="w-full bg-card">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="CASH">{t("pay_cash")}</SelectItem>
+                    <SelectItem value="CARD">{t("pay_card")}</SelectItem>
+                    <SelectItem value="TRANSFER">{t("pay_transfer")}</SelectItem>
+                    <SelectItem value="MIXED">{t("pay_mixed")}</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
 
-        {/* Envío / domicilio (opcional) — alimenta el stat "Domicilios cobrados" */}
-        <div className="space-y-3 rounded-xl border border-border/70 p-3">
-          <p className="text-xs font-semibold tracking-wide text-muted-foreground uppercase">{t("shipping_section")}</p>
-          <div className="grid gap-3 sm:grid-cols-3">
-            <div className="space-y-1.5 sm:col-span-2">
-              <Label>{t("address")}</Label>
-              <Input value={street} onChange={(e) => setStreet(e.target.value)} maxLength={300} />
-            </div>
-            <div className="space-y-1.5">
-              <Label>{t("shipping_city")}</Label>
-              <Input value={city} onChange={(e) => setCity(e.target.value)} maxLength={150} />
-            </div>
-            <div className="space-y-1.5">
-              <Label htmlFor="manual-order-shipping">{t("shipping_cost")}</Label>
-              <Input
-                id="manual-order-shipping"
-                type="number"
-                min={0}
-                step="0.01"
-                inputMode="decimal"
-                value={shippingCost}
-                onChange={(e) => setShippingCost(e.target.value)}
+              <div className="space-y-1.5">
+                <Label>{t("initial_status")}</Label>
+                <Select value={status} onValueChange={setStatus}>
+                  <SelectTrigger className="w-full bg-card">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="Confirmed">{t("confirmed")}</SelectItem>
+                    <SelectItem value="Pending">{t("pending")}</SelectItem>
+                    <SelectItem value="NeedsReview">{t("st_review")}</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              {/* Origen controlado (enum OrderOrigin) — para filtrar reportes junto
+                  con Cluvi/WooCommerce (que se marcan automáticamente). */}
+              <div className="space-y-1.5">
+                <Label>{t("origin")}</Label>
+                <Select value={origin || "none"} onValueChange={(v) => setOrigin(v === "none" ? "" : v)}>
+                  <SelectTrigger className="w-full bg-card">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="none">{t("origin_none")}</SelectItem>
+                    {MANUAL_ORIGINS.map((o) => (
+                      <SelectItem key={o} value={o}>
+                        {t(ORDER_ORIGIN_LABEL_KEY[o])}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </section>
+
+            {/* Envío / domicilio (opcional) — alimenta el stat "Domicilios cobrados" */}
+            <section className="space-y-3">
+              <p className="text-xs font-semibold tracking-wide text-muted-foreground uppercase">
+                {t("shipping_section")}
+              </p>
+              <div className="space-y-1.5">
+                <Label>{t("address")}</Label>
+                <Input value={street} onChange={(e) => setStreet(e.target.value)} maxLength={300} className="bg-card" />
+              </div>
+              <div className="grid grid-cols-2 gap-2">
+                <div className="space-y-1.5">
+                  <Label>{t("shipping_city")}</Label>
+                  <Input value={city} onChange={(e) => setCity(e.target.value)} maxLength={150} className="bg-card" />
+                </div>
+                <div className="space-y-1.5">
+                  <Label htmlFor="manual-order-shipping">{t("shipping_cost")}</Label>
+                  <Input
+                    id="manual-order-shipping"
+                    type="number"
+                    min={0}
+                    step="0.01"
+                    inputMode="decimal"
+                    value={shippingCost}
+                    onChange={(e) => setShippingCost(e.target.value)}
+                    className="bg-card"
+                  />
+                </div>
+              </div>
+            </section>
+
+            {/* Notas */}
+            <section className="space-y-1.5">
+              <Label>{t("notes")}</Label>
+              <Textarea
+                value={notes}
+                onChange={(e) => setNotes(e.target.value)}
+                maxLength={1000}
+                rows={2}
+                className="bg-card"
               />
-            </div>
-          </div>
+            </section>
+          </aside>
         </div>
 
-        {/* Notas */}
-        <div className="space-y-1.5">
-          <Label>{t("notes")}</Label>
-          <Textarea value={notes} onChange={(e) => setNotes(e.target.value)} maxLength={1000} rows={2} />
-        </div>
-
-        {/* Totales */}
-        <div className="ml-auto w-full max-w-xs space-y-1.5 text-sm">
-          <div className="flex justify-between text-muted-foreground">
-            <span>{t("subtotal")}</span>
-            <span className="tabular-nums">{formatCurrency(subtotal)}</span>
+        {/* Footer fijo */}
+        <footer className="flex items-center justify-between gap-3 border-t border-border/70 px-6 py-4">
+          <p className="hidden text-xs text-muted-foreground sm:block">{t("items_count", { count: lines.length })}</p>
+          <div className="flex items-center gap-2">
+            <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
+              {t("cancel")}
+            </Button>
+            <Button type="button" onClick={handleSubmit} disabled={!canSubmit}>
+              <Plus className="mr-2 size-4" />
+              {createOrder.isPending ? t("saving") : t("create_order")}
+            </Button>
           </div>
-          <div className="flex justify-between text-muted-foreground">
-            <span>{t("shipping_cost")}</span>
-            <span className="tabular-nums">{formatCurrency(shipping)}</span>
-          </div>
-          <div className="flex justify-between border-t border-border/70 pt-1.5 text-base font-semibold text-foreground">
-            <span>{t("total")}</span>
-            <span className="tabular-nums">{formatCurrency(total)}</span>
-          </div>
-        </div>
-
-        <DialogFooter className="flex justify-end gap-2">
-          <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
-            {t("close")}
-          </Button>
-          <Button type="button" onClick={handleSubmit} disabled={!canSubmit}>
-            <Plus className="mr-2 size-4" />
-            {createOrder.isPending ? t("saving") : t("create_order")}
-          </Button>
-        </DialogFooter>
+        </footer>
       </DialogContent>
     </Dialog>
   )

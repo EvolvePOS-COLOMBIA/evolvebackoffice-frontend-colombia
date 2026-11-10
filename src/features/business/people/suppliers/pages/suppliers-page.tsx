@@ -149,7 +149,10 @@ export function SuppliersPage() {
               </Button>
             ),
           }}
-          labels={{ paginationTotal: (count) => t("list_total", { total: count }) }}
+          labels={{
+            paginationTotal: (count) => t("list_total", { total: count }),
+            paginationProgress: (count, total) => t("list_progress", { count, total }),
+          }}
         />
       </EntityListLayout>
 

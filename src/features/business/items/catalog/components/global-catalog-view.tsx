@@ -1,5 +1,6 @@
-import { useState } from "react"
-import { Pencil, Trash2, CheckSquare, Square, Package, SearchX } from "lucide-react"
+import { useRef, useState } from "react"
+import { useNavigate } from "react-router-dom"
+import { Pencil, Power, CheckSquare, Square, Package, SearchX } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
@@ -13,12 +14,14 @@ import {
   PaginationNext,
   PaginationPrevious,
 } from "@/components/ui/pagination"
+import { generatePageNumbers } from "@/components/data-table"
 import { Skeleton } from "@/components/ui/skeleton"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { useTranslation } from "@/i18n/use-i18n"
-import { useItems, useDeleteItem } from "../hooks/use-items"
+import { useItems, useSetItemActive } from "../hooks/use-items"
 import type { ItemResponseDto } from "../types"
-import { ItemFormDialog } from "./item-form-dialog"
+import { ItemThumbnail } from "./item-thumbnail"
+import { ConfirmActionDialog } from "@/components/confirm-action-dialog"
 
 type GlobalCatalogViewProps = {
   onAssignToBranch: (items: ItemResponseDto[]) => void
@@ -26,28 +29,35 @@ type GlobalCatalogViewProps = {
 
 export function GlobalCatalogView({ onAssignToBranch }: GlobalCatalogViewProps) {
   const { t } = useTranslation("business-items-catalog")
+  const navigate = useNavigate()
   const [page, setPage] = useState(1)
   const [search, setSearch] = useState("")
+  const [debouncedSearch, setDebouncedSearch] = useState("")
+  const searchTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set())
-  const [formOpen, setFormOpen] = useState(false)
-  const [itemToEdit, setItemToEdit] = useState<ItemResponseDto | null>(null)
+  const [deactivateTarget, setDeactivateTarget] = useState<ItemResponseDto | null>(null)
 
-  const { data, isLoading } = useItems({ pageNumber: page, pageSize: 20 })
-  const deleteItem = useDeleteItem()
+  const { data, isLoading } = useItems({
+    pageNumber: page,
+    pageSize: 20,
+    searchField: "all",
+    searchValue: debouncedSearch.trim() || undefined,
+    includeInactive: true,
+  })
+  const setItemActive = useSetItemActive()
 
   const handleSearchChange = (value: string) => {
     setSearch(value)
-    setPage(1)
+    if (searchTimer.current) clearTimeout(searchTimer.current)
+    searchTimer.current = setTimeout(() => {
+      setDebouncedSearch(value)
+      setPage(1)
+    }, 350)
   }
 
+  // Búsqueda server-side (searchField=all): el backend ya devuelve filtrado.
   const items = data?.data ?? []
-  const filteredItems = search
-    ? items.filter(
-        (item) =>
-          item.name?.toLowerCase().includes(search.toLowerCase()) ||
-          item.sku?.toLowerCase().includes(search.toLowerCase())
-      )
-    : items
+  const filteredItems = items
 
   const isMultiSelectMode = selectedIds.size > 0
   const hasSearch = search.trim().length > 0
@@ -78,20 +88,13 @@ export function GlobalCatalogView({ onAssignToBranch }: GlobalCatalogViewProps) 
     setSelectedIds(new Set())
   }
 
-  const handleEdit = (item: ItemResponseDto) => {
-    setItemToEdit(item)
-    setFormOpen(true)
-  }
-
-  const handleDelete = (item: ItemResponseDto) => {
-    if (confirm(t("confirm_delete_item", { name: item.name }))) {
-      deleteItem.mutate({ id: item.id, name: item.name ?? "" })
+  // Activar es directo; desactivar pide confirmación visual (afecta a todas las sucursales).
+  const handleToggleStatus = (item: ItemResponseDto) => {
+    if (item.isActive) {
+      setDeactivateTarget(item)
+    } else {
+      setItemActive.mutate({ id: item.id, active: true, name: item.name ?? "" })
     }
-  }
-
-  const handleDialogClose = () => {
-    setFormOpen(false)
-    setItemToEdit(null)
   }
 
   return (
@@ -119,7 +122,11 @@ export function GlobalCatalogView({ onAssignToBranch }: GlobalCatalogViewProps) 
               <span className="hidden sm:inline">{t("assign_to_branch")}</span>
             </Button>
           )}
-          <Button size="sm" onClick={() => setFormOpen(true)} className="h-8 px-2 text-xs sm:h-9 sm:px-3 sm:text-sm">
+          <Button
+            size="sm"
+            onClick={() => navigate("/business/items/catalog/new")}
+            className="h-8 px-2 text-xs sm:h-9 sm:px-3 sm:text-sm"
+          >
             <span className="sm:hidden">{t("new")}</span>
             <span className="hidden sm:inline">{t("new_item")}</span>
           </Button>
@@ -170,7 +177,12 @@ export function GlobalCatalogView({ onAssignToBranch }: GlobalCatalogViewProps) 
                         <>
                           <Package className="mb-3 size-10 opacity-40" />
                           <p className="text-sm">{t("no_items")}</p>
-                          <Button variant="outline" size="sm" className="mt-4" onClick={() => setFormOpen(true)}>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="mt-4"
+                            onClick={() => navigate("/business/items/catalog/new")}
+                          >
                             {t("new_item")}
                           </Button>
                         </>
@@ -191,11 +203,14 @@ export function GlobalCatalogView({ onAssignToBranch }: GlobalCatalogViewProps) 
                       </button>
                     </TableCell>
                     <TableCell>
-                      <div>
-                        <p className="font-medium text-foreground">{item.name}</p>
-                        {item.description && (
-                          <p className="line-clamp-1 text-xs text-muted-foreground">{item.description}</p>
-                        )}
+                      <div className="flex items-center gap-3">
+                        <ItemThumbnail url={item.images?.[0]?.url} alt={item.name ?? ""} />
+                        <div className="min-w-0">
+                          <p className="font-medium text-foreground">{item.name}</p>
+                          {item.description && (
+                            <p className="line-clamp-1 text-xs text-muted-foreground">{item.description}</p>
+                          )}
+                        </div>
                       </div>
                     </TableCell>
                     <TableCell className="hidden px-4 text-muted-foreground sm:table-cell">{item.sku ?? "—"}</TableCell>
@@ -217,19 +232,19 @@ export function GlobalCatalogView({ onAssignToBranch }: GlobalCatalogViewProps) 
                           variant="secondary"
                           size="icon"
                           className="size-7 sm:size-8"
-                          onClick={() => handleEdit(item)}
+                          onClick={() => navigate(`/business/items/catalog/${item.id}`)}
                           aria-label={t("edit_item")}
                         >
                           <Pencil className="size-3.5 sm:size-4" />
                         </Button>
                         <Button
-                          variant="destructive"
+                          variant={item.isActive ? "destructive" : "secondary"}
                           size="icon"
-                          className="size-7 text-destructive sm:size-8"
-                          onClick={() => handleDelete(item)}
-                          aria-label={t("delete_item")}
+                          className="size-7 sm:size-8"
+                          onClick={() => handleToggleStatus(item)}
+                          aria-label={item.isActive ? t("deactivate_item") : t("activate_item")}
                         >
-                          <Trash2 className="size-3.5 sm:size-4" />
+                          <Power className="size-3.5 sm:size-4" />
                         </Button>
                       </div>
                     </TableCell>
@@ -286,44 +301,27 @@ export function GlobalCatalogView({ onAssignToBranch }: GlobalCatalogViewProps) 
         )}
       </div>
 
-      {/* Form Dialog */}
-      <ItemFormDialog open={formOpen} onOpenChange={handleDialogClose} itemToEdit={itemToEdit} />
+      {/* Confirmación visual: desactivar en todas las sucursales */}
+      <ConfirmActionDialog
+        open={deactivateTarget !== null}
+        onOpenChange={(openValue) => {
+          if (!openValue) setDeactivateTarget(null)
+        }}
+        title={t("deactivate_item_title")}
+        description={t("deactivate_item_desc")}
+        confirmLabel={t("deactivate_confirm")}
+        tone="destructive"
+        isPending={setItemActive.isPending}
+        onConfirm={() => {
+          if (!deactivateTarget) return
+          setItemActive.mutate(
+            { id: deactivateTarget.id, active: false, name: deactivateTarget.name ?? "" },
+            { onSuccess: () => setDeactivateTarget(null) }
+          )
+        }}
+      />
     </div>
   )
-}
-
-function generatePageNumbers(current: number, total: number): (number | "...")[] {
-  if (total <= 7) {
-    return Array.from({ length: total }, (_, i) => i + 1)
-  }
-
-  const pages: (number | "...")[] = []
-
-  // Always show first page
-  pages.push(1)
-
-  if (current > 3) {
-    pages.push("...")
-  }
-
-  // Show pages around current
-  const start = Math.max(2, current - 1)
-  const end = Math.min(total - 1, current + 1)
-
-  for (let i = start; i <= end; i++) {
-    pages.push(i)
-  }
-
-  if (current < total - 2) {
-    pages.push("...")
-  }
-
-  // Always show last page
-  if (total > 1) {
-    pages.push(total)
-  }
-
-  return pages
 }
 
 function TableSkeleton() {

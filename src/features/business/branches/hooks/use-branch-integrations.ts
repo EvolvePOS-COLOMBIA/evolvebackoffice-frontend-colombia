@@ -1,15 +1,19 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 
 import {
+  activateBranchIntegrationStore,
   createBranchIntegration,
   deleteBranchIntegration,
   listBranchIntegrations,
+  syncBranchIntegrationMenu,
   testBranchIntegrationConnection,
   updateBranchIntegration,
 } from "@/features/business/branches/services/branch-integrations.service"
 import type {
+  ActivateStoreResponse,
   CreateBranchIntegrationDto,
   PlatformCode,
+  SyncMenuResponse,
   UpdateBranchIntegrationDto,
 } from "@/features/business/branches/types/integrations-api"
 
@@ -77,5 +81,31 @@ export function useDeleteBranchIntegration() {
 export function useTestBranchIntegrationConnection() {
   return useMutation({
     mutationFn: ({ branchId, id }: { branchId: string; id: string }) => testBranchIntegrationConnection(branchId, id),
+  })
+}
+
+/** Activa la tienda en Cluvi (registra webhooks) para aceptar pedidos. */
+export function useActivateBranchIntegrationStore() {
+  const qc = useQueryClient()
+
+  return useMutation({
+    mutationFn: ({ branchId, id }: { branchId: string; id: string }): Promise<ActivateStoreResponse> =>
+      activateBranchIntegrationStore(branchId, id),
+    onSuccess: (_data, variables) => {
+      qc.invalidateQueries({ queryKey: integrationsKeys.list(variables.branchId) })
+    },
+  })
+}
+
+/** Sincroniza el menú publicado de la sucursal hacia Cluvi. */
+export function useSyncBranchIntegrationMenu() {
+  const qc = useQueryClient()
+
+  return useMutation({
+    mutationFn: ({ branchId, id }: { branchId: string; id: string }): Promise<SyncMenuResponse> =>
+      syncBranchIntegrationMenu(branchId, id),
+    onSuccess: (_data, variables) => {
+      qc.invalidateQueries({ queryKey: integrationsKeys.list(variables.branchId) })
+    },
   })
 }

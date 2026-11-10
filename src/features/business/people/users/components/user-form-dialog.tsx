@@ -1,6 +1,7 @@
-import { useEffect } from "react"
+import { useEffect, useState } from "react"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
+import { Search } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
 import {
@@ -14,7 +15,11 @@ import {
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form"
 import { Input } from "@/components/ui/input"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { notify } from "@/hooks/use-notify"
 import { useTranslation } from "@/i18n/use-i18n"
+import { PersonLookupBanner } from "../../persons/person-lookup-banner"
+import { usePersonLookup } from "../../persons/use-person-lookup"
+import type { PersonResponseDto } from "../../persons/types"
 import { createUserSchema, type CreateUserFormValues } from "../schemas/user-schema"
 import { IdentificationType, type UserResponseDto } from "../types"
 
@@ -45,11 +50,52 @@ export function UserFormDialog({
 }: UserFormDialogProps) {
   const isEditMode = Boolean(userToEdit)
   const { t } = useTranslation("business-users-catalog")
+  const { t: tCommon } = useTranslation("common")
+  const { lookup, isLooking } = usePersonLookup()
+  const [foundPerson, setFoundPerson] = useState<PersonResponseDto | null>(null)
 
   const form = useForm<CreateUserFormValues>({
     resolver: zodResolver(createUserSchema(t)) as never,
     defaultValues,
   })
+
+  /**
+   * Consulta la tabla Persons compartida por tipo + número de identificación
+   * para precargar los datos de un colaborador ya registrado.
+   */
+  const runLookup = async (explicit: boolean) => {
+    const typeId = Number(form.getValues("identificationTypeId")) || IdentificationType.CedulaCiudadania
+    const number = form.getValues("identificationNumber") ?? ""
+
+    if (!number.trim()) {
+      if (explicit) notify.info(tCommon("person_not_found"))
+      return
+    }
+
+    const person = await lookup(typeId, number)
+    if (!person) {
+      setFoundPerson(null)
+      if (explicit) notify.info(tCommon("person_not_found"))
+      return
+    }
+
+    setFoundPerson(person)
+    form.reset({
+      ...form.getValues(),
+      firstName: person.firstName ?? "",
+      lastName: person.lastName ?? "",
+      phoneNumber: person.phoneNumber ?? null,
+      email: person.emailAddress ?? null,
+    })
+  }
+
+  const [prevOpen, setPrevOpen] = useState(open)
+  const [prevUserToEdit, setPrevUserToEdit] = useState(userToEdit)
+  if (open !== prevOpen || userToEdit !== prevUserToEdit) {
+    setPrevOpen(open)
+    setPrevUserToEdit(userToEdit)
+    if (open) setFoundPerson(null)
+  }
 
   useEffect(() => {
     if (!open) return
@@ -156,7 +202,13 @@ export function UserFormDialog({
                     render={({ field }) => (
                       <FormItem>
                         <FormLabel>{t("document_type")}</FormLabel>
-                        <Select onValueChange={(val) => field.onChange(Number(val))} value={String(field.value)}>
+                        <Select
+                          onValueChange={(val) => {
+                            field.onChange(Number(val))
+                            setFoundPerson(null)
+                          }}
+                          value={String(field.value)}
+                        >
                           <FormControl>
                             <SelectTrigger>
                               <SelectValue />
@@ -179,13 +231,37 @@ export function UserFormDialog({
                       <FormItem>
                         <FormLabel>{t("document_number")}</FormLabel>
                         <FormControl>
-                          <Input placeholder={t("document_number_placeholder")} {...field} value={field.value ?? ""} />
+                          <Input
+                            placeholder={t("document_number_placeholder")}
+                            {...field}
+                            value={field.value ?? ""}
+                            onChange={(e) => {
+                              field.onChange(e.target.value)
+                              setFoundPerson(null)
+                            }}
+                            onBlur={() => void runLookup(false)}
+                          />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
                     )}
                   />
                 </div>
+
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  className="w-full sm:w-auto"
+                  disabled={isLooking}
+                  onMouseDown={(e) => e.preventDefault()}
+                  onClick={() => void runLookup(true)}
+                >
+                  <Search className="mr-1 size-4" />
+                  {isLooking ? tCommon("person_looking") : tCommon("person_lookup")}
+                </Button>
+
+                {foundPerson && <PersonLookupBanner person={foundPerson} onDismiss={() => setFoundPerson(null)} />}
 
                 <FormField
                   control={form.control}

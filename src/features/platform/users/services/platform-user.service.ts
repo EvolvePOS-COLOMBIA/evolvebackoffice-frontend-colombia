@@ -1,31 +1,26 @@
 import { api } from "@/config/axios-client"
-import type { AppRole } from "@/features/auth/types"
 import type {
-  PlatformUser,
-  PlatformUserListResponse,
-  PlatformUserResponse,
   BackendPlatformRole,
   CreatePlatformUserRequest,
+  PlatformUser,
+  PlatformUserResponseDto,
   UpdatePlatformUserRequest,
-} from "../types/api"
+  PlatformUserRole,
+} from "../types"
 
-const BACKEND_ROLE_BY_APP_ROLE: Record<Exclude<AppRole, "BusinessAdmin">, BackendPlatformRole> = {
+const BACKEND_ROLE_BY_APP_ROLE: Record<PlatformUserRole, BackendPlatformRole> = {
   PlatformAdmin: "ADMIN",
   PlatformSubAdmin: "SUBADMIN",
   PlatformSupervisor: "SUPERVISOR",
 }
 
-const APP_ROLE_BY_BACKEND_ROLE: Record<BackendPlatformRole, AppRole> = {
+const APP_ROLE_BY_BACKEND_ROLE: Record<BackendPlatformRole, PlatformUserRole> = {
   ADMIN: "PlatformAdmin",
   SUBADMIN: "PlatformSubAdmin",
   SUPERVISOR: "PlatformSupervisor",
 }
 
-export function toBackendRole(role: AppRole): BackendPlatformRole {
-  if (role === "BusinessAdmin") {
-    throw new Error(`Role "${role}" is not supported for platform users.`)
-  }
-
+export function toBackendRole(role: PlatformUserRole): BackendPlatformRole {
   const mapped = BACKEND_ROLE_BY_APP_ROLE[role]
   if (!mapped) {
     throw new Error(`Unsupported platform role: "${role}".`)
@@ -34,7 +29,7 @@ export function toBackendRole(role: AppRole): BackendPlatformRole {
   return mapped
 }
 
-export function toAppRole(role: string | null | undefined): AppRole {
+export function toAppRole(role: string | null | undefined): PlatformUserRole {
   const normalized = (role ?? "").trim().toUpperCase()
   const mapped = APP_ROLE_BY_BACKEND_ROLE[normalized as BackendPlatformRole]
   if (!mapped) {
@@ -44,7 +39,7 @@ export function toAppRole(role: string | null | undefined): AppRole {
   return mapped
 }
 
-function mapPlatformUser(raw: PlatformUserListResponse | PlatformUserResponse): PlatformUser {
+function mapPlatformUser(raw: PlatformUserResponseDto): PlatformUser {
   return {
     id: raw.id,
     email: raw.email,
@@ -57,25 +52,28 @@ function mapPlatformUser(raw: PlatformUserListResponse | PlatformUserResponse): 
 }
 
 export async function listPlatformUsers(): Promise<PlatformUser[]> {
-  const response = await api.get<PlatformUserListResponse[]>("/api/platform-users")
+  const response = await api.get<PlatformUserResponseDto[]>("/api/platform-users")
   return response.data.map(mapPlatformUser)
 }
 
 export async function getPlatformUser(id: string): Promise<PlatformUser> {
-  const response = await api.get<PlatformUserResponse>(`/api/platform-users/${id}`)
+  const response = await api.get<PlatformUserResponseDto>(`/api/platform-users/${id}`)
   return mapPlatformUser(response.data)
 }
 
-export async function createPlatformUser(data: CreatePlatformUserRequest): Promise<PlatformUserResponse> {
-  const response = await api.post<PlatformUserResponse>("/api/platform-users", {
+export async function createPlatformUser(data: CreatePlatformUserRequest): Promise<PlatformUserResponseDto> {
+  const response = await api.post<PlatformUserResponseDto>("/api/platform-users", {
     ...data,
     role: toBackendRole(data.role),
   })
   return response.data
 }
 
-export async function updatePlatformUser(id: string, data: UpdatePlatformUserRequest): Promise<PlatformUserResponse> {
-  const response = await api.put<PlatformUserResponse>(`/api/platform-users/${id}`, {
+export async function updatePlatformUser(
+  id: string,
+  data: UpdatePlatformUserRequest
+): Promise<PlatformUserResponseDto> {
+  const response = await api.put<PlatformUserResponseDto>(`/api/platform-users/${id}`, {
     ...data,
     role: data.role ? toBackendRole(data.role) : undefined,
   })

@@ -13,20 +13,27 @@ export interface StatsData {
   grossSales: number
   taxes: number
   netSales: number
-  hash: number
-  negHash: number
-  netSalesWohash: number
   customers: number
-  voidTrans: number
+  voidedAmount: number
+  voidCount: number
   cancelTrans: number
+  /** Cantidad de transacciones POS canceladas en el periodo. */
+  cancelTransCount: number
   itemsSold: number
   webSales: number
+  webOrderSales: number
+  webOrderTax: number
+  manualOrderSales: number
+  manualOrderTax: number
+  totalSales: number
+  shippingCollected: number
 }
 
 export interface DepartmentSale {
   department: string
   sales: number
-  fill: string
+  /** Opcional: la data de API no trae color; el chart asigna paleta si falta. */
+  fill?: string
 }
 
 export interface TenderEntry {
@@ -34,6 +41,10 @@ export interface TenderEntry {
   quantity: number
   sales: number
   color: string
+  /** Categoría estable del medio (Cash, Transfer, Credit…) — F5. */
+  category?: string
+  /** Participación % sobre el total (0–100) — F5. */
+  share?: number
 }
 
 export interface YearOnYearMonth {
@@ -58,6 +69,9 @@ export type OrderStatus = "pending" | "preparing" | "ready" | "on_the_way" | "de
 
 export interface ActiveOrder {
   id: string
+  /** Sucursal de la orden (el dashboard es tenant-wide). */
+  branchId?: string | null
+  branchName?: string | null
   customerName: string
   phone: string
   items: string[]
@@ -107,40 +121,55 @@ export const dashboardData: DashboardData = {
       grossSales: 2_580_000,
       taxes: 139_320,
       netSales: 2_440_680,
-      hash: 0,
-      negHash: 0,
-      netSalesWohash: 0,
       customers: 87,
-      voidTrans: 0,
+      voidedAmount: 0,
+      voidCount: 0,
       cancelTrans: 0,
+      cancelTransCount: 0,
       itemsSold: 156,
       webSales: 34,
+      webOrderSales: 420_000,
+      webOrderTax: 63_000,
+      manualOrderSales: 180_000,
+      manualOrderTax: 27_000,
+      totalSales: 3_180_000,
+      shippingCollected: 0,
     },
     week: {
       grossSales: 18_450_000,
       taxes: 996_300,
       netSales: 17_453_700,
-      hash: 52_000,
-      negHash: 18_000,
-      netSalesWohash: 17_401_700,
       customers: 612,
-      voidTrans: 125_000,
+      voidedAmount: 125_000,
+      voidCount: 2,
       cancelTrans: 87_500,
+      cancelTransCount: 1,
       itemsSold: 1_080,
       webSales: 220,
+      webOrderSales: 2_200_000,
+      webOrderTax: 330_000,
+      manualOrderSales: 950_000,
+      manualOrderTax: 142_500,
+      totalSales: 21_600_000,
+      shippingCollected: 0,
     },
     month: {
       grossSales: 78_500_000,
       taxes: 4_239_000,
       netSales: 74_261_000,
-      hash: 184_000,
-      negHash: 62_000,
-      netSalesWohash: 74_077_000,
       customers: 2_540,
-      voidTrans: 450_000,
+      voidedAmount: 450_000,
+      voidCount: 9,
       cancelTrans: 225_000,
+      cancelTransCount: 4,
       itemsSold: 4_670,
       webSales: 950,
+      webOrderSales: 9_800_000,
+      webOrderTax: 1_470_000,
+      manualOrderSales: 4_100_000,
+      manualOrderTax: 615_000,
+      totalSales: 92_400_000,
+      shippingCollected: 0,
     },
   },
 

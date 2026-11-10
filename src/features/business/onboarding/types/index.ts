@@ -77,6 +77,9 @@ export interface BranchStepValues {
   phone: string
   email: string
   adminUserId: string
+  /** Coordenadas como texto en el formulario; el servicio las convierte a número. */
+  latitude: string
+  longitude: string
 }
 
 /**

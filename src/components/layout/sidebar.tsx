@@ -1,20 +1,25 @@
 import {
   BarChart3,
+  Bot,
   Building2,
+  Fingerprint,
   LayoutDashboard,
   LogOut,
   Mail,
   Package,
+  ScrollText,
   Settings,
   Users,
   ChevronsUpDown,
   Sparkles,
-  CreditCard,
-  Bell,
+  Truck,
+  User,
+  KeyRound,
 } from "lucide-react"
 import { Link, NavLink, useLocation } from "react-router-dom"
 import { useState } from "react"
 
+import { useAppStore } from "@/store/app-store"
 import { Separator } from "@/components/ui/separator"
 import {
   AlertDialog,
@@ -28,6 +33,9 @@ import {
 } from "@/components/ui/alert-dialog"
 import { Logo } from "@/components/icons/logo"
 import { useAuth } from "@/features/auth/hooks/use-auth"
+import { ChangePasswordDialog } from "@/features/auth/components/change-password-dialog"
+import { ProfileDialog } from "@/features/auth/components/profile-dialog"
+import { useTenantModules } from "@/features/business/branches/hooks/use-branch-modules"
 import { useNotify } from "@/hooks/use-notify"
 import { cn } from "@/lib/utils"
 import { useTranslation } from "@/i18n/use-i18n"
@@ -46,10 +54,15 @@ const platformNavigationItems = [
   { to: "/platform/tenants", labelKey: "tenants", icon: Building2 },
   { to: "/platform/users", labelKey: "users", icon: Users },
   { to: "/platform/email-settings", labelKey: "email_settings", icon: Mail },
+  { to: "/platform/ai-settings", labelKey: "ai_settings", icon: Bot },
+  { to: "/platform/logs", labelKey: "logs", icon: ScrollText },
+  { to: "/platform/audit", labelKey: "audit", icon: Fingerprint },
 ]
 
 const businessNavigationItems = [
   { to: "/business/dashboard", labelKey: "dashboard", icon: LayoutDashboard },
+  { to: "/business/orders", labelKey: "orders", icon: Truck },
+  { to: "/business/ai-chat", labelKey: "ai_chat", icon: Sparkles },
   { to: "/business/items", labelKey: "items", icon: Package },
   { to: "/business/inventory", labelKey: "inventory", icon: Building2 },
   { to: "/business/people", labelKey: "people", icon: Users },
@@ -62,11 +75,15 @@ interface SidebarProps {
 }
 
 export function Sidebar({ isCollapsed = false }: SidebarProps) {
+  // En modo maximizado el aside colapsa a ancho 0 con transición en vez de
+  // desmontarse, para que la salida sea suave (estilo Jira).
+  const isMaximized = useAppStore((s) => s.isMaximized)
+
   return (
     <aside
       className={cn(
-        "hidden h-svh shrink-0 border-r border-border/70 bg-sidebar/90 transition-all duration-300 lg:block",
-        isCollapsed ? "w-20" : "w-70"
+        "hidden h-svh shrink-0 overflow-hidden border-r border-border/70 bg-sidebar/90 transition-all duration-300 ease-out lg:block",
+        isMaximized ? "w-0 border-r-0" : isCollapsed ? "w-20" : "w-70"
       )}
     >
       <SidebarContent isCollapsed={isCollapsed} />
@@ -83,10 +100,25 @@ export function SidebarContent({
   isCollapsed?: boolean
   onNavigate?: () => void
 }) {
-  const { defaultRoute, isPlatformAdmin } = useAuth()
+  const { defaultRoute, isPlatformAdmin, isBusinessAdmin } = useAuth()
   const { pathname } = useLocation()
   const { t } = useTranslation()
-  const navigationItems = isPlatformAdmin ? platformNavigationItems : businessNavigationItems
+
+  // El módulo Órdenes solo se muestra si el tenant tiene al menos una
+  // licencia (módulo de tenant) asignada y habilitada.
+  const { data: tenantModules, isLoading: tenantModulesLoading } = useTenantModules(isBusinessAdmin)
+  const hasOrdersLicense = isPlatformAdmin || (tenantModules ?? []).some((m) => m.isEnabled)
+  // El Asistente IA requiere específicamente el módulo "IA" habilitado.
+  const hasAiLicense = isPlatformAdmin || (tenantModules ?? []).some((m) => m.moduleCode === "IA" && m.isEnabled)
+
+  const baseNavigationItems = isPlatformAdmin ? platformNavigationItems : businessNavigationItems
+  const navigationItems = baseNavigationItems.filter((item) => {
+    if (item.labelKey !== "orders" && item.labelKey !== "ai_chat") return true
+    // Evita parpadeo: oculto hasta confirmar licencias (salvo platform admin).
+    if (isPlatformAdmin) return true
+    if (tenantModulesLoading) return false
+    return item.labelKey === "orders" ? hasOrdersLicense : hasAiLicense
+  })
 
   return (
     <div
@@ -139,6 +171,11 @@ export function SidebarContent({
                         | "people"
                         | "reports"
                         | "settings"
+                        | "orders"
+                        | "ai_chat"
+                        | "logs"
+                        | "audit"
+                        | "ai_settings"
                     )
                   : undefined
               }
@@ -164,6 +201,11 @@ export function SidebarContent({
                       | "settings"
                       | "users"
                       | "email_settings"
+                      | "orders"
+                      | "ai_chat"
+                      | "logs"
+                      | "audit"
+                      | "ai_settings"
                   )}
                 </span>
               )}
@@ -195,6 +237,8 @@ export function SidebarUserMenu({ isCollapsed = false }: SidebarUserMenuProps) {
   const notify = useNotify()
   const { t } = useTranslation()
   const [openLogoutDialog, setOpenLogoutDialog] = useState(false)
+  const [openProfileDialog, setOpenProfileDialog] = useState(false)
+  const [openChangePasswordDialog, setOpenChangePasswordDialog] = useState(false)
 
   const handleLogout = () => {
     logout()
@@ -243,20 +287,13 @@ export function SidebarUserMenu({ isCollapsed = false }: SidebarUserMenuProps) {
             </DropdownMenuLabel>
             <DropdownMenuSeparator />
             <DropdownMenuGroup>
-              <DropdownMenuItem className="cursor-pointer">
-                <Sparkles className="mr-2 size-4" />
-                <span>Upgrade to Pro</span>
+              <DropdownMenuItem className="cursor-pointer" onClick={() => setOpenProfileDialog(true)}>
+                <User className="mr-2 size-4" />
+                <span>{t("my_profile")}</span>
               </DropdownMenuItem>
-            </DropdownMenuGroup>
-            <DropdownMenuSeparator />
-            <DropdownMenuGroup>
-              <DropdownMenuItem className="cursor-pointer">
-                <CreditCard className="mr-2 size-4" />
-                <span>Billing</span>
-              </DropdownMenuItem>
-              <DropdownMenuItem className="cursor-pointer">
-                <Bell className="mr-2 size-4" />
-                <span>Notifications</span>
+              <DropdownMenuItem className="cursor-pointer" onClick={() => setOpenChangePasswordDialog(true)}>
+                <KeyRound className="mr-2 size-4" />
+                <span>{t("change_password")}</span>
               </DropdownMenuItem>
             </DropdownMenuGroup>
             <DropdownMenuSeparator />
@@ -270,6 +307,24 @@ export function SidebarUserMenu({ isCollapsed = false }: SidebarUserMenuProps) {
           </DropdownMenuContent>
         </DropdownMenu>
       </div>
+
+      {/* Modal de perfil (solo lectura) */}
+      <ProfileDialog
+        open={openProfileDialog}
+        onOpenChange={setOpenProfileDialog}
+        onChangePassword={() => {
+          setOpenProfileDialog(false)
+          setOpenChangePasswordDialog(true)
+        }}
+      />
+
+      {/* Modal de cambio de contraseña (opcional, dismissable) */}
+      <ChangePasswordDialog
+        open={openChangePasswordDialog}
+        onPasswordChanged={() => setOpenChangePasswordDialog(false)}
+        dismissable
+        onOpenChange={setOpenChangePasswordDialog}
+      />
 
       {/* Modal de confirmación de salida */}
       <AlertDialog open={openLogoutDialog} onOpenChange={setOpenLogoutDialog}>

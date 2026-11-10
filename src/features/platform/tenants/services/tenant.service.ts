@@ -33,11 +33,17 @@ function mapTenantResponseToTenant(dto: TenantResponseDto): Tenant {
     currentRegisterCount: dto.currentRegisterCount,
     subdomain: dto.subdomain ?? "",
     identificationNumber: dto.identificationNumber ?? "",
+    timeZoneId: dto.timeZoneId ?? null,
     identificationTypeId: dto.identificationTypeId ?? 0,
     maxBranches: dto.maxBranches ?? 0,
     maxUsers: dto.maxUsers ?? 0,
     serialCodes: dto.serialCodes ?? [],
     createdAt: dto.createdAt,
+    adminUsername: dto.adminUsername ?? null,
+    adminFullName: dto.adminFullName ?? null,
+    adminEmail: dto.adminEmail ?? null,
+    adminIdentification: dto.adminIdentification ?? null,
+    adminIsActive: dto.adminIsActive ?? null,
   }
 }
 
@@ -59,11 +65,11 @@ function mapListResponseToPagedTenants(dto: PagedTenantListResponse): PagedTenan
       rejectedAt: null,
       maxRegisters: item.maxRegisters,
       currentRegisterCount: 0,
-      subdomain: "",
-      identificationNumber: "",
-      identificationTypeId: 0,
-      maxBranches: 0,
-      maxUsers: 0,
+      subdomain: item.subdomain ?? "",
+      identificationNumber: item.identificationNumber ?? "",
+      identificationTypeId: item.identificationTypeId ?? 0,
+      maxBranches: item.maxBranches ?? 0,
+      maxUsers: item.maxUsers ?? 0,
       serialCodes: [],
       createdAt: item.createdAt,
     })),
@@ -110,7 +116,7 @@ export async function deleteTenant(id: string): Promise<void> {
 
 export async function getSerialCodes(tenantId: string): Promise<PosSerialCodeResponseDto[]> {
   const response = await api.get<PosSerialCodeResponseDto[]>(`/api/Tenants/${tenantId}/serial-codes`)
-  return response.data
+  return Array.isArray(response.data) ? response.data : []
 }
 
 export async function decommissionSerial(

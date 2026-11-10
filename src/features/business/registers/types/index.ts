@@ -4,6 +4,7 @@ export type {
   UpdateRegisterDto,
   RegisterStatus,
   PagedRegistersResponse,
+  SerialCodeSummaryDto,
 } from "./api"
 
 export interface Register {

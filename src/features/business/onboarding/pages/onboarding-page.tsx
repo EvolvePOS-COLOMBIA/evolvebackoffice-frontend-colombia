@@ -60,6 +60,8 @@ export function OnboardingPage() {
             address: firstBranch.address,
             phone: firstBranch.phone,
             email: firstBranch.email,
+            latitude: firstBranch.latitude,
+            longitude: firstBranch.longitude,
             adminUserId: firstBranch.adminUserId,
           },
           firstBranch.id
@@ -138,6 +140,8 @@ export function OnboardingPage() {
       address: values.address,
       phone: values.phone,
       email: values.email,
+      latitude: values.latitude,
+      longitude: values.longitude,
       adminUserId: values.adminUserId || userId,
     }
 

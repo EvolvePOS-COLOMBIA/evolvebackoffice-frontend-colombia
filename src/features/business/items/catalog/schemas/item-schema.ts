@@ -9,8 +9,8 @@ export const createItemSchema = (t: TFunction) =>
     sku: z.string().nullable().optional(),
     description: z.string().nullable().optional(),
     plu: z.coerce.number().int().min(0, t("plu_min")),
-    departmentId: z.coerce.number().int().min(1, t("department_required")),
-    itemType: z.coerce.number().int().min(1, t("item_type_required")),
+    departmentId: z.coerce.number().int().min(0, t("department_required")),
+    itemType: z.coerce.number().int().min(0, t("item_type_required")),
     unitOfMeasure: z.string().nullable().optional(),
     taxable: z.boolean().default(false),
     webItem: z.boolean().default(false),
@@ -22,6 +22,9 @@ export const createItemSchema = (t: TFunction) =>
     brandId: z.coerce.number().int().default(0),
     itemPresentationId: z.coerce.number().int().default(0),
     askQuantity: z.coerce.number().int().default(0),
+    trackInventory: z.boolean().default(true),
+    isSellable: z.boolean().default(true),
+    baseUnit: z.coerce.number().int().min(0).max(2).default(0),
   })
 
 export const updateItemSchema = (t: TFunction) =>

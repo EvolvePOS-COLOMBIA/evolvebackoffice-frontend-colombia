@@ -3,11 +3,18 @@ import { useCountUp } from "@/hooks/use-count-up"
 import { useLocaleFormat } from "@/hooks/use-locale-format"
 import { useTranslation } from "@/i18n/use-i18n"
 import type { StatsData } from "../mock/dashboard-data"
-import { DollarSign, Receipt, Wallet, Hash, CreditCard, Users, XCircle, Ban, Package, Globe } from "lucide-react"
+import { DollarSign, Users, XCircle, Ban, Package, Globe, Truck, Undo2, HandCoins, Banknote } from "lucide-react"
 import { CHART_PRIMARY, CHART_SECONDARY } from "../constants"
 
 interface StatsGridProps {
   stats: StatsData
+}
+
+type StatIcon = React.ComponentType<{ className?: string; style?: React.CSSProperties }>
+
+interface BreakdownRow {
+  label: string
+  value: number
 }
 
 interface StatCardProps {
@@ -15,16 +22,16 @@ interface StatCardProps {
   value: number
   style?: "currency" | "number"
   accent?: string
-  decimals?: number
-  compact?: boolean
-  icon: React.ComponentType<{ className?: string; style?: React.CSSProperties }>
+  icon: StatIcon
+  /** Filas secundarias bajo el valor principal (p. ej. "Sin impuestos" / "Impuestos"). */
+  breakdown?: BreakdownRow[]
 }
 
-function StatCard({ label, value, accent, decimals = 0, style = "currency", icon: Icon }: StatCardProps) {
+function StatCard({ label, value, accent, style = "currency", icon: Icon, breakdown }: StatCardProps) {
   const { locale, formatCurrency, formatNumber } = useLocaleFormat()
   const display = useCountUp(value, {
     locale,
-    decimals,
+    decimals: 0,
     formatter: style === "currency" ? formatCurrency : formatNumber,
   })
 
@@ -46,36 +53,116 @@ function StatCard({ label, value, accent, decimals = 0, style = "currency", icon
           </div>
           <p className="text-[10px] font-semibold tracking-wider text-muted-foreground uppercase">{label}</p>
         </div>
-        <p className="text-lg font-bold tracking-tight text-foreground tabular-nums">{display}</p>
+        <p className="text-lg font-bold tracking-tight text-foreground tabular-nums sm:text-xl">{display}</p>
+
+        {breakdown && breakdown.length > 0 && (
+          <div className="mt-2 space-y-1 border-t border-border/60 pt-2">
+            {breakdown.map((row) => (
+              <BreakdownLine key={row.label} label={row.label} value={row.value} />
+            ))}
+          </div>
+        )}
       </CardContent>
     </Card>
+  )
+}
+
+function BreakdownLine({ label, value }: BreakdownRow) {
+  const { formatCurrency } = useLocaleFormat()
+
+  return (
+    <div className="flex items-baseline justify-between gap-2 text-[11px]">
+      <span className="truncate text-muted-foreground">{label}</span>
+      <span className="shrink-0 font-semibold text-foreground tabular-nums">{formatCurrency(value)}</span>
+    </div>
   )
 }
 
 export function StatsGrid({ stats }: StatsGridProps) {
   const { t } = useTranslation("business-dashboard")
 
+  // Impuesto total recaudado en el periodo (POS + órdenes web + manuales).
+  const totalTaxes = stats.taxes + stats.webOrderTax + stats.manualOrderTax
+
   return (
     <div className="space-y-2">
-      <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-5">
-        <StatCard label={t("gross_sales")} value={stats.grossSales} accent={CHART_PRIMARY} icon={DollarSign} />
-        <StatCard label={t("taxes")} value={stats.taxes} accent={CHART_SECONDARY} icon={Receipt} />
-        <StatCard label={t("net_sales")} value={stats.netSales} accent={CHART_PRIMARY} icon={Wallet} />
-        <StatCard label={t("hash")} value={stats.hash} accent={CHART_SECONDARY} icon={Hash} />
-        <StatCard label={t("net_sales_wohash")} value={stats.netSalesWohash} accent={CHART_PRIMARY} icon={CreditCard} />
+      {/* Orígenes de ventas: cada card muestra el total (con impuestos) y su
+          desglose "sin impuestos / impuestos". POS + Web + Manuales = Total. */}
+      <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-4">
+        <StatCard
+          label={t("gross_sales")}
+          value={stats.grossSales}
+          accent={CHART_PRIMARY}
+          icon={DollarSign}
+          breakdown={[
+            { label: t("without_tax"), value: stats.netSales },
+            { label: t("taxes"), value: stats.taxes },
+          ]}
+        />
+        <StatCard
+          label={t("web_sales")}
+          value={stats.webOrderSales}
+          accent={CHART_SECONDARY}
+          icon={Globe}
+          breakdown={[
+            { label: t("without_tax"), value: stats.webOrderSales - stats.webOrderTax },
+            { label: t("taxes"), value: stats.webOrderTax },
+          ]}
+        />
+        <StatCard
+          label={t("manual_sales")}
+          value={stats.manualOrderSales}
+          accent={CHART_PRIMARY}
+          icon={HandCoins}
+          breakdown={[
+            { label: t("without_tax"), value: stats.manualOrderSales - stats.manualOrderTax },
+            { label: t("taxes"), value: stats.manualOrderTax },
+          ]}
+        />
+        <StatCard
+          label={t("sales_total")}
+          value={stats.totalSales}
+          accent={CHART_SECONDARY}
+          icon={Banknote}
+          breakdown={[
+            { label: t("without_tax"), value: stats.totalSales - totalTaxes },
+            { label: t("taxes"), value: totalTaxes },
+          ]}
+        />
       </div>
-      <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-5">
+
+      {/* Métricas del periodo:6 cards que reparten exactas en2/3/6 columnas
+          (sin huecos en ningún breakpoint). */}
+      <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-6">
         <StatCard label={t("customers")} value={stats.customers} style="number" accent={CHART_SECONDARY} icon={Users} />
-        <StatCard label={t("void_trans")} value={stats.voidTrans} accent={CHART_PRIMARY} icon={XCircle} />
-        <StatCard label={t("cancel_trans")} value={stats.cancelTrans} accent={CHART_SECONDARY} icon={Ban} />
+        <StatCard label={t("voided_amount")} value={stats.voidedAmount} accent={CHART_PRIMARY} icon={XCircle} />
+        <StatCard
+          label={t("void_count")}
+          value={stats.voidCount}
+          style="number"
+          accent={CHART_SECONDARY}
+          icon={Undo2}
+        />
+        {/* Trans. Canceladas: cantidad de ventas de caja canceladas en el
+            periodo (antes se mostraba el monto con formato de moneda). */}
+        <StatCard
+          label={t("cancel_trans")}
+          value={stats.cancelTransCount}
+          style="number"
+          accent={CHART_PRIMARY}
+          icon={Ban}
+        />
         <StatCard
           label={t("items_sold")}
           value={stats.itemsSold}
           style="number"
-          accent={CHART_PRIMARY}
+          accent={CHART_SECONDARY}
           icon={Package}
         />
-        <StatCard label={t("web_sales")} value={stats.webSales} style="number" accent={CHART_SECONDARY} icon={Globe} />
+        {/* Domicilios cobrados: dinero recibido que NO se contabiliza como
+            venta (regla contable — el informe de cierre sumará ventas +
+            domicilios). */}
+        <StatCard label={t("shipping_collected")} value={stats.shippingCollected} accent={CHART_PRIMARY} icon={Truck} />
       </div>
     </div>
   )

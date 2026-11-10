@@ -1,17 +1,27 @@
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
-import { Store } from "lucide-react"
+import { CheckSquare, Loader2, Square, Store } from "lucide-react"
 
+import { Button } from "@/components/ui/button"
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form"
 import { Input } from "@/components/ui/input"
 import { Switch } from "@/components/ui/switch"
 import { cn } from "@/lib/utils"
 import { useTranslation } from "@/i18n/use-i18n"
+import { notify } from "@/hooks/use-notify"
+import { useGeolocation, type GeolocationErrorCode } from "@/hooks/use-geolocation"
 
 import { branchSchema, type BranchFormValues } from "../schemas/onboarding-schemas"
 import type { BranchStepValues, TenantSettings } from "../types"
 import { StepCard, StepFooter } from "./step-frame"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+
+const GEOLOCATION_ERROR_KEYS: Record<GeolocationErrorCode, string> = {
+  unsupported: "geolocation_unsupported",
+  permission_denied: "geolocation_denied",
+  unavailable: "geolocation_unavailable",
+  timeout: "geolocation_timeout",
+}
 
 type StepBranchProps = {
   initialValues: BranchStepValues | null
@@ -37,6 +47,7 @@ export function StepBranch({
   onSubmit,
 }: StepBranchProps) {
   const { t } = useTranslation("business-onboarding")
+  const { isLocating, requestLocation } = useGeolocation()
 
   const form = useForm<BranchFormValues>({
     resolver: zodResolver(branchSchema(t)) as never,
@@ -46,9 +57,26 @@ export function StepBranch({
       address: initialValues?.address ?? "",
       phone: initialValues?.phone ?? "",
       email: initialValues?.email ?? "",
+      latitude: initialValues?.latitude ?? "",
+      longitude: initialValues?.longitude ?? "",
       adminUserId: initialValues?.adminUserId ?? adminUserId,
     },
   })
+
+  /** Rellena únicamente latitud y longitud con la posición del navegador. */
+  const handleUseCurrentLocation = async () => {
+    const outcome = await requestLocation()
+
+    if (!outcome.ok) {
+      notify.error(t(GEOLOCATION_ERROR_KEYS[outcome.code]))
+      return
+    }
+
+    form.setValue("latitude", String(Number(outcome.latitude.toFixed(7))), { shouldValidate: true })
+    form.setValue("longitude", String(Number(outcome.longitude.toFixed(7))), { shouldValidate: true })
+  }
+
+  const hasLocation = Boolean(form.watch("latitude")) && Boolean(form.watch("longitude"))
 
   /** Copia dirección, teléfono y correo del negocio a la sede, o los limpia. */
   const handleToggleSame = (checked: boolean) => {
@@ -106,20 +134,6 @@ export function StepBranch({
 
             <FormField
               control={form.control}
-              name="address"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>{t("address")}</FormLabel>
-                  <FormControl>
-                    <Input className="bg-white dark:bg-secondary" placeholder={t("address_placeholder")} {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            <FormField
-              control={form.control}
               name="identification"
               render={({ field }) => (
                 <FormItem>
@@ -138,23 +152,9 @@ export function StepBranch({
 
             <FormField
               control={form.control}
-              name="phone"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>{t("phone")}</FormLabel>
-                  <FormControl>
-                    <Input className="bg-white dark:bg-secondary" placeholder={t("landline_placeholder")} {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            <FormField
-              control={form.control}
               name="email"
               render={({ field }) => (
-                <FormItem>
+                <FormItem className="flex-1">
                   <FormLabel>{t("email")}</FormLabel>
                   <FormControl>
                     <Input
@@ -170,9 +170,23 @@ export function StepBranch({
 
             <FormField
               control={form.control}
+              name="phone"
+              render={({ field }) => (
+                <FormItem className="flex-1">
+                  <FormLabel>{t("phone")}</FormLabel>
+                  <FormControl>
+                    <Input className="bg-white dark:bg-secondary" placeholder={t("landline_placeholder")} {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
               name="adminUserId"
               render={({ field }) => (
-                <FormItem>
+                <FormItem className="flex-1">
                   <FormLabel>{t("branch_admin")}</FormLabel>
                   <Select onValueChange={field.onChange} value={field.value}>
                     <FormControl>
@@ -188,6 +202,86 @@ export function StepBranch({
                 </FormItem>
               )}
             />
+
+            <FormField
+              control={form.control}
+              name="address"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>{t("address")}</FormLabel>
+                  <FormControl>
+                    <Input className="bg-white dark:bg-secondary" placeholder={t("address_placeholder")} {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <div
+              className={cn(
+                "flex items-center gap-5 rounded-2xl border bg-white px-4 py-3 transition-colors dark:bg-secondary"
+              )}
+            >
+              <div className="min-w-0 flex-1">
+                <p className="text-sm font-medium">{t("geolocation_use")}</p>
+                <p className="text-[13px] leading-4.5 text-muted-foreground">{t("geolocation_hint")}</p>
+              </div>
+              <Button
+                type="button"
+                size="icon"
+                variant={hasLocation ? "default" : "outline"}
+                disabled={isLocating}
+                onClick={handleUseCurrentLocation}
+              >
+                {isLocating ? (
+                  <Loader2 className="size-5 animate-spin text-primary" />
+                ) : hasLocation ? (
+                  <CheckSquare className="size-5" />
+                ) : (
+                  <Square className="size-5 text-muted-foreground" />
+                )}
+              </Button>
+            </div>
+
+            <div className="flex gap-4">
+              <FormField
+                control={form.control}
+                name="latitude"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>{t("latitude")}</FormLabel>
+                    <FormControl>
+                      <Input
+                        className="bg-white dark:bg-secondary"
+                        inputMode="decimal"
+                        placeholder={t("latitude_placeholder")}
+                        {...field}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="longitude"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>{t("longitude")}</FormLabel>
+                    <FormControl>
+                      <Input
+                        className="bg-white dark:bg-secondary"
+                        inputMode="decimal"
+                        placeholder={t("longitude_placeholder")}
+                        {...field}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
           </div>
         </StepCard>
 

@@ -39,9 +39,21 @@ type ChangePasswordFormValues = {
 type ChangePasswordDialogProps = {
   open: boolean
   onPasswordChanged: () => void
+  /**
+   * true → uso opcional (p. ej. desde el menú de usuario): permite cerrar el
+   * diálogo (Esc/click fuera/X) y oculta el botón de logout del footer.
+   * default false → flujo forzado de cambio de contraseña (bloquea cierre).
+   */
+  dismissable?: boolean
+  onOpenChange?: (open: boolean) => void
 }
 
-export function ChangePasswordDialog({ open, onPasswordChanged }: ChangePasswordDialogProps) {
+export function ChangePasswordDialog({
+  open,
+  onPasswordChanged,
+  dismissable = false,
+  onOpenChange,
+}: ChangePasswordDialogProps) {
   const { t } = useTranslation("auth")
   const { logout } = useAuth()
   const changePasswordMutation = useChangePassword()
@@ -94,9 +106,23 @@ export function ChangePasswordDialog({ open, onPasswordChanged }: ChangePassword
     logout()
   }
 
+  const handleOpenChange = (nextOpen: boolean) => {
+    if (!nextOpen) {
+      form.reset()
+    }
+    if (dismissable) {
+      onOpenChange?.(nextOpen)
+    }
+  }
+
   return (
-    <Dialog open={open} onOpenChange={() => {}}>
-      <DialogContent className="w-[calc(100%-2rem)] max-w-md" onPointerDownOutside={(e) => e.preventDefault()}>
+    <Dialog open={open} onOpenChange={dismissable ? handleOpenChange : () => {}}>
+      <DialogContent
+        className="w-[calc(100%-2rem)] max-w-md"
+        onPointerDownOutside={(e) => {
+          if (!dismissable) e.preventDefault()
+        }}
+      >
         <DialogHeader className="space-y-3">
           <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-primary/10">
             <ShieldCheck className="h-6 w-6 text-primary" />
@@ -213,10 +239,12 @@ export function ChangePasswordDialog({ open, onPasswordChanged }: ChangePassword
             <p className="text-[13px] leading-[18px] text-muted-foreground">{t("password_policy_hint")}</p>
 
             <DialogFooter className="flex flex-col gap-2 sm:flex-row">
-              <Button type="button" variant="outline" onClick={handleLogout} className="w-full sm:w-auto">
-                <LogOut className="mr-2 h-4 w-4" />
-                {t("logout")}
-              </Button>
+              {!dismissable && (
+                <Button type="button" variant="outline" onClick={handleLogout} className="w-full sm:w-auto">
+                  <LogOut className="mr-2 h-4 w-4" />
+                  {t("logout")}
+                </Button>
+              )}
               <Button type="submit" disabled={changePasswordMutation.isPending} className="w-full sm:w-auto">
                 {changePasswordMutation.isPending ? t("saving") : t("save_password")}
               </Button>

@@ -32,3 +32,18 @@ export interface PagedRegistersResponse {
   data: RegisterResponseDto[]
   totalCount: number
 }
+
+/** Serial POS del tenant con su estado y la caja a la que está asignado. */
+export interface SerialCodeSummaryDto {
+  id: string
+  serialCode: string
+  status: "Unassigned" | "Activated" | "Decommissioned"
+  machineIdentifier?: string | null
+  deviceName?: string | null
+  activatedAt?: string | null
+  lastSeenAt?: string | null
+  isAssignedToRegister: boolean
+  registerName?: string | null
+  registerCode?: string | null
+  createdAt: string
+}

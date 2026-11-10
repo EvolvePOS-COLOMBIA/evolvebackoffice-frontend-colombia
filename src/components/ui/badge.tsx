@@ -2,13 +2,15 @@ import type { ReactNode } from "react"
 
 import { cn } from "@/lib/utils"
 
+export type BadgeTone = "neutral" | "primary" | "success" | "warning" | "danger" | "info" | "purple" | "orange"
+
 type BadgeProps = {
   children: ReactNode
-  tone?: "neutral" | "primary" | "success" | "warning" | "danger" | "info" | "purple" | "orange"
+  tone?: BadgeTone
   className?: string
 }
 
-const toneClasses: Record<NonNullable<BadgeProps["tone"]>, string> = {
+export const badgeTones: Record<BadgeTone, string> = {
   neutral: "border-border/70 bg-background/60 text-muted-foreground ",
   primary: "border-primary bg-primary/10 dark:text-primary text-primary",
   success: "border-emerald-400/30 bg-emerald-500/10 dark:text-emerald-200 text-emerald-500",
@@ -24,7 +26,7 @@ export function Badge({ children, tone = "neutral", className }: BadgeProps) {
     <span
       className={cn(
         "inline-flex items-center rounded-full border px-2.5 py-1 text-[11px] font-semibold tracking-[0.18em] uppercase",
-        toneClasses[tone],
+        badgeTones[tone],
         className
       )}
     >

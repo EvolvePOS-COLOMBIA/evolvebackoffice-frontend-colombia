@@ -42,6 +42,7 @@
   "choose_status": "Seleccionar estado",
   "search_placeholder": "Buscar terminal por nombre, código o sucursal...",
   "no_results": "No se encontraron terminales",
+  "search_desc": "Prueba con otro nombre.",
   "results": "resultados",
   "previous": "Anterior",
   "next": "Siguiente",
@@ -55,5 +56,15 @@
   "empty_desc": "Crea la primera terminal POS para empezar a operar.",
   "total_registers": "Total Terminales",
   "active_registers": "Terminales Activas",
-  "summary": "Resumen"
+  "summary": "Resumen",
+  "error_save": "No se pudo guardar la terminal",
+  "clear_search": "Limpiar búsqueda",
+  "refresh": "Actualizar",
+  "serials_pool_title": "Seriales POS del tenant",
+  "serials_pool_desc": "Pool de licencias POS: disponibles, en uso y dadas de baja.",
+  "serials_pool_empty": "Este tenant no tiene seriales POS registrados.",
+  "serials_pool_register": "Caja asignada",
+  "serial_status_activated": "Activado",
+  "serial_status_unassigned": "Sin asignar",
+  "serial_status_decommissioned": "Descomisionado"
 }

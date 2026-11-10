@@ -15,7 +15,7 @@ import { useAuth } from "@/features/auth/hooks/use-auth"
 import { notify } from "@/hooks/use-notify"
 import { formatDateTime } from "@/utils/format"
 import { useTranslation } from "@/i18n/use-i18n"
-import type { PlatformUser, AppRole } from "@/features/platform/users/types"
+import type { PlatformUser, PlatformUserRole } from "@/features/platform/users/types"
 
 export function PlatformUsersPage() {
   const [isDialogOpen, setIsDialogOpen] = useState(false)
@@ -41,7 +41,7 @@ export function PlatformUsersPage() {
     }
   }
 
-  const getRoleBadge = (role: AppRole) => {
+  const getRoleBadge = (role: PlatformUserRole) => {
     switch (role) {
       case "PlatformAdmin":
         return <Badge tone="primary">{t("role_admin")}</Badge>

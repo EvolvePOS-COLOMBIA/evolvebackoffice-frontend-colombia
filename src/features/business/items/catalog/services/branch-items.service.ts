@@ -22,7 +22,7 @@ export async function getBranchItems(
   const { data } = await api.get<{ data: BranchItemResponseDto[]; totalCount: number }>(
     `/api/branches/${branchId}/items`,
     {
-      params: { pageNumber, pageSize },
+      params: { pageNumber, pageSize, search: params.search || undefined },
     }
   )
   return {
@@ -72,4 +72,33 @@ export async function adjustBranchItemStock(
 
 export async function deleteBranchItem(branchId: string, id: string): Promise<void> {
   await api.delete(`/api/branches/${branchId}/items/${id}`)
+}
+
+/** Reactiva un producto en la sucursal (reverse del inactivar). */
+export async function activateBranchItem(branchId: string, id: string): Promise<void> {
+  await api.post(`/api/branches/${branchId}/items/${id}/activate`)
+}
+
+/** Inactiva un producto en la sucursal sin eliminarlo (reversible). */
+export async function deactivateBranchItem(branchId: string, id: string): Promise<void> {
+  await api.post(`/api/branches/${branchId}/items/${id}/deactivate`)
+}
+
+export interface BranchItemConfig {
+  id: string
+  useGlobalTaxes: boolean
+  useGlobalModifiers: boolean
+}
+
+/**
+ * Cambia el modo global/personalizado de impuestos y/o modificadores del ítem en la sucursal.
+ * Al personalizar (false) el backend copia la configuración global si no existe copia propia.
+ */
+export async function updateBranchItemConfig(
+  branchId: string,
+  id: string,
+  dto: { useGlobalTaxes?: boolean; useGlobalModifiers?: boolean; sellsHere?: boolean }
+): Promise<BranchItemConfig> {
+  const { data } = await api.put<BranchItemConfig>(`/api/branches/${branchId}/items/${id}/config`, dto)
+  return data
 }

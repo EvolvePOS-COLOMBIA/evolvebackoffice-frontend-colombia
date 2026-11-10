@@ -1,7 +1,9 @@
 import { api } from "@/config/axios-client"
 import type {
+  ActivateStoreResponse,
   BranchIntegrationResponseDto,
   CreateBranchIntegrationDto,
+  SyncMenuResponse,
   TestConnectionResult,
   UpdateBranchIntegrationDto,
 } from "../types/integrations-api"
@@ -52,5 +54,29 @@ export async function deleteBranchIntegration(branchId: string, id: string): Pro
 
 export async function testBranchIntegrationConnection(branchId: string, id: string): Promise<TestConnectionResult> {
   const { data } = await api.post<TestConnectionResult>(`${BASE}/${branchId}/integrations/${id}/test-connection`)
+  return data
+}
+
+/* ─── Activate store (Cluvi) ─── */
+
+/**
+ * Activa la tienda en Cluvi para aceptar pedidos. El backend configura los
+ * webhooks (new_order → webhook del backend, ping → /health) que Cluvi
+ * exige al activar y devuelve las URLs registradas.
+ */
+export async function activateBranchIntegrationStore(branchId: string, id: string): Promise<ActivateStoreResponse> {
+  const { data } = await api.post<ActivateStoreResponse>(`${BASE}/${branchId}/integrations/${id}/activate-store`)
+  return data
+}
+
+/* ─── Sync menu (Cluvi) ─── */
+
+/**
+ * Sincroniza el menú de la sucursal hacia Cluvi. El backend construye el menú
+ * desde los artículos con IsPublishedForWeb y sus modificadores — no se
+ * envían productos en la petición.
+ */
+export async function syncBranchIntegrationMenu(branchId: string, id: string): Promise<SyncMenuResponse> {
+  const { data } = await api.put<SyncMenuResponse>(`${BASE}/${branchId}/integrations/${id}/sync-menu`)
   return data
 }

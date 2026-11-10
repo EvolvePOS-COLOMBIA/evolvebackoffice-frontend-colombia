@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from "vitest"
 import axios from "axios"
 
-import { getTenantModules, updateTenantModule } from "@/features/platform/tenants/services/tenant-modules.service"
+import { getTenantModules } from "@/features/platform/tenants/services/tenant-modules.service"
 import type { TenantModuleDto } from "@/features/platform/tenants/types/api"
 import type { TenantModule } from "@/features/platform/tenants/types"
 
@@ -9,7 +9,6 @@ vi.mock("axios")
 
 const FAKE_TOKEN = "fake-token-123"
 const FAKE_TENANT_ID = "TENANT-001"
-const FAKE_MODULE_ID = "MODULE-PUB-001"
 
 const mockDto1: TenantModuleDto = {
   id: "MODULE-PUB-001",
@@ -36,20 +35,18 @@ const mockDto2: TenantModuleDto = {
 describe("tenant-modules.service", () => {
   let mockGet: ReturnType<typeof vi.fn>
   let mockPut: ReturnType<typeof vi.fn>
-  let mockCreate: ReturnType<typeof vi.fn>
 
   beforeEach(() => {
     vi.clearAllMocks()
     mockGet = vi.fn()
     mockPut = vi.fn()
-    mockCreate = vi.fn(() => ({
+    vi.mocked(axios.create).mockReturnValue({
       get: mockGet,
       put: mockPut,
       post: vi.fn(),
       delete: vi.fn(),
       defaults: { headers: {}, baseURL: "http://localhost" },
-    }))
-    vi.mocked(axios.create).mockReturnValue(mockCreate() as unknown as ReturnType<typeof axios.create>)
+    } as unknown as ReturnType<typeof axios.create>)
   })
 
   describe("getTenantModules", () => {
@@ -60,7 +57,7 @@ describe("tenant-modules.service", () => {
       const result: TenantModule[] = await getTenantModules(FAKE_TOKEN, FAKE_TENANT_ID)
 
       expect(axios.create).toHaveBeenCalledTimes(1)
-      expect(mockCreate).toHaveBeenCalledWith(
+      expect(axios.create).toHaveBeenCalledWith(
         expect.objectContaining({
           headers: expect.objectContaining({
             Authorization: `Bearer ${FAKE_TOKEN}`,
@@ -78,7 +75,7 @@ describe("tenant-modules.service", () => {
         moduleName: mockDto1.moduleName,
         moduleDescription: mockDto1.moduleDescription,
         isEnabled: mockDto1.isEnabled,
-        quantity: mockDto1.quantity,
+        quantity: mockDto1.quantity ?? 0,
         createdAt: mockDto1.createdAt,
       })
       expect(result[1]!).toEqual<TenantModule>({
@@ -88,7 +85,7 @@ describe("tenant-modules.service", () => {
         moduleName: mockDto2.moduleName,
         moduleDescription: mockDto2.moduleDescription,
         isEnabled: mockDto2.isEnabled,
-        quantity: mockDto2.quantity,
+        quantity: mockDto2.quantity ?? 0,
         createdAt: mockDto2.createdAt,
       })
     })
@@ -116,26 +113,6 @@ describe("tenant-modules.service", () => {
       mockGet.mockResolvedValue({ data: null })
       const result = await getTenantModules(FAKE_TOKEN, FAKE_TENANT_ID)
       expect(result).toEqual([])
-    })
-  })
-
-  describe("updateTenantModule", () => {
-    it("debe hacer PUT a /api/tenant-modules/{id} con el body y retornar el módulo mapeado", async () => {
-      const updatedDto: TenantModuleDto = {
-        ...mockDto1,
-        isEnabled: false,
-        quantity: 10,
-      }
-      mockPut.mockResolvedValue({ data: updatedDto })
-
-      const body = { isEnabled: false, quantity: 10 }
-      const result = await updateTenantModule(FAKE_TOKEN, FAKE_TENANT_ID, FAKE_MODULE_ID, body)
-
-      expect(mockPut).toHaveBeenCalledWith(`/api/tenant-modules/${FAKE_MODULE_ID}`, body)
-      expect(result.isEnabled).toBe(false)
-      expect(result.quantity).toBe(10)
-      expect(result.id).toBe(FAKE_MODULE_ID)
-      expect(result.moduleCode).toBe("POS")
     })
   })
 })

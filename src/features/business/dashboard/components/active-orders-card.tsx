@@ -1,21 +1,45 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { useTranslation } from "@/i18n/use-i18n"
-import type { ActiveOrder, OrderStatus } from "../mock/dashboard-data"
+import type { ActiveOrder } from "../mock/dashboard-data"
 import { CHART_PRIMARY, CHART_SECONDARY } from "../constants"
 import { Button } from "@/components/ui/button"
 import toast from "react-hot-toast"
 import { ArrowRight, Clock } from "lucide-react"
 
+/** El backend devuelve estados en PascalCase ("Pending", "Shipped", ...);
+ *  aquí se acepta cualquier variante para no romper la tarjeta. */
+type ActiveOrderView = Omit<ActiveOrder, "status"> & { status: string }
+
 interface ActiveOrdersCardProps {
-  orders: ActiveOrder[]
+  orders: ActiveOrderView[]
 }
 
-const STATUS_CONFIG: Record<OrderStatus, { color: string; labelKey: string; pulse: boolean }> = {
+type StatusConfig = { color: string; labelKey?: string; pulse: boolean }
+
+const STATUS_CONFIG: Record<string, StatusConfig> = {
   pending: { color: "#94a3b8", labelKey: "order_pending", pulse: true },
+  confirmed: { color: "#06b6d4", labelKey: "order_confirmed", pulse: true },
   preparing: { color: "#f59e0b", labelKey: "order_preparing", pulse: true },
   ready: { color: "#3b82f6", labelKey: "order_ready", pulse: false },
   on_the_way: { color: "#8b5cf6", labelKey: "order_on_the_way", pulse: true },
+  shipped: { color: "#8b5cf6", labelKey: "order_on_the_way", pulse: true },
   delivered: { color: "#22c55e", labelKey: "order_delivered", pulse: false },
+  cancelled: { color: "#ef4444", labelKey: "order_cancelled", pulse: false },
+  canceled: { color: "#ef4444", labelKey: "order_cancelled", pulse: false },
+  refunded: { color: "#ef4444", labelKey: "order_cancelled", pulse: false },
+}
+
+const DEFAULT_STATUS_CONFIG: StatusConfig = { color: "#94a3b8", pulse: false }
+
+function statusKey(status: string): string {
+  return (status ?? "")
+    .trim()
+    .toLowerCase()
+    .replace(/[\s-]+/g, "_")
+}
+
+function getStatusConfig(status: string): StatusConfig {
+  return STATUS_CONFIG[statusKey(status)] ?? DEFAULT_STATUS_CONFIG
 }
 
 function ProgressCircle({ progress, color, size = 36 }: { progress: number; color: string; size?: number }) {
@@ -46,10 +70,11 @@ function ProgressCircle({ progress, color, size = 36 }: { progress: number; colo
   )
 }
 
-function OrderRow({ order, t, index }: { order: ActiveOrder; t: (key: string) => string; index: number }) {
-  const config = STATUS_CONFIG[order.status]
-  const itemsPreview = order.items.slice(0, 2).join(", ")
-  const moreItems = order.items.length > 2 ? ` +${order.items.length - 2}` : ""
+function OrderRow({ order, t, index }: { order: ActiveOrderView; t: (key: string) => string; index: number }) {
+  const config = getStatusConfig(order.status)
+  const statusLabel = config.labelKey ? t(config.labelKey) : (order.status ?? "")
+  const itemsPreview = (order.items ?? []).slice(0, 2).join(", ")
+  const moreItems = (order.items?.length ?? 0) > 2 ? ` +${order.items.length - 2}` : ""
 
   return (
     <div
@@ -67,7 +92,7 @@ function OrderRow({ order, t, index }: { order: ActiveOrder; t: (key: string) =>
               color: config.color,
             }}
           >
-            {t(config.labelKey)}
+            {statusLabel}
           </span>
         </div>
         <p className="truncate text-xs text-muted-foreground">
@@ -75,13 +100,21 @@ function OrderRow({ order, t, index }: { order: ActiveOrder; t: (key: string) =>
           {moreItems}
         </p>
         <div className="mt-1 flex items-center gap-3 text-[11px] text-muted-foreground/80">
+          {order.branchName ? (
+            <>
+              <span className="max-w-32 truncate font-medium text-foreground/70" title={order.branchName}>
+                {order.branchName}
+              </span>
+              <span>·</span>
+            </>
+          ) : null}
           <span>{order.createdAt}</span>
           <span>·</span>
           <span>
-            {order.itemCount} {t("order_items")}
+            {order.itemCount ?? order.items?.length ?? 0} {t("order_items")}
           </span>
           <span>·</span>
-          <span className="font-mono font-medium text-foreground tabular-nums">${order.total.toFixed(2)}</span>
+          <span className="font-mono font-medium text-foreground tabular-nums">${(order.total ?? 0).toFixed(2)}</span>
         </div>
       </div>
 
@@ -94,8 +127,8 @@ function OrderRow({ order, t, index }: { order: ActiveOrder; t: (key: string) =>
 export function ActiveOrdersCard({ orders }: ActiveOrdersCardProps) {
   const { t } = useTranslation("business-dashboard")
 
-  const activeCount = orders.filter((o) => o.status !== "delivered").length
-  const deliveredCount = orders.filter((o) => o.status === "delivered").length
+  const activeCount = orders.filter((o) => statusKey(o.status) !== "delivered").length
+  const deliveredCount = orders.filter((o) => statusKey(o.status) === "delivered").length
 
   return (
     <Card className="transition-all duration-300 hover:shadow-md">
@@ -137,7 +170,7 @@ export function ActiveOrdersCard({ orders }: ActiveOrdersCardProps) {
         </Button>
       </CardHeader>
       <CardContent>
-        <div className="max-h-155 scrollbar-thin scrollbar-thumb-border scrollbar-track-transparent space-y-2 overflow-y-auto pr-1">
+        <div className="max-h-155 space-y-2 overflow-y-auto pr-1">
           {orders.map((order, index) => (
             <OrderRow key={order.id} order={order} t={t} index={index} />
           ))}

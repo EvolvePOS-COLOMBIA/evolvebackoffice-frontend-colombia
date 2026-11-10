@@ -1,5 +1,6 @@
 import { zodResolver } from "@hookform/resolvers/zod"
-import { Sparkles, SquarePen, Minus, Plus } from "lucide-react"
+import { useQuery } from "@tanstack/react-query"
+import { AlertTriangle, Sparkles, SquarePen, Minus, Plus } from "lucide-react"
 import { useEffect, useState } from "react"
 import { useForm, type Resolver } from "react-hook-form"
 
@@ -18,15 +19,21 @@ import {
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form"
 import { Input } from "@/components/ui/input"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Separator } from "@/components/ui/separator"
 import { Skeleton } from "@/components/ui/skeleton"
 import { Switch } from "@/components/ui/switch"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { tenantEditSchema as tenantSchema } from "@/features/platform/tenants/schemas/tenant-schema"
+import { getTimeZoneOptions, TIME_ZONE_AUTO } from "@/utils/timezones"
 import type { CatalogModule, Tenant, TenantFormValues, TenantModuleAssignment } from "@/features/platform/tenants/types"
 import { DocumentType } from "@/features/platform/tenants/types/api"
 import { useModulesCatalog } from "@/features/platform/tenants/hooks/use-modules-catalog"
+import { useDecommissionSerial, useSerialCodes } from "@/features/platform/tenants/hooks/use-tenants"
 import { getTenantModules } from "@/features/platform/tenants/services/tenant-modules.service"
+import { getTenant } from "@/features/platform/tenants/services/tenant.service"
 import { useAuth } from "@/features/auth/hooks/use-auth"
+import { notify } from "@/hooks/use-notify"
+import { formatDateTime } from "@/utils/format"
+import { isTenantOnlyModule } from "@/utils/module-scope"
 import { useTranslation } from "@/i18n/use-i18n"
 
 type TenantFormDialogProps = {
@@ -56,6 +63,7 @@ const defaultValues: TenantFormValues = {
   maxBranches: 0,
   maxUsers: 0,
   modules: [],
+  timeZoneId: "",
 }
 
 function buildModulesArray(catalog: CatalogModule[], state: Record<string, ModuleState>): TenantModuleAssignment[] {
@@ -87,33 +95,70 @@ export function TenantFormDialog({
     defaultValues,
   })
 
+  // Al editar se carga el tenant completo por id: el listado no trae todos los
+  // campos (teléfono, dirección, subdominio, límites de sucursales/usuarios)
+  // ni los datos del usuario administrador.
+  const {
+    data: fullTenant,
+    isLoading: fullTenantLoading,
+    isError: fullTenantError,
+  } = useQuery({
+    queryKey: ["tenant", tenantToEdit?.id],
+    queryFn: () => getTenant(tenantToEdit!.id),
+    enabled: open && isEditMode && Boolean(tenantToEdit?.id),
+    staleTime: 30_000,
+  })
+
+  const tenantSource = isEditMode ? (fullTenant ?? tenantToEdit) : null
+  const detailLoading = isEditMode && fullTenantLoading
+  const detailError = isEditMode && fullTenantError
+
+  // Tab "Seriales POS": solo cuando el tenant tiene terminales POS vendidos
+  // (maxRegisters > 0). Basado en el valor persistido, no en el del formulario.
+  const showSerialsTab = isEditMode && (tenantSource?.maxRegisters ?? 0) > 0
+
+  // Serials compartidos con la página de detalle (mismo queryKey), así una
+  // descomisión hecha aquí se refleja al cerrar el modal.
+  const { data: serialCodes = [], isLoading: serialsLoading } = useSerialCodes(
+    open && isEditMode ? tenantToEdit?.id : undefined
+  )
+  const decommissionMutation = useDecommissionSerial()
+  const [serialReasons, setSerialReasons] = useState<Record<string, string>>({})
+
+  // Reinicia el flag de módulos solo al abrir/cambiar de tenant. Si se hace en
+  // el effect de reset del formulario, la llegada del detalle (fullTenant) lo
+  // pondría en false otra vez y la sección de módulos se quedaría cargando.
+  useEffect(() => {
+    if (!open) return
+    queueMicrotask(() => setTenantModulesLoaded(false))
+  }, [open, tenantToEdit?.id])
+
   useEffect(() => {
     if (!open) {
       return
     }
 
-    queueMicrotask(() => setTenantModulesLoaded(false))
-
-    if (tenantToEdit) {
+    if (tenantSource) {
       form.reset({
-        name: tenantToEdit.name,
-        contactEmail: tenantToEdit.contactEmail,
-        phone: tenantToEdit.phone,
-        address: tenantToEdit.address,
-        countryCode: tenantToEdit.countryCode ?? "",
-        maxRegisters: tenantToEdit.maxRegisters,
-        adminIdentification: "",
-        subdomain: tenantToEdit.subdomain ?? "",
-        identificationNumber: tenantToEdit.identificationNumber ?? "",
-        identificationTypeId: tenantToEdit.identificationTypeId ?? 0,
-        maxBranches: tenantToEdit.maxBranches ?? 0,
-        maxUsers: tenantToEdit.maxUsers ?? 0,
+        name: tenantSource.name,
+        contactEmail: tenantSource.contactEmail,
+        phone: tenantSource.phone,
+        address: tenantSource.address,
+        countryCode: tenantSource.countryCode ?? "",
+        maxRegisters: tenantSource.maxRegisters,
+        adminIdentification: fullTenant?.adminIdentification ?? "",
+        subdomain: tenantSource.subdomain ?? "",
+        identificationNumber: tenantSource.identificationNumber ?? "",
+        identificationTypeId: tenantSource.identificationTypeId ?? 0,
+        maxBranches: tenantSource.maxBranches ?? 0,
+        maxUsers: tenantSource.maxUsers ?? 0,
         modules: [],
+        timeZoneId: tenantSource.timeZoneId ?? "",
       })
     } else {
       form.reset(defaultValues)
     }
-  }, [tenantToEdit, form, open])
+  }, [tenantSource, fullTenant, form, open])
 
   useEffect(() => {
     if (!open) return
@@ -126,13 +171,14 @@ export function TenantFormDialog({
 
     if (isEditMode && tenantToEdit && token) {
       queueMicrotask(() => setModulesState(defaultState))
-      getTenantModules(token, tenantToEdit.tenantId)
+      getTenantModules(token, tenantToEdit.id)
         .then((tenantModules) => {
           const merged = { ...defaultState }
           tenantModules.forEach((tm) => {
             merged[tm.moduleId] = {
               isEnabled: tm.isEnabled,
-              quantity: tm.quantity,
+              // El backend puede devolver quantity=null para módulos sin límite.
+              quantity: tm.quantity ?? (tm.isEnabled ? 1 : 0),
             }
           })
           setModulesState(merged)
@@ -203,12 +249,44 @@ export function TenantFormDialog({
     })
   }
 
+  const handleDecommissionSerial = (serialId: string) => {
+    if (!tenantToEdit) return
+    if (!window.confirm(t("decommission_confirm"))) return
+
+    decommissionMutation.mutate(
+      { tenantId: tenantToEdit.id, serialId, reason: serialReasons[serialId] || undefined },
+      {
+        onSuccess: () => {
+          notify.success(t("decommission_success"))
+          setSerialReasons((prev) => {
+            const next = { ...prev }
+            delete next[serialId]
+            return next
+          })
+        },
+        onError: (error) => notify.error(error instanceof Error ? error.message : t("decommission_error")),
+      }
+    )
+  }
+
   const handleFormSubmit = (values: TenantFormValues) => {
     const modules = buildModulesArray(catalogModules, modulesState)
     onSubmit({ ...values, modules })
   }
 
   const modulesLoading = catalogLoading || (isEditMode && !tenantModulesLoaded)
+  const serialsMutating = decommissionMutation.isPending || isSubmitting
+
+  // Estados reales de PosSerialCode en el backend: Unassigned | Activated | Decommissioned.
+  const serialStatusTone = (status: string) =>
+    status === "Activated" ? "success" : status === "Unassigned" ? "warning" : "neutral"
+
+  const serialStatusLabel = (status: string) =>
+    status === "Activated"
+      ? t("serial_activated")
+      : status === "Unassigned"
+        ? t("serial_unassigned")
+        : t("serial_decommissioned")
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -220,318 +298,482 @@ export function TenantFormDialog({
 
         <Form {...form}>
           <form className="space-y-5" onSubmit={form.handleSubmit(handleFormSubmit)}>
-            <div className="grid gap-4 sm:grid-cols-2">
-              <FormField
-                control={form.control}
-                name="name"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>{t("name")}</FormLabel>
-                    <FormControl>
-                      <Input placeholder={t("name_placeholder")} {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+            <Tabs defaultValue="basic" className="space-y-5">
+              <TabsList className={showSerialsTab ? "grid w-full grid-cols-3" : "grid w-full grid-cols-2"}>
+                <TabsTrigger value="basic">{t("tab_basic_data")}</TabsTrigger>
+                <TabsTrigger value="modules">{t("tab_modules")}</TabsTrigger>
+                {showSerialsTab ? <TabsTrigger value="serials">{t("tab_pos_serials")}</TabsTrigger> : null}
+              </TabsList>
 
-              <FormField
-                control={form.control}
-                name="contactEmail"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>{t("contact_email")}</FormLabel>
-                    <FormControl>
-                      <Input placeholder={t("email_placeholder")} type="email" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            </div>
+              {/* ─── Tab 1: Datos básicos ─────────────────────────────── */}
+              <TabsContent value="basic" className="space-y-5">
+                {/* Datos del usuario administrador (solo lectura, disponibles al editar) */}
+                {isEditMode ? (
+                  <Card className="rounded-2xl border-border/70 bg-background/45 shadow-none">
+                    <CardContent className="space-y-3 p-4">
+                      <div className="flex flex-wrap items-center justify-between gap-2">
+                        <h3 className="text-base font-semibold text-foreground">{t("admin_data_title")}</h3>
+                        {typeof fullTenant?.adminIsActive === "boolean" ? (
+                          <Badge tone={fullTenant.adminIsActive ? "success" : "warning"}>
+                            {fullTenant.adminIsActive ? t("active") : t("inactive")}
+                          </Badge>
+                        ) : null}
+                      </div>
+                      {detailLoading ? (
+                        <Skeleton className="h-16 w-full rounded-xl" />
+                      ) : fullTenant?.adminUsername ? (
+                        <dl className="grid gap-3 sm:grid-cols-2">
+                          <AdminInfoRow label={t("admin_username")} value={fullTenant.adminUsername} />
+                          <AdminInfoRow label={t("name")} value={fullTenant.adminFullName} />
+                          <AdminInfoRow label={t("contact_email")} value={fullTenant.adminEmail} />
+                          <AdminInfoRow label={t("admin_identification")} value={fullTenant.adminIdentification} />
+                        </dl>
+                      ) : (
+                        <p className="text-sm text-muted-foreground">{t("admin_missing")}</p>
+                      )}
+                    </CardContent>
+                  </Card>
+                ) : null}
 
-            <div className="grid gap-4 sm:grid-cols-2">
-              <FormField
-                control={form.control}
-                name="phone"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>{t("phone")}</FormLabel>
-                    <FormControl>
-                      <Input placeholder={t("phone_placeholder")} {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+                <div className="grid gap-4 sm:grid-cols-2">
+                  <FormField
+                    control={form.control}
+                    name="name"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>{t("name")}</FormLabel>
+                        <FormControl>
+                          <Input placeholder={t("name_placeholder")} {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
 
-              <FormField
-                control={form.control}
-                name="address"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>{t("address")}</FormLabel>
-                    <FormControl>
-                      <Input placeholder={t("address_placeholder")} {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            </div>
-
-            <FormField
-              control={form.control}
-              name="countryCode"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>{t("country")}</FormLabel>
-                  <Select value={field.value} onValueChange={field.onChange}>
-                    <FormControl>
-                      <SelectTrigger>
-                        <SelectValue placeholder={t("country_placeholder")} />
-                      </SelectTrigger>
-                    </FormControl>
-                    <SelectContent>
-                      <SelectItem value="CO">Colombia (CO)</SelectItem>
-                      <SelectItem value="MX">México (MX)</SelectItem>
-                      <SelectItem value="AR">Argentina (AR)</SelectItem>
-                      <SelectItem value="PE">Perú (PE)</SelectItem>
-                      <SelectItem value="CL">Chile (CL)</SelectItem>
-                      <SelectItem value="EC">Ecuador (EC)</SelectItem>
-                      <SelectItem value="ES">España (ES)</SelectItem>
-                      <SelectItem value="US">Estados Unidos (US)</SelectItem>
-                    </SelectContent>
-                  </Select>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            <FormField
-              control={form.control}
-              name="maxRegisters"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>{t("max_registers")}</FormLabel>
-                  <FormControl>
-                    <Input type="number" min={1} placeholder={t("max_registers_placeholder")} {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            <div className="grid gap-4 sm:grid-cols-2">
-              <FormField
-                control={form.control}
-                name="adminIdentification"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>{t("admin_identification")}</FormLabel>
-                    <FormControl>
-                      <Input placeholder={t("admin_identification_placeholder")} {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              <FormField
-                control={form.control}
-                name="subdomain"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>{t("subdomain")}</FormLabel>
-                    <FormControl>
-                      <Input placeholder={t("subdomain_placeholder")} {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            </div>
-
-            <div className="grid gap-4 sm:grid-cols-2">
-              <FormField
-                control={form.control}
-                name="identificationTypeId"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>{t("identification_type")}</FormLabel>
-                    <Select value={String(field.value)} onValueChange={(value) => field.onChange(Number(value))}>
-                      <FormControl>
-                        <SelectTrigger>
-                          <SelectValue placeholder={t("identification_type_placeholder")} />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        <SelectItem value={String(DocumentType.CedulaCiudadania)}>{t("doc_type_cc")}</SelectItem>
-                        <SelectItem value={String(DocumentType.CedulaExtranjeria)}>{t("doc_type_ce")}</SelectItem>
-                        <SelectItem value={String(DocumentType.NIT)}>{t("doc_type_nit")}</SelectItem>
-                        <SelectItem value={String(DocumentType.TarjetaIdentidad)}>{t("doc_type_ti")}</SelectItem>
-                        <SelectItem value={String(DocumentType.Pasaporte)}>{t("doc_type_pa")}</SelectItem>
-                      </SelectContent>
-                    </Select>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              <FormField
-                control={form.control}
-                name="identificationNumber"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>{t("identification_number")}</FormLabel>
-                    <FormControl>
-                      <Input placeholder={t("identification_number_placeholder")} {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            </div>
-
-            <div className="grid gap-4 sm:grid-cols-2">
-              <FormField
-                control={form.control}
-                name="maxBranches"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>{t("max_branches")}</FormLabel>
-                    <FormControl>
-                      <Input type="number" min={0} placeholder={t("max_branches_placeholder")} {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              <FormField
-                control={form.control}
-                name="maxUsers"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>{t("max_users")}</FormLabel>
-                    <FormControl>
-                      <Input type="number" min={0} placeholder={t("max_users_placeholder")} {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            </div>
-
-            <Separator />
-
-            <div className="space-y-3">
-              <div>
-                <h3 className="text-base font-semibold text-foreground">{t("assigned_modules_section")}</h3>
-                <p className="text-sm text-muted-foreground">{t("assigned_modules_section_desc")}</p>
-              </div>
-
-              {modulesLoading ? (
-                <div className="space-y-3">
-                  {Array.from({ length: 3 }).map((_, i) => (
-                    <Skeleton key={i} className="h-20 w-full rounded-2xl" />
-                  ))}
+                  <FormField
+                    control={form.control}
+                    name="contactEmail"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>{t("contact_email")}</FormLabel>
+                        <FormControl>
+                          <Input placeholder={t("email_placeholder")} type="email" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
                 </div>
-              ) : catalogModules.length === 0 ? (
-                <Card className="rounded-2xl">
-                  <CardContent className="p-4 text-center text-sm text-muted-foreground">
-                    {t("no_modules_found")}
-                  </CardContent>
-                </Card>
-              ) : (
-                <div className="space-y-3">
-                  {catalogModules.map((module) => {
-                    const state = modulesState[module.id] ?? {
-                      isEnabled: false,
-                      quantity: 1,
-                    }
-                    return (
-                      <Card key={module.id} className="rounded-2xl border-border/70 bg-background/45 shadow-none">
-                        <CardContent className="p-4">
-                          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-                            <div className="flex min-w-0 flex-1 items-center gap-3 sm:gap-4">
-                              <Switch
-                                checked={state.isEnabled}
-                                onCheckedChange={(checked) => handleToggleModule(module.id, checked)}
-                                disabled={isSubmitting}
-                              />
-                              <div className="min-w-0 space-y-1">
-                                <div className="flex flex-wrap items-center gap-2">
-                                  <span className="font-medium">{module.name}</span>
-                                  <Badge tone="neutral" className="text-[10px]">
-                                    {module.code}
-                                  </Badge>
-                                </div>
-                                {module.description ? (
-                                  <p className="line-clamp-1 text-xs text-muted-foreground">{module.description}</p>
-                                ) : null}
-                              </div>
-                            </div>
 
-                            <div className="flex items-center gap-3 sm:justify-end sm:gap-4">
-                              <div className="hidden text-sm text-muted-foreground sm:block">
-                                {t("module_enabled_label")}
-                              </div>
-                              <div className="flex items-center gap-2">
-                                <span className="text-xs text-muted-foreground sm:hidden">
-                                  {t("module_quantity_label")}:
-                                </span>
-                                <Button
-                                  variant="outline"
-                                  size="icon"
-                                  onClick={() => handleQuantityDecrement(module.id)}
-                                  disabled={isSubmitting}
-                                >
-                                  <Minus className="size-4" />
-                                </Button>
-                                <Input
-                                  type="number"
-                                  className="w-20 text-center"
-                                  min={0}
-                                  value={state.quantity}
-                                  onChange={(e) => handleQuantityChange(module.id, Number(e.target.value))}
+                <div className="grid gap-4 sm:grid-cols-2">
+                  <FormField
+                    control={form.control}
+                    name="phone"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>{t("phone")}</FormLabel>
+                        <FormControl>
+                          <Input placeholder={t("phone_placeholder")} {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={form.control}
+                    name="address"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>{t("address")}</FormLabel>
+                        <FormControl>
+                          <Input placeholder={t("address_placeholder")} {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
+
+                <FormField
+                  control={form.control}
+                  name="countryCode"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>{t("country")}</FormLabel>
+                      <Select value={field.value} onValueChange={field.onChange}>
+                        <FormControl>
+                          <SelectTrigger>
+                            <SelectValue placeholder={t("country_placeholder")} />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          <SelectItem value="CO">Colombia (CO)</SelectItem>
+                          <SelectItem value="MX">México (MX)</SelectItem>
+                          <SelectItem value="AR">Argentina (AR)</SelectItem>
+                          <SelectItem value="PE">Perú (PE)</SelectItem>
+                          <SelectItem value="CL">Chile (CL)</SelectItem>
+                          <SelectItem value="EC">Ecuador (EC)</SelectItem>
+                          <SelectItem value="ES">España (ES)</SelectItem>
+                          <SelectItem value="US">Estados Unidos (US)</SelectItem>
+                        </SelectContent>
+                      </Select>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="timeZoneId"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>{t("time_zone")}</FormLabel>
+                      <Select
+                        value={field.value || TIME_ZONE_AUTO}
+                        onValueChange={(value) => field.onChange(value === TIME_ZONE_AUTO ? "" : value)}
+                      >
+                        <FormControl>
+                          <SelectTrigger>
+                            <SelectValue placeholder={t("time_zone_placeholder")} />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          <SelectItem value={TIME_ZONE_AUTO}>{t("time_zone_auto")}</SelectItem>
+                          {getTimeZoneOptions().map((zone) => (
+                            <SelectItem key={zone} value={zone}>
+                              {zone}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      <p className="text-xs text-muted-foreground">{t("time_zone_hint")}</p>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="maxRegisters"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>{t("max_registers")}</FormLabel>
+                      <FormControl>
+                        <Input type="number" min={0} placeholder={t("max_registers_placeholder")} {...field} />
+                      </FormControl>
+                      <p className="text-xs text-muted-foreground">{t("max_registers_hint")}</p>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <div className="grid gap-4 sm:grid-cols-2">
+                  {!isEditMode ? (
+                    <FormField
+                      control={form.control}
+                      name="adminIdentification"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>{t("admin_identification")}</FormLabel>
+                          <FormControl>
+                            <Input placeholder={t("admin_identification_placeholder")} {...field} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  ) : null}
+
+                  <FormField
+                    control={form.control}
+                    name="subdomain"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>{t("subdomain")}</FormLabel>
+                        <FormControl>
+                          <Input placeholder={t("subdomain_placeholder")} {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
+
+                <div className="grid gap-4 sm:grid-cols-2">
+                  <FormField
+                    control={form.control}
+                    name="identificationTypeId"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>{t("identification_type")}</FormLabel>
+                        <Select value={String(field.value)} onValueChange={(value) => field.onChange(Number(value))}>
+                          <FormControl>
+                            <SelectTrigger>
+                              <SelectValue placeholder={t("identification_type_placeholder")} />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            <SelectItem value={String(DocumentType.CedulaCiudadania)}>{t("doc_type_cc")}</SelectItem>
+                            <SelectItem value={String(DocumentType.CedulaExtranjeria)}>{t("doc_type_ce")}</SelectItem>
+                            <SelectItem value={String(DocumentType.NIT)}>{t("doc_type_nit")}</SelectItem>
+                            <SelectItem value={String(DocumentType.TarjetaIdentidad)}>{t("doc_type_ti")}</SelectItem>
+                            <SelectItem value={String(DocumentType.Pasaporte)}>{t("doc_type_pa")}</SelectItem>
+                          </SelectContent>
+                        </Select>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={form.control}
+                    name="identificationNumber"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>{t("identification_number")}</FormLabel>
+                        <FormControl>
+                          <Input placeholder={t("identification_number_placeholder")} {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
+
+                <div className="grid gap-4 sm:grid-cols-2">
+                  <FormField
+                    control={form.control}
+                    name="maxBranches"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>{t("max_branches")}</FormLabel>
+                        <FormControl>
+                          <Input type="number" min={0} placeholder={t("max_branches_placeholder")} {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={form.control}
+                    name="maxUsers"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>{t("max_users")}</FormLabel>
+                        <FormControl>
+                          <Input type="number" min={0} placeholder={t("max_users_placeholder")} {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
+              </TabsContent>
+
+              {/* ─── Tab 2: Módulos ───────────────────────────────────── */}
+              <TabsContent value="modules" className="space-y-3">
+                <div>
+                  <h3 className="text-base font-semibold text-foreground">{t("assigned_modules_section")}</h3>
+                  <p className="text-sm text-muted-foreground">{t("assigned_modules_section_desc")}</p>
+                </div>
+
+                {modulesLoading ? (
+                  <div className="space-y-3">
+                    {Array.from({ length: 3 }).map((_, i) => (
+                      <Skeleton key={i} className="h-20 w-full rounded-2xl" />
+                    ))}
+                  </div>
+                ) : catalogModules.length === 0 ? (
+                  <Card className="rounded-2xl">
+                    <CardContent className="p-4 text-center text-sm text-muted-foreground">
+                      {t("no_modules_found")}
+                    </CardContent>
+                  </Card>
+                ) : (
+                  <div className="space-y-3">
+                    {catalogModules.map((module) => {
+                      const state = modulesState[module.id] ?? {
+                        isEnabled: false,
+                        quantity: 1,
+                      }
+                      return (
+                        <Card key={module.id} className="rounded-2xl border-border/70 bg-background/45 shadow-none">
+                          <CardContent className="p-4">
+                            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                              <div className="flex min-w-0 flex-1 items-center gap-3 sm:gap-4">
+                                <Switch
+                                  checked={state.isEnabled}
+                                  onCheckedChange={(checked) => handleToggleModule(module.id, checked)}
                                   disabled={isSubmitting}
                                 />
-                                <Button
-                                  variant="outline"
-                                  size="icon"
-                                  onClick={() => handleQuantityIncrement(module.id)}
-                                  disabled={isSubmitting}
-                                >
-                                  <Plus className="size-4" />
-                                </Button>
+                                <div className="min-w-0 space-y-1">
+                                  <div className="flex flex-wrap items-center gap-2">
+                                    <span className="font-medium">{module.name}</span>
+                                    <Badge tone="neutral" className="text-[10px]">
+                                      {module.code}
+                                    </Badge>
+                                  </div>
+                                  {module.description ? (
+                                    <p className="line-clamp-1 text-xs text-muted-foreground">{module.description}</p>
+                                  ) : null}
+                                </div>
                               </div>
-                              <div className="hidden sm:block">
-                                <span className="text-xs text-muted-foreground">{t("module_quantity_label")}</span>
+
+                              <div className="flex items-center gap-3 sm:justify-end sm:gap-4">
+                                <div className="hidden text-sm text-muted-foreground sm:block">
+                                  {t("module_enabled_label")}
+                                </div>
+                                {isTenantOnlyModule(module.code) ? (
+                                  <span className="text-xs text-muted-foreground">{t("module_scope_tenant")}</span>
+                                ) : (
+                                  <>
+                                    <div className="flex items-center gap-2">
+                                      <span className="text-xs text-muted-foreground sm:hidden">
+                                        {t("module_quantity_label")}:
+                                      </span>
+                                      <Button
+                                        variant="outline"
+                                        size="icon"
+                                        onClick={() => handleQuantityDecrement(module.id)}
+                                        disabled={isSubmitting}
+                                      >
+                                        <Minus className="size-4" />
+                                      </Button>
+                                      <Input
+                                        type="number"
+                                        className="w-20 text-center"
+                                        min={0}
+                                        value={state.quantity}
+                                        onChange={(e) => handleQuantityChange(module.id, Number(e.target.value))}
+                                        disabled={isSubmitting}
+                                      />
+                                      <Button
+                                        variant="outline"
+                                        size="icon"
+                                        onClick={() => handleQuantityIncrement(module.id)}
+                                        disabled={isSubmitting}
+                                      >
+                                        <Plus className="size-4" />
+                                      </Button>
+                                    </div>
+                                    <div className="hidden sm:block">
+                                      <span className="text-xs text-muted-foreground">
+                                        {t("module_quantity_label")}
+                                      </span>
+                                    </div>
+                                  </>
+                                )}
                               </div>
                             </div>
-                          </div>
-                        </CardContent>
-                      </Card>
-                    )
-                  })}
-                </div>
-              )}
+                          </CardContent>
+                        </Card>
+                      )
+                    })}
+                  </div>
+                )}
 
-              {!isEditMode && !modulesLoading && catalogModules.length > 0 ? (
-                <p className="text-xs text-muted-foreground italic">{t("modules_save_info")}</p>
+                {!isEditMode && !modulesLoading && catalogModules.length > 0 ? (
+                  <p className="text-xs text-muted-foreground italic">{t("modules_save_info")}</p>
+                ) : null}
+              </TabsContent>
+
+              {/* ─── Tab 3: Seriales POS (solo si hay terminales POS) ─── */}
+              {showSerialsTab ? (
+                <TabsContent value="serials" className="space-y-4">
+                  <div>
+                    <h3 className="text-base font-semibold text-foreground">{t("serial_codes")}</h3>
+                    <p className="text-sm text-muted-foreground">{t("serials_tab_desc")}</p>
+                  </div>
+
+                  {serialsLoading ? (
+                    <div className="space-y-3">
+                      {Array.from({ length: 3 }).map((_, i) => (
+                        <Skeleton key={i} className="h-24 w-full rounded-2xl" />
+                      ))}
+                    </div>
+                  ) : serialCodes.length === 0 ? (
+                    <Card className="rounded-2xl">
+                      <CardContent className="p-4 text-center text-sm text-muted-foreground">
+                        {t("no_serial_codes")}
+                      </CardContent>
+                    </Card>
+                  ) : (
+                    <div className="space-y-2">
+                      {serialCodes.map((serial) => (
+                        <Card key={serial.id} className="rounded-2xl border-border/70 bg-background/45 shadow-none">
+                          <CardContent className="space-y-3 p-4">
+                            <div className="flex flex-wrap items-center justify-between gap-2">
+                              <span className="font-mono text-sm font-medium text-foreground">{serial.serialCode}</span>
+                              <Badge tone={serialStatusTone(serial.status ?? "")}>
+                                {serialStatusLabel(serial.status ?? "")}
+                              </Badge>
+                            </div>
+                            <div className="grid grid-cols-2 gap-2 text-xs text-muted-foreground">
+                              <span>
+                                <span className="font-medium">{t("serial_machine")}:</span>{" "}
+                                {serial.machineIdentifier || "—"}
+                              </span>
+                              <span>
+                                <span className="font-medium">{t("serial_device")}:</span> {serial.deviceName || "—"}
+                              </span>
+                              <span>
+                                <span className="font-medium">{t("serial_activated")}:</span>{" "}
+                                {serial.activatedAt ? formatDateTime(serial.activatedAt) : "—"}
+                              </span>
+                              <span>
+                                <span className="font-medium">{t("serial_last_seen")}:</span>{" "}
+                                {serial.lastSeenAt ? formatDateTime(serial.lastSeenAt) : "—"}
+                              </span>
+                            </div>
+                            {serial.status !== "Decommissioned" ? (
+                              <div className="flex items-center gap-2 border-t pt-3">
+                                <Input
+                                  type="text"
+                                  className="flex-1 text-xs"
+                                  placeholder={t("decommission_reason")}
+                                  value={serialReasons[serial.id] ?? ""}
+                                  onChange={(e) =>
+                                    setSerialReasons((prev) => ({ ...prev, [serial.id]: e.target.value }))
+                                  }
+                                  disabled={serialsMutating}
+                                />
+                                <Button
+                                  size="sm"
+                                  variant="destructive"
+                                  disabled={serialsMutating}
+                                  onClick={() => handleDecommissionSerial(serial.id)}
+                                >
+                                  <AlertTriangle className="size-4" />
+                                  {t("decommission_serial")}
+                                </Button>
+                              </div>
+                            ) : null}
+                          </CardContent>
+                        </Card>
+                      ))}
+                    </div>
+                  )}
+                </TabsContent>
               ) : null}
-            </div>
+            </Tabs>
 
             {form.formState.errors.root ? (
               <p className="text-sm font-medium text-destructive">{form.formState.errors.root.message}</p>
+            ) : null}
+
+            {detailLoading ? (
+              <p className="text-xs text-muted-foreground">{t("full_data_loading")}</p>
+            ) : detailError ? (
+              <p className="text-sm font-medium text-destructive">{t("full_data_error")}</p>
             ) : null}
 
             <DialogFooter>
               <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
                 {t("cancel")}
               </Button>
-              <Button type="submit" disabled={isSubmitting}>
+              <Button type="submit" disabled={isSubmitting || detailLoading || detailError}>
                 {isSubmitting && <Spinner IsButton />}
                 {!isSubmitting && (isEditMode ? <SquarePen className="size-4" /> : <Sparkles className="size-4" />)}
                 {isEditMode ? t("update_tenant") : t("save_tenant")}
@@ -541,5 +783,15 @@ export function TenantFormDialog({
         </Form>
       </DialogContent>
     </Dialog>
+  )
+}
+
+/** Par etiqueta/valor de solo lectura usado en la tarjeta del admin. */
+function AdminInfoRow({ label, value }: { label: string; value?: string | null }) {
+  return (
+    <div className="rounded-xl bg-card/60 px-3 py-2">
+      <dt className="text-xs text-muted-foreground">{label}</dt>
+      <dd className="mt-0.5 text-sm font-medium text-foreground">{value || "—"}</dd>
+    </div>
   )
 }

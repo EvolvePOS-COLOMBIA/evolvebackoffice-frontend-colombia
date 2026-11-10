@@ -45,8 +45,7 @@ export function TenantsPage() {
   const [tenantToReject, setTenantToReject] = useState<Tenant | null>(null)
   const navigate = useNavigate()
   const { t } = useTranslation("platform-tenants")
-  const { session, isPlatformAdmin, isPlatformSupervisor } = useAuth()
-  const token = session?.accessToken
+  const { isPlatformAdmin, isPlatformSupervisor } = useAuth()
 
   const { data: pagedData, isLoading } = useTenants(page, PAGE_SIZE)
   const updateTenantMutation = useUpdateTenant()
@@ -80,9 +79,10 @@ export function TenantsPage() {
   const activeTenants = tenants.filter((tenant) => tenant.isActive).length
 
   const handleSubmit = (values: TenantFormValues) => {
-    if (selectedTenant && token) {
+    if (selectedTenant) {
+      // Datos + módulos en UNA sola petición (PUT /api/tenants/{id} con modules[]).
       updateTenantMutation.mutate(
-        { id: selectedTenant.id, values, token },
+        { id: selectedTenant.id, values },
         {
           onSuccess: () => {
             notify.success(t("tenant_updated"))

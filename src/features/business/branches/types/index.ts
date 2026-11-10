@@ -12,6 +12,10 @@ export interface Branch {
   adminUserId: string
   adminUserName: string
   createdAt: string
+  isSupplier: boolean
+  /** Coordenadas como texto; vacío cuando el backend no tiene datos. */
+  latitude: string
+  longitude: string
 }
 
 export interface PagedBranches {
@@ -28,5 +32,8 @@ export interface BranchFormValues {
   address: string
   phone: string
   email: string
+  latitude: string
+  longitude: string
   adminUserId: string
+  isSupplier: boolean
 }

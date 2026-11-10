@@ -1,11 +1,7 @@
 import axios from "axios"
 
 import { appConfig } from "@/config/env"
-import type {
-  TenantModuleDto,
-  UpdateTenantModuleDto,
-  BulkUpdateTenantModuleItemDto,
-} from "@/features/platform/tenants/types/api"
+import type { TenantModuleDto } from "@/features/platform/tenants/types/api"
 import type { TenantModule } from "@/features/platform/tenants/types"
 
 type PagedResponse<T> = {
@@ -29,7 +25,7 @@ function mapDtoToTenantModule(dto: TenantModuleDto): TenantModule {
     moduleName: dto.moduleName,
     moduleDescription: dto.moduleDescription,
     isEnabled: dto.isEnabled,
-    quantity: dto.quantity,
+    quantity: dto.quantity ?? 0,
     createdAt: dto.createdAt,
   }
 }
@@ -50,32 +46,4 @@ export async function getTenantModules(token: string, tenantId: string): Promise
   const { data } = await client.get<PagedResponse<TenantModuleDto> | TenantModuleDto[]>("/api/tenant-modules")
   const items = normalizeArray(data)
   return items.map(mapDtoToTenantModule)
-}
-
-export async function updateTenantModule(
-  token: string,
-  tenantId: string,
-  modulePublicId: string,
-  body: UpdateTenantModuleDto
-): Promise<TenantModule> {
-  const client = createPlatformClient(token, tenantId)
-  const { data } = await client.put<TenantModuleDto>(`/api/tenant-modules/${modulePublicId}`, body)
-  return mapDtoToTenantModule(data)
-}
-
-export async function bulkUpdateTenantModules(
-  token: string,
-  tenantId: string,
-  modules: BulkUpdateTenantModuleItemDto[]
-): Promise<TenantModule[]> {
-  const client = createPlatformClient(token, tenantId)
-  const results = await Promise.all(
-    modules.map((mod) =>
-      client.put<TenantModuleDto>(`/api/tenant-modules/${mod.modulePublicId}`, {
-        isEnabled: mod.isEnabled,
-        quantity: mod.quantity,
-      })
-    )
-  )
-  return results.map((r) => mapDtoToTenantModule(r.data))
 }

@@ -1,6 +1,7 @@
 import {
   ArrowLeftRight,
   ArchiveX,
+  Building2,
   Image,
   Keyboard,
   Layers,
@@ -72,6 +73,13 @@ export function SettingsPage() {
 
   const storeLinks: ItemCardLink[] = [
     {
+      name: t("branches"),
+      label: t("branches_desc"),
+      icon: Building2,
+      disabled: false,
+      onClick: () => navigate("/business/settings/branches"),
+    },
+    {
       name: t("store_information"),
       label: t("store_information_desc"),
       icon: Store,
@@ -81,7 +89,8 @@ export function SettingsPage() {
       name: t("tenders"),
       label: t("tenders_desc"),
       icon: CreditCard,
-      disabled: true,
+      disabled: false,
+      onClick: () => navigate("/business/settings/payment-methods"),
     },
     {
       name: t("pos_options"),

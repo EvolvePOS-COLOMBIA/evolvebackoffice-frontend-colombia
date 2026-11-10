@@ -4,6 +4,7 @@ import type {
   PagedRegistersResponse,
   RegisterResponseDto,
   RegisterStatus,
+  SerialCodeSummaryDto,
   UpdateRegisterDto,
 } from "@/features/business/registers/types/api"
 import type { PagedRegisters, Register } from "@/features/business/registers/types"
@@ -53,12 +54,30 @@ function normalizePagedResponse(
   }
 }
 
-export async function getRegisters(pageNumber = 1, pageSize = PAGE_SIZE_DEFAULT): Promise<PagedRegisters> {
+export async function getRegisters(
+  pageNumber = 1,
+  pageSize = PAGE_SIZE_DEFAULT,
+  searchValue?: string
+): Promise<PagedRegisters> {
+  // Búsqueda server-side (searchField=all): nombre, código, serial o sucursal.
   const { data } = await api.get<PagedRegistersResponse | RegisterResponseDto[]>("/api/registers", {
-    params: { pageNumber, pageSize },
+    params: {
+      pageNumber,
+      pageSize,
+      searchField: "all",
+      searchValue: searchValue?.trim() ? searchValue.trim() : undefined,
+    },
   })
 
   return normalizePagedResponse(data, pageNumber, pageSize)
+}
+
+/** Pool de seriales POS del tenant (estado + caja asignada). */
+export async function getTenantSerialCodes(): Promise<SerialCodeSummaryDto[]> {
+  const { data } = await api.get<SerialCodeSummaryDto[] | { data: SerialCodeSummaryDto[] }>(
+    "/api/tenant-settings/serial-codes"
+  )
+  return Array.isArray(data) ? data : (data.data ?? [])
 }
 
 export async function getRegisterById(id: string): Promise<Register> {

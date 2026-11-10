@@ -1,4 +1,4 @@
-import { CalendarClock, CircleUser, Key, Users } from "lucide-react"
+import { CalendarClock, CircleUser, Key, Truck, Users } from "lucide-react"
 import { useNavigate } from "react-router-dom"
 
 import { useTranslation } from "@/i18n/use-i18n"
@@ -14,7 +14,8 @@ export function PeoplePage() {
       name: t("customers"),
       label: t("customers_desc"),
       icon: Users,
-      disabled: true,
+      disabled: false,
+      onClick: () => navigate("/business/people/customers"),
     },
     {
       name: t("users"),
@@ -22,6 +23,13 @@ export function PeoplePage() {
       icon: CircleUser,
       disabled: false,
       onClick: () => navigate("/business/people/users"),
+    },
+    {
+      name: t("suppliers"),
+      label: t("suppliers_desc"),
+      icon: Truck,
+      disabled: false,
+      onClick: () => navigate("/business/people/suppliers"),
     },
     {
       name: t("roles"),

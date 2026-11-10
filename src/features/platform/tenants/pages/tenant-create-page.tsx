@@ -17,18 +17,32 @@ import {
   Minus,
   Plus,
   Flag,
+  Clock,
 } from "lucide-react"
+import { getTimeZoneOptions, TIME_ZONE_AUTO } from "@/utils/timezones"
 
 import { notify } from "@/hooks/use-notify"
+import { isTenantOnlyModule } from "@/utils/module-scope"
 import { useAuth } from "@/features/auth/hooks/use-auth"
 import { createTenant } from "@/features/platform/tenants/services/tenant.service"
-import { bulkUpdateTenantModules } from "@/features/platform/tenants/services/tenant-modules.service"
-import type { CreateTenantDto, BulkUpdateTenantModuleItemDto } from "@/features/platform/tenants/types/api"
+import type {
+  CreateTenantDto,
+  UpdateTenantModuleItemDto,
+  CreateTenantResponseDto,
+} from "@/features/platform/tenants/types/api"
 import { DocumentType } from "@/features/platform/tenants/types/api"
 import { tenantCreateSchema } from "@/features/platform/tenants/schemas/tenant-schema"
 import { useModulesCatalog } from "@/features/platform/tenants/hooks/use-modules-catalog"
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog"
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
@@ -47,6 +61,8 @@ export function TenantCreatePage() {
 
   const { data: catalogModules = [], isLoading: catalogLoading } = useModulesCatalog(token)
   const [isSubmitting, setIsSubmitting] = useState(false)
+  // Credenciales + seriales generados: se muestran UNA sola vez tras crear.
+  const [createdResult, setCreatedResult] = useState<CreateTenantResponseDto | null>(null)
 
   const [modulesState, setModulesState] = useState<Record<string, { isEnabled: boolean; quantity: number }>>({})
 
@@ -63,6 +79,7 @@ export function TenantCreatePage() {
     identificationTypeId: number
     maxBranches: number
     maxUsers: number
+    timeZoneId: string
   }>({
     resolver: zodResolver(tenantCreateSchema(t)) as never,
     defaultValues: {
@@ -78,6 +95,7 @@ export function TenantCreatePage() {
       identificationTypeId: 0,
       maxBranches: 0,
       maxUsers: 0,
+      timeZoneId: "",
     },
   })
 
@@ -132,12 +150,16 @@ export function TenantCreatePage() {
   }
 
   const onSubmit = async (values: Record<string, unknown>) => {
-    if (!token) {
-      notify.error(t("no_token"))
-      return
-    }
-
     setIsSubmitting(true)
+
+    // Módulos elegidos: viajan dentro del POST (una sola petición).
+    const moduleItems: UpdateTenantModuleItemDto[] = Object.entries(modulesState)
+      .filter(([, state]) => state.isEnabled || state.quantity > 0)
+      .map(([moduleId, state]) => ({
+        modulePublicId: moduleId,
+        isEnabled: state.isEnabled,
+        quantity: state.quantity,
+      }))
 
     const dto: CreateTenantDto = {
       name: (values.name as string) || null,
@@ -152,25 +174,15 @@ export function TenantCreatePage() {
       identificationTypeId: (values.identificationTypeId as number) ?? 0,
       maxBranches: (values.maxBranches as number) ?? 0,
       maxUsers: (values.maxUsers as number) ?? 0,
+      timeZoneId: (values.timeZoneId as string) || null,
+      modules: moduleItems.length > 0 ? moduleItems : null,
     }
 
     try {
       const result = await createTenant(dto)
 
-      const moduleItems: BulkUpdateTenantModuleItemDto[] = Object.entries(modulesState)
-        .filter(([, state]) => state.isEnabled || state.quantity > 0)
-        .map(([moduleId, state]) => ({
-          modulePublicId: moduleId,
-          isEnabled: state.isEnabled,
-          quantity: state.quantity,
-        }))
-
-      if (moduleItems.length > 0) {
-        await bulkUpdateTenantModules(token, result.id, moduleItems)
-      }
-
       notify.success(t("tenant_created"))
-      navigate("/platform/tenants", { replace: true })
+      setCreatedResult(result)
     } catch (error) {
       const msg = error instanceof Error ? error.message : t("unable_to_save")
       notify.error(msg)
@@ -291,6 +303,38 @@ export function TenantCreatePage() {
                         <SelectItem value="US">Estados Unidos (US)</SelectItem>
                       </SelectContent>
                     </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="timeZoneId"
+                render={({ field }) => (
+                  <FormItem className="space-y-2">
+                    <FormLabel className="flex items-center gap-2 text-sm font-medium">
+                      <Clock className="size-4 text-muted-foreground" />
+                      {t("time_zone")}
+                    </FormLabel>
+                    <Select
+                      value={field.value || TIME_ZONE_AUTO}
+                      onValueChange={(value) => field.onChange(value === TIME_ZONE_AUTO ? "" : value)}
+                    >
+                      <FormControl>
+                        <SelectTrigger className="h-11">
+                          <SelectValue placeholder={t("time_zone_placeholder")} />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        <SelectItem value={TIME_ZONE_AUTO}>{t("time_zone_auto")}</SelectItem>
+                        {getTimeZoneOptions().map((zone) => (
+                          <SelectItem key={zone} value={zone}>
+                            {zone}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <p className="text-xs text-muted-foreground">{t("time_zone_hint")}</p>
                     <FormMessage />
                   </FormItem>
                 )}
@@ -515,35 +559,41 @@ export function TenantCreatePage() {
                           </div>
                         </div>
                         <div className="flex items-center gap-2 sm:justify-end">
-                          <span className="text-xs text-muted-foreground">{t("module_quantity_label")}</span>
-                          <div className="flex items-center gap-1 rounded-lg border border-border/50 bg-background p-1">
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              className="size-7"
-                              onClick={() => handleQuantityDecrement(module.id)}
-                              disabled={isSubmitting}
-                            >
-                              <Minus className="size-3" />
-                            </Button>
-                            <Input
-                              type="number"
-                              className="w-14 border-0 bg-transparent text-center text-sm focus-visible:ring-0"
-                              min={0}
-                              value={state.quantity}
-                              onChange={(e) => handleQuantityChange(module.id, Number(e.target.value))}
-                              disabled={isSubmitting}
-                            />
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              className="size-7"
-                              onClick={() => handleQuantityIncrement(module.id)}
-                              disabled={isSubmitting}
-                            >
-                              <Plus className="size-3" />
-                            </Button>
-                          </div>
+                          {isTenantOnlyModule(module.code) ? (
+                            <span className="text-xs text-muted-foreground">{t("module_scope_tenant")}</span>
+                          ) : (
+                            <>
+                              <span className="text-xs text-muted-foreground">{t("module_quantity_label")}</span>
+                              <div className="flex items-center gap-1 rounded-lg border border-border/50 bg-background p-1">
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  className="size-7"
+                                  onClick={() => handleQuantityDecrement(module.id)}
+                                  disabled={isSubmitting}
+                                >
+                                  <Minus className="size-3" />
+                                </Button>
+                                <Input
+                                  type="number"
+                                  className="w-14 border-0 bg-transparent text-center text-sm focus-visible:ring-0"
+                                  min={0}
+                                  value={state.quantity}
+                                  onChange={(e) => handleQuantityChange(module.id, Number(e.target.value))}
+                                  disabled={isSubmitting}
+                                />
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  className="size-7"
+                                  onClick={() => handleQuantityIncrement(module.id)}
+                                  disabled={isSubmitting}
+                                >
+                                  <Plus className="size-3" />
+                                </Button>
+                              </div>
+                            </>
+                          )}
                         </div>
                       </div>
                     )
@@ -567,6 +617,60 @@ export function TenantCreatePage() {
           </div>
         </form>
       </Form>
+
+      {/* Credenciales y seriales generados (solo se muestran una vez) */}
+      <Dialog
+        open={createdResult !== null}
+        onOpenChange={(open) => {
+          if (!open) navigate("/platform/tenants", { replace: true })
+        }}
+      >
+        <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-lg">
+          <DialogHeader>
+            <DialogTitle>{t("created_title")}</DialogTitle>
+            <DialogDescription>{t("created_desc")}</DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-4">
+            <div className="grid gap-3 sm:grid-cols-2">
+              <CreatedField label={t("admin_credentials")} value={createdResult?.adminUsername} />
+              <CreatedField label={t("created_password")} value={createdResult?.adminTemporaryPassword} />
+              <CreatedField label={t("created_pin")} value={createdResult?.adminTemporaryPin} />
+            </div>
+
+            <div className="space-y-2">
+              <p className="text-sm font-medium text-foreground">{t("created_serials")}</p>
+              {createdResult?.serialCodes?.length ? (
+                <ul className="max-h-48 space-y-1 overflow-y-auto rounded-xl border border-border/70 bg-card/60 p-3">
+                  {createdResult.serialCodes.map((s) => (
+                    <li key={s.id} className="flex items-center justify-between gap-2 text-sm">
+                      <span className="font-mono">{s.serialCode}</span>
+                      <Badge tone={s.status === "Unassigned" ? "warning" : "neutral"}>{s.status}</Badge>
+                    </li>
+                  ))}
+                </ul>
+              ) : (
+                <p className="text-sm text-muted-foreground">—</p>
+              )}
+            </div>
+          </div>
+
+          <DialogFooter>
+            <Button type="button" onClick={() => navigate("/platform/tenants", { replace: true })} className="px-6">
+              {t("created_continue")}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </div>
+  )
+}
+
+function CreatedField({ label, value }: { label: string; value?: string | null }) {
+  return (
+    <div className="rounded-xl border border-border/70 bg-card/60 px-3 py-2">
+      <p className="text-xs text-muted-foreground">{label}</p>
+      <p className="mt-0.5 font-mono text-sm font-medium break-all text-foreground">{value || "—"}</p>
     </div>
   )
 }

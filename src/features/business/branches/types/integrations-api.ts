@@ -43,16 +43,41 @@ export interface UpdateBranchIntegrationDto {
 export interface TestConnectionResult {
   success: boolean
   message: string
+  /** Estado de la tienda en Cluvi: "on" | "off" (null cuando no aplica). */
+  storeStatus?: "on" | "off" | null
+}
+
+/** Respuesta de PUT .../integrations/{id}/sync-menu */
+export interface SyncMenuResponse {
+  success: boolean
+  message: string | null
+  products: number
+  categories: number
+  modifiers: number
+}
+
+/** Respuesta de POST .../integrations/{id}/activate-store */
+export interface ActivateStoreResponse {
+  success: boolean
+  message: string | null
+  storeStatus: string | null
+  newOrderWebhookUrl: string | null
+  pingWebhookUrl: string | null
 }
 
 /** Platform codes supported by the backend. */
 export type PlatformCode = "WOOCOMMERCE" | "CLUVI"
 
-/** Form values for creating/editing an integration. */
-export interface IntegrationFormValues {
-  baseUrl: string
-  consumerKey: string
-  consumerSecret: string
-  apiKey: string
-  apiSecret: string
+/** URL por defecto de la API de Cluvi (única constante compartida en el app). */
+export const CLUVI_DEFAULT_BASE_URL = "https://api.cluviplatform.click"
+
+/** Lee el storeId guardado en SettingsJson de una integración ("" si no hay). */
+export function readCluviStoreId(settingsJson: string | null | undefined): string {
+  if (!settingsJson) return ""
+  try {
+    const parsed = JSON.parse(settingsJson) as { storeId?: unknown }
+    return typeof parsed.storeId === "string" ? parsed.storeId : ""
+  } catch {
+    return ""
+  }
 }

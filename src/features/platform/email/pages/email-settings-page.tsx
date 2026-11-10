@@ -9,7 +9,11 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form"
 import { Input } from "@/components/ui/input"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { useEmailSetting, useUpdateEmailSetting, useSendTestEmail } from "@/features/platform/email/hooks/use-email-settings"
+import {
+  useEmailSetting,
+  useUpdateEmailSetting,
+  useSendTestEmail,
+} from "@/features/platform/email/hooks/use-email-settings"
 import { emailSettingsSchema, sendTestEmailSchema } from "@/features/platform/email/schemas/email-schema"
 import type { EmailSettingsFormValues, SendTestEmailFormValues } from "@/features/platform/email/schemas/email-schema"
 import { notify } from "@/hooks/use-notify"
@@ -187,7 +191,9 @@ export function EmailSettingsPage() {
                         <FormControl>
                           <Input
                             type="password"
-                            placeholder={setting ? t("smtp_password_placeholder_exists") : t("smtp_password_placeholder")}
+                            placeholder={
+                              setting ? t("smtp_password_placeholder_exists") : t("smtp_password_placeholder")
+                            }
                             {...field}
                           />
                         </FormControl>

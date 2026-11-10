@@ -23,6 +23,14 @@ export interface Tenant {
   maxUsers: number
   serialCodes: PosSerialCodeResponseDto[]
   createdAt: string
+  /** Datos del primer usuario administrador (solo disponibles vía GET por id). */
+  adminUsername?: string | null
+  adminFullName?: string | null
+  adminEmail?: string | null
+  adminIdentification?: string | null
+  adminIsActive?: boolean | null
+  /** Zona horaria IANA del negocio (null = UTC). */
+  timeZoneId?: string | null
 }
 
 export interface PagedTenantsResponse {
@@ -73,4 +81,6 @@ export interface TenantFormValues {
   maxBranches: number
   maxUsers: number
   modules: TenantModuleAssignment[]
+  /** Zona horaria IANA; vacío = automática según país (UTC si no hay país). */
+  timeZoneId: string
 }

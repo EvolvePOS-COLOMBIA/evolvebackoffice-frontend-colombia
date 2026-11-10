@@ -1,7 +1,8 @@
-import { useMemo, useState } from "react"
-import { MonitorCog, Plus, RefreshCw, SquarePen, AlertTriangle, Settings2, ChevronRight } from "lucide-react"
+import { useMemo, useRef, useState } from "react"
+import { MonitorCog, Plus, RefreshCw, Settings2, SquarePen, AlertTriangle, ChevronRight } from "lucide-react"
 import { useNavigate } from "react-router-dom"
 
+import { EmptyState } from "@/components/share/empty-state"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
@@ -18,15 +19,22 @@ import {
   useCreateRegister,
   useRegisters,
   useSetRegisterStatus,
+  useTenantSerialCodes,
   useUpdateRegister,
 } from "@/features/business/registers/hooks/use-registers"
 import { useBranchTerminalSettings } from "@/features/business/branches/hooks/use-branch-terminals"
-import type { Register, RegisterFormValues, RegisterStatus } from "@/features/business/registers/types"
+import type {
+  Register,
+  RegisterFormValues,
+  RegisterStatus,
+  SerialCodeSummaryDto,
+} from "@/features/business/registers/types"
 import type { CreateRegisterDto, UpdateRegisterDto } from "@/features/business/registers/types/api"
 
 import type { TFunction } from "i18next"
 
 import { notify } from "@/hooks/use-notify"
+import { getApiErrorMessage } from "@/utils/api-error"
 import { formatDateTime } from "@/utils/format"
 import { useTranslation } from "@/i18n/use-i18n"
 
@@ -57,6 +65,29 @@ function statusTextKey(status: RegisterStatus) {
     case "Inactive":
     default:
       return "status_inactive"
+  }
+}
+
+/** Estados reales de PosSerialCode: Unassigned | Activated | Decommissioned. */
+function serialStatusBadgeTone(status: SerialCodeSummaryDto["status"]) {
+  switch (status) {
+    case "Activated":
+      return "success"
+    case "Unassigned":
+      return "warning"
+    default:
+      return "neutral"
+  }
+}
+
+function serialStatusTextKey(status: SerialCodeSummaryDto["status"]) {
+  switch (status) {
+    case "Activated":
+      return "serial_status_activated"
+    case "Unassigned":
+      return "serial_status_unassigned"
+    default:
+      return "serial_status_decommissioned"
   }
 }
 
@@ -100,13 +131,31 @@ export function RegistersPage() {
 
   const [page, setPage] = useState(1)
   const [query, setQuery] = useState("")
+  const [debouncedQuery, setDebouncedQuery] = useState("")
+  const searchTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   const [createOpen, setCreateOpen] = useState(false)
   const [editOpen, setEditOpen] = useState(false)
   const [setStatusOpen, setSetStatusOpen] = useState(false)
   const [selectedRegister, setSelectedRegister] = useState<Register | null>(null)
 
-  const { data: pagedData, isLoading, isError, refetch } = useRegisters(page, PAGE_SIZE)
+  // Búsqueda server-side (searchField=all) con debounce, como en el catálogo.
+  const handleSearchChange = (value: string) => {
+    setQuery(value)
+    if (searchTimer.current) clearTimeout(searchTimer.current)
+    searchTimer.current = setTimeout(() => {
+      setDebouncedQuery(value.trim())
+      setPage(1)
+    }, 350)
+  }
+
+  const { data: pagedData, isLoading, isError, refetch } = useRegisters(page, PAGE_SIZE, debouncedQuery)
+  const {
+    data: serials = [],
+    isLoading: serialsLoading,
+    isError: serialsError,
+    refetch: refetchSerials,
+  } = useTenantSerialCodes()
   const createMutation = useCreateRegister()
   const updateMutation = useUpdateRegister()
   const setStatusMutation = useSetRegisterStatus()
@@ -114,18 +163,6 @@ export function RegistersPage() {
   const registers = useMemo(() => pagedData?.data ?? [], [pagedData?.data])
   const totalCount = pagedData?.totalCount ?? 0
   const totalPages = pagedData?.totalPages ?? 0
-
-  const filteredRegisters = useMemo(() => {
-    const normalizedQuery = query.trim().toLowerCase()
-    if (!normalizedQuery) return registers
-    return registers.filter((r) => {
-      return (
-        r.name.toLowerCase().includes(normalizedQuery) ||
-        r.code.toLowerCase().includes(normalizedQuery) ||
-        r.branchName.toLowerCase().includes(normalizedQuery)
-      )
-    })
-  }, [registers, query])
 
   const activeRegisters = useMemo(() => registers.filter((r) => r.status === "Active").length, [registers])
 
@@ -136,10 +173,6 @@ export function RegistersPage() {
     })
     return Array.from(set)
   }, [registers])
-
-  const hasAnyDisabledBranchWarning = (() => {
-    return true
-  })()
 
   const handleCreate = (values: RegisterFormValues) => {
     const payload: CreateRegisterDto = {
@@ -155,7 +188,7 @@ export function RegistersPage() {
         setCreateOpen(false)
       },
       onError: (error) => {
-        notify.error(error instanceof Error ? error.message : t("error_load_title"))
+        notify.error(getApiErrorMessage(error, t("error_save")))
       },
     })
   }
@@ -177,7 +210,7 @@ export function RegistersPage() {
           setSelectedRegister(null)
         },
         onError: (error) => {
-          notify.error(error instanceof Error ? error.message : t("error_load_title"))
+          notify.error(getApiErrorMessage(error, t("error_save")))
         },
       }
     )
@@ -194,7 +227,7 @@ export function RegistersPage() {
           setSelectedRegister(null)
         },
         onError: (error) => {
-          notify.error(error instanceof Error ? error.message : t("error_load_title"))
+          notify.error(getApiErrorMessage(error, t("error_save")))
         },
       }
     )
@@ -253,7 +286,7 @@ export function RegistersPage() {
         </CardContent>
       </Card>
 
-      {hasAnyDisabledBranchWarning && uniqueBranchIds.length > 0 ? (
+      {uniqueBranchIds.length > 0 ? (
         <div className="space-y-3">
           {uniqueBranchIds.map((bid) => (
             <BranchDisabledWarning key={bid} branchId={bid} t={t} onNavigate={goToBranchSettings} />
@@ -278,17 +311,48 @@ export function RegistersPage() {
         <CardContent className="space-y-4 pt-6">
           <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
             <div className="max-w-xl flex-1">
-              <Input value={query} onChange={(e) => setQuery(e.target.value)} placeholder={t("search_placeholder")} />
+              <Input
+                value={query}
+                onChange={(e) => handleSearchChange(e.target.value)}
+                placeholder={t("search_placeholder")}
+              />
             </div>
             <Badge tone="neutral" className="w-fit">
-              {filteredRegisters.length} {t("results")}
+              {totalCount} {t("results")}
             </Badge>
           </div>
 
           {isLoading ? (
             <RegistersSkeleton />
-          ) : filteredRegisters.length === 0 ? (
-            <EmptyState t={t} icon={MonitorCog} onClickNew={() => setCreateOpen(true)} />
+          ) : registers.length === 0 ? (
+            debouncedQuery ? (
+              <Card className="p-8 text-center">
+                <EmptyState
+                  icon={MonitorCog}
+                  title={t("no_results")}
+                  description={t("search_desc")}
+                  action={
+                    <Button variant="outline" onClick={() => handleSearchChange("")}>
+                      {t("clear_search")}
+                    </Button>
+                  }
+                />
+              </Card>
+            ) : (
+              <Card className="p-8 text-center">
+                <EmptyState
+                  icon={MonitorCog}
+                  title={t("empty_title")}
+                  description={t("empty_desc")}
+                  action={
+                    <Button onClick={() => setCreateOpen(true)}>
+                      <Plus className="size-4" />
+                      {t("create")}
+                    </Button>
+                  }
+                />
+              </Card>
+            )
           ) : (
             <>
               <div className="hidden xl:block">
@@ -298,17 +362,21 @@ export function RegistersPage() {
                       <TableHead>{t("name_label")}</TableHead>
                       <TableHead>{t("code_label")}</TableHead>
                       <TableHead>{t("branch_label")}</TableHead>
+                      <TableHead>{t("serial_label")}</TableHead>
+                      <TableHead>{t("device_label")}</TableHead>
                       <TableHead>{t("status_label")}</TableHead>
                       <TableHead>{t("last_activity")}</TableHead>
                       <TableHead className="text-right">{t("actions")}</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {filteredRegisters.map((r) => (
+                    {registers.map((r) => (
                       <TableRow key={r.id}>
                         <TableCell className="font-medium">{r.name}</TableCell>
                         <TableCell className="text-muted-foreground">{r.code}</TableCell>
                         <TableCell className="text-muted-foreground">{r.branchName || "—"}</TableCell>
+                        <TableCell className="font-mono text-sm">{r.serialCode || "—"}</TableCell>
+                        <TableCell className="text-muted-foreground">{r.deviceIdentifier || "—"}</TableCell>
                         <TableCell>
                           <Badge tone={statusBadgeTone(r.status)}>{t(statusTextKey(r.status))}</Badge>
                         </TableCell>
@@ -337,6 +405,18 @@ export function RegistersPage() {
                               <ChevronRight className="size-4 rotate-90" />
                               {t("status_label")}
                             </Button>
+                            {r.branchPublicId ? (
+                              <Button
+                                type="button"
+                                variant="outline"
+                                size="sm"
+                                onClick={() => goToBranchSettings(r.branchPublicId)}
+                                disabled={isMutating}
+                                title={t("go_to_branch_settings")}
+                              >
+                                <Settings2 className="size-4" />
+                              </Button>
+                            ) : null}
                           </div>
                         </TableCell>
                       </TableRow>
@@ -346,7 +426,7 @@ export function RegistersPage() {
               </div>
 
               <div className="grid gap-4 xl:hidden">
-                {filteredRegisters.map((r) => (
+                {registers.map((r) => (
                   <Card key={r.id} className="rounded-[24px] border-border/70 bg-background/45 shadow-none">
                     <CardContent className="space-y-4 p-4 sm:p-5">
                       <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
@@ -380,6 +460,18 @@ export function RegistersPage() {
                             <ChevronRight className="size-4 rotate-90" />
                             {t("status_label")}
                           </Button>
+                          {r.branchPublicId ? (
+                            <Button
+                              type="button"
+                              variant="outline"
+                              size="sm"
+                              onClick={() => goToBranchSettings(r.branchPublicId)}
+                              disabled={isMutating}
+                            >
+                              <Settings2 className="size-4" />
+                              {t("go_to_branch_settings")}
+                            </Button>
+                          ) : null}
                         </div>
                       </div>
 
@@ -424,6 +516,104 @@ export function RegistersPage() {
               </Button>
             </div>
           ) : null}
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader className="pb-0">
+          <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+            <div className="space-y-1">
+              <CardTitle>{t("serials_pool_title")}</CardTitle>
+              <CardDescription>{t("serials_pool_desc")}</CardDescription>
+            </div>
+            <Button variant="outline" size="sm" onClick={() => refetchSerials()}>
+              <RefreshCw className="size-4" />
+              {t("refresh")}
+            </Button>
+          </div>
+        </CardHeader>
+        <CardContent className="pt-6">
+          {serialsLoading ? (
+            <div className="space-y-3">
+              {Array.from({ length: 3 }).map((_, i) => (
+                <Skeleton key={i} className="h-14 w-full rounded-xl" />
+              ))}
+            </div>
+          ) : serialsError ? (
+            <div className="flex flex-col items-start gap-3 py-4">
+              <p className="text-sm text-muted-foreground">{t("error_load_title")}</p>
+              <Button variant="outline" size="sm" onClick={() => refetchSerials()}>
+                <RefreshCw className="size-4" />
+                {t("retry")}
+              </Button>
+            </div>
+          ) : serials.length === 0 ? (
+            <p className="py-4 text-sm text-muted-foreground">{t("serials_pool_empty")}</p>
+          ) : (
+            <>
+              <div className="hidden xl:block">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>{t("serial_label")}</TableHead>
+                      <TableHead>{t("status_label")}</TableHead>
+                      <TableHead>{t("device_label")}</TableHead>
+                      <TableHead>{t("serials_pool_register")}</TableHead>
+                      <TableHead>{t("last_activity")}</TableHead>
+                      <TableHead>{t("created")}</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {serials.map((s) => (
+                      <TableRow key={s.id}>
+                        <TableCell className="font-mono text-sm">{s.serialCode}</TableCell>
+                        <TableCell>
+                          <Badge tone={serialStatusBadgeTone(s.status)}>{t(serialStatusTextKey(s.status))}</Badge>
+                        </TableCell>
+                        <TableCell className="text-muted-foreground">{s.deviceName || "—"}</TableCell>
+                        <TableCell className="text-muted-foreground">
+                          {s.isAssignedToRegister ? s.registerName || s.registerCode || "—" : "—"}
+                        </TableCell>
+                        <TableCell className="text-muted-foreground">
+                          {s.lastSeenAt ? formatDateTime(s.lastSeenAt) : "—"}
+                        </TableCell>
+                        <TableCell className="text-muted-foreground">{formatDateTime(s.createdAt)}</TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
+
+              <div className="grid gap-3 xl:hidden">
+                {serials.map((s) => (
+                  <Card key={s.id} className="rounded-2xl border-border/70 bg-background/45 shadow-none">
+                    <CardContent className="space-y-2 p-4">
+                      <div className="flex items-center justify-between gap-2">
+                        <span className="font-mono text-sm font-medium">{s.serialCode}</span>
+                        <Badge tone={serialStatusBadgeTone(s.status)}>{t(serialStatusTextKey(s.status))}</Badge>
+                      </div>
+                      <div className="grid grid-cols-2 gap-2 text-xs text-muted-foreground">
+                        <div>
+                          <span className="font-medium">{t("device_label")}:</span> {s.deviceName || "—"}
+                        </div>
+                        <div>
+                          <span className="font-medium">{t("serials_pool_register")}:</span>{" "}
+                          {s.isAssignedToRegister ? s.registerName || s.registerCode || "—" : "—"}
+                        </div>
+                        <div>
+                          <span className="font-medium">{t("last_activity")}:</span>{" "}
+                          {s.lastSeenAt ? formatDateTime(s.lastSeenAt) : "—"}
+                        </div>
+                        <div>
+                          <span className="font-medium">{t("created")}:</span> {formatDateTime(s.createdAt)}
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            </>
+          )}
         </CardContent>
       </Card>
 
@@ -499,29 +689,5 @@ function RegistersSkeleton() {
         ))}
       </div>
     </div>
-  )
-}
-
-function EmptyState({
-  t,
-  icon: Icon,
-  onClickNew,
-}: {
-  t: (k: string) => string
-  icon: React.ComponentType<{ className?: string }>
-  onClickNew: () => void
-}) {
-  return (
-    <Card className="p-8 text-center">
-      <div className="mx-auto flex size-14 items-center justify-center rounded-3xl border border-border/70 bg-accent/60 text-muted-foreground">
-        <Icon className="size-6" />
-      </div>
-      <h2 className="mt-4 text-lg font-semibold text-foreground">{t("empty_title")}</h2>
-      <p className="mt-2 text-sm text-muted-foreground">{t("empty_desc")}</p>
-      <Button onClick={onClickNew} className="mt-5">
-        <Plus className="size-4" />
-        {t("create")}
-      </Button>
-    </Card>
   )
 }

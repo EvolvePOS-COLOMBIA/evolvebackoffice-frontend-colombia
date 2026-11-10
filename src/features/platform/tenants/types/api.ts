@@ -19,6 +19,10 @@ export interface CreateTenantDto {
   identificationTypeId: number
   maxBranches: number | null
   maxUsers: number | null
+  /** Zona horaria IANA (ej America/Bogota). Vacío = derivar del país; si no, UTC. */
+  timeZoneId?: string | null
+  /** Módulos a configurar en la misma petición (opcional). Vacío = defaults (todo deshabilitado). */
+  modules?: UpdateTenantModuleItemDto[] | null
 }
 
 export interface CreateTenantResponseDto {
@@ -55,6 +59,10 @@ export interface UpdateTenantDto {
   maxRegisters: number | null
   maxBranches: number | null
   maxUsers: number | null
+  /** null = no cambiar; '' = limpiar (UTC). */
+  timeZoneId?: string | null
+  /** Módulos a configurar en la misma petición. null = no modificar los módulos. */
+  modules?: UpdateTenantModuleItemDto[] | null
 }
 
 export interface PosSerialCodeResponseDto {
@@ -91,6 +99,12 @@ export interface TenantResponseDto {
   currentRegisterCount: number
   serialCodes: PosSerialCodeResponseDto[] | null
   createdAt: string
+  adminUsername?: string | null
+  adminFullName?: string | null
+  adminEmail?: string | null
+  adminIdentification?: string | null
+  adminIsActive?: boolean | null
+  timeZoneId?: string | null
 }
 
 export interface TenantListResponseDto {
@@ -99,11 +113,16 @@ export interface TenantListResponseDto {
   tenantId: string | null
   contactEmail: string | null
   countryCode: string | null
+  identificationNumber?: string | null
+  identificationTypeId?: number
+  subdomain?: string | null
   isActive: boolean
   status: string
   createdById: string | null
   rejectionReason: string | null
   maxRegisters: number
+  maxBranches?: number | null
+  maxUsers?: number | null
   createdAt: string
 }
 
@@ -122,7 +141,7 @@ export interface TenantModuleDto {
   moduleName: string
   moduleDescription?: string | null
   isEnabled: boolean
-  quantity: number
+  quantity: number | null
   createdAt: string
 }
 
@@ -131,14 +150,11 @@ export interface UpdateTenantModuleDto {
   quantity?: number
 }
 
-export interface BulkUpdateTenantModuleItemDto {
+/** Item de módulo dentro de una operación masiva (una sola petición). */
+export interface UpdateTenantModuleItemDto {
   modulePublicId: string
   isEnabled: boolean
   quantity: number
-}
-
-export interface BulkUpdateTenantModulesDto {
-  modules: BulkUpdateTenantModuleItemDto[]
 }
 
 export interface ModuleResponseDto {

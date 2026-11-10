@@ -6,6 +6,8 @@
   "customers_desc": "Manage contact details, purchase history, and loyalty information for your clients.",
   "users": "Users",
   "users_desc": "Control employee accounts, login credentials, and personal access settings for the system.",
+  "suppliers": "Suppliers",
+  "suppliers_desc": "Manage contact information, pricing agreements and terms for all your product suppliers.",
   "roles": "Roles",
   "roles_desc": "Define permissions and access levels for different user groups (e.g., Manager, Cashier, Admin).",
   "time_clock": "Time Clock",

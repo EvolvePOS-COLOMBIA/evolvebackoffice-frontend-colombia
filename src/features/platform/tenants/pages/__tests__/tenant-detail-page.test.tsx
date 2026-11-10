@@ -1,14 +1,18 @@
 /// <reference types="@testing-library/jest-dom/vitest" />
 import { describe, it, expect, vi, beforeEach, type Mock } from "vitest"
 import React from "react"
-import { render, screen, waitFor, fireEvent } from "@testing-library/react"
+import { render, screen, waitFor } from "@testing-library/react"
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query"
 import { I18nextProvider } from "react-i18next"
 import { MemoryRouter, Routes, Route } from "react-router-dom"
 
 import { TenantDetailPage } from "@/features/platform/tenants/pages/tenant-detail-page"
 import i18n from "@/i18n/index"
-import type { TenantResponseDto, TenantModuleDto } from "@/features/platform/tenants/types/api"
+import type {
+  TenantResponseDto,
+  TenantModuleDto,
+  PosSerialCodeResponseDto,
+} from "@/features/platform/tenants/types/api"
 
 vi.mock("@/config/axios-client", () => ({
   api: {
@@ -58,7 +62,6 @@ vi.mock("@/hooks/use-notify", () => ({
     info: vi.fn(),
   }),
 }))
-import { notify } from "@/hooks/use-notify"
 
 const TENANT_PUBLIC_ID = "FAKE-GUID-ID-123"
 const TENANT_INTERNAL_ID = "TENANT-INT-001"
@@ -111,6 +114,31 @@ const fakeModulesDto: TenantModuleDto[] = [
     createdAt: "2025-01-15T10:30:00Z",
   },
 ]
+
+function mockTenantAndSerialCodesRequests() {
+  ;(api.get as Mock).mockImplementation((url: string) => {
+    if (url === `/api/Tenants/${TENANT_PUBLIC_ID}`) {
+      return Promise.resolve({ data: fakeTenantDto })
+    }
+
+    if (url === `/api/Tenants/${TENANT_PUBLIC_ID}/serial-codes`) {
+      return Promise.resolve({ data: [] })
+    }
+
+    return Promise.reject(new Error(`Unexpected GET request: ${url}`))
+  })
+}
+
+const fakeSerialDto: PosSerialCodeResponseDto = {
+  id: "SERIAL-PUB-001",
+  serialCode: "POS-123456",
+  status: "Unassigned",
+  machineIdentifier: null,
+  deviceName: null,
+  activatedAt: null,
+  lastSeenAt: null,
+  createdAt: "2025-01-15T10:30:00Z",
+}
 
 function renderWithProviders(initialEntries = [`/platform/tenants/${TENANT_PUBLIC_ID}`]) {
   const queryClient = new QueryClient({
@@ -194,7 +222,7 @@ describe("TenantDetailPage", () => {
   })
 
   it("2.4.2 - Muestra breadcrumb, nombre del tenant y campos summary cuando fetch exitoso", async () => {
-    ;(api.get as Mock).mockResolvedValue({ data: fakeTenantDto })
+    mockTenantAndSerialCodesRequests()
 
     const modulesClient = {
       get: vi.fn().mockResolvedValue({ data: fakeModulesDto }),
@@ -239,17 +267,12 @@ describe("TenantDetailPage", () => {
     expect(activeTiles.length).toBeGreaterThanOrEqual(1)
   })
 
-  it("2.4.3 - Switch isEnabled y boton Save quantity disparan mutation y notify.success", async () => {
-    ;(api.get as Mock).mockResolvedValue({ data: fakeTenantDto })
-
-    const updatedModuleDto: TenantModuleDto = {
-      ...fakeModulesDto[0]!,
-      quantity: 7,
-    }
+  it("2.4.3 - La seccion de modulos es solo lectura (sin switches, inputs ni boton guardar)", async () => {
+    mockTenantAndSerialCodesRequests()
 
     const modulesClient = {
       get: vi.fn().mockResolvedValue({ data: fakeModulesDto }),
-      put: vi.fn().mockResolvedValue({ data: updatedModuleDto }),
+      put: vi.fn(),
       post: vi.fn(),
       delete: vi.fn(),
       defaults: { headers: {}, baseURL: "http://localhost" },
@@ -261,42 +284,15 @@ describe("TenantDetailPage", () => {
     const posHeadings = await screen.findAllByText(/punto de venta/i)
     expect(posHeadings.length).toBeGreaterThanOrEqual(1)
 
-    const inputs = screen.getAllByRole("spinbutton") as HTMLInputElement[]
-    expect(inputs.length).toBeGreaterThanOrEqual(2)
-    const posInput = inputs[0]!
-    fireEvent.change(posInput, { target: { value: "7" } })
-    expect(posInput.value).toBe("7")
+    // Estado y cantidad se muestran como texto plano
+    expect(screen.getAllByText(/activo/i).length).toBeGreaterThanOrEqual(1)
+    expect(screen.getAllByText("5").length).toBeGreaterThanOrEqual(1)
 
-    const saveButtons = screen.getAllByRole("button", { name: /guardar/i })
-    expect(saveButtons.length).toBeGreaterThanOrEqual(2)
-    const firstSave = saveButtons[0]!
-    fireEvent.click(firstSave)
-
-    await waitFor(() => {
-      expect(modulesClient.put).toHaveBeenCalledWith(`/api/tenant-modules/${fakeModulesDto[0]!.id}`, { quantity: 7 })
-      expect(notify.success).toHaveBeenCalledTimes(1)
-    })
-
-    modulesClient.put.mockReset()
-    vi.mocked(notify.success).mockReset()
-
-    const toggledDto: TenantModuleDto = {
-      ...fakeModulesDto[1]!,
-      isEnabled: true,
-    }
-    modulesClient.put.mockResolvedValue({ data: toggledDto })
-
-    const switches = screen.getAllByRole("switch")
-    expect(switches.length).toBeGreaterThanOrEqual(2)
-    const inventorySwitch = switches[1]!
-    fireEvent.click(inventorySwitch)
-
-    await waitFor(() => {
-      expect(modulesClient.put).toHaveBeenCalledWith(`/api/tenant-modules/${fakeModulesDto[1]!.id}`, {
-        isEnabled: true,
-      })
-      expect(notify.success).toHaveBeenCalledTimes(1)
-    })
+    // Sin controles de edición ni peticiones de escritura
+    expect(screen.queryAllByRole("switch")).toHaveLength(0)
+    expect(screen.queryAllByRole("spinbutton")).toHaveLength(0)
+    expect(screen.queryAllByRole("button", { name: /guardar/i })).toHaveLength(0)
+    expect(modulesClient.put).not.toHaveBeenCalled()
   })
 
   it("2.4.4 - Cuando fetch tenant da error 404 muestra ErrorState/Not found", async () => {
@@ -323,5 +319,37 @@ describe("TenantDetailPage", () => {
       name: /volver a tenants/i,
     })
     expect(backButtons.length).toBeGreaterThanOrEqual(1)
+  })
+
+  it("2.4.5 - La seccion de seriales POS es solo lectura (la descomision vive en el modal)", async () => {
+    ;(api.get as Mock).mockImplementation((url: string) => {
+      if (url === `/api/Tenants/${TENANT_PUBLIC_ID}`) {
+        return Promise.resolve({ data: fakeTenantDto })
+      }
+
+      if (url === `/api/Tenants/${TENANT_PUBLIC_ID}/serial-codes`) {
+        return Promise.resolve({ data: [fakeSerialDto] })
+      }
+
+      return Promise.reject(new Error(`Unexpected GET request: ${url}`))
+    })
+
+    const modulesClient = {
+      get: vi.fn().mockResolvedValue({ data: fakeModulesDto }),
+      put: vi.fn(),
+      post: vi.fn(),
+      delete: vi.fn(),
+      defaults: { headers: {}, baseURL: "http://localhost" },
+    }
+    vi.mocked(axios.create).mockReturnValue(modulesClient as unknown as ReturnType<typeof axios.create>)
+
+    renderWithProviders()
+
+    const serialCodes = await screen.findAllByText("POS-123456")
+    expect(serialCodes.length).toBeGreaterThanOrEqual(1)
+
+    // Sin acciones inline: ni boton de descomisionar ni campo de motivo
+    expect(screen.queryByRole("button", { name: /descomisionar/i })).toBeNull()
+    expect(screen.queryByPlaceholderText(/motivo/i)).toBeNull()
   })
 })

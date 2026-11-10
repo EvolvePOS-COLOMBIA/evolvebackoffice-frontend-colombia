@@ -8,14 +8,19 @@ export const tenantCreateSchema = (t: TFunction) =>
     phone: z.string().optional().default(""),
     address: z.string().optional().default(""),
     countryCode: z.string().optional().default(""),
-    maxRegisters: z.coerce.number().int().min(1, t("max_registers_min")),
+    maxRegisters: z.coerce.number().int().min(0, t("max_registers_min")).optional().default(0),
     adminIdentification: z.string().min(1, t("admin_identification_required")),
     subdomain: z.string().optional().default(""),
     identificationNumber: z.string().optional().default(""),
     identificationTypeId: z.coerce.number().int().min(0).optional().default(0),
     maxBranches: z.coerce.number().int().min(0).optional().default(0),
     maxUsers: z.coerce.number().int().min(0).optional().default(0),
+    timeZoneId: z.string().optional().default(""),
   })
 
-// Alias for the edit dialog (same schema)
-export const tenantEditSchema = tenantCreateSchema
+// Schema de edición: mismo que creación salvo la identificación del admin,
+// que no se edita (es un dato de solo lectura del usuario admin del tenant).
+export const tenantEditSchema = (t: TFunction) =>
+  tenantCreateSchema(t).extend({
+    adminIdentification: z.string().optional().default(""),
+  })

@@ -11,6 +11,7 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "
 import { Input } from "@/components/ui/input"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { useAuth } from "@/features/auth/hooks/use-auth"
+import { useAuthLoginConfig } from "@/features/auth/hooks/use-auth-login-config"
 import { businessLoginSchema, platformLoginSchema } from "@/features/auth/schemas/login-schema"
 import type { PlatformLoginFormValues, TenantLoginFormValues } from "@/features/auth/types"
 import { notify } from "@/hooks/use-notify"
@@ -20,12 +21,21 @@ export function LoginForm() {
   const navigate = useNavigate()
   const { defaultRoute, isLogging, loginBusiness, loginPlatform } = useAuth()
   const { t } = useTranslation("auth")
+  const { data: authConfig } = useAuthLoginConfig()
+
+  // PLATFORM_ADMIN_HOST: la pestaña de plataforma solo se ofrece cuando el
+  // host actual es el autorizado (o en desarrollo local). El backend aplica
+  // la misma regla con 403 en POST /api/auth/login/platform.
+  const currentHost = window.location.hostname.toLowerCase()
+  const platformHost = authConfig?.platformAdminHost?.toLowerCase() ?? null
+  const isLoopback = currentHost === "localhost" || currentHost === "127.0.0.1"
+  const platformLoginAllowed = !platformHost || isLoopback || currentHost === platformHost
 
   const businessForm = useForm<TenantLoginFormValues>({
     resolver: zodResolver(businessLoginSchema(t)),
     defaultValues: {
-      tenantPublicId: "-juaco-pizza-ca474991",
-      email: "joaquin@urspos.com",
+      tenantPublicId: "joaquin-4bb4e4d0",
+      email: "joaquin@URSPOS.COM",
       password: "Guar123!",
     },
   })
@@ -83,16 +93,24 @@ export function LoginForm() {
 
           <CardContent className="space-y-5">
             <Tabs defaultValue="business" className="space-y-5">
-              <TabsList className="grid w-full grid-cols-2">
+              <TabsList className={platformLoginAllowed ? "grid w-full grid-cols-2" : "grid w-full grid-cols-1"}>
                 <TabsTrigger value="business">
                   <Building2 className="mr-2 size-4" />
                   {t("business_admin")}
                 </TabsTrigger>
-                <TabsTrigger value="platform">
-                  <ShieldCheck className="mr-2 size-4" />
-                  {t("platform_admin")}
-                </TabsTrigger>
+                {platformLoginAllowed ? (
+                  <TabsTrigger value="platform">
+                    <ShieldCheck className="mr-2 size-4" />
+                    {t("platform_admin")}
+                  </TabsTrigger>
+                ) : null}
               </TabsList>
+
+              {!platformLoginAllowed ? (
+                <p className="rounded-xl border border-border/70 bg-muted/40 px-3 py-2 text-center text-xs text-muted-foreground">
+                  {t("platform_login_restricted", { host: authConfig?.platformAdminHost ?? "" })}
+                </p>
+              ) : null}
 
               <TabsContent value="business">
                 <Form {...businessForm}>

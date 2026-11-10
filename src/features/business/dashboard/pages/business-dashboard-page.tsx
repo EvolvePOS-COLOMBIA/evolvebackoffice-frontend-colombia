@@ -28,6 +28,10 @@ import { ActiveOrdersCard } from "../components/active-orders-card"
 import { StatsGrid } from "../components/stats-grid"
 import { DepartmentSalesChart } from "../components/department-sales-chart"
 import { TenderReportCard } from "../components/tender-report-card"
+import { CHART_PRIMARY, CHART_PRIMARY_LIGHT, CHART_SECONDARY, CHART_SECONDARY_DARK } from "../constants"
+
+/** Paleta del donut de tender (los datos del API no traen color). */
+const TENDER_COLORS = [CHART_PRIMARY, CHART_SECONDARY, CHART_PRIMARY_LIGHT, CHART_SECONDARY_DARK]
 import { YearOnYearChart } from "../components/year-on-year-chart"
 import { VsPreviousMonthChart } from "../components/vs-previous-month-chart"
 
@@ -95,11 +99,27 @@ export function BusinessDashboardPage() {
     }
   }, [period, salesByPeriod])
 
-  const defaultStats = useMemo(() => ({
-    grossSales: 0, taxes: 0, netSales: 0, hash: 0, negHash: 0,
-    netSalesWohash: 0, customers: 0, voidTrans: 0, cancelTrans: 0,
-    itemsSold: 0, webSales: 0,
-  }), [])
+  const defaultStats = useMemo(
+    () => ({
+      grossSales: 0,
+      taxes: 0,
+      netSales: 0,
+      customers: 0,
+      voidedAmount: 0,
+      voidCount: 0,
+      cancelTrans: 0,
+      cancelTransCount: 0,
+      itemsSold: 0,
+      webSales: 0,
+      webOrderSales: 0,
+      webOrderTax: 0,
+      manualOrderSales: 0,
+      manualOrderTax: 0,
+      totalSales: 0,
+      shippingCollected: 0,
+    }),
+    []
+  )
 
   return (
     <div>
@@ -140,7 +160,7 @@ export function BusinessDashboardPage() {
           {/* Department Sales */}
           <div>
             <DepartmentSalesChart
-              data={(departmentSales ?? []).map((d) => ({ ...d, fill: "" }))}
+              data={departmentSales ?? []}
               dateRange={dateRange}
               onPrint={handlePrint}
               onSave={handleSave}
@@ -165,13 +185,16 @@ export function BusinessDashboardPage() {
         <div className="space-y-4">
           {/* Active Orders */}
           <div>
-            <ActiveOrdersCard orders={(activeOrders ?? []).map((o) => ({ ...o, status: o.status as "pending" | "preparing" | "ready" | "on_the_way" | "delivered" }))} />
+            <ActiveOrdersCard orders={activeOrders ?? []} />
           </div>
 
           {/* Tender Report */}
           <div>
             <TenderReportCard
-              data={(tenderReport ?? []).map((t) => ({ ...t, color: "" }))}
+              data={(tenderReport ?? []).map((t, i) => ({
+                ...t,
+                color: TENDER_COLORS[i % TENDER_COLORS.length],
+              }))}
               dateRange={dateRange}
               onPrint={handlePrint}
               onSave={handleSave}

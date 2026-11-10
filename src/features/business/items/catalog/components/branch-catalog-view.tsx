@@ -1,8 +1,9 @@
-import { useState } from "react"
-import { Pencil, Trash2, Package, Settings } from "lucide-react"
+import { useRef, useState } from "react"
+import { Pencil, Power, Trash2, Package, SearchX } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
+import { Input } from "@/components/ui/input"
 import {
   Pagination,
   PaginationContent,
@@ -12,13 +13,15 @@ import {
   PaginationNext,
   PaginationPrevious,
 } from "@/components/ui/pagination"
+import { generatePageNumbers } from "@/components/data-table"
 import { Skeleton } from "@/components/ui/skeleton"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { useTranslation } from "@/i18n/use-i18n"
-import { useBranchItems, useDeleteBranchItem } from "../hooks/use-branch-items"
+import { useBranchItems, useDeleteBranchItem, useSetBranchItemActive } from "../hooks/use-branch-items"
 import type { BranchItemResponseDto } from "../types"
-import { BranchItemFormDialog } from "./branch-item-form-dialog"
-import { AdjustStockDialog } from "./adjust-stock-dialog"
+import { ItemThumbnail } from "./item-thumbnail"
+import { BranchItemEditDialog } from "./branch-item-edit-dialog"
+import { ConfirmActionDialog } from "@/components/confirm-action-dialog"
 
 type BranchCatalogViewProps = {
   branchId: string
@@ -28,46 +31,75 @@ type BranchCatalogViewProps = {
 export function BranchCatalogView({ branchId, onAssignClick }: BranchCatalogViewProps) {
   const { t } = useTranslation("business-items-catalog")
   const [page, setPage] = useState(1)
-  const [pricingDialogOpen, setPricingDialogOpen] = useState(false)
-  const [stockDialogOpen, setStockDialogOpen] = useState(false)
-  const [selectedItem, setSelectedItem] = useState<BranchItemResponseDto | null>(null)
+  const [search, setSearch] = useState("")
+  const [debouncedSearch, setDebouncedSearch] = useState("")
+  const searchTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const [editDialogOpen, setEditDialogOpen] = useState(false)
+  const [selectedItemId, setSelectedItemId] = useState<string | null>(null)
+  const [confirmDeactivate, setConfirmDeactivate] = useState<BranchItemResponseDto | null>(null)
+  const [confirmRemove, setConfirmRemove] = useState<BranchItemResponseDto | null>(null)
 
-  const { data, isLoading } = useBranchItems(branchId, { pageNumber: page, pageSize: 20 })
+  const { data, isLoading } = useBranchItems(branchId, {
+    pageNumber: page,
+    pageSize: 20,
+    search: debouncedSearch.trim() || undefined,
+  })
   const deleteBranchItem = useDeleteBranchItem(branchId)
+  const setActive = useSetBranchItemActive(branchId)
+
+  // Búsqueda server-side (mismo debounce que el catálogo global).
+  const handleSearchChange = (value: string) => {
+    setSearch(value)
+    if (searchTimer.current) clearTimeout(searchTimer.current)
+    searchTimer.current = setTimeout(() => {
+      setDebouncedSearch(value)
+      setPage(1)
+    }, 350)
+  }
+
+  const hasSearch = search.trim().length > 0
 
   const items = data?.data ?? []
+  // Selección derivada de la query: refresca los flags (global/personalizado)
+  // automáticamente tras cada mutación de configuración.
+  const selectedItem = items.find((i) => i.id === selectedItemId) ?? null
 
-  const handleEditPricing = (item: BranchItemResponseDto) => {
-    setSelectedItem(item)
-    setPricingDialogOpen(true)
+  const handleEdit = (item: BranchItemResponseDto) => {
+    setSelectedItemId(item.id)
+    setEditDialogOpen(true)
   }
 
-  const handleAdjustStock = (item: BranchItemResponseDto) => {
-    setSelectedItem(item)
-    setStockDialogOpen(true)
-  }
-
-  const handleDelete = (item: BranchItemResponseDto) => {
-    if (confirm(t("confirm_remove_from_branch", { name: item.itemName }))) {
-      deleteBranchItem.mutate({ id: item.id, name: item.itemName ?? "" })
+  // Inactivar (reversible) pide confirmación visual; activar es directo.
+  const handleToggleStatus = (item: BranchItemResponseDto) => {
+    if (item.inactive) {
+      setActive.mutate({ id: item.id, active: true, name: item.itemName ?? "" })
+    } else {
+      setConfirmDeactivate(item)
     }
   }
 
-  const handlePricingDialogClose = () => {
-    setPricingDialogOpen(false)
-    setSelectedItem(null)
+  // Eliminar = quitar la asignación de ESTA sucursal (el catálogo general no se toca).
+  const handleRemove = (item: BranchItemResponseDto) => {
+    setConfirmRemove(item)
   }
 
-  const handleStockDialogClose = () => {
-    setStockDialogOpen(false)
-    setSelectedItem(null)
+  const handleEditDialogClose = (openValue: boolean) => {
+    setEditDialogOpen(openValue)
+    if (!openValue) setSelectedItemId(null)
   }
 
   return (
     <div className="flex h-full flex-col gap-4">
       {/* Toolbar */}
-      <div className="flex shrink-0 items-center justify-end">
-        <Button size="sm" onClick={onAssignClick} className="h-8 px-2 text-xs sm:h-9 sm:px-3 sm:text-sm">
+      <div className="flex shrink-0 flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+        <Input
+          type="text"
+          placeholder={t("search_items")}
+          value={search}
+          onChange={(e) => handleSearchChange(e.target.value)}
+          className="h-8 w-full max-w-sm px-3 text-sm sm:h-9"
+        />
+        <Button size="sm" onClick={onAssignClick} className="h-8 w-fit px-2 text-xs sm:h-9 sm:px-3 sm:text-sm">
           <span className="sm:hidden">{t("assign")}</span>
           <span className="hidden sm:inline">{t("assign_products")}</span>
         </Button>
@@ -104,17 +136,26 @@ export function BranchCatalogView({ branchId, onAssignClick }: BranchCatalogView
                 <TableRow>
                   <TableCell colSpan={8}>
                     <div className="flex flex-col items-center justify-center py-8 text-muted-foreground sm:py-12">
-                      <Package className="mb-2 size-8 opacity-40 sm:mb-3 sm:size-10" />
-                      <p className="text-xs sm:text-sm">{t("no_branch_items")}</p>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        className="mt-3 h-8 px-2 text-xs sm:mt-4"
-                        onClick={onAssignClick}
-                      >
-                        <span className="sm:hidden">{t("assign")}</span>
-                        <span className="hidden sm:inline">{t("assign_products")}</span>
-                      </Button>
+                      {hasSearch ? (
+                        <>
+                          <SearchX className="mb-2 size-8 opacity-40 sm:mb-3 sm:size-10" />
+                          <p className="text-xs sm:text-sm">{t("no_results_for_search", { search })}</p>
+                        </>
+                      ) : (
+                        <>
+                          <Package className="mb-2 size-8 opacity-40 sm:mb-3 sm:size-10" />
+                          <p className="text-xs sm:text-sm">{t("no_branch_items")}</p>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="mt-3 h-8 px-2 text-xs sm:mt-4"
+                            onClick={onAssignClick}
+                          >
+                            <span className="sm:hidden">{t("assign")}</span>
+                            <span className="hidden sm:inline">{t("assign_products")}</span>
+                          </Button>
+                        </>
+                      )}
                     </div>
                   </TableCell>
                 </TableRow>
@@ -122,13 +163,16 @@ export function BranchCatalogView({ branchId, onAssignClick }: BranchCatalogView
                 items.map((item) => (
                   <TableRow key={item.id}>
                     <TableCell className="px-4">
-                      <div className="min-w-0">
-                        <p className="truncate font-medium text-foreground">{item.itemName}</p>
-                        {item.binLocation && (
-                          <p className="text-xs text-muted-foreground">
-                            {t("bin")}: {item.binLocation}
-                          </p>
-                        )}
+                      <div className="flex items-center gap-3">
+                        <ItemThumbnail url={item.imageUrl} alt={item.itemName ?? ""} />
+                        <div className="min-w-0">
+                          <p className="truncate font-medium text-foreground">{item.itemName}</p>
+                          {item.binLocation && (
+                            <p className="text-xs text-muted-foreground">
+                              {t("bin")}: {item.binLocation}
+                            </p>
+                          )}
+                        </div>
                       </div>
                     </TableCell>
                     <TableCell className="hidden px-4 text-muted-foreground sm:table-cell">
@@ -157,17 +201,17 @@ export function BranchCatalogView({ branchId, onAssignClick }: BranchCatalogView
                           variant="secondary"
                           size="icon"
                           className="size-7 sm:size-8"
-                          onClick={() => handleEditPricing(item)}
-                          aria-label={t("edit_pricing")}
+                          onClick={() => handleToggleStatus(item)}
+                          aria-label={item.inactive ? t("activate_item") : t("deactivate_item")}
                         >
-                          <Settings className="size-3.5 sm:size-4" />
+                          <Power className="size-3.5 sm:size-4" />
                         </Button>
                         <Button
                           variant="secondary"
                           size="icon"
                           className="size-7 sm:size-8"
-                          onClick={() => handleAdjustStock(item)}
-                          aria-label={t("adjust_stock")}
+                          onClick={() => handleEdit(item)}
+                          aria-label={t("edit_item")}
                         >
                           <Pencil className="size-3.5 sm:size-4" />
                         </Button>
@@ -175,7 +219,7 @@ export function BranchCatalogView({ branchId, onAssignClick }: BranchCatalogView
                           variant="destructive"
                           size="icon"
                           className="size-7 text-destructive sm:size-8"
-                          onClick={() => handleDelete(item)}
+                          onClick={() => handleRemove(item)}
                           aria-label={t("remove_from_branch")}
                         >
                           <Trash2 className="size-3.5 sm:size-4" />
@@ -230,56 +274,55 @@ export function BranchCatalogView({ branchId, onAssignClick }: BranchCatalogView
         )}
       </div>
 
-      {/* Pricing Dialog */}
-      {selectedItem && (
-        <BranchItemFormDialog
-          open={pricingDialogOpen}
-          onOpenChange={handlePricingDialogClose}
-          branchId={branchId}
-          item={selectedItem}
-        />
-      )}
+      {/* Edición por pestañas: Precios / Stock / Impuestos / Modificadores */}
+      <BranchItemEditDialog
+        open={editDialogOpen}
+        onOpenChange={handleEditDialogClose}
+        branchId={branchId}
+        item={selectedItem}
+      />
 
-      {/* Adjust Stock Dialog */}
-      {selectedItem && (
-        <AdjustStockDialog open={stockDialogOpen} onOpenChange={handleStockDialogClose} item={selectedItem} />
-      )}
+      {/* Confirmación visual: desactivar solo en esta sucursal */}
+      <ConfirmActionDialog
+        open={confirmDeactivate !== null}
+        onOpenChange={(openValue) => {
+          if (!openValue) setConfirmDeactivate(null)
+        }}
+        title={t("branch_deactivate_title")}
+        description={t("branch_deactivate_desc", { name: confirmDeactivate?.itemName ?? "" })}
+        confirmLabel={t("deactivate_confirm")}
+        tone="destructive"
+        isPending={setActive.isPending}
+        onConfirm={() => {
+          if (!confirmDeactivate) return
+          setActive.mutate(
+            { id: confirmDeactivate.id, active: false, name: confirmDeactivate.itemName ?? "" },
+            { onSuccess: () => setConfirmDeactivate(null) }
+          )
+        }}
+      />
+
+      {/* Confirmación visual: quitar de esta sucursal (no borra el catálogo general) */}
+      <ConfirmActionDialog
+        open={confirmRemove !== null}
+        onOpenChange={(openValue) => {
+          if (!openValue) setConfirmRemove(null)
+        }}
+        title={t("branch_remove_title")}
+        description={t("branch_remove_desc", { name: confirmRemove?.itemName ?? "" })}
+        confirmLabel={t("remove_from_branch")}
+        tone="destructive"
+        isPending={deleteBranchItem.isPending}
+        onConfirm={() => {
+          if (!confirmRemove) return
+          deleteBranchItem.mutate(
+            { id: confirmRemove.id, name: confirmRemove.itemName ?? "" },
+            { onSuccess: () => setConfirmRemove(null) }
+          )
+        }}
+      />
     </div>
   )
-}
-
-function generatePageNumbers(current: number, total: number): (number | "...")[] {
-  if (total <= 7) {
-    return Array.from({ length: total }, (_, i) => i + 1)
-  }
-
-  const pages: (number | "...")[] = []
-
-  // Always show first page
-  pages.push(1)
-
-  if (current > 3) {
-    pages.push("...")
-  }
-
-  // Show pages around current
-  const start = Math.max(2, current - 1)
-  const end = Math.min(total - 1, current + 1)
-
-  for (let i = start; i <= end; i++) {
-    pages.push(i)
-  }
-
-  if (current < total - 2) {
-    pages.push("...")
-  }
-
-  // Always show last page
-  if (total > 1) {
-    pages.push(total)
-  }
-
-  return pages
 }
 
 function StockBadge({ quantity, reorderPoint }: { quantity: number; reorderPoint: number }) {

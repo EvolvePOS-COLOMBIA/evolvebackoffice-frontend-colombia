@@ -13,6 +13,21 @@ import type {
 } from "@/features/auth/types"
 
 /**
+ * Config pública de login (`GET /api/auth/has-admin`): si existe admin de
+ * plataforma y cuál es el host autorizado (PLATFORM_ADMIN_HOST) para acceder
+ * desde el navegador (null = sin restricción).
+ */
+export interface AuthLoginConfig {
+  hasAdmin: boolean
+  platformAdminHost: string | null
+}
+
+export async function getAuthLoginConfig(): Promise<AuthLoginConfig> {
+  const response = await api.get<AuthLoginConfig>("/api/auth/has-admin")
+  return response.data
+}
+
+/**
  * Cambia la contraseña web del usuario autenticado.
  * `POST /api/Auth/change-password` responde 204 sin cuerpo y revoca todos los
  * refresh tokens del usuario (motivo "password_changed").

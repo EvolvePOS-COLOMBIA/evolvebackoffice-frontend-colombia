@@ -3,10 +3,13 @@ import toast from "react-hot-toast"
 
 import { useTranslation } from "@/i18n/use-i18n"
 import {
+  activateBranchItem,
   adjustBranchItemStock,
   createBranchItem,
+  deactivateBranchItem,
   deleteBranchItem,
   getBranchItems,
+  updateBranchItemConfig,
   updateBranchItemPricing,
 } from "../services/branch-items.service"
 import type { AdjustBranchItemStockDto, CreateBranchItemDto, ItemListParams, UpdateBranchItemDto } from "../types"
@@ -68,6 +71,55 @@ export function useAdjustBranchItemStock(branchId: string) {
     },
     onError: () => {
       toast.error(t("toast_error_stock"))
+    },
+  })
+}
+
+/**
+ * Cambia el modo de configuración (global vs personalizada) de impuestos/modificadores
+ * del ítem en la sucursal. Refresca los ítems de la sucursal porque cambian los flags.
+ */
+export function useUpdateBranchItemConfig(branchId: string) {
+  const queryClient = useQueryClient()
+  const { t } = useTranslation("business-items-catalog")
+
+  return useMutation({
+    mutationFn: ({
+      id,
+      payload,
+    }: {
+      id: string
+      payload: { useGlobalTaxes?: boolean; useGlobalModifiers?: boolean; sellsHere?: boolean }
+    }) => updateBranchItemConfig(branchId, id, payload),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["branch-items", branchId] })
+      queryClient.invalidateQueries({ queryKey: ["tax-rates"] })
+      queryClient.invalidateQueries({ queryKey: ["item-modifiers"] })
+      toast.success(t("toast_config_saved"))
+    },
+    onError: () => {
+      toast.error(t("toast_error_config"))
+    },
+  })
+}
+
+/**
+ * Activa o desactiva un producto dentro de la sucursal.
+ * Desactivar es reversible (el badge queda en la fila); no afecta al catálogo general.
+ */
+export function useSetBranchItemActive(branchId: string) {
+  const queryClient = useQueryClient()
+  const { t } = useTranslation("business-items-catalog")
+
+  return useMutation({
+    mutationFn: ({ id, active }: { id: string; active: boolean; name: string }) =>
+      active ? activateBranchItem(branchId, id) : deactivateBranchItem(branchId, id),
+    onSuccess: (_data, variables) => {
+      queryClient.invalidateQueries({ queryKey: ["branch-items", branchId] })
+      toast.success(variables.active ? t("toast_branch_item_activated") : t("toast_branch_item_deactivated"))
+    },
+    onError: () => {
+      toast.error(t("toast_error_remove"))
     },
   })
 }

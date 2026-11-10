@@ -15,6 +15,11 @@ export interface BranchResponseDto {
   adminUserPublicId: string
   adminUserName: string | null
   createdAt: string
+  /** Sucursal proveedora: abastece a otras sucursales. */
+  isSupplier?: boolean
+  /** El backend los devuelve en null cuando la sucursal no tiene coordenadas. */
+  latitude?: number | null
+  longitude?: number | null
 }
 
 export interface CreateBranchDto {
@@ -24,6 +29,10 @@ export interface CreateBranchDto {
   address: string | null
   phone: string | null
   email: string | null
+  isSupplier?: boolean
+  /** Opcionales: el backend acepta null cuando no hay coordenadas. */
+  latitude?: number | null
+  longitude?: number | null
 }
 
 export interface UpdateBranchDto {
@@ -33,6 +42,10 @@ export interface UpdateBranchDto {
   phone: string | null
   email: string | null
   adminUserId: string | null
+  isSupplier?: boolean | null
+  /** Opcionales: el backend acepta null cuando no hay coordenadas. */
+  latitude?: number | null
+  longitude?: number | null
 }
 
 /**

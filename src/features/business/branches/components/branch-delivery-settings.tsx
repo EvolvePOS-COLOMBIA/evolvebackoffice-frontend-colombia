@@ -12,7 +12,7 @@ import {
   useBranchDeliverySettings,
   useUpdateBranchDeliverySettings,
 } from "@/features/business/delivery/hooks/use-delivery"
-import { ADVANCE_MODE } from "@/features/business/delivery/types"
+import { ADVANCE_MODE, type BranchDeliverySettingsDto } from "@/features/business/delivery/types"
 import { notify } from "@/hooks/use-notify"
 import { getApiErrorMessage } from "@/utils/api-error"
 import { useTranslation } from "@/i18n/use-i18n"
@@ -53,8 +53,15 @@ export function BranchDeliverySettings({ branchId, branch, hasDeliveryModule }: 
   // render (patrón de user-form-dialog), en vez de setState en un efecto; solo
   // se resincroniza cuando cambian los datos de origen (refetchOnWindowFocus
   // está deshabilitado, así que no pisa ediciones en curso).
-  const [prevBranch, setPrevBranch] = useState(branch)
-  const [prevSettings, setPrevSettings] = useState(settings)
+  //
+  // `prev*` arranca en `undefined`, nunca con el dato actual: si la sucursal o
+  // la configuración ya están cargadas al montar (volver a la pestaña, caché de
+  // React Query o un refetch con datos idénticos, que conserva la misma
+  // referencia por structural sharing), inicializarlas con el mismo objeto
+  // haría que `!==` nunca se cumpliera y el formulario quedara vacío aunque el
+  // GET devolviera los valores.
+  const [prevBranch, setPrevBranch] = useState<Branch | null | undefined>(undefined)
+  const [prevSettings, setPrevSettings] = useState<BranchDeliverySettingsDto | undefined>(undefined)
   if (branch !== prevBranch) {
     setPrevBranch(branch)
     if (branch) {

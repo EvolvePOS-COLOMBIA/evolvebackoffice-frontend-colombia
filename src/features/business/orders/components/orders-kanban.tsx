@@ -45,7 +45,9 @@ export function OrdersKanban({
     <DragDropContext onDragEnd={handleDragEnd}>
       {/* grow + min-h-0: ocupa el alto restante de la página y puede
           contraerse; sin min-h-0 el contenido de las columnas estira la fila. */}
-      <div className="flex min-h-0 grow gap-4 overflow-x-auto">
+      {/* pb-2: deja aire entre el borde inferior de las columnas y la
+          scrollbar horizontal de esta fila. */}
+      <div className="flex min-h-0 grow gap-4 overflow-x-auto pb-2">
         {columns.map((status) => {
           const config = ORDER_STATUS_CONFIG[status]
           const orders = ordersByStatus[status] ?? []
@@ -65,7 +67,7 @@ export function OrdersKanban({
                     <section
                       ref={provided.innerRef}
                       {...provided.droppableProps}
-                      className={`min-h-0 flex-1 space-y-2 overflow-y-auto overscroll-contain transition-colors ${
+                      className={`min-h-0 flex-1 space-y-2 overflow-y-auto overscroll-contain pr-2 transition-colors ${
                         snapshot.isDraggingOver ? "bg-primary/5" : ""
                       }`}
                     >

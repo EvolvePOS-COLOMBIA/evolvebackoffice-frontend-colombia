@@ -33,6 +33,7 @@
   "action_writeoff": "Dar de baja",
   "action_correction": "Corregir saldo",
   "stock_count": "{{count}} productos",
+  "stock_progress": "{{count}} de {{total}} productos",
   "show_all": "Ver todos",
   "status_negative": "Negativo",
   "status_below_min": "Bajo el mínimo",
@@ -54,6 +55,7 @@
   "cost": "Costo",
   "user": "Usuario",
   "movements_count": "{{count}} movimientos",
+  "movements_progress": "{{count}} de {{total}} movimientos",
   "movement_PurchaseReceipt": "Entrada de proveedor",
   "movement_TransferOut": "Envío a sucursal",
   "movement_TransferIn": "Recibido de sucursal",
@@ -436,5 +438,6 @@
   "filter_total_cost": "Costo total",
   "filter_more": "Más filtros",
   "filter_less": "Menos filtros",
-  "filter_clear": "Limpiar filtros"
+  "filter_clear": "Limpiar filtros",
+  "filters_title": "Filtros"
 }

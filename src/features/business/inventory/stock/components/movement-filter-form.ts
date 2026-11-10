@@ -66,6 +66,12 @@ export const isSet = (form: MovementFilterForm, key: keyof MovementFilterForm) =
 export const hasMovementFilters = (form: MovementFilterForm) =>
   (Object.keys(form) as (keyof MovementFilterForm)[]).some((k) => isSet(form, k))
 
+// Filtros ocultos en el popover del toolbar (search y type se ven en la fila).
+// direction también vive en el popover aunque no esté en MORE_KEYS (MORE_KEYS
+// solo listaba la sección "Más filtros" del panel anterior).
+export const countHiddenMovementFilters = (form: MovementFilterForm) =>
+  (["from", "to", "direction", ...MORE_KEYS] as (keyof MovementFilterForm)[]).filter((k) => isSet(form, k)).length
+
 const text = (value: string) => value.trim() || undefined
 const option = (value: string) => (value === ALL ? undefined : value)
 const amount = (value: string) => {

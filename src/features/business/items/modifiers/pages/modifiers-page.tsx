@@ -219,6 +219,7 @@ export function ModifiersPage() {
               previous: t("previous"),
               next: t("next"),
               paginationTotal: (count) => t("list_total", { total: count }),
+              paginationProgress: (count, total) => t("list_progress", { count, total }),
             }}
           />
         ) : (
@@ -330,6 +331,7 @@ export function ModifiersPage() {
                   previous: t("previous"),
                   next: t("next"),
                   paginationTotal: (count) => t("list_total_modifiers", { total: count }),
+                  paginationProgress: (count, total) => t("list_progress_modifiers", { count, total }),
                 }}
               />
             )}

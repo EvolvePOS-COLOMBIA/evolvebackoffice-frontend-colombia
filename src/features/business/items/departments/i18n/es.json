@@ -28,6 +28,7 @@
   "previous": "Anterior",
   "next": "Siguiente",
   "list_total": "{{total}} departamentos",
+  "list_progress": "{{count}} de {{total}} departamentos",
   "empty_title": "Aún no hay departamentos",
   "empty_desc": "Crea el primero para clasificar tus productos.",
   "search_title": "No encontramos departamentos",

@@ -67,6 +67,7 @@
   "previous": "Anterior",
   "next": "Siguiente",
   "list_total": "{{total}} sucursales",
+  "list_progress": "{{count}} de {{total}} sucursales",
   "empty_title": "Aún no hay sucursales",
   "empty_desc": "Crea la primera sucursal para organizar tu operación y sus terminales POS.",
   "empty_search_title": "No encontramos sucursales",

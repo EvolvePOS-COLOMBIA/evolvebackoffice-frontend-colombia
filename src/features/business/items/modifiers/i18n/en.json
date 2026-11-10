@@ -13,6 +13,8 @@
   "next": "Next",
   "list_total": "{{total}} groups",
   "list_total_modifiers": "{{total}} modifiers",
+  "list_progress": "{{count}} of {{total}} groups",
+  "list_progress_modifiers": "{{count}} of {{total}} modifiers",
   "results": "result(s)",
   "create_group": "New group",
   "no_results": "No groups found.",

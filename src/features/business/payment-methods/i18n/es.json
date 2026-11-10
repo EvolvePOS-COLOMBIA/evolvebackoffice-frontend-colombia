@@ -52,6 +52,7 @@
   "previous": "Anterior",
   "next": "Siguiente",
   "list_total": "{{total}} medios de pago",
+  "list_progress": "{{count}} de {{total}} medios de pago",
   "loading": "Cargando...",
   "saving": "Guardando...",
   "cancel": "Cancelar",

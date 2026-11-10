@@ -203,6 +203,7 @@ export function BranchesPage() {
             previous: t("previous"),
             next: t("next"),
             paginationTotal: (count) => t("list_total", { total: count }),
+            paginationProgress: (count, total) => t("list_progress", { count, total }),
           }}
         />
       </EntityListLayout>

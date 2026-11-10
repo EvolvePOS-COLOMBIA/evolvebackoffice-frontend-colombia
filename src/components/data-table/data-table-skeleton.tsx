@@ -5,6 +5,8 @@ type DataTableSkeletonProps<T = unknown> = {
   columns: ColumnDef<T>[]
   rows?: number
   selectable?: boolean
+  /** Ancho mínimo de la tabla; por defecto `min-w-175`. */
+  minWidth?: string
 }
 
 function responsiveClass(breakpoint?: string): string {
@@ -20,9 +22,14 @@ function responsiveClass(breakpoint?: string): string {
   }
 }
 
-export function DataTableSkeleton<T = unknown>({ columns, rows = 10, selectable = false }: DataTableSkeletonProps<T>) {
+export function DataTableSkeleton<T = unknown>({
+  columns,
+  rows = 10,
+  selectable = false,
+  minWidth,
+}: DataTableSkeletonProps<T>) {
   return (
-    <div className="min-h-0 flex-1 space-y-0 overflow-hidden rounded-lg border">
+    <div className={`min-h-0 flex-1 space-y-0 overflow-hidden rounded-lg border ${minWidth ?? "min-w-175"}`}>
       {/* Header */}
       <div className="flex items-center border-b border-border/70 bg-muted/50 px-3 py-3">
         {selectable && (

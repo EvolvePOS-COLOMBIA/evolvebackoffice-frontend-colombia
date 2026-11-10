@@ -312,8 +312,12 @@ export function OrdersPage() {
     navigate(`/business/branches/${branchId}/config?tab=${tab}`)
   }
 
+  // min-h-0 (sin shrink-0): la única forma de que esta sección — y el
+  // kanban debajo — se contraiga al alto disponible en vez de medir su
+  // contenido. Header/filtros no llevan min-h-0: su min-height default
+  // (auto) los protege de comprimirse.
   return (
-    <section className="flex min-h-0 shrink-0 grow flex-col gap-3 overflow-hidden border-border/80 shadow-none">
+    <section className="flex min-h-0 grow flex-col gap-3 overflow-hidden border-border/80 shadow-none">
       {/* Header */}
       <header className="flex flex-col gap-3 border-b border-border/70 pb-4 sm:flex-row sm:items-center sm:justify-between">
         <div>

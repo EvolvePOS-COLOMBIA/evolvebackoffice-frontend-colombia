@@ -43,17 +43,17 @@ export function OrdersKanban({
 
   return (
     <DragDropContext onDragEnd={handleDragEnd}>
-      {/* grow: ocupa el alto restante de la columna del layout (evita depender
-          de h-full porcentual, que no resuelve contra alturas dadas por flex) */}
-      <div className="flex grow gap-4 overflow-x-auto">
+      {/* grow + min-h-0: ocupa el alto restante de la página y puede
+          contraerse; sin min-h-0 el contenido de las columnas estira la fila. */}
+      <div className="flex min-h-0 grow gap-4 overflow-x-auto">
         {columns.map((status) => {
           const config = ORDER_STATUS_CONFIG[status]
           const orders = ordersByStatus[status] ?? []
 
           return (
             <section key={status} className="min-w-67.5 flex-1 sm:min-w-75">
-              <div className="h-full rounded-xl border border-border/70 bg-card px-4 pb-4 text-card-foreground shadow-[0_24px_70px_rgba(15,23,42,0.14)] backdrop-blur-sm">
-                <header className="my-3 border-b border-border/70 pb-2">
+              <div className="flex h-full flex-col rounded-xl border border-border/70 bg-card px-4 pb-4 text-card-foreground shadow-[0_24px_70px_rgba(15,23,42,0.14)] backdrop-blur-sm">
+                <header className="my-3 shrink-0 border-b border-border/70 pb-2">
                   <div className="flex items-center justify-between">
                     <h2 className="text-sm font-semibold">{config?.label}</h2>
 
@@ -65,12 +65,14 @@ export function OrdersKanban({
                     <section
                       ref={provided.innerRef}
                       {...provided.droppableProps}
-                      className={`min-h-50 space-y-2 transition-colors ${
+                      className={`min-h-0 flex-1 space-y-2 overflow-y-auto overscroll-contain transition-colors ${
                         snapshot.isDraggingOver ? "bg-primary/5" : ""
                       }`}
                     >
                       {orders.length === 0 && (
-                        <p className="py-8 text-center text-xs text-muted-foreground">{t("no_orders")}</p>
+                        <p className="flex h-full items-center justify-center text-center text-xs text-muted-foreground">
+                          {t("no_orders")}
+                        </p>
                       )}
                       {orders.map((order, index) => (
                         <Draggable key={order.id} draggableId={order.id} index={index}>

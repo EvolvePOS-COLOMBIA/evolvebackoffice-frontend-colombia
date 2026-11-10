@@ -55,14 +55,19 @@ export function AppLayout() {
             </div>
           </div>
 
-          <div className="min-h-0 flex-1 overflow-y-auto">
+          {/* El padding vive en el scroller (no en el wrapper) para que el
+              espacio inferior exista también al final del scroll en páginas
+              más altas que el viewport. */}
+          <div className={cn("min-h-0 flex-1 overflow-y-auto", isMaximized ? "p-6" : "p-3 sm:p-4 lg:p-5")}>
             <div
               className={cn(
-                // flex + min-h-full: el outlet ocupa exactamente el alto
-                // disponible (sin alturas mágicas de 100vh en cada página) y,
-                // si una página crece más, el contenedor hace scroll normal.
-                "flex min-h-full w-full flex-col transition-all duration-300 ease-out",
-                isMaximized ? "animate-in p-6 duration-300 fade-in-0 zoom-in-95" : "p-3 sm:p-4 lg:p-5"
+                // flex + h-full: el outlet ocupa exactamente el alto visible
+                // (sin alturas mágicas de 100vh en cada página). La altura
+                // definitiva hace que grow/h-full de las páginas (kanban)
+                // resuelvan de verdad; si una página crece más, su contenido
+                // se desborda visible y el scroll lo hace este contenedor.
+                "flex h-full w-full flex-col transition-all duration-300 ease-out",
+                isMaximized && "animate-in duration-300 fade-in-0 zoom-in-95"
               )}
             >
               <Outlet />

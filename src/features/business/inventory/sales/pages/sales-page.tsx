@@ -1,21 +1,20 @@
 import { useState } from "react"
 import { Banknote, Plus, TrendingUp } from "lucide-react"
 
+import { DataTable } from "@/components/data-table"
 import { EntityListLayout } from "@/components/share"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Skeleton } from "@/components/ui/skeleton"
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { BranchSelector } from "@/features/business/items/catalog/components/branch-selector"
 import { useTranslation } from "@/i18n/use-i18n"
-import { InventoryPagination } from "../../components/inventory-pagination"
 import { useInventoryBranch } from "../../hooks/use-inventory-branch"
 import { useSales, useSalesStats } from "../../hooks/use-sales"
 import { INVENTORY_PAGE_SIZE } from "../../services/inventory.service"
-import { formatDateTime } from "../../utils/status"
 import { formatMoney } from "../../utils/units"
 import { NewSaleDialog } from "../components/new-sale-dialog"
 import { SaleDetailDialog } from "../components/sale-detail-dialog"
+import { buildSaleColumns } from "../components/sales-columns"
 
 /** Ventas a empleados desde el backoffice: salen del inventario de la sucursal y queda la ganancia. */
 export function SalesPage() {
@@ -86,54 +85,34 @@ export function SalesPage() {
       >
         {/* El Card del layout recorta: la tabla hace su propio scroll. */}
         {branch ? (
-          <div className="flex min-h-0 flex-1 flex-col gap-4">
-            <div className="min-h-0 flex-1 overflow-y-auto">
-              {isLoading ? (
-                <Skeleton className="h-48 w-full" />
-              ) : rows.length === 0 ? (
-                <p className="py-12 text-center text-sm text-muted-foreground">{t("sales_empty")}</p>
-              ) : (
-                <div className="w-full overflow-x-auto">
-                  <Table className="min-w-[680px]">
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead>{t("document")}</TableHead>
-                        <TableHead>{t("sale_customer")}</TableHead>
-                        <TableHead>{t("date")}</TableHead>
-                        <TableHead className="text-right">{t("sale_total")}</TableHead>
-                        <TableHead className="text-right">{t("sale_profit")}</TableHead>
-                        <TableHead>{t("status")}</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {rows.map((s) => (
-                        <TableRow key={s.id} className="cursor-pointer" onClick={() => setSaleId(s.id)}>
-                          <TableCell className="font-medium text-foreground">{s.number}</TableCell>
-                          <TableCell>{s.customerName ?? t("sale_customer_none")}</TableCell>
-                          <TableCell className="text-muted-foreground">{formatDateTime(s.createdAt)}</TableCell>
-                          <TableCell className="text-right">{formatMoney(s.total)}</TableCell>
-                          <TableCell className="text-right">
-                            {formatMoney(s.profit)}
-                            {s.profitPercent !== null ? (
-                              <p className="text-xs text-muted-foreground">{s.profitPercent} %</p>
-                            ) : null}
-                          </TableCell>
-                          <TableCell>
-                            {s.status === "Voided" ? (
-                              <Badge tone="danger">{t("receipt_voided")}</Badge>
-                            ) : (
-                              <Badge tone="success">{t("sale_status_applied")}</Badge>
-                            )}
-                          </TableCell>
-                        </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
-                </div>
-              )}
-            </div>
-            <InventoryPagination page={page} totalPages={totalPages} onPageChange={setPage} />
-          </div>
+          <DataTable
+            columns={buildSaleColumns(t, { onView: (sale) => setSaleId(sale.id) })}
+            data={rows}
+            isLoading={isLoading}
+            page={page}
+            totalPages={Math.max(1, totalPages)}
+            totalCount={data?.totalCount ?? 0}
+            onPageChange={setPage}
+            skeletonRows={6}
+            minWidth="min-w-[680px]"
+            emptyState={{
+              icon: Banknote,
+              title: t("sales_empty"),
+              description: t("sales_empty_desc"),
+              action: (
+                <Button onClick={() => setCreating(true)}>
+                  <Plus className="size-4" />
+                  {t("sale_new_title")}
+                </Button>
+              ),
+            }}
+            labels={{
+              previous: t("previous"),
+              next: t("next"),
+              paginationTotal: (count) => t("sales_count", { count }),
+              paginationProgress: (count, total) => t("sales_progress", { count, total }),
+            }}
+          />
         ) : branches.length === 0 && !branchesLoading ? (
           <p className="text-sm text-muted-foreground">{t("no_branches")}</p>
         ) : null}

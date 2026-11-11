@@ -311,6 +311,7 @@
   "sales_count": "{{count}} ventas",
   "sales_progress": "{{count}} de {{total}} ventas",
   "sale_view_action": "Ver detalle",
+  "search_sales": "Buscar por empleado o documento...",
   "sale_new_title": "Nueva venta",
   "sale_new_desc": "Venta desde {{branch}}.",
   "sale_customer": "Empleado",

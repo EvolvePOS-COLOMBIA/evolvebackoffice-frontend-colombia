@@ -21,9 +21,10 @@ export function SalesPage() {
   const { t } = useTranslation("business-inventory")
   const { branches, branch, branchId, selectBranch, isLoading: branchesLoading } = useInventoryBranch()
   const [page, setPage] = useState(1)
+  const [search, setSearch] = useState("")
   const [creating, setCreating] = useState(false)
   const [saleId, setSaleId] = useState<string | null>(null)
-  const { data, isLoading } = useSales(branchId, page)
+  const { data, isLoading } = useSales(branchId, page, search)
   const stats = useSalesStats(branchId)
   const rows = data?.items ?? []
   const totalPages = Math.ceil((data?.totalCount ?? 0) / INVENTORY_PAGE_SIZE)
@@ -74,6 +75,14 @@ export function SalesPage() {
           branchesLoading || branches.length === 0
             ? undefined
             : {
+                search: {
+                  value: search,
+                  onChange: (value) => {
+                    setSearch(value)
+                    setPage(1)
+                  },
+                  placeholder: t("search_sales"),
+                },
                 actions: (
                   <Button id="btn-nueva-venta" type="button" onClick={() => setCreating(true)}>
                     <Plus className="mr-2 size-4" />

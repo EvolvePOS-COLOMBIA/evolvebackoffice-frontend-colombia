@@ -1,4 +1,3 @@
-import { useEffect } from "react"
 import { BrowserRouter, Navigate, Route, Routes } from "react-router-dom"
 
 import { AppLayout } from "@/components/layout/app-layout"
@@ -48,19 +47,12 @@ import { OnboardingGate } from "@/routes/onboarding-gate"
 import { ProtectedRoute } from "@/routes/protected-route"
 import { PublicRoute } from "@/routes/public-route"
 import { useAuth } from "@/features/auth/hooks/use-auth"
-import { notify } from "@/hooks/use-notify"
-import i18n from "@/i18n"
+import { useSessionExpiry } from "@/features/auth/hooks/use-session-expiry"
 
 function AppRoutesContent() {
-  const { defaultRoute, isAuthenticated, logout, session } = useAuth()
+  const { defaultRoute, isAuthenticated } = useAuth()
 
-  useEffect(() => {
-    if (session && new Date(session.expiresAtUtc).getTime() <= Date.now()) {
-      const t = i18n.getFixedT(null, "auth")
-      notify.info(t("session_expired"))
-      logout()
-    }
-  }, [logout, session])
+  useSessionExpiry()
 
   return (
     <Routes>

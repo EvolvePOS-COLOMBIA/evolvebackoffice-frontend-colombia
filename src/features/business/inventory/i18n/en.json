@@ -439,5 +439,7 @@
   "filter_more": "More filters",
   "filter_less": "Fewer filters",
   "filter_clear": "Clear filters",
-  "filters_title": "Filters"
+  "filters_title": "Filters",
+  "filters_desc": "Filter movements by date, document, reason, user, status and amounts.",
+  "filters_close": "Close"
 }

@@ -22,7 +22,7 @@ export async function getBranchItems(
   const { data } = await api.get<{ data: BranchItemResponseDto[]; totalCount: number }>(
     `/api/branches/${branchId}/items`,
     {
-      params: { pageNumber, pageSize },
+      params: { pageNumber, pageSize, search: params.search || undefined },
     }
   )
   return {

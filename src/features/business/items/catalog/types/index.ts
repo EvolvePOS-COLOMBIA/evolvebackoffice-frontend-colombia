@@ -212,6 +212,7 @@ export interface PaginatedResponse<T> {
 }
 
 export interface ItemListParams {
+  search?: string
   pageNumber?: number
   pageSize?: number
   searchField?: string

@@ -159,29 +159,46 @@
   /* --- ESTILOS GLOBALES PARA SCROLLBARS --- */
   /* Para navegadores basados en Webkit (Chrome, Safari, Edge, Opera) */
   ::-webkit-scrollbar {
-    width: 6px;
-    height: 6px;
+    width: 10px;
+    height: 10px;
   }
 
   ::-webkit-scrollbar-track {
     background: transparent;
   }
 
+  /* border transparent + background-clip: la barra visual mide 4px dentro
+     de la pista de 8px (efecto barra-embebida estilo macOS/Jira). */
   ::-webkit-scrollbar-thumb {
-    background: var(--muted-foreground);
-    opacity: 0.3; /* Ajustado dinámicamente mediante opacidad o alpha */
-    background-color: color-mix(in oklch, var(--muted-foreground) 30%, transparent);
+    background-color: color-mix(in oklch, var(--muted-foreground) 40%, transparent);
+    background-clip: padding-box;
+    border: 0px solid transparent;
     border-radius: 9999px;
+    transition: background-color 0.2s ease;
   }
 
   ::-webkit-scrollbar-thumb:hover {
-    background-color: color-mix(in oklch, var(--muted-foreground) 50%, transparent);
+    background-color: color-mix(in oklch, var(--muted-foreground) 65%, transparent);
   }
 
-  /* Soporte moderno estándar (Firefox) */
-  * {
-    scrollbar-width: thin;
-    scrollbar-color: color-mix(in oklch, var(--muted-foreground) 30%, transparent) transparent;
+  ::-webkit-scrollbar-thumb:active {
+    background-color: color-mix(in oklch, var(--muted-foreground) 85%, transparent);
+  }
+
+  ::-webkit-scrollbar-corner {
+    background: transparent;
+  }
+
+  /* Soporte estándar (Firefox), SOLO donde no existen los pseudos WebKit.
+     En Chrome, especificar scrollbar-color/scrollbar-width en cualquier
+     elemento (incluso vía *) desactiva por completo ::-webkit-scrollbar*,
+     por eso esta regla debe quedar fuera del alcance de los navegadores
+     que sí soportan los pseudos. */
+  @supports not selector(::-webkit-scrollbar) {
+    * {
+      scrollbar-width: thin;
+      scrollbar-color: color-mix(in oklch, var(--muted-foreground) 40%, transparent) transparent;
+    }
   }
 }
 
@@ -233,21 +250,31 @@
 /* Opcional: Utilidad reutilizable por si solo quieres aplicarlo a contenedores específicos en lugar de global */
 @utility custom-scrollbar {
   &::-webkit-scrollbar {
-    width: 6px;
-    height: 6px;
+    width: 8px;
+    height: 8px;
   }
   &::-webkit-scrollbar-track {
     background: transparent;
   }
   &::-webkit-scrollbar-thumb {
-    background-color: color-mix(in oklch, var(--muted-foreground) 25%, transparent);
+    background-color: color-mix(in oklch, var(--muted-foreground) 40%, transparent);
+    background-clip: padding-box;
+    border: 2px solid transparent;
     border-radius: 9999px;
+    transition: background-color 0.2s ease;
     &:hover {
-      background-color: color-mix(in oklch, var(--muted-foreground) 45%, transparent);
+      background-color: color-mix(in oklch, var(--muted-foreground) 65%, transparent);
+    }
+    &:active {
+      background-color: color-mix(in oklch, var(--muted-foreground) 85%, transparent);
     }
   }
-  scrollbar-width: thin;
-  scrollbar-color: color-mix(in oklch, var(--muted-foreground) 25%, transparent) transparent;
+  /* Mismo guard: en Chrome estas propiedades desactivarían los pseudos
+     &::-webkit-scrollbar* de arriba. Solo para Firefox y similares. */
+  @supports not selector(::-webkit-scrollbar) {
+    scrollbar-width: thin;
+    scrollbar-color: color-mix(in oklch, var(--muted-foreground) 40%, transparent) transparent;
+  }
 }
 
 @utility animate-float {

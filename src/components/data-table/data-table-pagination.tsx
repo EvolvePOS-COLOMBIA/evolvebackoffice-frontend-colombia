@@ -9,6 +9,7 @@ import {
 } from "@/components/ui/pagination"
 
 import { generatePageNumbers } from "./generate-page-numbers"
+import { computeReachedCount } from "./reached-count"
 
 // ─── DataTablePagination ─────────────────────────────────────────────────────
 
@@ -16,6 +17,7 @@ type DataTablePaginationProps = {
   currentPage: number
   totalPages: number
   totalCount: number
+  shownCount?: number
   selectedCount?: number
   onPageChange: (page: number) => void
   labels?: {
@@ -23,6 +25,7 @@ type DataTablePaginationProps = {
     next?: string
     selected?: string
     paginationTotal?: (count: number) => string
+    paginationProgress?: (count: number, total: number) => string
   }
 }
 
@@ -30,14 +33,26 @@ export function DataTablePagination({
   currentPage,
   totalPages,
   totalCount,
+  shownCount,
   selectedCount,
   onPageChange,
   labels,
 }: DataTablePaginationProps) {
+  const reached = computeReachedCount(currentPage, shownCount ?? 0, totalCount, totalPages)
+
+  let summary: string
+  if (reached != null && labels?.paginationProgress) {
+    summary = labels.paginationProgress(reached, totalCount)
+  } else if (labels?.paginationTotal) {
+    summary = labels.paginationTotal(totalCount)
+  } else {
+    summary = `${totalCount} items total`
+  }
+
   return (
     <div className="flex w-full shrink-0 items-center justify-between">
       <p className="min-w-fit text-xs text-muted-foreground">
-        {labels?.paginationTotal ? labels.paginationTotal(totalCount) : `${totalCount} items total`}
+        {summary}
         {selectedCount != null && selectedCount > 0 && (
           <span className="ml-2 text-primary">
             · {selectedCount} {labels?.selected ?? "selected"}

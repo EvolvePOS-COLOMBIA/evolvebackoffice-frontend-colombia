@@ -41,6 +41,7 @@
   "stats_active": "Active",
   "stats_inactive": "Inactive",
   "list_total": "{{total}} users",
+  "list_progress": "{{count}} of {{total}} users",
   "loading": "Loading...",
   "saving": "Saving...",
   "cancel": "Cancel",

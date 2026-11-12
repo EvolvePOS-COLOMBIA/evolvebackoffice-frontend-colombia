@@ -51,6 +51,7 @@
   "stats_active": "Active",
   "stats_inactive": "Inactive",
   "list_total": "{{total}} customers",
+  "list_progress": "{{count}} of {{total}} customers",
   "customer_created": "Customer created.",
   "customer_updated": "Customer updated.",
   "customer_status_updated": "Customer status updated."

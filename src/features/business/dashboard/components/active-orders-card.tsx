@@ -170,7 +170,7 @@ export function ActiveOrdersCard({ orders }: ActiveOrdersCardProps) {
         </Button>
       </CardHeader>
       <CardContent>
-        <div className="max-h-155 scrollbar-thin scrollbar-thumb-border scrollbar-track-transparent space-y-2 overflow-y-auto pr-1">
+        <div className="max-h-155 space-y-2 overflow-y-auto pr-1">
           {orders.map((order, index) => (
             <OrderRow key={order.id} order={order} t={t} index={index} />
           ))}

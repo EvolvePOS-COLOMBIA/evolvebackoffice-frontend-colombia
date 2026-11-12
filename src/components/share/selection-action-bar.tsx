@@ -1,7 +1,8 @@
+import type { ComponentProps } from "react"
 import type { LucideIcon } from "lucide-react"
 import { X } from "lucide-react"
 
-import { Button, type ButtonProps } from "@/components/ui/button"
+import { Button } from "@/components/ui/button"
 import { useTranslation } from "@/i18n/use-i18n"
 import { cn } from "@/lib/utils"
 
@@ -9,7 +10,7 @@ export type SelectionAction = {
   label: string
   icon?: LucideIcon
   /** Variante del botón (default = acción principal destacada). */
-  variant?: ButtonProps["variant"]
+  variant?: ComponentProps<typeof Button>["variant"]
   onClick: () => void
   disabled?: boolean
 }

@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo, useRef } from "react"
-import { useNavigate } from "react-router-dom"
+// import { useNavigate } from "react-router-dom"
 import { useTranslation } from "@/i18n/use-i18n"
 import { useNotify } from "@/hooks/use-notify"
 import { useAppStore } from "@/store/app-store"
@@ -23,8 +23,6 @@ import {
   ShoppingCart,
   AlertTriangle,
   Bike,
-  Plus,
-  Lock,
   Maximize2,
   Minimize2,
   Search,
@@ -41,7 +39,7 @@ import {
 } from "@/features/business/branches/hooks/use-branch-modules"
 import { getBranchModules } from "@/features/business/branches/services/branch-modules.service"
 import { BranchSelector } from "@/features/business/items/catalog/components/branch-selector"
-import { useBranchIntegrations } from "@/features/business/branches/hooks/use-branch-integrations"
+// import { useBranchIntegrations } from "@/features/business/branches/hooks/use-branch-integrations"
 import { SelectionActionBar } from "@/components/share/selection-action-bar"
 import { AssignDeliveryUserDialog } from "@/features/business/delivery/components/assign-delivery-user-dialog"
 import { useOrders, useUpdateOrderStatus, useBulkUpdateOrderStatus } from "../hooks/use-orders"
@@ -82,7 +80,7 @@ const formatSearchDate = (iso: string): string => {
  */
 export function OrdersPage() {
   const { t } = useTranslation("business-orders")
-  const navigate = useNavigate()
+  // const navigate = useNavigate()
   const notify = useNotify()
   const [selectedOrder, setSelectedOrder] = useState<OrderListItem | null>(null)
   const [detailOpen, setDetailOpen] = useState(false)
@@ -153,28 +151,29 @@ export function OrdersPage() {
     ? branchesWithOrdersModule.length > 0
     : branchModules?.some((m) => m.moduleCode === "ORDERS" && m.isEnabled)
 
-  const { data: integrations } = useBranchIntegrations(branchId)
+  // const { data: integrations } = useBranchIntegrations(branchId)
 
   // La configuración de Cluvi solo se expone si el módulo CLUVI está
   // habilitado para el tenant (licencia dada de baja en la consola de plataforma).
   const { data: tenantModules = [], isLoading: tenantModulesLoading } = useTenantModules()
-  const hasCluviModule = !tenantModulesLoading && tenantModules.some((m) => m.moduleCode === "CLUVI" && m.isEnabled)
+  // const hasCluviModule = !tenantModulesLoading && tenantModules.some((m) => m.moduleCode === "CLUVI" && m.isEnabled)
 
   /** Estado de una integración en la sucursal seleccionada. */
-  const integrationState = (platform: string): "active" | "configured" | "none" => {
-    if (!branchId) return "none"
-    const row = integrations?.find((i) => i.platformCode === platform)
-    if (!row) return "none"
-    return row.isActive ? "active" : "configured"
-  }
+  // const integrationState = (platform: string): "active" | "configured" | "none" => {
+  //   if (!branchId) return "none"
+  //   const row = integrations?.find((i) => i.platformCode === platform)
+  //   if (!row) return "none"
+  //   return row.isActive ? "active" : "configured"
+  // }
 
   // enabled=!!branchId: no se pide órdenes sin sucursal (evita una petición sin filtrar mientras carga la lista)
   // En "todas" se pide sin branchId (el backend devuelve todas las sucursales).
-  const {
-    data: ordersData,
-    isLoading,
-    refetch,
-  } = useOrders(1, 500, branchId ? { branchId } : undefined, !!branchId || showAllBranches)
+  const { data: ordersData, isLoading } = useOrders(
+    1,
+    500,
+    branchId ? { branchId } : undefined,
+    !!branchId || showAllBranches
+  )
   const updateStatusMutation = useUpdateOrderStatus()
   const bulkStatusMutation = useBulkUpdateOrderStatus()
 
@@ -254,10 +253,10 @@ export function OrdersPage() {
     })
   }, [allOrders, platformFilter, searchQuery])
 
-  const cancelledOrdersCount = useMemo(
-    () => filteredOrders.filter((o) => o.statusCode === "Cancelled").length,
-    [filteredOrders]
-  )
+  // const cancelledOrdersCount = useMemo(
+  //   () => filteredOrders.filter((o) => o.statusCode === "Cancelled").length,
+  //   [filteredOrders]
+  // )
 
   const kanbanStatusKeys = useMemo(
     () => (showCancelled ? ([...KANBAN_COLUMNS, "Cancelled"] as const) : KANBAN_COLUMNS),
@@ -409,13 +408,17 @@ export function OrdersPage() {
   }
 
   /** Navega a la pestaña de integración de la sucursal en Sucursales. */
-  const goToIntegration = (tab: "cluvi" | "woocommerce") => {
-    if (!branchId) return
-    navigate(`/business/branches/${branchId}/config?tab=${tab}`)
-  }
+  // const goToIntegration = (tab: "cluvi" | "woocommerce") => {
+  //   if (!branchId) return
+  //   navigate(`/business/branches/${branchId}/config?tab=${tab}`)
+  // }
 
+  // min-h-0 (sin shrink-0): la única forma de que esta sección — y el
+  // kanban debajo — se contraiga al alto disponible en vez de medir su
+  // contenido. Header/filtros no llevan min-h-0: su min-height default
+  // (auto) los protege de comprimirse.
   return (
-    <section className="flex min-h-0 shrink-0 grow flex-col gap-3 overflow-hidden border-border/80 shadow-none">
+    <section className="flex min-h-0 grow flex-col gap-3 overflow-hidden border-border/80 shadow-none">
       {/* Header */}
       <header className="flex flex-col gap-3 border-b border-border/70 pb-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
@@ -725,24 +728,24 @@ export function OrdersPage() {
   )
 }
 
-type IntegrationState = "active" | "configured" | "none"
+// type IntegrationState = "active" | "configured" | "none"
 
 /**
  * Círculo indicativo del estado de la integración en la sucursal seleccionada:
  * verde = activa · ámbar/naranja = configurada (inactiva) · rojo = no configurada.
  * Colores ya usados en la app (emerald/amber/red de las wizards de integración).
  */
-function StatusDot({ state }: { state: IntegrationState }) {
-  return (
-    <span
-      aria-hidden
-      className={`ml-1.5 inline-block size-2.5 shrink-0 rounded-full ${
-        state === "active" ? "bg-emerald-500" : state === "configured" ? "bg-amber-500" : "bg-red-500"
-      }`}
-    />
-  )
-}
+// function StatusDot({ state }: { state: IntegrationState }) {
+//   return (
+//     <span
+//       aria-hidden
+//       className={`ml-1.5 inline-block size-2.5 shrink-0 rounded-full ${
+//         state === "active" ? "bg-emerald-500" : state === "configured" ? "bg-amber-500" : "bg-red-500"
+//       }`}
+//     />
+//   )
+// }
 
-function integrationTitle(state: IntegrationState, t: ReturnType<typeof useTranslation>["t"]): string {
-  return state === "active" ? t("active") : state === "configured" ? t("int_configured") : t("int_none")
-}
+// function integrationTitle(state: IntegrationState, t: ReturnType<typeof useTranslation>["t"]): string {
+//   return state === "active" ? t("active") : state === "configured" ? t("int_configured") : t("int_none")
+// }

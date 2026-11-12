@@ -13,6 +13,8 @@
   "next": "Siguiente",
   "list_total": "{{total}} grupos",
   "list_total_modifiers": "{{total}} modificadores",
+  "list_progress": "{{count}} de {{total}} grupos",
+  "list_progress_modifiers": "{{count}} de {{total}} modificadores",
   "results": "resultado(s)",
   "create_group": "Nuevo grupo",
   "no_results": "No se encontraron grupos.",

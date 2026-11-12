@@ -12,6 +12,7 @@
   "previous": "Previous",
   "next": "Next",
   "list_total": "{{total}} tax rates",
+  "list_progress": "{{count}} of {{total}} tax rates",
   "results": "result(s)",
   "no_results": "No tax rates found.",
   "search_desc": "Try another search term.",

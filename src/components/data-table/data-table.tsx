@@ -54,6 +54,7 @@ export function DataTable<T>({
   selectedIds,
   onSelectionChange,
   skeletonRows,
+  minWidth,
   labels,
 }: DataTableProps<T>) {
   const colSpan = columns.length + (selectable ? 1 : 0)
@@ -113,10 +114,10 @@ export function DataTable<T>({
 
       {/* Table */}
       {isLoading ? (
-        <DataTableSkeleton columns={columns} rows={skeletonRows} selectable={selectable} />
+        <DataTableSkeleton columns={columns} rows={skeletonRows} selectable={selectable} minWidth={minWidth} />
       ) : data.length === 0 ? (
         <div className="min-h-0 flex-1">
-          <Table containerClassName="h-full bg-card" className="h-full min-w-175">
+          <Table containerClassName="h-full bg-card" className={`h-full ${minWidth ?? "min-w-175"}`}>
             {tableHeader}
             <TableBody>
               <TableRow className="h-full border-b-0 bg-card hover:bg-transparent">
@@ -131,7 +132,7 @@ export function DataTable<T>({
         </div>
       ) : (
         <div className="min-h-0 flex-1">
-          <Table containerClassName="h-full bg-card" className="min-w-175">
+          <Table containerClassName="h-full bg-card" className={minWidth ?? "min-w-175"}>
             {tableHeader}
             <TableBody>
               {data.map((row, rowIndex) => (
@@ -176,6 +177,7 @@ export function DataTable<T>({
         currentPage={page}
         totalPages={totalPages}
         totalCount={totalCount}
+        shownCount={data.length}
         selectedCount={selectable && selectedIds ? selectedIds.size : undefined}
         onPageChange={onPageChange}
         labels={labels}

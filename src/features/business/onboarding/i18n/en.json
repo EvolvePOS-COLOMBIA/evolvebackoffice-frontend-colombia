@@ -84,6 +84,7 @@
   "latitude_placeholder": "4.60971",
   "longitude_placeholder": "-74.082",
   "geolocation_use": "Use my current location",
+  "geolocation_hint": "Latitude and longitude are automatically completed.",
   "geolocation_locating": "Getting location…",
   "branch_admin": "Responsible administrator",
   "branch_admin_you": "{{name}} — you",

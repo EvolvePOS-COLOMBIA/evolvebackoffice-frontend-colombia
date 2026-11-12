@@ -36,11 +36,15 @@ export function useOrders(
   })
 }
 
-export function useOrderDetail(id: string) {
+/**
+ * Order detail. `enabled` allows lazy loading (e.g. Kanban cards only fetch
+ * the detail when prioritized, hovered or expanded).
+ */
+export function useOrderDetail(id: string, enabled = true) {
   return useQuery({
     queryKey: ordersKeys.detail(id),
     queryFn: () => getOrderById(id),
-    enabled: !!id,
+    enabled: !!id && enabled,
   })
 }
 

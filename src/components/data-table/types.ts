@@ -54,11 +54,16 @@ export interface DataTableProps<T> {
   selectedIds?: Set<string>
   onSelectionChange?: (ids: Set<string>) => void
   skeletonRows?: number
+  /** Ancho mínimo de la tabla; por defecto `min-w-175`. */
+  minWidth?: string
   labels?: {
     previous?: string
     next?: string
     selected?: string
+    /** Total de registros sin paginar; es el fallback del resumen del footer. */
     paginationTotal?: (count: number) => string
+    /** Registros alcanzados hasta la página actual; tiene prioridad sobre paginationTotal. */
+    paginationProgress?: (count: number, total: number) => string
     noResults?: (search: string) => string
   }
 }

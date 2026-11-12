@@ -1,6 +1,6 @@
 import { useState } from "react"
 import { useSearchParams } from "react-router-dom"
-import { AlertTriangle, PackagePlus, Plus, ShoppingCart, Truck } from "lucide-react"
+import { AlertTriangle, PackagePlus, Plus, SearchX, ShoppingCart, Truck } from "lucide-react"
 
 import { DataTable } from "@/components/data-table"
 import { ConfirmActionDialog } from "@/components/confirm-action-dialog"
@@ -24,6 +24,7 @@ import { GoodsReceiptDialog } from "../components/goods-receipt-dialog"
 import { NewOrderDialog } from "../components/new-order-dialog"
 import { OrderDetailDialog } from "../components/order-detail-dialog"
 import { buildOrderColumns, buildReceiptColumns } from "../components/purchase-orders-columns"
+import { filterGoodsReceipts, filterPurchaseOrders } from "../utils/search"
 
 type Tab = "mine" | "receipts"
 
@@ -37,6 +38,9 @@ export function PurchaseOrdersPage() {
   const [searchParams] = useSearchParams()
   const [tab, setTab] = useState<Tab>(() => (searchParams.get("tab") === "receipts" ? "receipts" : "mine"))
   const [openOnly, setOpenOnly] = useState(false)
+  // Búsqueda client-side: filtra los ítems ya cargados porque el backend no
+  // expone parámetro de búsqueda. Al escribir se vuelve a la página 1.
+  const [search, setSearch] = useState("")
   const [page, setPage] = useState(1)
   const [creating, setCreating] = useState<"order" | "receipt" | null>(null)
   const [orderId, setOrderId] = useState<string | null>(null)
@@ -68,6 +72,11 @@ export function PurchaseOrdersPage() {
 
   const current = activeTab === "receipts" ? receipts : orders
   const totalPages = Math.ceil((current.data?.totalCount ?? 0) / INVENTORY_PAGE_SIZE)
+  // Con filtro activo la tabla colapsa a los coincidentes de la página cargada:
+  // el pie deja de contar el total del servidor y la paginación se oculta.
+  const isFiltering = search.trim().length > 0
+  const orderItems = filterPurchaseOrders(orders.data?.items ?? [], search)
+  const receiptItems = filterGoodsReceipts(receipts.data?.items ?? [], search)
 
   const changeTab = (value: string) => {
     setTab(value as Tab)
@@ -134,6 +143,14 @@ export function PurchaseOrdersPage() {
         toolbar={
           branchId
             ? {
+                search: {
+                  value: search,
+                  onChange: (value) => {
+                    setSearch(value)
+                    setPage(1)
+                  },
+                  placeholder: activeTab === "mine" ? t("search_purchase_orders") : t("search_receipts"),
+                },
                 actions: (
                   <>
                     {activeTab === "mine" ? (
@@ -174,25 +191,29 @@ export function PurchaseOrdersPage() {
                 counterpart: "supplier",
                 onOpen: (order) => setOrderId(order.id),
               })}
-              data={orders.data?.items ?? []}
+              data={orderItems}
               isLoading={orders.isLoading}
               page={page}
-              totalPages={Math.max(1, totalPages)}
-              totalCount={orders.data?.totalCount ?? 0}
+              totalPages={isFiltering ? 1 : Math.max(1, totalPages)}
+              totalCount={isFiltering ? orderItems.length : (orders.data?.totalCount ?? 0)}
               onPageChange={setPage}
               skeletonRows={6}
               minWidth="min-w-[680px]"
-              emptyState={{
-                icon: ShoppingCart,
-                title: t("po_empty"),
-                description: t("po_empty_desc"),
-                action: (
-                  <Button type="button" onClick={() => setCreating("order")}>
-                    <Plus className="size-4" />
-                    {t("po_new_title")}
-                  </Button>
-                ),
-              }}
+              emptyState={
+                isFiltering
+                  ? { icon: SearchX, title: t("po_no_results"), description: t("po_no_results_desc") }
+                  : {
+                      icon: ShoppingCart,
+                      title: t("po_empty"),
+                      description: t("po_empty_desc"),
+                      action: (
+                        <Button type="button" onClick={() => setCreating("order")}>
+                          <Plus className="size-4" />
+                          {t("po_new_title")}
+                        </Button>
+                      ),
+                    }
+              }
               labels={{
                 previous: t("previous"),
                 next: t("next"),
@@ -203,25 +224,29 @@ export function PurchaseOrdersPage() {
           ) : (
             <DataTable
               columns={buildReceiptColumns(t, { onVoid: setVoiding })}
-              data={receipts.data?.items ?? []}
+              data={receiptItems}
               isLoading={receipts.isLoading}
               page={page}
-              totalPages={Math.max(1, totalPages)}
-              totalCount={receipts.data?.totalCount ?? 0}
+              totalPages={isFiltering ? 1 : Math.max(1, totalPages)}
+              totalCount={isFiltering ? receiptItems.length : (receipts.data?.totalCount ?? 0)}
               onPageChange={setPage}
               skeletonRows={6}
               minWidth="min-w-[640px]"
-              emptyState={{
-                icon: PackagePlus,
-                title: t("receipts_empty"),
-                description: t("receipts_empty_desc"),
-                action: (
-                  <Button type="button" onClick={() => setCreating("receipt")}>
-                    <Plus className="size-4" />
-                    {t("receipt_new_title")}
-                  </Button>
-                ),
-              }}
+              emptyState={
+                isFiltering
+                  ? { icon: SearchX, title: t("receipts_no_results"), description: t("receipts_no_results_desc") }
+                  : {
+                      icon: PackagePlus,
+                      title: t("receipts_empty"),
+                      description: t("receipts_empty_desc"),
+                      action: (
+                        <Button type="button" onClick={() => setCreating("receipt")}>
+                          <Plus className="size-4" />
+                          {t("receipt_new_title")}
+                        </Button>
+                      ),
+                    }
+              }
               labels={{
                 previous: t("previous"),
                 next: t("next"),

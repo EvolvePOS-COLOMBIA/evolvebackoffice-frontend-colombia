@@ -1,8 +1,9 @@
 import { useState } from "react"
 import { useSearchParams } from "react-router-dom"
-import { AlertTriangle, ArrowRight, ArrowRightLeft, PackageCheck, Send, ShoppingCart, Truck } from "lucide-react"
+import { AlertTriangle, ArrowRightLeft, PackageCheck, Send, ShoppingCart, Truck } from "lucide-react"
 import type { LucideIcon } from "lucide-react"
 
+import { DataTable } from "@/components/data-table"
 import { BackLink } from "@/components/ui/back-link"
 import { Badge } from "@/components/ui/badge"
 import { Card, CardContent } from "@/components/ui/card"
@@ -10,20 +11,17 @@ import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Skeleton } from "@/components/ui/skeleton"
 import { Switch } from "@/components/ui/switch"
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { BranchSelector } from "@/features/business/items/catalog/components/branch-selector"
 import { useTranslation } from "@/i18n/use-i18n"
-import { InventoryPagination } from "../../components/inventory-pagination"
 import { useInventoryInbox } from "../../hooks/use-inventory"
 import { useInventoryBranch } from "../../hooks/use-inventory-branch"
 import { usePurchaseOrders, useTransfers } from "../../hooks/use-purchasing"
 import { NewOrderDialog } from "../../purchase-orders/components/new-order-dialog"
 import { OrderDetailDialog } from "../../purchase-orders/components/order-detail-dialog"
-import { OrdersTable } from "../../purchase-orders/components/orders-table"
+import { buildOrderColumns } from "../../purchase-orders/components/purchase-orders-columns"
 import { INVENTORY_PAGE_SIZE } from "../../services/inventory.service"
-import { formatDateTime, TRANSFER_STATUS_TONE } from "../../utils/status"
-import { formatMoney } from "../../utils/units"
+import { buildTransferColumns } from "../components/transfers-columns"
 import { NewTransferDialog } from "../components/new-transfer-dialog"
 import { TransferDetailDialog } from "../components/transfer-detail-dialog"
 
@@ -187,12 +185,27 @@ export function TransfersPage() {
                     setPage(1)
                   }}
                 />
-                <OrdersTable
-                  query={orders}
-                  counterpartLabel={t("transfers_asked_to")}
-                  counterpart="supplier"
-                  emptyLabel={t("transfers_requested_empty")}
-                  onOpen={setOrderId}
+                <DataTable
+                  columns={buildOrderColumns(t, {
+                    counterpartLabel: t("transfers_asked_to"),
+                    counterpart: "supplier",
+                    onOpen: (order) => setOrderId(order.id),
+                  })}
+                  data={orders.data?.items ?? []}
+                  isLoading={orders.isLoading}
+                  page={page}
+                  totalPages={Math.max(1, totalPages)}
+                  totalCount={orders.data?.totalCount ?? 0}
+                  onPageChange={setPage}
+                  skeletonRows={6}
+                  minWidth="min-w-[680px]"
+                  emptyState={{ icon: ShoppingCart, title: t("transfers_requested_empty") }}
+                  labels={{
+                    previous: t("previous"),
+                    next: t("next"),
+                    paginationTotal: (count) => t("transfers_orders_count", { count }),
+                    paginationProgress: (count, total) => t("transfers_orders_progress", { count, total }),
+                  }}
                 />
               </TabsContent>
 
@@ -205,12 +218,27 @@ export function TransfersPage() {
                     setPage(1)
                   }}
                 />
-                <OrdersTable
-                  query={orders}
-                  counterpartLabel={t("order_requested_by")}
-                  counterpart="branch"
-                  emptyLabel={t("transfers_requests_empty")}
-                  onOpen={setOrderId}
+                <DataTable
+                  columns={buildOrderColumns(t, {
+                    counterpartLabel: t("order_requested_by"),
+                    counterpart: "branch",
+                    onOpen: (order) => setOrderId(order.id),
+                  })}
+                  data={orders.data?.items ?? []}
+                  isLoading={orders.isLoading}
+                  page={page}
+                  totalPages={Math.max(1, totalPages)}
+                  totalCount={orders.data?.totalCount ?? 0}
+                  onPageChange={setPage}
+                  skeletonRows={6}
+                  minWidth="min-w-[680px]"
+                  emptyState={{ icon: ShoppingCart, title: t("transfers_requests_empty") }}
+                  labels={{
+                    previous: t("previous"),
+                    next: t("next"),
+                    paginationTotal: (count) => t("transfers_orders_count", { count }),
+                    paginationProgress: (count, total) => t("transfers_orders_progress", { count, total }),
+                  }}
                 />
               </TabsContent>
 
@@ -228,10 +256,25 @@ export function TransfersPage() {
                     </SelectContent>
                   </Select>
                 </div>
-                <ShipmentsTable query={transfers} onOpen={setTransferId} />
+                <DataTable
+                  columns={buildTransferColumns(t, { onOpen: (transfer) => setTransferId(transfer.id) })}
+                  data={transfers.data?.items ?? []}
+                  isLoading={transfers.isLoading}
+                  page={page}
+                  totalPages={Math.max(1, totalPages)}
+                  totalCount={transfers.data?.totalCount ?? 0}
+                  onPageChange={setPage}
+                  skeletonRows={6}
+                  minWidth="min-w-[720px]"
+                  emptyState={{ icon: Truck, title: t("transfers_empty") }}
+                  labels={{
+                    previous: t("previous"),
+                    next: t("next"),
+                    paginationTotal: (count) => t("transfers_count", { count }),
+                    paginationProgress: (count, total) => t("transfers_progress", { count, total }),
+                  }}
+                />
               </TabsContent>
-
-              <InventoryPagination page={page} totalPages={totalPages} onPageChange={setPage} />
             </Tabs>
           </>
         ) : null}
@@ -354,67 +397,6 @@ function OpenOnlySwitch({ checked, onChange }: { checked: boolean; onChange: (ch
     <div className="flex items-center gap-2">
       <Switch id="transferencias-pendientes" checked={checked} onCheckedChange={onChange} />
       <Label htmlFor="transferencias-pendientes">{t("transfers_open_only")}</Label>
-    </div>
-  )
-}
-
-/** Envíos con su ruta "De → Para" para que se lea de un vistazo. */
-function ShipmentsTable({ query, onOpen }: { query: ReturnType<typeof useTransfers>; onOpen: (id: string) => void }) {
-  const { t } = useTranslation("business-inventory")
-  const rows = query.data?.items ?? []
-
-  if (query.isLoading) return <Skeleton className="h-48 w-full" />
-  if (rows.length === 0)
-    return <p className="py-12 text-center text-sm text-muted-foreground">{t("transfers_empty")}</p>
-
-  return (
-    <div className="w-full overflow-x-auto">
-      <Table className="min-w-[720px]">
-        <TableHeader>
-          <TableRow>
-            <TableHead>{t("document")}</TableHead>
-            <TableHead>{t("transfers_route")}</TableHead>
-            <TableHead>{t("date")}</TableHead>
-            <TableHead className="text-right">{t("order_products")}</TableHead>
-            <TableHead className="text-right">{t("value")}</TableHead>
-            <TableHead>{t("status")}</TableHead>
-          </TableRow>
-        </TableHeader>
-        <TableBody>
-          {rows.map((tr) => (
-            <TableRow key={tr.id} className="cursor-pointer" onClick={() => onOpen(tr.id)}>
-              <TableCell>
-                <p className="font-medium text-foreground">{tr.number}</p>
-                {tr.purchaseOrderNumber ? (
-                  <p className="text-xs text-muted-foreground">
-                    {t("transfers_for_order", { number: tr.purchaseOrderNumber })}
-                  </p>
-                ) : (
-                  <p className="text-xs text-muted-foreground">{t("transfers_without_order")}</p>
-                )}
-              </TableCell>
-              <TableCell>
-                <span className="flex items-center gap-2">
-                  {tr.fromBranchName}
-                  <ArrowRight className="size-4 shrink-0 text-muted-foreground" />
-                  {tr.toBranchName}
-                </span>
-              </TableCell>
-              <TableCell className="text-muted-foreground">{formatDateTime(tr.dispatchedAt)}</TableCell>
-              <TableCell className="text-right">{tr.lineCount}</TableCell>
-              <TableCell className="text-right">{formatMoney(tr.totalValue)}</TableCell>
-              <TableCell>
-                <div className="flex flex-wrap gap-1">
-                  <Badge tone={TRANSFER_STATUS_TONE[tr.status]}>{t(`transfer_status_${tr.status}`)}</Badge>
-                  {tr.pendingDifferences > 0 ? (
-                    <Badge tone="warning">{t("transfer_pending_differences", { count: tr.pendingDifferences })}</Badge>
-                  ) : null}
-                </div>
-              </TableCell>
-            </TableRow>
-          ))}
-        </TableBody>
-      </Table>
     </div>
   )
 }

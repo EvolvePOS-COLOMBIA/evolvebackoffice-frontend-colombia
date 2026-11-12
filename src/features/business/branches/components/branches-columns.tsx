@@ -79,7 +79,6 @@ export function buildBranchColumns(
       header: t("actions"),
       minWidth: "min-w-[150px]",
       align: "right",
-      stickyRight: true,
       render: (branch) => (
         <div className="flex justify-end gap-2">
           <Button type="button" variant="outline" size="sm" onClick={() => onEdit(branch)} disabled={isMutating}>

@@ -12,12 +12,6 @@ export interface ColumnDef<T> {
   minWidth?: string
   responsive?: ColumnBreakpoint
   align?: "left" | "right"
-  /**
-   * Ancla la columna al borde derecho del scroll horizontal (típicamente la
-   * columna de acciones). En móvil la tabla puede scrollear pero las acciones
-   * permanecen visibles.
-   */
-  stickyRight?: boolean
   render: (row: T) => React.ReactNode
   skeletonWidth?: number
 }

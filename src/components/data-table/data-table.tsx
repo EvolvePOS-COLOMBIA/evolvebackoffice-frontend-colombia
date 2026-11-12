@@ -22,21 +22,6 @@ function responsiveClass(breakpoint?: string): string {
   }
 }
 
-// Ancla una columna al borde derecho del contenedor scrolleable. La sombra
-// izquierda da la señal visual de que hay contenido scrolleable debajo.
-const STICKY_SHADOW = "shadow-[-10px_0_10px_-10px_rgba(0,0,0,0.25)]"
-
-function stickyRightHeadClass(sticky?: boolean): string {
-  return sticky ? `sticky right-0 z-20 bg-muted ${STICKY_SHADOW}` : ""
-}
-
-function stickyRightCellClass(sticky?: boolean): string {
-  // bg-card calza exacto con el contenedor de la tabla (bg-card) y con hover de
-  // la fila (group-hover accent) — sin la franja de tono distinto que causaba
-  // bg-background en dark theme.
-  return sticky ? `sticky right-0 z-10 bg-card group-hover:bg-accent/50 ${STICKY_SHADOW}` : ""
-}
-
 // ─── DataTable ───────────────────────────────────────────────────────────────
 
 export function DataTable<T>({
@@ -98,7 +83,7 @@ export function DataTable<T>({
             key={col.key}
             className={`sticky top-0 z-10 ${col.minWidth ?? ""} ${responsiveClass(col.responsive)} ${
               col.align === "right" ? "text-right" : ""
-            } ${stickyRightHeadClass(col.stickyRight)}`}
+            }`}
           >
             {col.header}
           </TableHead>
@@ -160,7 +145,7 @@ export function DataTable<T>({
                   {columns.map((col) => (
                     <TableCell
                       key={col.key}
-                      className={`${responsiveClass(col.responsive)} ${col.align === "right" ? "text-right" : ""} ${stickyRightCellClass(col.stickyRight)}`}
+                      className={`${responsiveClass(col.responsive)} ${col.align === "right" ? "text-right" : ""}`}
                     >
                       {col.render(row)}
                     </TableCell>

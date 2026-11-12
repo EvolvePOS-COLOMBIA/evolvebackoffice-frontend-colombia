@@ -87,7 +87,6 @@ export function buildStockColumns(
       key: "actions",
       header: t("actions"),
       align: "right",
-      stickyRight: true,
       render: (item) => (
         <DropdownMenu>
           <DropdownMenuTrigger asChild>

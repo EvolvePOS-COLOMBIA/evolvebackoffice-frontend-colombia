@@ -94,7 +94,6 @@ export function buildMovementColumns(
       key: "actions",
       header: t("actions"),
       align: "right",
-      stickyRight: true,
       render: (m) =>
         canVoid(m) ? (
           <Button variant="ghost" size="sm" onClick={() => onVoid(m)}>

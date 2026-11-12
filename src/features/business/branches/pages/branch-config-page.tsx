@@ -21,6 +21,7 @@ import {
 import { useBranchRegisters } from "@/features/business/branches/hooks/use-branch-terminals"
 
 import { IntegrationPanel } from "@/features/business/branches/components/integration-panel"
+import { BranchDeliverySettings } from "@/features/business/branches/components/branch-delivery-settings"
 
 import { notify } from "@/hooks/use-notify"
 import { formatDateTime } from "@/utils/format"
@@ -65,7 +66,11 @@ export function BranchConfigPage() {
   const [searchParams, setSearchParams] = useSearchParams()
   const tabParam = searchParams.get("tab")
   const [activeTab, setActiveTabState] = useState(
-    tabParam === "woocommerce" || tabParam === "cluvi" || tabParam === "modules" || tabParam === "serials"
+    tabParam === "woocommerce" ||
+      tabParam === "cluvi" ||
+      tabParam === "modules" ||
+      tabParam === "serials" ||
+      tabParam === "delivery"
       ? tabParam
       : "info"
   )
@@ -104,6 +109,12 @@ export function BranchConfigPage() {
   const removeMutation = useRemoveModuleFromBranch()
 
   const assignedTenantModuleIds = new Set(branchModules.map((bm) => bm.tenantModuleId))
+
+  // Pestaña «Domicilios»: visible con el módulo habilitado para el tenant; su
+  // configuración se habilita cuando la sucursal lo tiene asignado (la ubicación
+  // es editable siempre porque es requisito previo para asignar el módulo).
+  const hasDomiciliosLicense = tenantModules.some((tm) => tm.moduleCode === "DOMICILIOS" && tm.isEnabled)
+  const branchHasDomicilios = branchModules.some((bm) => bm.moduleCode === "DOMICILIOS" && bm.isEnabled)
 
   const handleAssign = (tenantModulePublicId: string) => {
     if (!branchId) return
@@ -196,6 +207,7 @@ export function BranchConfigPage() {
           <TabsTrigger value="info">{t("tab_info")}</TabsTrigger>
           <TabsTrigger value="modules">{t("tab_modules")}</TabsTrigger>
           <TabsTrigger value="serials">{t("tab_serials")}</TabsTrigger>
+          {hasDomiciliosLicense && <TabsTrigger value="delivery">{t("tab_delivery")}</TabsTrigger>}
           <TabsTrigger value="woocommerce">{t("tab_woocommerce")}</TabsTrigger>
           <TabsTrigger value="cluvi">{t("tab_cluvi")}</TabsTrigger>
         </TabsList>
@@ -419,6 +431,19 @@ export function BranchConfigPage() {
             </CardContent>
           </Card>
         </TabsContent>
+
+        {/* ───── TAB: DOMICILIOS ───── */}
+        {hasDomiciliosLicense && (
+          <TabsContent value="delivery" className="mt-0 outline-none">
+            {branchId && (
+              <BranchDeliverySettings
+                branchId={branchId}
+                branch={branch ?? null}
+                hasDeliveryModule={branchHasDomicilios}
+              />
+            )}
+          </TabsContent>
+        )}
 
         {/* ───── TAB: WOOCOMMERCE ───── */}
         <TabsContent value="woocommerce" className="mt-0 outline-none">

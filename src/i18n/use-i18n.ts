@@ -22,6 +22,7 @@ export type Namespace =
   | "business-inventory"
   | "business-onboarding"
   | "business-orders"
+  | "business-delivery"
   | "business-people"
   | "business-reports"
   | "business-registers"

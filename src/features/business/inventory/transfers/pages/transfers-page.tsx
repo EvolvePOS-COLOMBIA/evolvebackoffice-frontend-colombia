@@ -1,17 +1,16 @@
 import { useState } from "react"
 import { useSearchParams } from "react-router-dom"
-import { AlertTriangle, ArrowRightLeft, PackageCheck, Send, ShoppingCart, Truck } from "lucide-react"
-import type { LucideIcon } from "lucide-react"
+import { AlertTriangle, PackageCheck, SearchX, Send, ShoppingCart, Truck } from "lucide-react"
 
 import { DataTable } from "@/components/data-table"
-import { BackLink } from "@/components/ui/back-link"
+import { EntityListLayout } from "@/components/share"
 import { Badge } from "@/components/ui/badge"
-import { Card, CardContent } from "@/components/ui/card"
+import { Button } from "@/components/ui/button"
 import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Skeleton } from "@/components/ui/skeleton"
 import { Switch } from "@/components/ui/switch"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { BranchSelector } from "@/features/business/items/catalog/components/branch-selector"
 import { useTranslation } from "@/i18n/use-i18n"
 import { useInventoryInbox } from "../../hooks/use-inventory"
@@ -24,6 +23,7 @@ import { INVENTORY_PAGE_SIZE } from "../../services/inventory.service"
 import { buildTransferColumns } from "../components/transfers-columns"
 import { NewTransferDialog } from "../components/new-transfer-dialog"
 import { TransferDetailDialog } from "../components/transfer-detail-dialog"
+import { filterTransferOrders, filterTransfers } from "../utils/search"
 
 /** requested = lo que pedí · requests = lo que me piden · shipments = envíos que salen y llegan. */
 type Tab = "requested" | "requests" | "shipments"
@@ -54,6 +54,9 @@ export function TransfersPage() {
   const [tab, setTab] = useState<Tab>(() => initialView(searchParams).tab)
   const [filter, setFilter] = useState<ShipmentFilter>(() => initialView(searchParams).filter)
   const [openOnly, setOpenOnly] = useState(true)
+  // Búsqueda client-side: filtra los ítems ya cargados porque el backend no
+  // expone parámetro de búsqueda. Al escribir se vuelve a la página 1.
+  const [search, setSearch] = useState("")
   const [page, setPage] = useState(1)
   const [creating, setCreating] = useState<"order" | "transfer" | null>(null)
   const [orderId, setOrderId] = useState<string | null>(null)
@@ -75,6 +78,11 @@ export function TransfersPage() {
   })
   const current = tab === "shipments" ? transfers : orders
   const totalPages = Math.ceil((current.data?.totalCount ?? 0) / INVENTORY_PAGE_SIZE)
+  // Con filtro activo la tabla colapsa a los coincidentes de la página cargada:
+  // el pie deja de contar el total del servidor y la paginación se oculta.
+  const isFiltering = search.trim().length > 0
+  const orderItems = filterTransferOrders(orders.data?.items ?? [], search)
+  const transferItems = filterTransfers(transfers.data?.items ?? [], search)
 
   // Sin pedido: la proveedora le envía a cualquiera; las demás solo a una proveedora.
   const canSend = Boolean(
@@ -88,315 +96,264 @@ export function TransfersPage() {
   }
 
   return (
-    <Card className="overflow-hidden shadow-none">
-      <CardContent className="space-y-6 p-4 sm:p-6 lg:p-8">
-        <BackLink to="/business/inventory">{t("back_to_inventory")}</BackLink>
-        <div className="relative flex flex-col gap-2">
-          <h1 className="text-xl font-semibold text-foreground sm:text-2xl">{t("transfers")}</h1>
-          <p className="max-w-4xl text-sm leading-5 text-muted-foreground">{t("transfers_page_desc")}</p>
-          <ArrowRightLeft
-            color="#58626b"
-            className="absolute -top-10 -right-20 -z-10 size-50 shrink-0 animate-float opacity-5 md:-top-10 md:-right-10 md:size-70 lg:-top-20 lg:-right-30 lg:size-100"
-          />
-        </div>
-
-        {branchesLoading ? (
-          <Skeleton className="h-10 w-80" />
-        ) : branches.length === 0 ? (
-          <p className="text-sm text-muted-foreground">{t("no_branches")}</p>
-        ) : (
-          <div className="flex flex-wrap items-center gap-2">
-            <BranchSelector
-              options={branches.map((b) => ({ id: b.id, name: b.name }))}
-              selectedId={branchId}
-              onSelect={(id) => {
-                if (!id) return
-                selectBranch(id)
-                setPage(1)
-              }}
-            />
-            {branch?.isSupplier ? <Badge tone="primary">{t("supplier_branch")}</Badge> : null}
-          </div>
-        )}
-
-        {branch ? (
-          <>
-            <div className="grid gap-3 sm:grid-cols-2">
-              <ActionTile
-                id="btn-pedir-productos"
-                icon={ShoppingCart}
-                title={t("transfers_action_request")}
-                description={t("transfers_action_request_desc")}
-                onClick={() => setCreating("order")}
+    <>
+      <EntityListLayout
+        back={{ to: "/business/inventory", label: t("back_to_inventory") }}
+        title={t("transfers")}
+        description={t("transfers_page_desc")}
+        tabs={
+          branchesLoading ? (
+            <Skeleton className="h-10 w-80" />
+          ) : branches.length === 0 ? undefined : (
+            <div className="flex flex-wrap items-center gap-2">
+              <BranchSelector
+                options={branches.map((b) => ({ id: b.id, name: b.name }))}
+                selectedId={branchId}
+                onSelect={(id) => {
+                  if (!id) return
+                  selectBranch(id)
+                  setPage(1)
+                }}
               />
-              <ActionTile
-                id="btn-enviar-productos"
-                icon={Send}
-                title={t("transfers_action_send")}
-                description={
-                  branch.isSupplier ? t("transfers_action_send_desc_supplier") : t("transfers_action_send_desc")
-                }
-                disabled={!canSend}
-                onClick={() => setCreating("transfer")}
-              />
+              {branch?.isSupplier ? <Badge tone="primary">{t("supplier_branch")}</Badge> : null}
             </div>
-
-            <div className="space-y-2">
-              <p className="text-sm font-medium text-foreground">{t("transfers_attention")}</p>
-              <div className="grid gap-3 sm:grid-cols-3">
-                <AttentionTile
-                  icon={Truck}
-                  count={inbox?.ordersToDispatch ?? 0}
-                  label={t("transfers_attention_dispatch")}
-                  onClick={() => {
-                    setOpenOnly(true)
-                    show("requests")
-                  }}
-                />
-                <AttentionTile
-                  icon={PackageCheck}
-                  count={inbox?.transfersToReceive ?? 0}
-                  label={t("transfers_attention_receive")}
-                  onClick={() => show("shipments", "incoming")}
-                />
-                <AttentionTile
-                  icon={AlertTriangle}
-                  count={inbox?.differencesToResolve ?? 0}
-                  label={t("transfers_attention_differences")}
-                  tone="warning"
-                  onClick={() => show("shipments", "differences")}
-                />
-              </div>
-            </div>
-
+          )
+        }
+        stats={
+          branch
+            ? [
+                {
+                  icon: Truck,
+                  tone: "info",
+                  label: t("transfers_attention_dispatch"),
+                  value: inbox?.ordersToDispatch ?? 0,
+                },
+                {
+                  icon: PackageCheck,
+                  tone: "info",
+                  label: t("transfers_attention_receive"),
+                  value: inbox?.transfersToReceive ?? 0,
+                },
+                {
+                  icon: AlertTriangle,
+                  tone: "warning",
+                  label: t("transfers_attention_differences"),
+                  value: inbox?.differencesToResolve ?? 0,
+                },
+              ]
+            : undefined
+        }
+        heroFooter={
+          branchId ? (
             <Tabs value={tab} onValueChange={(value) => show(value as Tab)}>
               <TabsList>
                 <TabsTrigger value="requested">{t("transfers_tab_requested")}</TabsTrigger>
                 <TabsTrigger value="requests">{t("transfers_tab_requests")}</TabsTrigger>
                 <TabsTrigger value="shipments">{t("transfers_tab_shipments")}</TabsTrigger>
               </TabsList>
-
-              <TabsContent value="requested" className="space-y-4">
-                <p className="text-sm text-muted-foreground">{t("transfers_requested_hint")}</p>
-                <OpenOnlySwitch
-                  checked={openOnly}
-                  onChange={(checked) => {
-                    setOpenOnly(checked)
-                    setPage(1)
-                  }}
-                />
-                <DataTable
-                  columns={buildOrderColumns(t, {
-                    counterpartLabel: t("transfers_asked_to"),
-                    counterpart: "supplier",
-                    onOpen: (order) => setOrderId(order.id),
-                  })}
-                  data={orders.data?.items ?? []}
-                  isLoading={orders.isLoading}
-                  page={page}
-                  totalPages={Math.max(1, totalPages)}
-                  totalCount={orders.data?.totalCount ?? 0}
-                  onPageChange={setPage}
-                  skeletonRows={6}
-                  minWidth="min-w-[680px]"
-                  emptyState={{ icon: ShoppingCart, title: t("transfers_requested_empty") }}
-                  labels={{
-                    previous: t("previous"),
-                    next: t("next"),
-                    paginationTotal: (count) => t("transfers_orders_count", { count }),
-                    paginationProgress: (count, total) => t("transfers_orders_progress", { count, total }),
-                  }}
-                />
-              </TabsContent>
-
-              <TabsContent value="requests" className="space-y-4">
-                <p className="text-sm text-muted-foreground">{t("transfers_requests_hint")}</p>
-                <OpenOnlySwitch
-                  checked={openOnly}
-                  onChange={(checked) => {
-                    setOpenOnly(checked)
-                    setPage(1)
-                  }}
-                />
-                <DataTable
-                  columns={buildOrderColumns(t, {
-                    counterpartLabel: t("order_requested_by"),
-                    counterpart: "branch",
-                    onOpen: (order) => setOrderId(order.id),
-                  })}
-                  data={orders.data?.items ?? []}
-                  isLoading={orders.isLoading}
-                  page={page}
-                  totalPages={Math.max(1, totalPages)}
-                  totalCount={orders.data?.totalCount ?? 0}
-                  onPageChange={setPage}
-                  skeletonRows={6}
-                  minWidth="min-w-[680px]"
-                  emptyState={{ icon: ShoppingCart, title: t("transfers_requests_empty") }}
-                  labels={{
-                    previous: t("previous"),
-                    next: t("next"),
-                    paginationTotal: (count) => t("transfers_orders_count", { count }),
-                    paginationProgress: (count, total) => t("transfers_orders_progress", { count, total }),
-                  }}
-                />
-              </TabsContent>
-
-              <TabsContent value="shipments" className="space-y-4">
-                <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
-                  <Label htmlFor="envios-filtro">{t("transfers_show")}</Label>
-                  <Select value={filter} onValueChange={(value) => show("shipments", value as ShipmentFilter)}>
-                    <SelectTrigger id="envios-filtro" className="sm:w-72">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="incoming">{t("transfers_filter_incoming")}</SelectItem>
-                      <SelectItem value="outgoing">{t("transfers_filter_outgoing")}</SelectItem>
-                      <SelectItem value="differences">{t("transfers_filter_differences")}</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-                <DataTable
-                  columns={buildTransferColumns(t, { onOpen: (transfer) => setTransferId(transfer.id) })}
-                  data={transfers.data?.items ?? []}
-                  isLoading={transfers.isLoading}
-                  page={page}
-                  totalPages={Math.max(1, totalPages)}
-                  totalCount={transfers.data?.totalCount ?? 0}
-                  onPageChange={setPage}
-                  skeletonRows={6}
-                  minWidth="min-w-[720px]"
-                  emptyState={{ icon: Truck, title: t("transfers_empty") }}
-                  labels={{
-                    previous: t("previous"),
-                    next: t("next"),
-                    paginationTotal: (count) => t("transfers_count", { count }),
-                    paginationProgress: (count, total) => t("transfers_progress", { count, total }),
-                  }}
-                />
-              </TabsContent>
             </Tabs>
-          </>
-        ) : null}
-
-        {branch && creating === "order" ? (
-          <NewOrderDialog
-            kind="branch"
-            branch={branch}
-            branches={branches}
-            onOpenChange={(open) => !open && setCreating(null)}
-            onCreated={(order) => {
-              setCreating(null)
-              show("requested")
-              setOrderId(order.id)
+          ) : undefined
+        }
+        toolbar={
+          branch
+            ? {
+                search: {
+                  value: search,
+                  onChange: (value) => {
+                    setSearch(value)
+                    setPage(1)
+                  },
+                  placeholder: tab === "shipments" ? t("search_transfers_shipments") : t("search_transfers_orders"),
+                },
+                actions: (
+                  <div className="flex flex-wrap items-center gap-4">
+                    {tab === "shipments" ? (
+                      <Select value={filter} onValueChange={(value) => show("shipments", value as ShipmentFilter)}>
+                        <SelectTrigger id="envios-filtro" className="sm:w-80">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="incoming">{t("transfers_filter_incoming")}</SelectItem>
+                          <SelectItem value="outgoing">{t("transfers_filter_outgoing")}</SelectItem>
+                          <SelectItem value="differences">{t("transfers_filter_differences")}</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    ) : (
+                      <div className="flex items-center gap-2">
+                        <Switch
+                          id="transferencias-pendientes"
+                          checked={openOnly}
+                          onCheckedChange={(checked) => {
+                            setOpenOnly(checked)
+                            setPage(1)
+                          }}
+                        />
+                        <Label htmlFor="transferencias-pendientes">{t("transfers_open_only")}</Label>
+                      </div>
+                    )}
+                    <Button
+                      id="btn-pedir-productos"
+                      type="button"
+                      variant="outline"
+                      onClick={() => setCreating("order")}
+                    >
+                      <ShoppingCart className="mr-2 size-4" />
+                      {t("transfers_action_request")}
+                    </Button>
+                    <Button
+                      id="btn-enviar-productos"
+                      type="button"
+                      disabled={!canSend}
+                      onClick={() => setCreating("transfer")}
+                    >
+                      <Send className="mr-2 size-4" />
+                      {t("transfers_action_send")}
+                    </Button>
+                  </div>
+                ),
+              }
+            : undefined
+        }
+      >
+        {branches.length === 0 ? (
+          branchesLoading ? null : (
+            <p className="text-sm text-muted-foreground">{t("no_branches")}</p>
+          )
+        ) : branchId === null ? null : tab === "requested" ? (
+          <DataTable
+            columns={buildOrderColumns(t, {
+              counterpartLabel: t("transfers_asked_to"),
+              counterpart: "supplier",
+              onOpen: (order) => setOrderId(order.id),
+            })}
+            data={orderItems}
+            isLoading={orders.isLoading}
+            page={page}
+            totalPages={isFiltering ? 1 : Math.max(1, totalPages)}
+            totalCount={isFiltering ? orderItems.length : (orders.data?.totalCount ?? 0)}
+            onPageChange={setPage}
+            skeletonRows={6}
+            minWidth="min-w-[680px]"
+            emptyState={
+              isFiltering
+                ? {
+                    icon: SearchX,
+                    title: t("transfers_orders_no_results"),
+                    description: t("transfers_orders_no_results_desc"),
+                  }
+                : { icon: ShoppingCart, title: t("transfers_requested_empty") }
+            }
+            labels={{
+              previous: t("previous"),
+              next: t("next"),
+              paginationTotal: (count) => t("transfers_orders_count", { count }),
+              paginationProgress: (count, total) => t("transfers_orders_progress", { count, total }),
             }}
           />
-        ) : null}
-        {branch && creating === "transfer" ? (
-          <NewTransferDialog
-            branch={branch}
-            branches={branches}
-            onOpenChange={(open) => !open && setCreating(null)}
-            onCreated={(transfer) => {
-              setCreating(null)
-              show("shipments", "outgoing")
-              setTransferId(transfer.id)
+        ) : tab === "requests" ? (
+          <DataTable
+            columns={buildOrderColumns(t, {
+              counterpartLabel: t("order_requested_by"),
+              counterpart: "branch",
+              onOpen: (order) => setOrderId(order.id),
+            })}
+            data={orderItems}
+            isLoading={orders.isLoading}
+            page={page}
+            totalPages={isFiltering ? 1 : Math.max(1, totalPages)}
+            totalCount={isFiltering ? orderItems.length : (orders.data?.totalCount ?? 0)}
+            onPageChange={setPage}
+            skeletonRows={6}
+            minWidth="min-w-[680px]"
+            emptyState={
+              isFiltering
+                ? {
+                    icon: SearchX,
+                    title: t("transfers_orders_no_results"),
+                    description: t("transfers_orders_no_results_desc"),
+                  }
+                : { icon: ShoppingCart, title: t("transfers_requests_empty") }
+            }
+            labels={{
+              previous: t("previous"),
+              next: t("next"),
+              paginationTotal: (count) => t("transfers_orders_count", { count }),
+              paginationProgress: (count, total) => t("transfers_orders_progress", { count, total }),
             }}
           />
-        ) : null}
-        {branchId && orderId ? (
-          <OrderDetailDialog
-            orderId={orderId}
-            branchId={branchId}
-            onOpenChange={(open) => !open && setOrderId(null)}
-            onOpenTransfer={(id) => {
-              setOrderId(null)
-              setTransferId(id)
+        ) : (
+          <DataTable
+            columns={buildTransferColumns(t, { onOpen: (transfer) => setTransferId(transfer.id) })}
+            data={transferItems}
+            isLoading={transfers.isLoading}
+            page={page}
+            totalPages={isFiltering ? 1 : Math.max(1, totalPages)}
+            totalCount={isFiltering ? transferItems.length : (transfers.data?.totalCount ?? 0)}
+            onPageChange={setPage}
+            skeletonRows={6}
+            minWidth="min-w-[720px]"
+            emptyState={
+              isFiltering
+                ? {
+                    icon: SearchX,
+                    title: t("transfers_shipments_no_results"),
+                    description: t("transfers_shipments_no_results_desc"),
+                  }
+                : { icon: Truck, title: t("transfers_empty") }
+            }
+            labels={{
+              previous: t("previous"),
+              next: t("next"),
+              paginationTotal: (count) => t("transfers_count", { count }),
+              paginationProgress: (count, total) => t("transfers_progress", { count, total }),
             }}
           />
-        ) : null}
-        {branchId && transferId ? (
-          <TransferDetailDialog
-            transferId={transferId}
-            branchId={branchId}
-            onOpenChange={(open) => !open && setTransferId(null)}
-          />
-        ) : null}
-      </CardContent>
-    </Card>
-  )
-}
+        )}
+      </EntityListLayout>
 
-/** Botón grande de acción: "Pedir productos" / "Enviar productos". */
-function ActionTile({
-  id,
-  icon: Icon,
-  title,
-  description,
-  disabled = false,
-  onClick,
-}: {
-  id: string
-  icon: LucideIcon
-  title: string
-  description: string
-  disabled?: boolean
-  onClick: () => void
-}) {
-  return (
-    <button
-      id={id}
-      type="button"
-      disabled={disabled}
-      onClick={onClick}
-      className="flex items-center gap-3 rounded-2xl border border-border/70 bg-background/35 p-4 text-left transition-colors hover:border-primary/40 hover:bg-primary/5 disabled:cursor-not-allowed disabled:opacity-50 sm:p-5"
-    >
-      <div className="flex size-10 shrink-0 items-center justify-center rounded-2xl border border-primary/15 bg-primary/10 text-primary">
-        <Icon className="size-5" />
-      </div>
-      <div className="min-w-0">
-        <p className="font-semibold text-foreground">{title}</p>
-        <p className="text-xs leading-5 text-muted-foreground">{description}</p>
-      </div>
-    </button>
-  )
-}
-
-/** Contador de lo que la sucursal tiene por atender; al tocarlo muestra la lista. */
-function AttentionTile({
-  icon: Icon,
-  count,
-  label,
-  tone = "info",
-  onClick,
-}: {
-  icon: LucideIcon
-  count: number
-  label: string
-  tone?: "info" | "warning"
-  onClick: () => void
-}) {
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      className="flex items-center justify-between gap-3 rounded-xl border border-border/70 bg-background/45 p-3 text-left transition-colors hover:border-primary/40"
-    >
-      <span className="flex items-center gap-2 text-sm text-muted-foreground">
-        <Icon className="size-4" />
-        {label}
-      </span>
-      {count > 0 ? <Badge tone={tone}>{count}</Badge> : <span className="text-sm text-muted-foreground">0</span>}
-    </button>
-  )
-}
-
-function OpenOnlySwitch({ checked, onChange }: { checked: boolean; onChange: (checked: boolean) => void }) {
-  const { t } = useTranslation("business-inventory")
-  return (
-    <div className="flex items-center gap-2">
-      <Switch id="transferencias-pendientes" checked={checked} onCheckedChange={onChange} />
-      <Label htmlFor="transferencias-pendientes">{t("transfers_open_only")}</Label>
-    </div>
+      {branch && creating === "order" ? (
+        <NewOrderDialog
+          kind="branch"
+          branch={branch}
+          branches={branches}
+          onOpenChange={(open) => !open && setCreating(null)}
+          onCreated={(order) => {
+            setCreating(null)
+            show("requested")
+            setOrderId(order.id)
+          }}
+        />
+      ) : null}
+      {branch && creating === "transfer" ? (
+        <NewTransferDialog
+          branch={branch}
+          branches={branches}
+          onOpenChange={(open) => !open && setCreating(null)}
+          onCreated={(transfer) => {
+            setCreating(null)
+            show("shipments", "outgoing")
+            setTransferId(transfer.id)
+          }}
+        />
+      ) : null}
+      {branchId && orderId ? (
+        <OrderDetailDialog
+          orderId={orderId}
+          branchId={branchId}
+          onOpenChange={(open) => !open && setOrderId(null)}
+          onOpenTransfer={(id) => {
+            setOrderId(null)
+            setTransferId(id)
+          }}
+        />
+      ) : null}
+      {branchId && transferId ? (
+        <TransferDetailDialog
+          transferId={transferId}
+          branchId={branchId}
+          onOpenChange={(open) => !open && setTransferId(null)}
+        />
+      ) : null}
+    </>
   )
 }

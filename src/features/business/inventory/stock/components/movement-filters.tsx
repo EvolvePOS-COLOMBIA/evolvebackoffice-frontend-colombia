@@ -1,22 +1,25 @@
-import { X } from "lucide-react"
-
-import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { useTranslation } from "@/i18n/use-i18n"
 import { useMovementAuthors } from "../../hooks/use-inventory"
 import { MOVEMENT_DOCUMENT_TYPES, MOVEMENT_REASONS } from "../../types"
-import { ALL, EMPTY_MOVEMENT_FILTERS, hasMovementFilters, type MovementFilterForm } from "./movement-filter-form"
+import { ALL, type MovementFilterForm } from "./movement-filter-form"
 
 type MovementFiltersContentProps = {
   branchId: string
   value: MovementFilterForm
   onChange: (value: MovementFilterForm) => void
+  /**
+   * Grilla densa para el popover ancho: 3 columnas y los rangos como celda
+   * individual en vez de ancho completo. Sin esto (el panel lateral) usa
+   * 2 columnas y los rangos ocupan la fila entera.
+   */
+  dense?: boolean
 }
 
-/** Filtros avanzados del historial: vive dentro del popover de la barra de herramientas. */
-export function MovementFiltersContent({ branchId, value, onChange }: MovementFiltersContentProps) {
+/** Filtros avanzados del historial: viven dentro del contenedor que los abre (sheet o popover). */
+export function MovementFiltersContent({ branchId, value, onChange, dense = false }: MovementFiltersContentProps) {
   const { t } = useTranslation("business-inventory")
   const authors = useMovementAuthors(branchId)
 
@@ -67,10 +70,11 @@ export function MovementFiltersContent({ branchId, value, onChange }: MovementFi
           min={0}
           aria-label={`${label} ${t("filter_from")}`}
           placeholder={t("filter_min")}
+          className="min-w-0 flex-1"
           value={value[min]}
           onChange={(e) => set(min)(e.target.value)}
         />
-        <span className="text-muted-foreground">–</span>
+        <span className="shrink-0 text-muted-foreground">–</span>
         <Input
           id={`movimientos-${max}`}
           type="number"
@@ -78,6 +82,7 @@ export function MovementFiltersContent({ branchId, value, onChange }: MovementFi
           min={0}
           aria-label={`${label} ${t("filter_to")}`}
           placeholder={t("filter_max")}
+          className="min-w-0 flex-1"
           value={value[max]}
           onChange={(e) => set(max)(e.target.value)}
         />
@@ -87,7 +92,7 @@ export function MovementFiltersContent({ branchId, value, onChange }: MovementFi
 
   return (
     <div className="space-y-4">
-      <div className="grid gap-3 sm:grid-cols-2">
+      <div className={dense ? "grid gap-3 sm:grid-cols-2 lg:grid-cols-3" : "grid gap-3 sm:grid-cols-2"}>
         {field("from", t("filter_from"), "date")}
         {field("to", t("filter_to"), "date")}
         {select("direction", t("filter_direction"), t("filter_all_directions"), [
@@ -118,19 +123,19 @@ export function MovementFiltersContent({ branchId, value, onChange }: MovementFi
           ["no", t("filter_reversed_no")],
           ["yes", t("filter_reversed_yes")],
         ])}
-        <div className="sm:col-span-2">{range("minQuantity", "maxQuantity", t("quantity"))}</div>
-        <div className="sm:col-span-2">{range("minUnitCost", "maxUnitCost", t("filter_unit_cost"))}</div>
-        <div className="sm:col-span-2">{range("minTotalCost", "maxTotalCost", t("filter_total_cost"))}</div>
-      </div>
-
-      {hasMovementFilters(value) ? (
-        <div className="flex items-center justify-end">
-          <Button type="button" variant="ghost" size="sm" onClick={() => onChange(EMPTY_MOVEMENT_FILTERS)}>
-            <X className="size-4" />
-            {t("filter_clear")}
-          </Button>
+        {/*
+          En denso los rangos son celda individual: 12 celdas en 3 columnas =
+          4 filas en vez de 8. Cada celda lleva dos inputs de ancho libre
+          (`min-w-0` + `flex-1`) para que no empujen la fila.
+        */}
+        <div className={dense ? "min-w-0" : "sm:col-span-2"}>{range("minQuantity", "maxQuantity", t("quantity"))}</div>
+        <div className={dense ? "min-w-0" : "sm:col-span-2"}>
+          {range("minUnitCost", "maxUnitCost", t("filter_unit_cost"))}
         </div>
-      ) : null}
+        <div className={dense ? "min-w-0" : "sm:col-span-2"}>
+          {range("minTotalCost", "maxTotalCost", t("filter_total_cost"))}
+        </div>
+      </div>
     </div>
   )
 }

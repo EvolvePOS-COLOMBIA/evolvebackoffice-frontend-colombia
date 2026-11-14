@@ -1,4 +1,4 @@
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
+import { useMutation, useQueries, useQuery, useQueryClient } from "@tanstack/react-query"
 
 import {
   assignModuleToBranch,
@@ -32,6 +32,37 @@ export function useBranchModules(branchId: string | null | undefined, enabled = 
     enabled: Boolean(branchId) && enabled,
     staleTime: 60_000,
   })
+}
+
+/**
+ * Sucursales que tienen habilitado un módulo, consultadas en paralelo.
+ * Comparte caché con useBranchModules (misma query key por sucursal), así que
+ * la sucursal seleccionada no se pide dos veces. Para filtrar selectores cuando
+ * una pantalla solo aplica a sucursales con cierto módulo (ej. Producción).
+ */
+export function useBranchesWithModule(branchIds: string[], moduleCode: string, enabled = true) {
+  const ids = branchIds.filter(Boolean)
+  const results = useQueries({
+    queries: ids.map((id) => ({
+      queryKey: branchModulesKeys.list(id),
+      queryFn: () => getBranchModules(id),
+      enabled,
+      staleTime: 60_000,
+    })),
+  })
+
+  const enabledIds = new Set<string>()
+  results.forEach((result, index) => {
+    if ((result.data ?? []).some((m) => m.moduleCode === moduleCode && m.isEnabled)) {
+      enabledIds.add(ids[index])
+    }
+  })
+
+  return {
+    enabledIds,
+    // Mientras haya consultas sin resolver no se filtra (evita el flash de lista incompleta).
+    isLoading: enabled && results.some((result) => result.isLoading),
+  }
 }
 
 /** Assign a tenant module to a branch. */

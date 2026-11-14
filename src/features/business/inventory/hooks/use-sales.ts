@@ -27,10 +27,10 @@ export function useMargins(params: { branchId: string | null; search: string; pa
   })
 }
 
-export function useSales(branchId: string | null, pageNumber: number) {
+export function useSales(branchId: string | null, pageNumber: number, search: string) {
   return useQuery({
-    queryKey: ["sales", branchId, pageNumber],
-    queryFn: () => getSales(branchId!, pageNumber),
+    queryKey: ["sales", branchId, search, pageNumber],
+    queryFn: () => getSales(branchId!, pageNumber, undefined, search),
     enabled: Boolean(branchId),
     placeholderData: keepPreviousData,
   })

@@ -24,10 +24,11 @@ export async function getItemPrice(branchId: string, itemId: string): Promise<It
 export async function getSales(
   branchId: string,
   pageNumber: number,
-  pageSize: number = INVENTORY_PAGE_SIZE
+  pageSize: number = INVENTORY_PAGE_SIZE,
+  search?: string
 ): Promise<PagedResult<WholesaleSaleDto>> {
   const { data } = await api.get<Paged<WholesaleSaleDto>>("/api/sales", {
-    params: { branchId, pageNumber, pageSize },
+    params: { branchId, pageNumber, pageSize, search: search?.trim() || undefined },
   })
   return { items: data?.data ?? [], totalCount: data?.totalCount ?? 0 }
 }

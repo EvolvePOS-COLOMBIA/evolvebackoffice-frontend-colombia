@@ -7,6 +7,7 @@ import {
   getProducibleItems,
   getProductionOrder,
   getProductionOrders,
+  getProductionStats,
   voidProductionOrder,
 } from "../services/production.service"
 
@@ -15,6 +16,7 @@ const PRODUCTION_KEYS = [
   "production-orders",
   "production-order",
   "production-products",
+  "production-stats",
   "inventory-stock",
   "inventory-movements",
   "inventory-inbox",
@@ -39,6 +41,14 @@ export function useProductionOrders(params: { branchId: string | null; status?: 
 
 export function useProductionOrder(id: string | null) {
   return useQuery({ queryKey: ["production-order", id], queryFn: () => getProductionOrder(id!), enabled: Boolean(id) })
+}
+
+export function useProductionStats(branchId: string | null) {
+  return useQuery({
+    queryKey: ["production-stats", branchId],
+    queryFn: () => getProductionStats(branchId!),
+    enabled: Boolean(branchId),
+  })
 }
 
 function useProductionMutation<TArgs, TResult>(fn: (args: TArgs) => Promise<TResult>) {

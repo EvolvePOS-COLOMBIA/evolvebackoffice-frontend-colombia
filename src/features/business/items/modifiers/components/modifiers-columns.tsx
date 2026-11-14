@@ -61,7 +61,6 @@ export function buildModifierGroupColumns(
       header: t("actions"),
       minWidth: "min-w-[90px]",
       align: "right",
-      stickyRight: true,
       render: (row) => (
         <div className="flex justify-end gap-1 sm:gap-2">
           <Button
@@ -163,7 +162,6 @@ export function buildItemModifierColumns(
       header: t("actions"),
       minWidth: "min-w-[90px]",
       align: "right",
-      stickyRight: true,
       render: (row) => (
         <div className="flex justify-end gap-1 sm:gap-2">
           <Button

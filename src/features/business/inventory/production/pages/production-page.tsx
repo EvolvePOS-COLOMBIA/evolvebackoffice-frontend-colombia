@@ -7,7 +7,7 @@ import { EntityListLayout } from "@/components/share"
 import { Button } from "@/components/ui/button"
 import { Skeleton } from "@/components/ui/skeleton"
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { useBranchModules } from "@/features/business/branches/hooks/use-branch-modules"
+import { useBranchesWithModule } from "@/features/business/branches/hooks/use-branch-modules"
 import { BranchSelector } from "@/features/business/items/catalog/components/branch-selector"
 import { useTranslation } from "@/i18n/use-i18n"
 import { useInventoryInbox } from "../../hooks/use-inventory"
@@ -27,8 +27,18 @@ type Tab = "done" | "planned"
 /** Producción: lo que se hizo (con su costo real) y las órdenes preparadas por hacer. */
 export function ProductionPage() {
   const { t } = useTranslation("business-inventory")
-  const { branches, branch, branchId, selectBranch, isLoading: branchesLoading } = useInventoryBranch()
-  const { data: modules, isLoading: modulesLoading } = useBranchModules(branchId)
+  const { branches, branch: selectedBranch, selectBranch, isLoading: branchesLoading } = useInventoryBranch()
+  // Solo las sucursales con el módulo de Producción: las demás no se rendizan.
+  const { enabledIds, isLoading: modulesByBranchLoading } = useBranchesWithModule(
+    branches.map((b) => b.id),
+    PRODUCTION_MODULE,
+    !branchesLoading
+  )
+  const productionBranches = branches.filter((b) => enabledIds.has(b.id))
+  // Selección derivada (sin useEffect): si la sucursal de la sesión no produce,
+  // se usa la primera que sí; si ninguna produce, queda en null.
+  const branch = productionBranches.find((b) => b.id === selectedBranch?.id) ?? productionBranches[0] ?? null
+  const branchId = branch?.id ?? null
   const [searchParams] = useSearchParams()
   const [tab, setTab] = useState<Tab>(() => (searchParams.get("tab") === "planned" ? "planned" : "done"))
   // Búsqueda client-side: filtra los ítems ya cargados porque el backend no
@@ -38,9 +48,8 @@ export function ProductionPage() {
   const [dialog, setDialog] = useState<{ mode: "produce" | "plan"; fromPlan?: ProductionOrderDto } | null>(null)
   const [detailId, setDetailId] = useState<string | null>(null)
 
-  const hasModule = (modules ?? []).some((m) => m.moduleCode === PRODUCTION_MODULE && m.isEnabled)
   const { data, isLoading } = useProductionOrders({
-    branchId: hasModule ? branchId : null,
+    branchId,
     status: tab === "planned" ? "Planned" : "done",
     pageNumber: page,
   })
@@ -67,7 +76,7 @@ export function ProductionPage() {
         title={t("production")}
         description={t("production_page_desc")}
         stats={
-          branchId && hasModule
+          branchId
             ? [
                 {
                   icon: ChefHat,
@@ -91,12 +100,12 @@ export function ProductionPage() {
             : undefined
         }
         tabs={
-          branchesLoading ? (
+          branchesLoading || modulesByBranchLoading ? (
             <Skeleton className="h-10 w-80" />
-          ) : branches.length === 0 ? undefined : (
+          ) : productionBranches.length === 0 ? undefined : (
             <div className="flex flex-wrap items-center gap-2">
               <BranchSelector
-                options={branches.map((b) => ({ id: b.id, name: b.name }))}
+                options={productionBranches.map((b) => ({ id: b.id, name: b.name }))}
                 selectedId={branchId}
                 onSelect={(id) => {
                   if (!id) return
@@ -108,7 +117,7 @@ export function ProductionPage() {
           )
         }
         heroFooter={
-          branch && hasModule ? (
+          branch ? (
             <Tabs value={tab} onValueChange={changeTab}>
               <TabsList>
                 <TabsTrigger value="done">{t("production_tab_done")}</TabsTrigger>
@@ -118,7 +127,7 @@ export function ProductionPage() {
           ) : undefined
         }
         toolbar={
-          branch && hasModule
+          branch
             ? {
                 search: {
                   value: search,
@@ -150,13 +159,13 @@ export function ProductionPage() {
         }
       >
         {/* El Card del layout recorta: la tabla hace su propio scroll. */}
-        {branch && modulesLoading ? <Skeleton className="h-48 w-full" /> : null}
-        {branch && !modulesLoading && !hasModule ? (
+        {branchesLoading || modulesByBranchLoading ? <Skeleton className="h-48 w-full" /> : null}
+        {!branch && !branchesLoading && !modulesByBranchLoading ? (
           <p className="py-12 text-center text-sm text-muted-foreground">
-            {t("production_no_module", { branch: branch.name })}
+            {branches.length === 0 ? t("no_branches") : t("production_no_module_branches")}
           </p>
         ) : null}
-        {branch && hasModule ? (
+        {branch ? (
           <DataTable
             columns={buildProductionColumns(t, { onOpen: (order) => setDetailId(order.id) })}
             data={items}
@@ -205,9 +214,6 @@ export function ProductionPage() {
                   : t("production_planned_progress", { count, total }),
             }}
           />
-        ) : null}
-        {!branch && branches.length === 0 && !branchesLoading ? (
-          <p className="text-sm text-muted-foreground">{t("no_branches")}</p>
         ) : null}
       </EntityListLayout>
 

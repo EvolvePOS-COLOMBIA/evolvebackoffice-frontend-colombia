@@ -252,6 +252,7 @@
   "production_desc": "Produce semielaborados con su receta y conoce su costo real.",
   "production_page_desc": "Registra lo que produce esta sucursal: salen los ingredientes de cada receta y entran los productos a su costo real. Una orden puede llevar varios productos.",
   "production_no_module": "{{branch}} no tiene el módulo de Producción. Asígnalo en la configuración de la sucursal.",
+  "production_no_module_branches": "Ninguna sucursal tiene el módulo de Producción. Asígnalo en la configuración de la sucursal.",
   "production_produce": "Producir ahora",
   "production_tab_done": "Producciones",
   "production_tab_planned": "Preparadas",

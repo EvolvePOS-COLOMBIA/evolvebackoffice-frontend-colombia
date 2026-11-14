@@ -252,6 +252,7 @@
   "production_desc": "Produce semi-finished goods from their recipe and know their real cost.",
   "production_page_desc": "Record what this branch produces: each recipe's ingredients go out and the products come in at their real cost. One order can hold several products.",
   "production_no_module": "{{branch}} does not have the Production module. Assign it in the branch settings.",
+  "production_no_module_branches": "No branch has the Production module. Assign it in the branch settings.",
   "production_produce": "Produce now",
   "production_tab_done": "Productions",
   "production_tab_planned": "Prepared",

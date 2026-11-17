@@ -140,6 +140,30 @@ export function OrderDetailDialog({ open, onOpenChange, order, onEdit }: OrderDe
 
           <Separator />
 
+          {/* Productos */}
+          <section className="space-y-2 text-sm" aria-label={t("order_items_title")}>
+            <h3 className="font-semibold">{t("order_items_title")}</h3>
+            {!detail ? (
+              <p className="text-muted-foreground">{t("order_items_loading")}</p>
+            ) : detail.items.length === 0 ? (
+              <p className="text-muted-foreground">{t("order_items_empty")}</p>
+            ) : (
+              <ul className="max-h-48 space-y-2 overflow-y-auto pr-1">
+                {detail.items.map((item) => (
+                  <li key={item.id} className="flex items-start justify-between gap-3">
+                    <div className="min-w-0">
+                      <p className="truncate font-medium">{`${item.quantity} × ${item.name}`}</p>
+                      {item.sku ? <p className="text-xs text-muted-foreground">{item.sku}</p> : null}
+                    </div>
+                    <span className="shrink-0 tabular-nums">{formatCurrency(item.subtotal)}</span>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </section>
+
+          <Separator />
+
           {/* Breakdown */}
           <div className="space-y-2 text-sm">
             <div className="flex justify-between">

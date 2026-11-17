@@ -136,6 +136,35 @@ describe("OrderDetailDialog", () => {
     expect(screen.getByText("Tarjeta credito")).toBeInTheDocument()
   })
 
+  it("shows the translated order status in the header", () => {
+    mockDetail(ITEMS)
+
+    renderDialog()
+
+    expect(screen.getByText("order_status_pending")).toBeInTheDocument()
+  })
+
+  it("shows the status from the fresh detail instead of the stale list value", () => {
+    mockedUseOrderDetail.mockReturnValue({
+      data: { ...ORDER, items: ITEMS, statusCode: "Shipped", statusName: "Shipped" },
+    } as unknown as DetailQueryResult)
+
+    renderDialog()
+
+    expect(screen.getByText("order_status_shipped")).toBeInTheDocument()
+    expect(screen.queryByText("order_status_pending")).toBeNull()
+  })
+
+  it("falls back to the backend status name for a status the UI does not know", () => {
+    mockedUseOrderDetail.mockReturnValue({
+      data: { ...ORDER, items: ITEMS, statusCode: "SomethingNew", statusName: "Algo Nuevo" },
+    } as unknown as DetailQueryResult)
+
+    renderDialog()
+
+    expect(screen.getByText("Algo Nuevo")).toBeInTheDocument()
+  })
+
   it("shows the SKU only for lines that have one", () => {
     mockDetail(ITEMS)
 

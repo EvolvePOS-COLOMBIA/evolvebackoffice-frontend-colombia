@@ -107,7 +107,10 @@ export function OrderDetailDialog({ open, onOpenChange, order, onEdit }: OrderDe
             <DialogTitle className="text-lg sm:text-xl">
               {t("order_number")} #{reference}
             </DialogTitle>
-            <Badge tone={statusConfig?.color}>{statusConfig?.label ?? current.statusName}</Badge>
+            <Badge tone={statusConfig?.color} className="px-3 py-1.5 text-xs">
+              <span aria-hidden className="mr-2 size-2 rounded-full bg-current" />
+              {statusConfig ? t(statusConfig.labelKey) : current.statusName}
+            </Badge>
           </div>
           <DialogDescription className="flex flex-wrap items-center gap-x-2 text-xs leading-5">
             <span>{order.branchName}</span>

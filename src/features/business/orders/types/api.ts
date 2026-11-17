@@ -114,7 +114,16 @@ export interface OrderStockCheck {
   items: OrderStockItem[]
 }
 
-export type OrderStatus = "Pending" | "Confirmed" | "Preparing" | "Ready" | "Shipped" | "Delivered" | "Cancelled"
+export type OrderStatus =
+  | "Pending"
+  | "Confirmed"
+  | "Preparing"
+  | "Ready"
+  | "Shipped"
+  | "Delivered"
+  | "Cancelled"
+  | "NeedsReview"
+  | "Refunded"
 
 export interface CluviStoreInfo {
   id: number

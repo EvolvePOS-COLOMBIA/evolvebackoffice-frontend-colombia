@@ -137,7 +137,7 @@ function CancelOrderForm({ order, items, onOpenChange, onSuccess }: CancelOrderF
             <AlertTriangle className="size-5" />
             {t("cancel_order_title", { reference: orderRef })}
           </DialogTitle>
-          {statusConfig && <Badge tone={statusConfig.color}>{statusConfig.label}</Badge>}
+          {statusConfig && <Badge tone={statusConfig.color}>{t(statusConfig.labelKey)}</Badge>}
         </div>
         <DialogDescription>{t("cancel_order_desc")}</DialogDescription>
       </DialogHeader>

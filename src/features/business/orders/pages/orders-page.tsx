@@ -299,7 +299,12 @@ export function OrdersPage() {
     updateStatusMutation.mutate(
       { id: orderId, status: newStatus, deliveryUserId: deliveryUserId ?? null },
       {
-        onSuccess: () => notify.success(t("status") + " → " + (ORDER_STATUS_CONFIG[newStatus]?.label ?? newStatus)),
+        onSuccess: () =>
+          notify.success(
+            t("status") +
+              " → " +
+              (ORDER_STATUS_CONFIG[newStatus] ? t(ORDER_STATUS_CONFIG[newStatus].labelKey) : newStatus)
+          ),
         onError: (error: unknown) => {
           const message = (error as { response?: { data?: { message?: string } } })?.response?.data?.message
           notify.error(message || t("status_update_failed"))
@@ -365,7 +370,7 @@ export function OrdersPage() {
         { id: order.id, status: "Shipped", deliveryUserId: userId },
         {
           onSuccess: () => {
-            notify.success(t("status") + " → " + (ORDER_STATUS_CONFIG.Shipped?.label ?? "Shipped"))
+            notify.success(t("status") + " → " + t(ORDER_STATUS_CONFIG.Shipped.labelKey))
             setAssignTargets([])
             setSelectedReadyIds((prev) => {
               const next = new Set(prev)

@@ -206,5 +206,10 @@
   "copy_failed": "Could not copy the URL",
   "checking_store": "Checking store status...",
   "store_status_unknown": "Store status not verified",
-  "check_status": "Check"
+  "check_status": "Check",
+  "selection_label": "«Ready» orders selected",
+  "assign_courier": "Assign courier",
+  "assign_done": "Orders assigned successfully.",
+  "assign_partial": "{{ok}} order(s) assigned; {{failed}} could not be assigned.",
+  "assign_failed": "No order could be assigned."
 }

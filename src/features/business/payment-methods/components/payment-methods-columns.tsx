@@ -69,7 +69,6 @@ export function buildPaymentMethodColumns(
       header: t("actions"),
       minWidth: "min-w-[90px]",
       align: "right",
-      stickyRight: true,
       render: (method) => (
         <div className="flex justify-end gap-1">
           <Button

@@ -1,4 +1,3 @@
-import { useEffect } from "react"
 import { BrowserRouter, Navigate, Route, Routes } from "react-router-dom"
 
 import { AppLayout } from "@/components/layout/app-layout"
@@ -30,6 +29,7 @@ import { PaymentMethodsPage } from "@/features/business/payment-methods/pages/pa
 import { RegistersPage } from "@/features/business/registers/pages/registers-page"
 import { OrdersPage } from "@/features/business/orders/pages/orders-page"
 import { OrderClosingPage } from "@/features/business/orders/pages/order-closing-page"
+import { DeliveryPage } from "@/features/business/delivery/pages/delivery-page"
 import { BranchTerminalSettingsPage } from "@/features/business/branches/pages/branch-terminal-settings-page"
 import { BranchConfigPage } from "@/features/business/branches/pages/branch-config-page"
 import { BranchesPage } from "@/features/business/branches/pages/branches-page"
@@ -48,19 +48,12 @@ import { OnboardingGate } from "@/routes/onboarding-gate"
 import { ProtectedRoute } from "@/routes/protected-route"
 import { PublicRoute } from "@/routes/public-route"
 import { useAuth } from "@/features/auth/hooks/use-auth"
-import { notify } from "@/hooks/use-notify"
-import i18n from "@/i18n"
+import { useSessionExpiry } from "@/features/auth/hooks/use-session-expiry"
 
 function AppRoutesContent() {
-  const { defaultRoute, isAuthenticated, logout, session } = useAuth()
+  const { defaultRoute, isAuthenticated } = useAuth()
 
-  useEffect(() => {
-    if (session && new Date(session.expiresAtUtc).getTime() <= Date.now()) {
-      const t = i18n.getFixedT(null, "auth")
-      notify.info(t("session_expired"))
-      logout()
-    }
-  }, [logout, session])
+  useSessionExpiry()
 
   return (
     <Routes>
@@ -101,6 +94,7 @@ function AppRoutesContent() {
             <Route path="/business/dashboard" element={<BusinessDashboardPage />} />
             <Route path="/business/orders" element={<OrdersPage />} />
             <Route path="/business/orders/closing" element={<OrderClosingPage />} />
+            <Route path="/business/delivery" element={<DeliveryPage />} />
             <Route path="/business/items" element={<ItemsPage />} />
             <Route path="/business/items/catalog" element={<ItemsCatalogPage />} />
             <Route path="/business/items/catalog/new" element={<ItemFormPage />} />

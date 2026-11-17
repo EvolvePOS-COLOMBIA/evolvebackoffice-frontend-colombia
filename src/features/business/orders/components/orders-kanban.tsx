@@ -1,6 +1,7 @@
 import type { CSSProperties } from "react"
 import { DragDropContext, Droppable, Draggable, type DropResult } from "@hello-pangea/dnd"
 import { Badge } from "@/components/ui/badge"
+import { Checkbox } from "@/components/ui/checkbox"
 import { useLocaleFormat } from "@/hooks/use-locale-format"
 import { useTranslation } from "@/i18n/use-i18n"
 import { KANBAN_COLUMNS, ORDER_STATUS_CONFIG } from "../types"
@@ -15,6 +16,11 @@ interface OrdersKanbanProps {
   /** En "todas las sucursales" cada tarjeta muestra su sucursal. */
   showBranch?: boolean
   showCancelled?: boolean
+  /** Estado cuyas tarjetas muestran checkbox de selección múltiple (p. ej. "Ready"). */
+  selectableStatus?: OrderStatus
+  /** Ids seleccionados (selección múltiple para acciones por lote). */
+  selectedIds?: Set<string>
+  onToggleSelect?: (orderId: string) => void
 }
 
 /**
@@ -28,6 +34,9 @@ export function OrdersKanban({
   onCancelOrder,
   showBranch = false,
   showCancelled = false,
+  selectableStatus,
+  selectedIds,
+  onToggleSelect,
 }: OrdersKanbanProps) {
   const { t } = useTranslation("business-orders")
   const { formatCurrency } = useLocaleFormat()
@@ -93,17 +102,34 @@ export function OrdersKanban({
                               // como CSSProperties para compatibilidad con los
                               // index signatures de custom properties (--radix-*).
                               style={provided.draggableProps.style as CSSProperties}
-                              className={`group rounded-lg border bg-primary/5 p-3 shadow-sm transition-shadow hover:border-primary/30 ${
+                              className={`group flex items-start gap-2 rounded-lg border bg-primary/5 p-3 shadow-sm transition-shadow hover:border-primary/30 ${
                                 snapshot.isDragging ? "shadow-md" : ""
                               }`}
                             >
-                              <OrderCard
-                                order={order}
-                                showBranch={showBranch}
-                                priority={index < 8}
-                                onViewDetail={onViewDetail}
-                                onCancelOrder={onCancelOrder}
-                              />
+                              {selectableStatus === status && onToggleSelect ? (
+                                // stopPropagation evita que mousedown en el
+                                // checkbox dispare el arrastre de la tarjeta.
+                                <span
+                                  className="mt-0.5 flex shrink-0 items-center"
+                                  onMouseDown={(e) => e.stopPropagation()}
+                                  onClick={(e) => e.stopPropagation()}
+                                >
+                                  <Checkbox
+                                    checked={selectedIds?.has(order.id) ?? false}
+                                    onCheckedChange={() => onToggleSelect(order.id)}
+                                    aria-label={`#${order.externalOrderId?.slice(0, 8) ?? order.id.slice(0, 8)}`}
+                                  />
+                                </span>
+                              ) : null}
+                              <div className="min-w-0 flex-1">
+                                <OrderCard
+                                  order={order}
+                                  showBranch={showBranch}
+                                  priority={index < 8}
+                                  onViewDetail={onViewDetail}
+                                  onCancelOrder={onCancelOrder}
+                                />
+                              </div>
                             </div>
                           )}
                         </Draggable>

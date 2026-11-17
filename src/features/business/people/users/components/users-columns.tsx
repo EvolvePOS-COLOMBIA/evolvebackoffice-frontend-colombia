@@ -71,7 +71,6 @@ export function buildUserColumns(
       header: t("actions"),
       minWidth: "min-w-[80px]",
       align: "right",
-      stickyRight: true,
       render: (user) => (
         <div className="flex justify-end gap-1">
           <Button

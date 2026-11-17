@@ -16,7 +16,8 @@ export const IDENTIFICATION_TYPE_LABELS: Record<IdentificationType, string> = {
   [IdentificationType.CedulaExtranjeria]: "CE",
 }
 
-export type Role = "Admin" | "Manager" | "Cashier"
+/** Roles de usuario del tenant. `Delivery` = domiciliario (exige teléfono). */
+export type Role = "Admin" | "Manager" | "Cashier" | "Delivery"
 
 export interface UserResponseDto {
   id: string

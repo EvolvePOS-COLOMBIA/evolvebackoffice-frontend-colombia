@@ -72,5 +72,9 @@
   "person_found_confirm": "Got it",
   "person_not_found": "No person found with that identification. You can keep filling the form.",
   "person_lookup": "Look up person",
-  "person_looking": "Searching..."
+  "person_looking": "Searching...",
+  "saving": "Saving...",
+  "search_placeholder": "Search...",
+  "clear_selection": "Clear selection",
+  "delivery": "Delivery"
 }

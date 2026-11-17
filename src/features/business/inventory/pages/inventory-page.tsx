@@ -60,17 +60,13 @@ export function InventoryPage() {
       disabled: false,
       onClick: () => navigate("/business/inventory/purchase-orders"),
     },
-    ...(hasProduction
-      ? [
-          {
-            name: t("production"),
-            label: t("production_desc"),
-            icon: ChefHat,
-            disabled: false,
-            onClick: () => navigate("/business/inventory/production"),
-          },
-        ]
-      : []),
+    {
+      name: t("production"),
+      label: t("production_desc"),
+      icon: ChefHat,
+      disabled: !hasProduction,
+      onClick: () => navigate("/business/inventory/production"),
+    },
     {
       name: t("physical_inventory"),
       label: t("physical_inventory_desc"),

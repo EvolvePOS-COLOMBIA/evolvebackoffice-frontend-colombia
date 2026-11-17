@@ -48,6 +48,8 @@ import businessSuppliersEs from "@/features/business/people/suppliers/i18n/es.js
 import businessSuppliersEn from "@/features/business/people/suppliers/i18n/en.json"
 import businessOrdersEs from "@/features/business/orders/i18n/es.json"
 import businessOrdersEn from "@/features/business/orders/i18n/en.json"
+import businessDeliveryEs from "@/features/business/delivery/i18n/es.json"
+import businessDeliveryEn from "@/features/business/delivery/i18n/en.json"
 import businessPaymentMethodsEs from "@/features/business/payment-methods/i18n/es.json"
 import businessPaymentMethodsEn from "@/features/business/payment-methods/i18n/en.json"
 import businessCreditEs from "@/features/business/people/credit/i18n/es.json"
@@ -84,6 +86,7 @@ const resources = {
     "business-customers": businessCustomersEs,
     "business-suppliers": businessSuppliersEs,
     "business-orders": businessOrdersEs,
+    "business-delivery": businessDeliveryEs,
     "business-payment-methods": businessPaymentMethodsEs,
     "business-credit": businessCreditEs,
     "business-registers": businessRegistersEs,
@@ -114,6 +117,7 @@ const resources = {
     "business-customers": businessCustomersEn,
     "business-suppliers": businessSuppliersEn,
     "business-orders": businessOrdersEn,
+    "business-delivery": businessDeliveryEn,
     "business-payment-methods": businessPaymentMethodsEn,
     "business-credit": businessCreditEn,
     "business-registers": businessRegistersEn,
@@ -152,6 +156,7 @@ i18n.use(initReactI18next).init({
     "business-customers",
     "business-suppliers",
     "business-orders",
+    "business-delivery",
     "business-payment-methods",
     "business-credit",
     "business-registers",

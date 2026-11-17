@@ -7,6 +7,9 @@ import type {
   CreateManualOrderDto,
   UpdateOrderDetailsDto,
   CancelOrderDto,
+  BulkUpdateOrderStatusDto,
+  BulkOrderStatusItemResult,
+  BulkOrderStatusResultDto,
 } from "../types/api"
 
 function normalizePagedResponse(raw: unknown, pageSize: number): PagedOrders {
@@ -40,8 +43,29 @@ export async function getOrderById(id: string): Promise<OrderDetail> {
   return data
 }
 
-export async function updateOrderStatus(id: string, status: string): Promise<void> {
-  await api.put(`/api/orders/${id}/status`, { status })
+export async function updateOrderStatus(id: string, status: string, deliveryUserId?: string | null): Promise<void> {
+  await api.put(`/api/orders/${id}/status`, { status, deliveryUserId: deliveryUserId ?? null })
+}
+
+/**
+ * Cambio de estado múltiple (varios pedidos a "En camino" con el mismo
+ * domiciliario). El backend acepta hasta 50 ids por llamada; aquí se fragmenta
+ * automáticamente y se agregan los resultados por pedido.
+ */
+export async function bulkUpdateOrderStatus(payload: BulkUpdateOrderStatusDto): Promise<BulkOrderStatusResultDto> {
+  const chunks: string[][] = []
+  for (let i = 0; i < payload.ids.length; i += 50) {
+    chunks.push(payload.ids.slice(i, i + 50))
+  }
+  const results: BulkOrderStatusItemResult[] = []
+  for (const ids of chunks) {
+    const { data } = await api.put<BulkOrderStatusResultDto>("/api/orders/status/bulk", {
+      ...payload,
+      ids,
+    })
+    results.push(...(data?.results ?? []))
+  }
+  return { results }
 }
 
 /** Inventario de la orden contra la sucursal. Solo informativo, nunca bloquea. */

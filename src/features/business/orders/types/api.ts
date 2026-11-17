@@ -215,7 +215,7 @@ export interface CreateManualOrderDto {
   items: CreateManualOrderItemDto[]
 }
 
-/** Payload de PUT /api/orders/{id}/details — null = no modificar el campo. */
+/** Payload de PUT /api/orders/{id}/details - null = no modificar el campo. */
 export interface UpdateOrderDetailsDto {
   notes: string | null
   shippingStreet: string | null
@@ -226,4 +226,25 @@ export interface UpdateOrderDetailsDto {
   shippingLongitude: number | null
   shippingNotes: string | null
   shippingCost: number | null
+}
+
+/**
+ * Payload de PUT /api/orders/status/bulk (cambio de estado múltiple).
+ * `ids` es el nombre real del campo en el wire (máx. 50 por llamada).
+ */
+export interface BulkUpdateOrderStatusDto {
+  ids: string[]
+  status: string
+  /** Domiciliario asignado (obligatorio al pasar a Shipped con DOMICILIOS). */
+  deliveryUserId?: string | null
+}
+
+export interface BulkOrderStatusItemResult {
+  id: string
+  success: boolean
+  error: string | null
+}
+
+export interface BulkOrderStatusResultDto {
+  results: BulkOrderStatusItemResult[]
 }

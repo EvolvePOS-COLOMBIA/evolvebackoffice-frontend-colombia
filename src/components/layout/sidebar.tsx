@@ -1,5 +1,6 @@
 import {
   BarChart3,
+  Bike,
   Bot,
   Building2,
   Fingerprint,
@@ -62,6 +63,7 @@ const platformNavigationItems = [
 const businessNavigationItems = [
   { to: "/business/dashboard", labelKey: "dashboard", icon: LayoutDashboard },
   { to: "/business/orders", labelKey: "orders", icon: Truck },
+  { to: "/business/delivery", labelKey: "delivery", icon: Bike },
   { to: "/business/ai-chat", labelKey: "ai_chat", icon: Sparkles },
   { to: "/business/items", labelKey: "items", icon: Package },
   { to: "/business/inventory", labelKey: "inventory", icon: Building2 },
@@ -110,14 +112,19 @@ export function SidebarContent({
   const hasOrdersLicense = isPlatformAdmin || (tenantModules ?? []).some((m) => m.isEnabled)
   // El Asistente IA requiere específicamente el módulo "IA" habilitado.
   const hasAiLicense = isPlatformAdmin || (tenantModules ?? []).some((m) => m.moduleCode === "IA" && m.isEnabled)
+  // Gestión de Domicilios requiere específicamente el módulo "DOMICILIOS".
+  const hasDeliveryLicense =
+    isPlatformAdmin || (tenantModules ?? []).some((m) => m.moduleCode === "DOMICILIOS" && m.isEnabled)
 
   const baseNavigationItems = isPlatformAdmin ? platformNavigationItems : businessNavigationItems
   const navigationItems = baseNavigationItems.filter((item) => {
-    if (item.labelKey !== "orders" && item.labelKey !== "ai_chat") return true
+    if (item.labelKey !== "orders" && item.labelKey !== "ai_chat" && item.labelKey !== "delivery") return true
     // Evita parpadeo: oculto hasta confirmar licencias (salvo platform admin).
     if (isPlatformAdmin) return true
     if (tenantModulesLoading) return false
-    return item.labelKey === "orders" ? hasOrdersLicense : hasAiLicense
+    if (item.labelKey === "orders") return hasOrdersLicense
+    if (item.labelKey === "delivery") return hasDeliveryLicense
+    return hasAiLicense
   })
 
   return (
@@ -172,6 +179,7 @@ export function SidebarContent({
                         | "reports"
                         | "settings"
                         | "orders"
+                        | "delivery"
                         | "ai_chat"
                         | "logs"
                         | "audit"
@@ -202,6 +210,7 @@ export function SidebarContent({
                       | "users"
                       | "email_settings"
                       | "orders"
+                      | "delivery"
                       | "ai_chat"
                       | "logs"
                       | "audit"

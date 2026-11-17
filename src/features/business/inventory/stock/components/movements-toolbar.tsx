@@ -1,14 +1,12 @@
-import { Search, SlidersHorizontal } from "lucide-react"
+import { Search } from "lucide-react"
 
-import { Badge } from "@/components/ui/badge"
-import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { useTranslation } from "@/i18n/use-i18n"
 import { MOVEMENT_TYPES } from "../../types"
-import { ALL, countHiddenMovementFilters, type MovementFilterForm } from "./movement-filter-form"
-import { MovementFiltersContent } from "./movement-filters"
+import { ALL, type MovementFilterForm } from "./movement-filter-form"
+import { MovementFiltersPopover } from "./movement-filters-popover"
+// import { MovementFiltersSheet } from "./movement-filters-sheet"
 
 type MovementsToolbarProps = {
   branchId: string
@@ -16,10 +14,9 @@ type MovementsToolbarProps = {
   onChange: (value: MovementFilterForm) => void
 }
 
-/** Barra de herramientas del historial: búsqueda, tipo de movimiento y popover de filtros. */
+/** Barra de herramientas del historial: búsqueda, tipo de movimiento y filtros. */
 export function MovementsToolbar({ branchId, value, onChange }: MovementsToolbarProps) {
   const { t } = useTranslation("business-inventory")
-  const hiddenCount = countHiddenMovementFilters(value)
 
   return (
     <div className="flex shrink-0 flex-col items-start gap-3 sm:flex-row sm:items-center sm:justify-between">
@@ -47,24 +44,8 @@ export function MovementsToolbar({ branchId, value, onChange }: MovementsToolbar
           </SelectContent>
         </Select>
 
-        <Popover>
-          <PopoverTrigger asChild>
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              className="max-sm:h-8 max-sm:px-2.5 max-sm:text-xs"
-              aria-label={t("filters_title")}
-            >
-              <SlidersHorizontal className="size-4" />
-              {t("filters_title")}
-              {hiddenCount > 0 ? <Badge tone="primary">{hiddenCount}</Badge> : null}
-            </Button>
-          </PopoverTrigger>
-          <PopoverContent align="end" className="w-[min(92vw,34rem)] p-4">
-            <MovementFiltersContent branchId={branchId} value={value} onChange={onChange} />
-          </PopoverContent>
-        </Popover>
+        <MovementFiltersPopover branchId={branchId} value={value} onChange={onChange} />
+        {/* <MovementFiltersSheet branchId={branchId} value={value} onChange={onChange} /> */}
       </div>
     </div>
   )

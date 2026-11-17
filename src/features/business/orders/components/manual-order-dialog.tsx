@@ -212,8 +212,9 @@ export function ManualOrderDialog({ open, onOpenChange, branchId }: ManualOrderD
         <div className="grid min-h-0 flex-1 grid-cols-1 md:grid-cols-[minmax(0,1fr)_21rem]">
           {/* Izquierda: productos + líneas */}
           <div className="flex min-h-0 flex-col overflow-y-auto px-6 py-4">
-            {/* Buscador de productos (combobox) */}
-            <Popover open={pickerOpen} onOpenChange={setPickerOpen}>
+            {/* Buscador de productos (combobox). `modal`: el popover se renderiza por portal fuera del
+                diálogo y el bloqueo de scroll de este lo dejaba sin rueda del ratón (EC-2). */}
+            <Popover modal open={pickerOpen} onOpenChange={setPickerOpen}>
               <PopoverTrigger asChild>
                 <Button
                   type="button"

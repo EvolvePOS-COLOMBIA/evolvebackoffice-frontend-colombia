@@ -14,6 +14,7 @@
   "all_orders": "Todas las Órdenes",
   "order_detail": "Detalle de Orden",
   "order_number": "Orden",
+  "order_notes": "Notas",
   "order_items_title": "Productos",
   "order_items_loading": "Cargando productos…",
   "order_items_empty": "Esta orden no tiene productos.",

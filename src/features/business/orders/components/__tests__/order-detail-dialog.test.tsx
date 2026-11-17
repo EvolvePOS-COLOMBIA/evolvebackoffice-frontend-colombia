@@ -99,8 +99,41 @@ describe("OrderDetailDialog", () => {
 
     renderDialog()
 
-    expect(screen.getByText("2 × Hamburguesa Doble")).toBeInTheDocument()
-    expect(screen.getByText("1 × Coca Cola")).toBeInTheDocument()
+    expect(screen.getByText("Hamburguesa Doble")).toBeInTheDocument()
+    expect(screen.getByText("2×")).toBeInTheDocument()
+    expect(screen.getByText("Coca Cola")).toBeInTheDocument()
+    expect(screen.getByText("1×")).toBeInTheDocument()
+  })
+
+  it("shows customer and notes only when the detail provides them", () => {
+    mockedUseOrderDetail.mockReturnValue({
+      data: { ...ORDER, items: ITEMS, customerName: "María Pérez", notes: "Sin cilantro" },
+    } as unknown as DetailQueryResult)
+
+    renderDialog()
+
+    expect(screen.getByText("María Pérez")).toBeInTheDocument()
+    expect(screen.getByText("Sin cilantro")).toBeInTheDocument()
+  })
+
+  it("hides shipping and discount rows when they are zero", () => {
+    mockDetail(ITEMS)
+
+    renderDialog()
+
+    expect(screen.queryByText("shipping_cost")).toBeNull()
+    expect(screen.queryByText("discount")).toBeNull()
+    expect(screen.getByText("subtotal")).toBeInTheDocument()
+  })
+
+  it("humanizes payment codes that have no translation", () => {
+    mockedUseOrderDetail.mockReturnValue({
+      data: { ...ORDER, items: ITEMS, paymentMethod: "TARJETA_CREDITO" },
+    } as unknown as DetailQueryResult)
+
+    renderDialog()
+
+    expect(screen.getByText("Tarjeta credito")).toBeInTheDocument()
   })
 
   it("shows the SKU only for lines that have one", () => {

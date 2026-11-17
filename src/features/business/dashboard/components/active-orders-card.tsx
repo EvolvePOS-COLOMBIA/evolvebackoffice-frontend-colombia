@@ -51,7 +51,7 @@ function ProgressCircle({ progress, color, size = 36 }: { progress: number; colo
   return (
     <svg width={size} height={size} className="shrink-0 -rotate-90">
       {/* Background circle */}
-      <circle cx={size / 2} cy={size / 2} r={radius} fill="none" stroke="hsl(var(--muted))" strokeWidth={strokeWidth} />
+      <circle cx={size / 2} cy={size / 2} r={radius} fill="none" stroke="var(--muted)" strokeWidth={strokeWidth} />
       {/* Progress arc — animates on mount */}
       <circle
         cx={size / 2}

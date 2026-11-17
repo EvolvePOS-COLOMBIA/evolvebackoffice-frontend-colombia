@@ -61,7 +61,7 @@ export function DepartmentSalesChart({ data, dateRange, onPrint, onSave }: Depar
       <CardContent>
         <ChartContainer config={chartConfig} className="h-75 w-full">
           <BarChart data={data} margin={{ top: 10, right: -19, left: -10, bottom: 0 }}>
-            <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="hsl(var(--border))" />
+            <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="var(--border)" />
             <XAxis dataKey="department" tickLine={false} axisLine={false} tickMargin={8} fontSize={11} />
             <YAxis
               tickLine={false}

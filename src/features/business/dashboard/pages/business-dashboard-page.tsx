@@ -24,6 +24,7 @@ import {
 } from "../hooks/use-dashboard"
 import { PeriodFilter } from "../components/period-filter"
 import { SalesByPeriodChart } from "../components/sales-by-period-chart"
+import { fillSalesBuckets } from "../utils/sales-buckets"
 import { ActiveOrdersCard } from "../components/active-orders-card"
 import { StatsGrid } from "../components/stats-grid"
 import { DepartmentSalesChart } from "../components/department-sales-chart"
@@ -93,7 +94,8 @@ export function BusinessDashboardPage() {
     const map = { day: "hourly", week: "weekly", month: "monthly" } as const
     const points = salesByPeriod?.[map[period]] ?? []
     return {
-      points,
+      // The API only sends the buckets that have sales; fill the empty ones so the area chart can draw.
+      points: fillSalesBuckets(points, period),
       totalSales: points.reduce((sum, p) => sum + p.sales, 0),
       totalTransactions: points.reduce((sum, p) => sum + p.transactions, 0),
     }

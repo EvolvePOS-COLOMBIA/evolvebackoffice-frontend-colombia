@@ -8,6 +8,7 @@ import { useTranslation } from "@/i18n/use-i18n"
 import { useLocaleFormat } from "@/hooks/use-locale-format"
 import type { Period, SalesByPeriodPoint } from "../mock/dashboard-data"
 import { CHART_PRIMARY, CHART_SECONDARY } from "../constants"
+import { DAY_INDEX } from "../utils/sales-buckets"
 
 interface SalesByPeriodChartProps {
   data: SalesByPeriodPoint[]
@@ -33,24 +34,6 @@ const DAY_NAMES: Record<string, string[]> = {
 const MONTH_NAMES: Record<string, string[]> = {
   es: ["ene", "feb", "mar", "abr", "may", "jun", "jul", "ago", "sep", "oct", "nov", "dic"],
   en: ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"],
-}
-
-/** Map abbreviated day labels to day-of-week index (0=Sun) */
-const DAY_INDEX: Record<string, number> = {
-  Lun: 1,
-  Mar: 2,
-  Mié: 3,
-  Jue: 4,
-  Vie: 5,
-  Sáb: 6,
-  Dom: 0,
-  Mon: 1,
-  Tue: 2,
-  Wed: 3,
-  Thu: 4,
-  Fri: 5,
-  Sat: 6,
-  Sun: 0,
 }
 
 function formatMonthDay(dayNum: number, locale: string): string {

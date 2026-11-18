@@ -48,7 +48,7 @@ export function transferShareText(transfer: TransferDto, t: TFunction): string {
   ].join("\n")
 }
 
-/** Resumen de una venta para el cliente: productos, cantidades y total (sin costos ni ganancia). */
+/** Resumen de una venta para el empleado: productos, cantidades y total (sin costos ni ganancia). */
 export function saleShareText(sale: WholesaleSaleDto, t: TFunction): string {
   const lines = sale.lines.map((l) => {
     const packaging = l.packagingName && l.packagingFactor ? { name: l.packagingName, factor: l.packagingFactor } : null
@@ -56,7 +56,7 @@ export function saleShareText(sale: WholesaleSaleDto, t: TFunction): string {
   })
   return [
     `${t("share_sale_heading")} ${sale.number}`,
-    `${t("share_from")}: ${sale.branchName}${sale.customerName ? `  →  ${t("share_to")}: ${sale.customerName}` : ""}`,
+    `${t("share_from")}: ${sale.branchName}${sale.employeeName ? `  →  ${t("share_to")}: ${sale.employeeName}` : ""}`,
     `${t("share_date")}: ${formatShortDate(sale.createdAt)}`,
     "",
     ...lines,

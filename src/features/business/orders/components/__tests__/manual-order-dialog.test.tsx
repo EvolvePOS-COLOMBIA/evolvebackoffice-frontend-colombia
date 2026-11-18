@@ -16,8 +16,10 @@ vi.mock("@/features/business/items/catalog/hooks/use-branch-items", () => ({
   useBranchItems: vi.fn(),
 }))
 
+const { createMutate } = vi.hoisted(() => ({ createMutate: vi.fn() }))
+
 vi.mock("../../hooks/use-orders", () => ({
-  useCreateManualOrder: () => ({ mutate: vi.fn(), isPending: false }),
+  useCreateManualOrder: () => ({ mutate: createMutate, isPending: false }),
 }))
 
 const mockedUseBranchItems = vi.mocked(useBranchItems)
@@ -165,5 +167,71 @@ describe("ManualOrderDialog redesign", () => {
     fireEvent.change(screen.getByLabelText(/unit_price_of/), { target: { value: "900" } })
 
     expect(screen.getByText(/price_modified/)).toBeInTheDocument()
+  })
+})
+
+/** The picker stays open (and aria-hidden-s the rest), so find the button by its footer slot. */
+function submitOrder() {
+  const footer = document.querySelector("[data-slot=order-footer]") as HTMLElement
+  fireEvent.click(within(footer).getByText("create_order"))
+}
+
+describe("ManualOrderDialog money fields (EC-3)", () => {
+  beforeEach(() => {
+    vi.clearAllMocks()
+    mockedUseBranchItems.mockReturnValue({
+      data: { data: ITEMS },
+      isLoading: false,
+    } as unknown as BranchItemsResult)
+  })
+
+  it("shows the unit price with thousands separators and formats while typing", async () => {
+    render(<ManualOrderDialog open onOpenChange={vi.fn()} branchId="branch-1" />)
+    openPicker()
+    await screen.findByText("Producto 0")
+    addFromPicker("Producto 0")
+
+    const price = screen.getByLabelText(/unit_price_of/) as HTMLInputElement
+    expect(price.value).toBe("1.000")
+
+    fireEvent.change(price, { target: { value: "12500" } })
+    expect(price.value).toBe("12.500")
+    expect(screen.getByText(/price_modified/)).toBeInTheDocument()
+  })
+
+  it("formats the shipping cost while typing", () => {
+    render(<ManualOrderDialog open onOpenChange={vi.fn()} branchId="branch-1" />)
+
+    const shipping = screen.getByLabelText("shipping_cost") as HTMLInputElement
+    fireEvent.change(shipping, { target: { value: "5000" } })
+
+    expect(shipping.value).toBe("5.000")
+  })
+
+  it("still sends plain numbers to the API", async () => {
+    render(<ManualOrderDialog open onOpenChange={vi.fn()} branchId="branch-1" />)
+    openPicker()
+    await screen.findByText("Producto 0")
+    addFromPicker("Producto 0")
+
+    fireEvent.change(screen.getByLabelText(/unit_price_of/), { target: { value: "12500" } })
+    fireEvent.change(screen.getByLabelText("shipping_cost"), { target: { value: "5000" } })
+    submitOrder()
+
+    expect(createMutate).toHaveBeenCalledTimes(1)
+    const payload = createMutate.mock.calls[0][0]
+    expect(payload.shippingCost).toBe(5000)
+    expect(payload.items[0].unitPriceOverride).toBe(12500)
+  })
+
+  it("sends no shipping cost when the field is left empty", async () => {
+    render(<ManualOrderDialog open onOpenChange={vi.fn()} branchId="branch-1" />)
+    openPicker()
+    await screen.findByText("Producto 0")
+    addFromPicker("Producto 0")
+
+    submitOrder()
+
+    expect(createMutate.mock.calls[0][0].shippingCost).toBeNull()
   })
 })

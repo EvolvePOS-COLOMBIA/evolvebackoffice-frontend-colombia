@@ -6,6 +6,7 @@ import { Dialog, DialogContent, DialogDescription, DialogTitle } from "@/compone
 import { FIELD_SURFACE_CLASS } from "@/components/ui/field-surface"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
+import { MoneyInputBare } from "@/components/ui/money-input"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Textarea } from "@/components/ui/textarea"
@@ -83,7 +84,7 @@ export function ManualOrderDialog({ open, onOpenChange, branchId }: ManualOrderD
   const [notes, setNotes] = useState("")
   const [street, setStreet] = useState("")
   const [city, setCity] = useState("")
-  const [shippingCost, setShippingCost] = useState("")
+  const [shippingCost, setShippingCost] = useState<number | null>(null)
 
   const [prevOpen, setPrevOpen] = useState(open)
   if (open !== prevOpen) {
@@ -98,7 +99,7 @@ export function ManualOrderDialog({ open, onOpenChange, branchId }: ManualOrderD
       setNotes("")
       setStreet("")
       setCity("")
-      setShippingCost("")
+      setShippingCost(null)
     }
   }
 
@@ -159,7 +160,7 @@ export function ManualOrderDialog({ open, onOpenChange, branchId }: ManualOrderD
 
   const subtotal = lines.reduce((sum, l) => sum + l.price * l.quantity, 0)
   const units = lines.reduce((sum, l) => sum + l.quantity, 0)
-  const shipping = Number(shippingCost) > 0 ? Number(shippingCost) : 0
+  const shipping = shippingCost !== null && shippingCost > 0 ? shippingCost : 0
   const total = subtotal + shipping
 
   const canSubmit = lines.length > 0 && lines.every((l) => l.quantity >= 1 && l.price >= 0) && !createOrder.isPending
@@ -403,19 +404,11 @@ export function ManualOrderDialog({ open, onOpenChange, branchId }: ManualOrderD
                           <span aria-hidden className="text-[13px] text-muted-foreground">
                             {currencySymbol}
                           </span>
-                          <input
-                            type="number"
-                            min={0}
-                            step="0.01"
-                            inputMode="decimal"
+                          <MoneyInputBare
                             aria-label={t("unit_price_of", { name: line.name })}
-                            className="w-full min-w-0 [appearance:textfield] bg-transparent p-0 text-right tabular-nums outline-none [&::-webkit-inner-spin-button]:appearance-none"
+                            className="w-full min-w-0 bg-transparent p-0 text-right tabular-nums outline-none"
                             value={line.price}
-                            onChange={(e) =>
-                              updateLine(line.key, {
-                                price: e.target.value === "" ? 0 : Number(e.target.value),
-                              })
-                            }
+                            onChange={(price) => updateLine(line.key, { price: price ?? 0 })}
                           />
                         </label>
 
@@ -573,16 +566,12 @@ export function ManualOrderDialog({ open, onOpenChange, branchId }: ManualOrderD
                     <span aria-hidden className="text-[13px] text-muted-foreground">
                       {currencySymbol}
                     </span>
-                    <input
+                    <MoneyInputBare
                       id="manual-order-shipping"
-                      type="number"
-                      min={0}
-                      step="0.01"
-                      inputMode="decimal"
                       placeholder="0"
-                      className="w-full min-w-0 [appearance:textfield] bg-transparent p-0 text-right tabular-nums outline-none [&::-webkit-inner-spin-button]:appearance-none"
+                      className="w-full min-w-0 bg-transparent p-0 text-right tabular-nums outline-none"
                       value={shippingCost}
-                      onChange={(e) => setShippingCost(e.target.value)}
+                      onChange={setShippingCost}
                     />
                   </div>
                 </div>

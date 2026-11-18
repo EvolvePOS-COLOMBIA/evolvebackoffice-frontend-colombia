@@ -9,7 +9,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog"
-import { Input } from "@/components/ui/input"
+import { MoneyInput } from "@/components/ui/money-input"
 import { Label } from "@/components/ui/label"
 import { useTranslation } from "@/i18n/use-i18n"
 import type { DeliveryDomiciliarioDto } from "../types"
@@ -84,15 +84,12 @@ export function ActivateDomiciliarioDialog({
 
         <div className="space-y-2">
           <Label htmlFor="activate-base">{t("activate_base_label")}</Label>
-          <Input
+          <MoneyInput
             id="activate-base"
-            type="number"
-            min="0"
-            step="1"
-            inputMode="decimal"
+            emit="string"
             value={base}
             placeholder={defaultBase != null ? String(defaultBase) : "0"}
-            onChange={(e) => setBase(e.target.value)}
+            onChange={setBase}
           />
           <p className="text-xs text-muted-foreground">{t("activate_base_hint")}</p>
           {error ? <p className="text-sm font-medium text-destructive">{error}</p> : null}

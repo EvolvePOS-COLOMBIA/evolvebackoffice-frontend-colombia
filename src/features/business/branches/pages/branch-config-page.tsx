@@ -23,7 +23,14 @@ import { useBranchRegisters } from "@/features/business/branches/hooks/use-branc
 import { IntegrationPanel } from "@/features/business/branches/components/integration-panel"
 import { BranchDeliverySettings } from "@/features/business/branches/components/branch-delivery-settings"
 
+import {
+  getAssignableTenantModules,
+  getBranchScopedAssignments,
+  isTenantModuleAssigned,
+} from "@/features/business/branches/utils/branch-modules"
+
 import { notify } from "@/hooks/use-notify"
+import { getApiErrorMessage } from "@/utils/api-error"
 import { formatDateTime } from "@/utils/format"
 import { useTranslation } from "@/i18n/use-i18n"
 
@@ -108,7 +115,10 @@ export function BranchConfigPage() {
   const assignMutation = useAssignModuleToBranch()
   const removeMutation = useRemoveModuleFromBranch()
 
-  const assignedTenantModuleIds = new Set(branchModules.map((bm) => bm.tenantModuleId))
+  // Solo módulos por sucursal: los globales del tenant (CREDITO, IA,
+  // FIDELIZACION) ya aplican a todas las sedes y el backend rechaza asignarlos.
+  const assignedModules = getBranchScopedAssignments(branchModules)
+  const assignableModules = getAssignableTenantModules(tenantModules)
 
   // Pestaña «Domicilios»: visible con el módulo habilitado para el tenant; su
   // configuración se habilita cuando la sucursal lo tiene asignado (la ubicación
@@ -122,7 +132,7 @@ export function BranchConfigPage() {
       { branchId, tenantModulePublicId },
       {
         onSuccess: () => notify.success(t("modules_assign_success")),
-        onError: (err) => notify.error(err instanceof Error ? err.message : t("error_loading")),
+        onError: (err) => notify.error(getApiErrorMessage(err, t("error_loading"))),
       }
     )
   }
@@ -133,7 +143,7 @@ export function BranchConfigPage() {
       { branchId, modulePublicId },
       {
         onSuccess: () => notify.success(t("modules_remove_success")),
-        onError: (err) => notify.error(err instanceof Error ? err.message : t("error_loading")),
+        onError: (err) => notify.error(getApiErrorMessage(err, t("error_loading"))),
       }
     )
   }
@@ -187,7 +197,7 @@ export function BranchConfigPage() {
                 <HeroMetric
                   icon={Package}
                   label={t("tab_modules")}
-                  value={branchModules.length}
+                  value={assignedModules.length}
                   loading={branchModulesLoading}
                 />
                 <HeroMetric
@@ -267,7 +277,7 @@ export function BranchConfigPage() {
                       <Skeleton key={i} className="h-16 w-full rounded-xl" />
                     ))}
                   </div>
-                ) : branchModules.length === 0 ? (
+                ) : assignedModules.length === 0 ? (
                   <div className="py-8 text-center text-sm text-muted-foreground">
                     {t("modules_empty")}
                     <br />
@@ -275,7 +285,7 @@ export function BranchConfigPage() {
                   </div>
                 ) : (
                   <div className="space-y-2">
-                    {branchModules.map((bm) => {
+                    {assignedModules.map((bm) => {
                       const Icon = moduleIcon(bm.moduleCode)
                       return (
                         <div
@@ -312,6 +322,7 @@ export function BranchConfigPage() {
             <Card className="border-border/80 bg-card/70 shadow-none">
               <CardHeader className="border-b border-border/70 pb-5">
                 <CardTitle>{t("modules_available")}</CardTitle>
+                <CardDescription>{t("modules_available_desc")}</CardDescription>
               </CardHeader>
               <CardContent className="p-4 sm:p-5">
                 {tenantModulesLoading ? (
@@ -320,47 +331,45 @@ export function BranchConfigPage() {
                       <Skeleton key={i} className="h-16 w-full rounded-xl" />
                     ))}
                   </div>
-                ) : tenantModules.length === 0 ? (
+                ) : assignableModules.length === 0 ? (
                   <div className="py-8 text-center text-sm text-muted-foreground">{t("modules_none_available")}</div>
                 ) : (
                   <div className="space-y-2">
-                    {tenantModules
-                      .filter((tm) => tm.isEnabled)
-                      .map((tm) => {
-                        const Icon = moduleIcon(tm.moduleCode)
-                        const isAssigned = assignedTenantModuleIds.has(Number(tm.id))
-                        return (
-                          <div
-                            key={tm.id}
-                            className="flex items-center justify-between rounded-2xl border border-border/70 bg-background/45 px-4 py-3 transition-colors hover:border-primary/20"
-                          >
-                            <div className="flex items-center gap-3">
-                              <div className="flex size-9 items-center justify-center rounded-lg bg-muted text-muted-foreground">
-                                <Icon className="size-4" />
-                              </div>
-                              <div>
-                                <p className="text-sm font-medium">{tm.moduleName ?? tm.moduleCode}</p>
-                                <p className="text-xs text-muted-foreground">{tm.moduleCode}</p>
-                              </div>
+                    {assignableModules.map((tm) => {
+                      const Icon = moduleIcon(tm.moduleCode)
+                      const isAssigned = isTenantModuleAssigned(tm, branchModules)
+                      return (
+                        <div
+                          key={tm.id}
+                          className="flex items-center justify-between rounded-2xl border border-border/70 bg-background/45 px-4 py-3 transition-colors hover:border-primary/20"
+                        >
+                          <div className="flex items-center gap-3">
+                            <div className="flex size-9 items-center justify-center rounded-lg bg-muted text-muted-foreground">
+                              <Icon className="size-4" />
                             </div>
-                            {isAssigned ? (
-                              <Badge tone="success">
-                                <CheckCircle2 className="mr-1 size-3" />
-                                {t("modules_assign")}
-                              </Badge>
-                            ) : (
-                              <Button
-                                variant="outline"
-                                size="sm"
-                                onClick={() => handleAssign(tm.id)}
-                                disabled={assignMutation.isPending}
-                              >
-                                {t("modules_assign")}
-                              </Button>
-                            )}
+                            <div>
+                              <p className="text-sm font-medium">{tm.moduleName ?? tm.moduleCode}</p>
+                              <p className="text-xs text-muted-foreground">{tm.moduleCode}</p>
+                            </div>
                           </div>
-                        )
-                      })}
+                          {isAssigned ? (
+                            <Badge tone="success">
+                              <CheckCircle2 className="mr-1 size-3" />
+                              {t("modules_assigned_badge")}
+                            </Badge>
+                          ) : (
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => handleAssign(tm.id)}
+                              disabled={assignMutation.isPending}
+                            >
+                              {t("modules_assign")}
+                            </Button>
+                          )}
+                        </div>
+                      )
+                    })}
                   </div>
                 )}
               </CardContent>

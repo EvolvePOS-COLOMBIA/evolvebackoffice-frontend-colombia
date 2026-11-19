@@ -38,6 +38,8 @@ export interface OrderClosingOrderRow {
   reconciled: boolean
   reconcilePaymentMethodCode: string | null
   reconciledAt: string | null
+  /** Sin cierre asociado: se puede resolver o conciliar. */
+  editable?: boolean
 }
 
 export interface OrderClosingPreview {
@@ -49,6 +51,24 @@ export interface OrderClosingPreview {
   breakdown: OrderClosingBreakdownRow[]
   orders: OrderClosingOrderRow[]
   alreadyClosedCount: number
+  /** Día operativo del periodo (YYYY-MM-DD). */
+  date?: string
+  /** false = periodo cerrado y sin órdenes nuevas. */
+  editable?: boolean
+  /** Órdenes de días anteriores sin cierre (no incluidas en este periodo). */
+  carriedOverCount?: number
+  /** Órdenes sin estado final: hay que entregarlas o cancelarlas para cerrarlas. */
+  unresolvedCount?: number
+}
+
+/** Día anterior al actual con órdenes que aún no entran a un cierre. */
+export interface OrderClosingPendingDate {
+  date: string // YYYY-MM-DD
+  windowStartUtc: string
+  windowEndUtc: string
+  ordersCount: number
+  unresolvedCount: number
+  totalAmount: number
 }
 
 export interface OrderClosing {

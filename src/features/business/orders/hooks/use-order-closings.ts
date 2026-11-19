@@ -4,14 +4,27 @@ import {
   closeOrders,
   getOrderClosing,
   listOrderClosings,
+  listPendingClosingDates,
   previewOrderClosing,
   reconcileOrder,
+  resolveOrderAsDelivered,
 } from "../services/order-closings.service"
+import { cancelOrder } from "../services/orders.service"
 
-export function useOrderClosingPreview(branchId: string | null) {
+/** Preview del periodo de `date` (null = turno actual). */
+export function useOrderClosingPreview(branchId: string | null, date: string | null = null) {
   return useQuery({
-    queryKey: ["order-closing-preview", branchId],
-    queryFn: () => previewOrderClosing(branchId!),
+    queryKey: ["order-closing-preview", branchId, date ?? "current"],
+    queryFn: () => previewOrderClosing(branchId!, date),
+    enabled: !!branchId,
+  })
+}
+
+/** Días anteriores con órdenes sin cierre de la sucursal. */
+export function usePendingClosingDates(branchId: string | null) {
+  return useQuery({
+    queryKey: ["order-closing-pending-dates", branchId],
+    queryFn: () => listPendingClosingDates(branchId!),
     enabled: !!branchId,
   })
 }
@@ -36,6 +49,7 @@ function useClosingInvalidation() {
   const queryClient = useQueryClient()
   return () => {
     queryClient.invalidateQueries({ queryKey: ["order-closing-preview"] })
+    queryClient.invalidateQueries({ queryKey: ["order-closing-pending-dates"] })
     queryClient.invalidateQueries({ queryKey: ["order-closings"] })
     queryClient.invalidateQueries({ queryKey: ["order-closing-detail"] })
     queryClient.invalidateQueries({ queryKey: ["orders"] })
@@ -45,7 +59,28 @@ function useClosingInvalidation() {
 export function useCloseOrders() {
   const invalidate = useClosingInvalidation()
   return useMutation({
-    mutationFn: ({ branchId, notes }: { branchId: string; notes?: string }) => closeOrders(branchId, notes),
+    mutationFn: ({ branchId, notes, date }: { branchId: string; notes?: string; date?: string | null }) =>
+      closeOrders(branchId, notes, date),
+    onSuccess: invalidate,
+  })
+}
+
+/**
+ * Decisión sobre una orden sin estado final desde el cierre de su día:
+ * entregada (genera la venta) o cancelada (con motivo).
+ */
+export function useResolvePendingOrder() {
+  const invalidate = useClosingInvalidation()
+  return useMutation({
+    mutationFn: ({
+      orderId,
+      outcome,
+      reason,
+    }: {
+      orderId: string
+      outcome: "delivered" | "cancelled"
+      reason?: string
+    }) => (outcome === "delivered" ? resolveOrderAsDelivered(orderId) : cancelOrder(orderId, { reason })),
     onSuccess: invalidate,
   })
 }

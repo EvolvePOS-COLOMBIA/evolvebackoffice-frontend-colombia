@@ -23,8 +23,8 @@ const SERIES_COLORS = ["#2563eb", "#8b5cf6", "#06b6d4", "#f59e0b", "#ef4444"]
 // Estilo compartido de los tooltips para que combinen con el tema.
 const TOOLTIP_STYLE = {
   borderRadius: 10,
-  border: "1px solid hsl(var(--border))",
-  background: "hsl(var(--background))",
+  border: "1px solid var(--border)",
+  background: "var(--background)",
   fontSize: 11,
   padding: "6px 10px",
   boxShadow: "0 4px 12px rgba(0,0,0,0.08)",
@@ -90,7 +90,7 @@ export function ChatChartBlock({ chart, className }: ChatChartBlockProps) {
             </PieChart>
           ) : chart.type === "bar" ? (
             <BarChart data={data} margin={{ top: 8, right: 8, left: -8, bottom: 0 }}>
-              <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="hsl(var(--border))" />
+              <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="var(--border)" />
               <XAxis
                 dataKey="label"
                 tickLine={false}
@@ -120,7 +120,7 @@ export function ChatChartBlock({ chart, className }: ChatChartBlockProps) {
             </BarChart>
           ) : (
             <LineChart data={data} margin={{ top: 8, right: 8, left: -8, bottom: 0 }}>
-              <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="hsl(var(--border))" />
+              <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="var(--border)" />
               <XAxis
                 dataKey="label"
                 tickLine={false}

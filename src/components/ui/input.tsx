@@ -1,6 +1,7 @@
 import * as React from "react"
 
 import { cn } from "@/lib/utils"
+import { FIELD_SURFACE_CLASS } from "./field-surface"
 
 function Input({ className, type, ...props }: React.ComponentProps<"input">) {
   return (
@@ -8,7 +9,8 @@ function Input({ className, type, ...props }: React.ComponentProps<"input">) {
       type={type}
       data-slot="input"
       className={cn(
-        "flex h-11 w-full rounded-2xl border border-border/70 bg-white px-4 py-2 text-sm text-foreground shadow-sm transition-all outline-none placeholder:text-muted-foreground/90 focus-visible:border-primary/50 focus-visible:ring-4 focus-visible:ring-primary/10 disabled:cursor-not-allowed disabled:opacity-50 dark:bg-secondary",
+        "flex h-11 w-full rounded-2xl border border-border/70 px-4 py-2 text-sm text-foreground shadow-sm transition-all outline-none placeholder:text-muted-foreground/90 focus-visible:border-primary/50 focus-visible:ring-4 focus-visible:ring-primary/10 disabled:cursor-not-allowed disabled:opacity-50",
+        FIELD_SURFACE_CLASS,
         className
       )}
       {...props}

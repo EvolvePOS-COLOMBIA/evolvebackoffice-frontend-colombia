@@ -3,6 +3,7 @@ import { Percent } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
+import { MoneyInput } from "@/components/ui/money-input"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { useTranslation } from "@/i18n/use-i18n"
 import { type LinePrice, type PriceBase, type PriceMode, resolvePrice } from "../utils/pricing"
@@ -58,14 +59,13 @@ export function LinePriceInput({ base, unitLabel, value, onChange, noBaseLabel }
           </div>
         ) : null}
         {value.mode === "special" ? (
-          <Input
-            type="number"
-            min={0}
-            step="any"
+          <MoneyInput
+            emit="string"
+            decimals={2}
             className="w-28"
             aria-label={t("price_special")}
             value={value.special}
-            onChange={(e) => onChange({ ...value, special: e.target.value })}
+            onChange={(special) => onChange({ ...value, special })}
           />
         ) : null}
       </div>

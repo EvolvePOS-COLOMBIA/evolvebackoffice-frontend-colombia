@@ -12,6 +12,8 @@ export interface TenantModuleResponseDto {
   moduleDescription: string | null
   isEnabled: boolean
   quantity: number | null
+  /** true = se asigna por sucursal; false = global del tenant (backend `ModuleScope`). */
+  isBranchScoped?: boolean
 }
 
 /** Módulo asignado a una sucursal (`GET /api/Branches/{id}/modules`). */
@@ -20,6 +22,8 @@ export interface BranchModuleResponseDto {
   branchPublicId: string
   branchName: string | null
   tenantModuleId: number
+  /** PublicId del TenantModule (cruza con `GET /api/tenant-modules`). */
+  tenantModulePublicId?: string
   moduleCode: string | null
   moduleName: string | null
   isEnabled: boolean

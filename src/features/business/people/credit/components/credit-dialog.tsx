@@ -11,7 +11,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog"
-import { Input } from "@/components/ui/input"
+import { MoneyInput } from "@/components/ui/money-input"
 import { Label } from "@/components/ui/label"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
@@ -153,13 +153,12 @@ export function CreditDialog({ open, onOpenChange, personId, personName }: Credi
             <div className="flex flex-col gap-3 rounded-xl border border-border/60 p-3 sm:flex-row sm:items-end">
               <div className="flex-1 space-y-1.5">
                 <Label htmlFor="credit-limit-input">{t("limit_input")}</Label>
-                <Input
+                <MoneyInput
                   id="credit-limit-input"
-                  type="number"
-                  min={0}
+                  emit="string"
                   placeholder={t("limit_placeholder")}
                   value={limitInput}
-                  onChange={(e) => setLimitInput(e.target.value)}
+                  onChange={setLimitInput}
                 />
               </div>
               <div className="flex gap-2">

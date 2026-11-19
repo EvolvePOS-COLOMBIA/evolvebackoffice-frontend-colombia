@@ -10,6 +10,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog"
 import { Input } from "@/components/ui/input"
+import { MoneyInput } from "@/components/ui/money-input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { useOrderDetail, useUpdateOrderDetails } from "../hooks/use-orders"
@@ -148,14 +149,11 @@ export function EditOrderDialog({ open, onOpenChange, orderId }: EditOrderDialog
               </div>
               <div className="space-y-1.5">
                 <Label htmlFor="edit-order-shipping-cost">{t("shipping_cost")}</Label>
-                <Input
+                <MoneyInput
                   id="edit-order-shipping-cost"
-                  type="number"
-                  min={0}
-                  step="0.01"
-                  inputMode="decimal"
+                  emit="string"
                   value={shippingCost}
-                  onChange={(e) => setShippingCost(e.target.value)}
+                  onChange={setShippingCost}
                   disabled={isFinal}
                 />
               </div>

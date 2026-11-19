@@ -61,7 +61,7 @@ export function SaleDetailDialog({ saleId, onOpenChange }: SaleDetailDialogProps
                 {sale.status === "Voided" ? <Badge tone="danger">{t("receipt_voided")}</Badge> : null}
               </DialogTitle>
               <DialogDescription>
-                {sale.branchName} · {sale.customerName ?? t("sale_customer_none")} · {formatDateTime(sale.createdAt)}
+                {sale.branchName} · {sale.employeeName ?? t("sale_employee_none")} · {formatDateTime(sale.createdAt)}
               </DialogDescription>
             </div>
           </div>
@@ -119,7 +119,7 @@ export function SaleDetailDialog({ saleId, onOpenChange }: SaleDetailDialogProps
         {sale.notes ? <p className="text-sm text-muted-foreground">{sale.notes}</p> : null}
 
         <DialogFooter className="flex-wrap gap-2">
-          <ShareButton title={sale.number} text={saleShareText(sale, t)} phone={sale.customerPhone} />
+          <ShareButton title={sale.number} text={saleShareText(sale, t)} phone={sale.employeePhone} />
           {sale.status === "Applied" ? (
             <Button type="button" variant="outline" onClick={() => setConfirm(true)}>
               <Ban className="mr-2 size-4" />

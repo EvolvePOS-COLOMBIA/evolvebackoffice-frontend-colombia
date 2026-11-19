@@ -67,7 +67,7 @@ export function OrdersKanban({
               <div className="flex h-full flex-col rounded-xl border border-border/70 bg-card px-4 pb-4 text-card-foreground shadow-[0_24px_70px_rgba(15,23,42,0.14)] backdrop-blur-sm">
                 <header className="my-3 shrink-0 border-b border-border/70 pb-2">
                   <div className="flex items-center justify-between">
-                    <h2 className="text-sm font-semibold">{config?.label}</h2>
+                    <h2 className="text-sm font-semibold">{config ? t(config.labelKey) : status}</h2>
 
                     <div className="flex items-center gap-2">
                       <span className="text-[11px] font-medium text-muted-foreground tabular-nums" title={t("total")}>

@@ -51,9 +51,9 @@ export interface WholesaleSaleDto {
   number: string
   branchId: string
   branchName: string
-  customerId: string | null
-  customerName: string | null
-  customerPhone: string | null
+  employeeId: string | null
+  employeeName: string | null
+  employeePhone: string | null
   status: "Applied" | "Voided"
   notes: string | null
   createdAt: string
@@ -67,8 +67,8 @@ export interface WholesaleSaleDto {
 
 export interface CreateWholesaleSaleDto {
   branchId: string
-  customerId: string | null
-  customerName: string | null
+  employeeId: string | null
+  employeeName: string | null
   notes: string | null
   lines: { itemId: string; quantity: number; unitPrice: number; packagingId: string | null }[]
 }

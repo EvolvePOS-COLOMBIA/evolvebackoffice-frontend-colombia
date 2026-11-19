@@ -56,10 +56,9 @@ export function NewSaleDialog({ branch, onOpenChange, onCreated }: NewSaleDialog
     createSale.mutate(
       {
         branchId: branch.id,
-        // El DTO del backend solo ofrece customerId (uuid de Customers) o customerName;
-        // no existe campo para el id de usuario, así que va el nombre del empleado.
-        customerId: null,
-        customerName: selectedEmployee ? getUserDisplayName(selectedEmployee) : employeeName.trim() || null,
+        // Con un usuario elegido el backend toma su nombre; si no, va el nombre escrito.
+        employeeId: selectedEmployee?.id ?? null,
+        employeeName: selectedEmployee ? null : employeeName.trim() || null,
         notes: notes.trim() || null,
         lines: inputs.map((input, i) => ({ ...input, unitPrice: Number(lines[i].unitCost) })),
       },
@@ -91,13 +90,13 @@ export function NewSaleDialog({ branch, onOpenChange, onCreated }: NewSaleDialog
         <div className="space-y-4">
           <div className="grid gap-4 sm:grid-cols-2">
             <div className="space-y-2">
-              <Label htmlFor="venta-empleado">{t("sale_customer")}</Label>
+              <Label htmlFor="venta-empleado">{t("sale_employee")}</Label>
               <Select value={employeeId} onValueChange={setEmployeeId}>
                 <SelectTrigger id="venta-empleado">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value={NO_EMPLOYEE}>{t("sale_customer_free")}</SelectItem>
+                  <SelectItem value={NO_EMPLOYEE}>{t("sale_employee_free")}</SelectItem>
                   {employees.map((u) => (
                     <SelectItem key={u.id} value={u.id}>
                       {getUserDisplayName(u)}
@@ -108,12 +107,12 @@ export function NewSaleDialog({ branch, onOpenChange, onCreated }: NewSaleDialog
             </div>
             {employeeId === NO_EMPLOYEE ? (
               <div className="space-y-2">
-                <Label htmlFor="venta-empleado-nombre">{t("sale_customer_name")}</Label>
+                <Label htmlFor="venta-empleado-nombre">{t("sale_employee_name")}</Label>
                 <Input
                   id="venta-empleado-nombre"
                   value={employeeName}
                   maxLength={200}
-                  placeholder={t("sale_customer_name_placeholder")}
+                  placeholder={t("sale_employee_name_placeholder")}
                   onChange={(e) => setEmployeeName(e.target.value)}
                 />
               </div>

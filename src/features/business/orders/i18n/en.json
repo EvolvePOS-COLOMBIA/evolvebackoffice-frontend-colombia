@@ -140,6 +140,7 @@
   "closing_title": "Order closing",
   "closing_desc": "Reconciliation of manual and web orders per branch window. Collection happens outside the POS: this documents and reconciles the balances.",
   "closing_entry": "Closing",
+  "more_actions": "More actions",
   "branch": "Branch",
   "window": "Closing window",
   "window_hint": "From the branch opening time to the next opening.",

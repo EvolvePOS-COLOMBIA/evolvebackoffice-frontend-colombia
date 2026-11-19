@@ -28,7 +28,6 @@ import {
   Search,
   SlidersHorizontal,
   ShoppingCartIcon,
-  Menu,
 } from "lucide-react"
 import { useQueries } from "@tanstack/react-query"
 import { useBranches } from "@/features/business/branches/hooks/use-branches"
@@ -48,6 +47,7 @@ import { OrderDetailDialog } from "../components/order-detail-dialog"
 import { CancelOrderDialog } from "../components/cancel-order-dialog"
 import { ManualOrderDialog } from "../components/manual-order-dialog"
 import { EditOrderDialog } from "../components/edit-order-dialog"
+import { OrdersActionsMenu } from "../components/orders-actions-menu"
 import { OrdersFiltersDialog, type OrdersSortOrder } from "../components/orders-filters-dialog"
 import { KANBAN_COLUMNS, ORDER_STATUS_CONFIG } from "../types"
 import { checkOrderStock } from "../services/orders.service"
@@ -592,14 +592,7 @@ export function OrdersPage() {
           </Button>
 
           <div className="flex items-center gap-2 rounded-xl border border-border/70 bg-background/90 p-1">
-            <Button
-              variant="outline"
-              size="sm"
-              aria-label={isMaximized ? t("minimize_view") : t("maximize_view")}
-              title={isMaximized ? t("minimize_view") : t("maximize_view")}
-            >
-              <Menu />
-            </Button>
+            <OrdersActionsMenu />
 
             <Button
               variant="outline"

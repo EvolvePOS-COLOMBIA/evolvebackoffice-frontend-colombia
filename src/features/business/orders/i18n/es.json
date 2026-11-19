@@ -140,6 +140,7 @@
   "closing_title": "Cierre de órdenes",
   "closing_desc": "Cuadre de las órdenes manuales y web por ventana de la sucursal. El cobro ocurre fuera del POS: aquí se documenta y concilian los saldos.",
   "closing_entry": "Cierre",
+  "more_actions": "Más acciones",
   "branch": "Sucursal",
   "window": "Ventana del cierre",
   "window_hint": "De la apertura de la sucursal a la siguiente apertura.",

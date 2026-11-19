@@ -246,7 +246,7 @@ export function RegistersPage() {
   }
 
   const goToBranchSettings = (branchId: string) => {
-    navigate(`/business/branches/${branchId}/settings/terminals`)
+    navigate(`/business/branches/${branchId}/config?tab=terminals`)
   }
 
   if (isError && !isLoading) {

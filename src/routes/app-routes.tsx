@@ -1,4 +1,4 @@
-import { BrowserRouter, Navigate, Route, Routes } from "react-router-dom"
+import { BrowserRouter, Navigate, Route, Routes, useParams } from "react-router-dom"
 
 import { AppLayout } from "@/components/layout/app-layout"
 import { UnauthorizedPage } from "@/features/auth/pages/unauthorized-page"
@@ -30,7 +30,6 @@ import { RegistersPage } from "@/features/business/registers/pages/registers-pag
 import { OrdersPage } from "@/features/business/orders/pages/orders-page"
 import { OrderClosingPage } from "@/features/business/orders/pages/order-closing-page"
 import { DeliveryPage } from "@/features/business/delivery/pages/delivery-page"
-import { BranchTerminalSettingsPage } from "@/features/business/branches/pages/branch-terminal-settings-page"
 import { BranchConfigPage } from "@/features/business/branches/pages/branch-config-page"
 import { BranchesPage } from "@/features/business/branches/pages/branches-page"
 import { AiChatPage } from "@/features/business/ai-chat/pages/ai-chat-page"
@@ -49,6 +48,12 @@ import { ProtectedRoute } from "@/routes/protected-route"
 import { PublicRoute } from "@/routes/public-route"
 import { useAuth } from "@/features/auth/hooks/use-auth"
 import { useSessionExpiry } from "@/features/auth/hooks/use-session-expiry"
+
+/** Terminals are now a section of the branch settings; this keeps the old URL working. */
+function BranchTerminalsRedirect() {
+  const { branchId } = useParams<{ branchId: string }>()
+  return <Navigate to={`/business/branches/${branchId}/config?tab=terminals`} replace />
+}
 
 function AppRoutesContent() {
   const { defaultRoute, isAuthenticated } = useAuth()
@@ -122,7 +127,7 @@ function AppRoutesContent() {
             <Route path="/business/settings/branches" element={<BranchesPage />} />
             <Route path="/business/settings/registers" element={<RegistersPage />} />
             <Route path="/business/settings/payment-methods" element={<PaymentMethodsPage />} />
-            <Route path="/business/branches/:branchId/settings/terminals" element={<BranchTerminalSettingsPage />} />
+            <Route path="/business/branches/:branchId/settings/terminals" element={<BranchTerminalsRedirect />} />
             <Route path="/business/branches/:branchId/config" element={<BranchConfigPage />} />
           </Route>
         </Route>

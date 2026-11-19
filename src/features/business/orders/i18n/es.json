@@ -211,5 +211,9 @@
   "assign_courier": "Asignar domiciliario",
   "assign_done": "Pedidos asignados correctamente.",
   "assign_partial": "{{ok}} pedido(s) asignado(s); {{failed}} no se pudieron asignar.",
-  "assign_failed": "No se pudo asignar ningún pedido."
+  "assign_failed": "No se pudo asignar ningún pedido.",
+  "print_kitchen": "Imprimir comanda",
+  "print_kitchen_sent": "Comanda enviada a PrinterX.",
+  "print_kitchen_not_configured": "No hay una registradora con impresión habilitada para este equipo. Configúrala en Cajas / Registradoras.",
+  "print_kitchen_failed": "No se pudo conectar con PrinterX. Verifica que el servicio esté ejecutándose."
 }

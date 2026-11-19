@@ -7,8 +7,9 @@ import { useTranslation } from "@/i18n/use-i18n"
 import { useLocaleFormat } from "@/hooks/use-locale-format"
 import { ORDER_STATUS_CONFIG, ORDER_ORIGIN_LABEL_KEY } from "../types"
 import type { OrderListItem } from "../types/api"
-import { MapPin, Clock, CreditCard, FileText, SquarePen, Tag, Ban } from "lucide-react"
+import { MapPin, Clock, CreditCard, FileText, SquarePen, Tag, Ban, Printer, Loader2 } from "lucide-react"
 import { useOrderDetail } from "../hooks/use-orders"
+import { usePrintComanda } from "../hooks/use-print-comanda"
 import { CancelOrderDialog } from "./cancel-order-dialog"
 
 interface OrderDetailDialogProps {
@@ -27,6 +28,7 @@ export function OrderDetailDialog({ open, onOpenChange, order, onEdit }: OrderDe
   const { t } = useTranslation("business-orders")
   const { formatCurrency } = useLocaleFormat()
   const { data: detail } = useOrderDetail(open ? (order?.id ?? "") : "")
+  const { printComanda, isPrinting } = usePrintComanda()
   const [cancelDialogOpen, setCancelDialogOpen] = useState(false)
 
   if (!order) return null
@@ -161,28 +163,31 @@ export function OrderDetailDialog({ open, onOpenChange, order, onEdit }: OrderDe
             </div>
           </div>
 
-          {/* Acciones de la orden (Editar detalles / Cancelar orden) */}
-          {(onEdit && canEdit) || canCancel ? (
-            <div className="flex flex-col gap-2 sm:flex-row">
-              {onEdit && canEdit ? (
-                <Button type="button" variant="outline" className="flex-1" onClick={onEdit}>
-                  <SquarePen className="mr-2 size-4" />
-                  {t("edit_order")}
-                </Button>
-              ) : null}
-              {canCancel ? (
-                <Button
-                  type="button"
-                  variant="destructive"
-                  className={onEdit && canEdit ? "flex-1" : "w-full"}
-                  onClick={() => setCancelDialogOpen(true)}
-                >
-                  <Ban className="mr-2 size-4" />
-                  {t("cancel_order")}
-                </Button>
-              ) : null}
-            </div>
-          ) : null}
+          {/* Acciones de la orden (Imprimir comanda / Editar detalles / Cancelar orden) */}
+          <div className="flex flex-col gap-2 sm:flex-row">
+            <Button
+              type="button"
+              variant="outline"
+              className="flex-1"
+              onClick={() => void printComanda(current)}
+              disabled={isPrinting}
+            >
+              {isPrinting ? <Loader2 className="mr-2 size-4 animate-spin" /> : <Printer className="mr-2 size-4" />}
+              {t("print_kitchen")}
+            </Button>
+            {onEdit && canEdit ? (
+              <Button type="button" variant="outline" className="flex-1" onClick={onEdit}>
+                <SquarePen className="mr-2 size-4" />
+                {t("edit_order")}
+              </Button>
+            ) : null}
+            {canCancel ? (
+              <Button type="button" variant="destructive" className="flex-1" onClick={() => setCancelDialogOpen(true)}>
+                <Ban className="mr-2 size-4" />
+                {t("cancel_order")}
+              </Button>
+            ) : null}
+          </div>
         </div>
       </DialogContent>
 

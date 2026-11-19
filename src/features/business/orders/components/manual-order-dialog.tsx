@@ -11,6 +11,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Textarea } from "@/components/ui/textarea"
 import { useBranchItems } from "@/features/business/items/catalog/hooks/use-branch-items"
 import { useCreateManualOrder } from "../hooks/use-orders"
+import { usePrintComanda } from "../hooks/use-print-comanda"
 import { ORDER_ORIGIN_LABEL_KEY } from "../types"
 import type { CreateManualOrderDto } from "../types/api"
 import { notify } from "@/hooks/use-notify"
@@ -62,6 +63,7 @@ export function ManualOrderDialog({ open, onOpenChange, branchId }: ManualOrderD
   const { t } = useTranslation("business-orders")
   const { formatCurrency } = useLocaleFormat()
   const createOrder = useCreateManualOrder()
+  const { printComanda } = usePrintComanda()
   const { data: branchItems, isLoading: itemsLoading } = useBranchItems(open ? branchId : null, {
     pageNumber: 1,
     pageSize: 100,
@@ -181,8 +183,11 @@ export function ManualOrderDialog({ open, onOpenChange, branchId }: ManualOrderD
     }
 
     createOrder.mutate(payload, {
-      onSuccess: () => {
+      onSuccess: (createdOrder) => {
         notify.success(t("order_created"))
+        if (createdOrder) {
+          void printComanda(createdOrder, { autoOnly: true })
+        }
         onOpenChange(false)
       },
       onError: (error) => {

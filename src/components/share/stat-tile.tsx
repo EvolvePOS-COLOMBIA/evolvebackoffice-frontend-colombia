@@ -21,14 +21,14 @@ export function StatTile({ label, value, icon: Icon, tone = "muted", className }
     <div
       className={cn(
         // Móvil (<sm): chip píldora en una línea. sm+: card con icono arriba.
-        "flex items-center gap-2 rounded-full border border-border/70 bg-background/45 px-3 py-1.5 sm:block sm:min-w-32 sm:rounded-2xl sm:px-3.5 sm:py-3",
+        "group/tile flex items-center gap-2 rounded-full border border-border/70 bg-background/45 px-3 py-1.5 transition-all duration-200 hover:-translate-y-0.5 hover:border-primary/30 hover:shadow-lg hover:shadow-primary/10 motion-reduce:transition-none motion-reduce:hover:translate-y-0 sm:block sm:min-w-32 sm:rounded-2xl sm:px-3.5 sm:py-3",
         className
       )}
     >
       {Icon ? (
         <div
           className={cn(
-            "flex size-5 shrink-0 items-center justify-center rounded-md border sm:size-7 sm:rounded-lg",
+            "flex size-5 shrink-0 items-center justify-center rounded-md border transition-transform duration-200 group-hover/tile:scale-110 group-hover/tile:-rotate-3 motion-reduce:transition-none motion-reduce:group-hover/tile:transform-none sm:size-7 sm:rounded-lg",
             badgeTones[badgeTone]
           )}
         >

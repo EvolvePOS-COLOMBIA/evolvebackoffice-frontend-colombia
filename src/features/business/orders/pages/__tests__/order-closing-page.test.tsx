@@ -36,6 +36,8 @@ const closingsData: { current: OrderClosing[] } = { current: [] }
 
 vi.mock("../../hooks/use-order-closings", () => ({
   useOrderClosingPreview: (branchId: string | null) => ({ data: previewFor(branchId), isLoading: false }),
+  usePendingClosingDates: () => ({ data: [] }),
+  useResolvePendingOrder: () => ({ mutate: vi.fn(), isPending: false }),
   useOrderClosings: () => ({ data: closingsData.current, isLoading: false }),
   useOrderClosingDetail: () => ({ data: undefined }),
   useCloseOrders: () => ({ mutate: closeMutate, isPending: false }),
@@ -152,7 +154,7 @@ describe("OrderClosingPage", () => {
     fireEvent.click(within(dialog).getByRole("button", { name: "closing_confirm_action" }))
 
     expect(closeMutate).toHaveBeenCalledTimes(1)
-    expect(closeMutate.mock.calls[0][0]).toEqual({ branchId: "b1", notes: "Diferencia en caja" })
+    expect(closeMutate.mock.calls[0][0]).toEqual({ branchId: "b1", notes: "Diferencia en caja", date: null })
   })
 
   it("disables closing when the window has no orders", () => {

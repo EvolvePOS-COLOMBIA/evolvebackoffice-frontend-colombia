@@ -18,6 +18,10 @@ interface ClosingSummaryPanelProps {
   onShowOpen: () => void
   onClose: () => void
   isClosing: boolean
+  /** Órdenes del periodo sin estado final: mientras haya alguna el cierre está bloqueado. */
+  unresolvedCount?: number
+  /** False cuando el periodo ya está cerrado y no hay nada nuevo por agregar. */
+  editable?: boolean
 }
 
 const SECTION_TITLE = "text-[10px] font-semibold tracking-[0.14em] text-muted-foreground uppercase"
@@ -31,6 +35,8 @@ export function ClosingSummaryPanel({
   onShowOpen,
   onClose,
   isClosing,
+  unresolvedCount = 0,
+  editable = true,
 }: ClosingSummaryPanelProps) {
   const { t } = useTranslation("business-orders")
   const { formatCurrency } = useLocaleFormat()
@@ -38,6 +44,7 @@ export function ClosingSummaryPanel({
   const [methodsOpen, setMethodsOpen] = useState(true)
 
   const count = summary.counted.length
+  const blocked = unresolvedCount > 0
   const maxMethod = summary.byMethod[0]?.total ?? 0
 
   return (
@@ -130,13 +137,17 @@ export function ClosingSummaryPanel({
       </div>
 
       <div className="space-y-2 border-t border-border/70 p-4">
-        <Button className="h-11 w-full" onClick={onClose} disabled={isClosing || count === 0}>
+        <Button className="h-11 w-full" onClick={onClose} disabled={isClosing || count === 0 || blocked || !editable}>
           <Lock className="size-4" />
           {count === 0
             ? t("closing_close_empty")
             : t("closing_close_action", { count, total: formatCurrency(totalAmount) })}
         </Button>
-        {count > 0 ? (
+        {blocked ? (
+          <p role="status" className="text-center text-[11px] text-amber-700 dark:text-amber-200">
+            {t("closing_blocked")}
+          </p>
+        ) : count > 0 ? (
           <p className="text-center text-[11px] whitespace-nowrap text-muted-foreground">{t("closing_irreversible")}</p>
         ) : null}
       </div>

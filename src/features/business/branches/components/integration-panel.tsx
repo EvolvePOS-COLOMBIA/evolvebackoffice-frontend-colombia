@@ -3,11 +3,11 @@ import { zodResolver } from "@hookform/resolvers/zod"
 import { useForm, useWatch } from "react-hook-form"
 import { z } from "zod"
 import {
-  ArrowLeft,
-  ArrowRight,
   CheckCircle,
   Copy,
+  KeyRound,
   Link2,
+  ListChecks,
   Loader2,
   Plug,
   RefreshCw,
@@ -29,19 +29,18 @@ import {
 } from "@/components/ui/alert-dialog"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Switch } from "@/components/ui/switch"
 import { Skeleton } from "@/components/ui/skeleton"
-import { Separator } from "@/components/ui/separator"
 import { appConfig } from "@/config/env"
 import { notify } from "@/hooks/use-notify"
 import { useAppStore } from "@/store/app-store"
 import { formatDateTime } from "@/utils/format"
 import { useTranslation } from "@/i18n/use-i18n"
 import Spinner from "@/components/Spinner"
+import { SettingRow, SettingsGroup } from "./config/settings-primitives"
 
 import {
   useActivateBranchIntegrationStore,
@@ -76,10 +75,8 @@ export function IntegrationPanel({ branchId, platform }: Props) {
   const { t } = useTranslation("business-branches")
 
   const isCluvi = platform === "CLUVI"
-  const platformName = isCluvi ? "Cluvi" : "WooCommerce"
   const defaultBaseUrl = isCluvi ? CLUVI_DEFAULT_BASE_URL : ""
 
-  const [stepOverride, setStepOverride] = useState<number | null>(null)
   const [testResult, setTestResult] = useState<TestConnectionResult | null>(null)
   // Estado de la tienda en Cluvi: "on" | "off" | null (aún desconocido)
   const [storeStatus, setStoreStatus] = useState<"on" | "off" | null>(null)
@@ -142,9 +139,6 @@ export function IntegrationPanel({ branchId, platform }: Props) {
     },
   })
 
-  // Valores derivados en render (sin useEffect): si el usuario no los cambió,
-  // siguen a la integración existente —incluso si carga después de montar—.
-  const step = stepOverride ?? (existingIntegration ? 1 : 0)
   const storeId = useWatch({ control: form.control, name: "storeId" })
 
   // URL del webhook que este backend expone para recibir pedidos (la misma
@@ -157,10 +151,6 @@ export function IntegrationPanel({ branchId, platform }: Props) {
   const defaultPingUrl = `${appConfig.apiBaseUrl}/health`
   const webhookUrl = registeredUrls?.newOrder ?? defaultWebhookUrl
   const pingUrl = registeredUrls?.ping ?? defaultPingUrl
-
-  const steps = isCluvi
-    ? [t("config_step_credentials"), t("config_step_verify"), t("config_step_menu")]
-    : [t("config_step_credentials"), t("config_step_verify")]
 
   const handleTestConnection = () => {
     if (!branchId || !existingIntegration) return
@@ -201,7 +191,6 @@ export function IntegrationPanel({ branchId, platform }: Props) {
 
     const onSuccess = () => {
       notify.success(isNew ? t("integration_create_success") : t("integration_save_success"))
-      if (isNew) setStepOverride(1)
     }
     const onError = (err: unknown) => notify.error(err instanceof Error ? err.message : t("integration_save_error"))
 
@@ -288,7 +277,6 @@ export function IntegrationPanel({ branchId, platform }: Props) {
         onSuccess: () => {
           notify.success(t("integration_delete_success"))
           setDeleteOpen(false)
-          setStepOverride(null)
           setTestResult(null)
           setStoreStatus(null)
           setRegisteredUrls(null)
@@ -311,219 +299,288 @@ export function IntegrationPanel({ branchId, platform }: Props) {
 
   const PlatformIcon = isCluvi ? Truck : Store
 
-  // Mientras carga la lista no se monta el formulario: así los defaultValues
-  // siempre arrancan desde la integración existente (si la hay).
+  // While the list loads the form is not mounted, so its defaultValues always start from the
+  // existing integration (if there is one).
   if (isLoading) {
     return (
-      <Card className="border-border/80 bg-card/70 shadow-none">
-        <CardContent className="space-y-3 p-6">
-          <Skeleton className="h-8 w-1/3 rounded-xl" />
-          <Skeleton className="h-40 w-full rounded-xl" />
-          <Skeleton className="h-10 w-40 rounded-xl" />
-        </CardContent>
-      </Card>
+      <div className="space-y-3">
+        <Skeleton className="h-8 w-1/3 rounded-xl" />
+        <Skeleton className="h-40 w-full rounded-2xl" />
+        <Skeleton className="h-10 w-40 rounded-xl" />
+      </div>
     )
   }
 
+  const verified = testResult?.success === true
+  const menuSynced = Boolean(syncResult) || Boolean(existingIntegration?.lastSyncedAtUtc)
+  const storeOn = storeStatus === "on"
+
+  const stepItems = [
+    {
+      label: t("config_step_credentials"),
+      hint: existingIntegration ? t("cfg_step_credentials_done") : t("cfg_step_credentials_todo"),
+      done: Boolean(existingIntegration),
+    },
+    {
+      label: t("config_step_verify"),
+      hint: verified ? t("cfg_step_verify_done") : t("cfg_step_verify_todo"),
+      done: verified,
+    },
+    ...(isCluvi
+      ? [
+          {
+            label: t("config_step_menu"),
+            hint: menuSynced ? t("cfg_step_menu_done") : t("cfg_step_menu_todo"),
+            done: menuSynced,
+          },
+          {
+            label: t("cfg_step_webhook"),
+            hint: storeOn ? t("cfg_step_webhook_done") : t("cfg_step_webhook_todo"),
+            done: storeOn,
+          },
+        ]
+      : []),
+  ]
+
+  const resultTone = (ok: boolean) =>
+    ok
+      ? "border-emerald-400/30 bg-emerald-500/10 text-emerald-600 dark:text-emerald-300"
+      : "border-rose-400/30 bg-rose-500/10 text-rose-600 dark:text-rose-300"
+
   return (
-    <div className="space-y-5">
-      {/* Status card */}
-      {existingIntegration && (
-        <Card className="rounded-2xl border-border/70 bg-card/60">
-          <CardContent className="p-5">
-            <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-              <div className="space-y-2">
-                <div className="flex items-center gap-2">
-                  <Badge tone={existingIntegration.isActive ? "success" : "warning"}>
-                    {existingIntegration.isActive ? t("integration_active") : t("integration_inactive")}
-                  </Badge>
-                  <span className="text-xs text-muted-foreground">
-                    {t("integration_last_sync")}:
-                    {existingIntegration.lastSyncedAtUtc
-                      ? ` ${formatDateTime(existingIntegration.lastSyncedAtUtc)}`
-                      : ` ${t("integration_never_synced")}`}
-                  </span>
-                </div>
-                {existingIntegration.lastError && (
-                  <p className="text-xs text-destructive">{existingIntegration.lastError}</p>
-                )}
-              </div>
-              <div className="flex gap-2">
-                <Button type="button" variant="outline" size="sm" onClick={handleTestConnection} disabled={isMutating}>
-                  {testMutation.isPending ? <Loader2 className="size-4 animate-spin" /> : <Plug className="size-4" />}
-                  {t("integration_test")}
-                </Button>
-                <Button
-                  type="button"
-                  variant="destructive"
-                  size="sm"
-                  onClick={() => setDeleteOpen(true)}
-                  disabled={isMutating}
-                >
-                  <Trash2 className="size-4" />
-                </Button>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      )}
-
-      {/* Step indicator */}
-      <div className="flex items-center justify-center gap-2">
-        {steps.map((label, i) => (
-          <div key={label} className="flex items-center gap-2">
-            <div
-              className={`flex size-8 items-center justify-center rounded-full text-xs font-bold ${
-                i <= step ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground"
-              }`}
+    <div className="space-y-4">
+      <div className="grid items-start gap-4 @2xl:grid-cols-2">
+        <div className="min-w-0 space-y-4">
+          <SettingsGroup
+            icon={PlatformIcon}
+            title={t("cfg_integration_status")}
+            aside={
+              existingIntegration?.isActive ? (
+                <Badge live tone="success">
+                  {t("integration_active")}
+                </Badge>
+              ) : (
+                <Badge tone="warning">
+                  {existingIntegration ? t("integration_inactive") : t("integration_not_configured")}
+                </Badge>
+              )
+            }
+          >
+            <SettingRow
+              title={t("integration_last_sync")}
+              description={
+                existingIntegration?.lastSyncedAtUtc
+                  ? formatDateTime(existingIntegration.lastSyncedAtUtc)
+                  : t("integration_never_synced")
+              }
             >
-              {i < step ? <CheckCircle className="size-4" /> : i + 1}
-            </div>
-            {i < steps.length - 1 && <div className={`h-0.5 w-12 ${i < step ? "bg-primary" : "bg-muted"}`} />}
-          </div>
-        ))}
-      </div>
-      <Separator />
-
-      {/* Step 0: Credentials */}
-      {step === 0 && (
-        <Card className="border-border/80 bg-card/70 shadow-none">
-          <CardHeader className="border-b border-border/70 pb-5">
-            <CardTitle className="flex items-center gap-2">
-              <PlatformIcon className="size-5" />
-              {t("integration_title", { platform: platformName })}
-            </CardTitle>
-            <CardDescription>{isCluvi ? t("cluvi_help_keys") : t("woocommerce_help_keys")}</CardDescription>
-          </CardHeader>
-          <CardContent className="p-4 sm:p-6">
-            <Form {...form}>
-              <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-5">
-                <FormField
-                  control={form.control}
-                  name="baseUrl"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>{t("integration_form_url")}</FormLabel>
-                      <FormControl>
-                        <Input placeholder={t("integration_form_url_placeholder")} {...field} disabled={isMutating} />
-                      </FormControl>
-                      <p className="text-xs text-muted-foreground">
-                        {isCluvi ? t("cluvi_help_url") : t("woocommerce_help_url")}
-                      </p>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                {isCluvi ? (
-                  <>
-                    <FormField
-                      control={form.control}
-                      name="apiKey"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>{t("app_id")}</FormLabel>
-                          <FormControl>
-                            <Input {...field} disabled={isMutating} />
-                          </FormControl>
-                          {!isNew && <p className="text-xs text-muted-foreground">{t("secret_keep_hint")}</p>}
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                    <FormField
-                      control={form.control}
-                      name="apiSecret"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>{t("secret_key")}</FormLabel>
-                          <FormControl>
-                            <Input type="password" {...field} disabled={isMutating} />
-                          </FormControl>
-                          {!isNew && <p className="text-xs text-muted-foreground">{t("secret_keep_hint")}</p>}
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                    <FormField
-                      control={form.control}
-                      name="storeId"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>{t("store_id")}</FormLabel>
-                          <FormControl>
-                            <Input placeholder={t("store_id_placeholder")} {...field} disabled={isMutating} />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                  </>
+              {existingIntegration ? (
+                <>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={handleTestConnection}
+                    disabled={isMutating}
+                  >
+                    {testMutation.isPending ? <Loader2 className="size-4 animate-spin" /> : <Plug className="size-4" />}
+                    {testMutation.isPending ? t("integration_test_pending") : t("integration_test")}
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="destructive"
+                    size="sm"
+                    aria-label={t("integration_delete")}
+                    title={t("integration_delete")}
+                    onClick={() => setDeleteOpen(true)}
+                    disabled={isMutating}
+                  >
+                    <Trash2 className="size-4" />
+                  </Button>
+                </>
+              ) : (
+                <span className="text-xs text-muted-foreground">{t("cfg_integration_no_credentials")}</span>
+              )}
+            </SettingRow>
+            {existingIntegration?.lastError ? (
+              <p className="border-t border-border/70 px-4 py-3 text-xs text-destructive">
+                {existingIntegration.lastError}
+              </p>
+            ) : null}
+            {testResult ? (
+              <div
+                className={`m-4 flex items-center gap-2 rounded-lg border p-3 text-sm ${resultTone(testResult.success)}`}
+              >
+                {testResult.success ? (
+                  <CheckCircle className="size-4 shrink-0" />
                 ) : (
-                  <>
-                    <FormField
-                      control={form.control}
-                      name="consumerKey"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>{t("integration_form_consumer_key")}</FormLabel>
-                          <FormControl>
-                            <Input
-                              placeholder={t("integration_form_consumer_key_placeholder")}
-                              {...field}
-                              disabled={isMutating}
-                            />
-                          </FormControl>
-                          {!isNew && <p className="text-xs text-muted-foreground">{t("secret_keep_hint")}</p>}
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                    <FormField
-                      control={form.control}
-                      name="consumerSecret"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>{t("integration_form_consumer_secret")}</FormLabel>
-                          <FormControl>
-                            <Input
-                              placeholder={t("integration_form_consumer_secret_placeholder")}
-                              type="password"
-                              {...field}
-                              disabled={isMutating}
-                            />
-                          </FormControl>
-                          {!isNew && <p className="text-xs text-muted-foreground">{t("secret_keep_hint")}</p>}
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                  </>
+                  <XCircle className="size-4 shrink-0" />
                 )}
+                {testResult.message}
+              </div>
+            ) : null}
+          </SettingsGroup>
+
+          <SettingsGroup icon={ListChecks} title={t("cfg_integration_steps")}>
+            <ol className="p-4">
+              {stepItems.map((item, index) => (
+                <li key={item.label} className="relative grid grid-cols-[1.75rem_1fr] gap-3 py-2.5">
+                  {index < stepItems.length - 1 ? (
+                    <span
+                      aria-hidden
+                      className={`absolute top-9 -bottom-1.5 left-[0.8125rem] w-0.5 ${item.done ? "bg-emerald-400/50" : "bg-border"}`}
+                    />
+                  ) : null}
+                  <span
+                    className={`relative z-10 flex size-6 items-center justify-center rounded-full border text-xs font-bold ${
+                      item.done
+                        ? "border-emerald-400/40 bg-emerald-500/15 text-emerald-500"
+                        : "border-border bg-muted text-muted-foreground"
+                    }`}
+                  >
+                    {item.done ? <CheckCircle className="size-3.5" /> : index + 1}
+                  </span>
+                  <div>
+                    <p className="text-sm font-semibold">{item.label}</p>
+                    <p className="text-xs text-muted-foreground">{item.hint}</p>
+                  </div>
+                </li>
+              ))}
+            </ol>
+          </SettingsGroup>
+        </div>
+
+        <div className="min-w-0 space-y-4">
+          <SettingsGroup icon={KeyRound} title={t("cfg_integration_credentials")}>
+            <Form {...form}>
+              <form onSubmit={form.handleSubmit(onSubmit)}>
+                <div className="space-y-4 p-4">
+                  <FormField
+                    control={form.control}
+                    name="baseUrl"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>{t("integration_form_url")}</FormLabel>
+                        <FormControl>
+                          <Input placeholder={t("integration_form_url_placeholder")} {...field} disabled={isMutating} />
+                        </FormControl>
+                        <p className="text-xs text-muted-foreground">
+                          {isCluvi ? t("cluvi_help_url") : t("woocommerce_help_url")}
+                        </p>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  {isCluvi ? (
+                    <>
+                      <FormField
+                        control={form.control}
+                        name="apiKey"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>{t("app_id")}</FormLabel>
+                            <FormControl>
+                              <Input {...field} disabled={isMutating} />
+                            </FormControl>
+                            {!isNew && <p className="text-xs text-muted-foreground">{t("secret_keep_hint")}</p>}
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                      <FormField
+                        control={form.control}
+                        name="apiSecret"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>{t("secret_key")}</FormLabel>
+                            <FormControl>
+                              <Input type="password" {...field} disabled={isMutating} />
+                            </FormControl>
+                            {!isNew && <p className="text-xs text-muted-foreground">{t("secret_keep_hint")}</p>}
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                      <FormField
+                        control={form.control}
+                        name="storeId"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>{t("store_id")}</FormLabel>
+                            <FormControl>
+                              <Input placeholder={t("store_id_placeholder")} {...field} disabled={isMutating} />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                    </>
+                  ) : (
+                    <>
+                      <FormField
+                        control={form.control}
+                        name="consumerKey"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>{t("integration_form_consumer_key")}</FormLabel>
+                            <FormControl>
+                              <Input
+                                placeholder={t("integration_form_consumer_key_placeholder")}
+                                {...field}
+                                disabled={isMutating}
+                              />
+                            </FormControl>
+                            {!isNew && <p className="text-xs text-muted-foreground">{t("secret_keep_hint")}</p>}
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                      <FormField
+                        control={form.control}
+                        name="consumerSecret"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>{t("integration_form_consumer_secret")}</FormLabel>
+                            <FormControl>
+                              <Input
+                                placeholder={t("integration_form_consumer_secret_placeholder")}
+                                type="password"
+                                {...field}
+                                disabled={isMutating}
+                              />
+                            </FormControl>
+                            {!isNew && <p className="text-xs text-muted-foreground">{t("secret_keep_hint")}</p>}
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                    </>
+                  )}
+                </div>
 
                 <FormField
                   control={form.control}
                   name="isActive"
                   render={({ field }) => (
-                    <FormItem className="flex flex-row items-center justify-between rounded-xl border border-border/70 bg-card/60 p-4">
-                      <div className="space-y-0.5">
-                        <FormLabel>{t("integration_form_is_active")}</FormLabel>
-                        <p className="text-xs text-muted-foreground">{t("integration_form_is_active_hint")}</p>
-                      </div>
-                      <FormControl>
-                        <Switch checked={field.value} onCheckedChange={field.onChange} disabled={isMutating} />
-                      </FormControl>
-                    </FormItem>
+                    <div className="border-t border-border/70">
+                      <SettingRow
+                        title={t("integration_form_is_active")}
+                        description={t("integration_form_is_active_hint")}
+                      >
+                        <Switch
+                          glow
+                          checked={field.value}
+                          onCheckedChange={field.onChange}
+                          disabled={isMutating}
+                          aria-label={t("integration_form_is_active")}
+                        />
+                      </SettingRow>
+                    </div>
                   )}
                 />
 
-                <div className="flex justify-end gap-2">
-                  {existingIntegration && (
-                    <Button type="button" variant="outline" onClick={() => setStepOverride(1)}>
-                      {t("close")}
-                      <ArrowRight className="ml-2 size-4" />
-                    </Button>
-                  )}
+                <div className="flex justify-end border-t border-border/70 p-4">
                   <Button type="submit" disabled={isMutating}>
                     {(createMutation.isPending || updateMutation.isPending) && (
                       <Loader2 className="mr-2 size-4 animate-spin" />
@@ -533,69 +590,25 @@ export function IntegrationPanel({ branchId, platform }: Props) {
                 </div>
               </form>
             </Form>
-          </CardContent>
-        </Card>
-      )}
+          </SettingsGroup>
 
-      {/* Step 1: Verify */}
-      {step === 1 && (
-        <div className="space-y-4">
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-sm">{t("integration_test")}</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="flex flex-wrap items-center justify-between gap-2">
-                <div className="min-w-0">
-                  <p className="truncate text-sm font-medium">{existingIntegration?.baseUrl}</p>
-                  {isCluvi && (
-                    <p className="text-xs text-muted-foreground">
-                      {t("store_id")}: {readCluviStoreId(existingIntegration?.settingsJson) || "—"}
-                    </p>
-                  )}
-                </div>
-                <Button onClick={handleTestConnection} disabled={testMutation.isPending || !existingIntegration}>
-                  {testMutation.isPending && <Spinner className="mr-2 size-4" />}
-                  {testMutation.isPending ? t("integration_test_pending") : t("integration_test")}
-                </Button>
-              </div>
-              {testResult && (
-                <div
-                  className={`flex items-center gap-2 rounded-lg p-3 text-sm ${
-                    testResult.success ? "bg-emerald-50 text-emerald-700" : "bg-red-50 text-red-700"
-                  }`}
-                >
-                  {testResult.success ? <CheckCircle className="size-4" /> : <XCircle className="size-4" />}
-                  {testResult.message}
-                </div>
-              )}
-            </CardContent>
-          </Card>
-
-          {/* URL de pedidos (webhook) + estado de la tienda — solo Cluvi */}
-          {isCluvi && (
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2 text-sm">
-                  <Link2 className="size-4" />
-                  {t("webhook_url_title")}
-                </CardTitle>
+          {/* New-orders webhook and store status: Cluvi only, once the integration exists */}
+          {isCluvi && existingIntegration ? (
+            <SettingsGroup icon={Link2} title={t("webhook_url_title")}>
+              <div className="space-y-3 p-4">
                 <p className="text-xs text-muted-foreground">{t("webhook_url_desc")}</p>
-              </CardHeader>
-              <CardContent className="space-y-3">
-                {/* Estado de la tienda: activa / inactiva / sin verificar */}
                 {storeStatus === "on" ? (
-                  <div className="flex items-center gap-2 rounded-lg bg-emerald-50 p-3 text-sm text-emerald-700">
+                  <div className={`flex items-center gap-2 rounded-lg border p-3 text-sm ${resultTone(true)}`}>
                     <CheckCircle className="size-4 shrink-0" />
                     {t("store_active")}
                   </div>
                 ) : storeStatus !== null ? (
-                  <div className="flex items-center gap-2 rounded-lg bg-amber-50 p-3 text-sm text-amber-800">
+                  <div className="flex items-center gap-2 rounded-lg border border-amber-400/35 bg-amber-500/10 p-3 text-sm text-amber-700 dark:text-amber-200">
                     <XCircle className="size-4 shrink-0" />
                     {t("store_inactive")}
                   </div>
                 ) : (
-                  <div className="flex flex-wrap items-center justify-between gap-2 rounded-lg border bg-muted/40 p-3 text-sm text-muted-foreground">
+                  <div className="flex flex-wrap items-center justify-between gap-2 rounded-lg border border-border/70 bg-muted/40 p-3 text-sm text-muted-foreground">
                     <span className="flex items-center gap-2">
                       {testMutation.isPending && <Spinner className="size-4" />}
                       {testMutation.isPending ? t("checking_store") : t("store_status_unknown")}
@@ -612,7 +625,6 @@ export function IntegrationPanel({ branchId, platform }: Props) {
                   </div>
                 )}
 
-                {/* Webhook de nuevas órdenes */}
                 <div className="space-y-1">
                   <Label className="text-xs text-muted-foreground">{t("new_order_url")}</Label>
                   <div className="flex items-center gap-2">
@@ -625,6 +637,7 @@ export function IntegrationPanel({ branchId, platform }: Props) {
                     <Button
                       variant="outline"
                       size="icon"
+                      aria-label={t("new_order_url")}
                       disabled={!webhookUrl}
                       onClick={() => webhookUrl && copyText(webhookUrl, "webhook_copied")}
                     >
@@ -633,93 +646,63 @@ export function IntegrationPanel({ branchId, platform }: Props) {
                   </div>
                 </div>
 
-                {/* Ping / health check */}
                 <div className="space-y-1">
                   <Label className="text-xs text-muted-foreground">{t("ping_url")}</Label>
                   <div className="flex items-center gap-2">
                     <Input readOnly value={pingUrl} className="font-mono text-xs" />
-                    <Button variant="outline" size="icon" onClick={() => copyText(pingUrl, "ping_copied")}>
+                    <Button
+                      variant="outline"
+                      size="icon"
+                      aria-label={t("ping_url")}
+                      onClick={() => copyText(pingUrl, "ping_copied")}
+                    >
                       <Copy className="size-4" />
                     </Button>
                   </div>
                 </div>
 
-                <Button
-                  onClick={handleActivateStore}
-                  disabled={activateMutation.isPending || !existingIntegration}
-                  className="w-full"
-                >
+                <Button onClick={handleActivateStore} disabled={activateMutation.isPending} className="w-full">
                   {activateMutation.isPending && <Spinner className="mr-2 size-4" />}
                   {activateMutation.isPending ? t("setting_url") : t("set_webhook_url")}
                 </Button>
                 <p className="text-[11px] leading-4 text-muted-foreground">{t("webhook_url_hint")}</p>
-              </CardContent>
-            </Card>
-          )}
-
-          <div className="flex justify-end gap-2">
-            <Button variant="outline" onClick={() => setStepOverride(0)}>
-              <ArrowLeft className="mr-2 size-4" />
-              {t("config_step_credentials")}
-            </Button>
-            {isCluvi && (
-              <Button onClick={() => setStepOverride(2)}>
-                {t("config_step_menu")}
-                <ArrowRight className="ml-2 size-4" />
-              </Button>
-            )}
-          </div>
-        </div>
-      )}
-
-      {/* Step 2: Sync Menu (Cluvi only) */}
-      {step === 2 && isCluvi && (
-        <div className="space-y-4">
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-sm">{t("sync_menu")}</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <p className="text-sm text-muted-foreground">{t("sync_menu_desc")}</p>
-              <div className="rounded-lg border bg-muted/50 p-4">
-                <p className="text-sm text-muted-foreground">{t("sync_menu_items_hint")}</p>
               </div>
-              {syncResult && (
-                <div className="grid grid-cols-3 gap-2 text-center">
-                  <div className="rounded-lg border bg-background/50 p-3">
-                    <p className="text-xl font-semibold tracking-tight">{syncResult.products}</p>
+            </SettingsGroup>
+          ) : null}
+        </div>
+      </div>
+
+      {/* Menu sync: Cluvi only, once the integration exists */}
+      {isCluvi && existingIntegration ? (
+        <SettingsGroup icon={RefreshCw} title={t("sync_menu")}>
+          <div className="space-y-3 p-4">
+            <p className="text-sm text-muted-foreground">{t("sync_menu_desc")}</p>
+            <p className="rounded-lg border border-border/70 bg-muted/40 p-3 text-xs text-muted-foreground">
+              {t("sync_menu_items_hint")}
+            </p>
+            {syncResult ? (
+              <div className="grid grid-cols-3 gap-2 text-center">
+                {[
+                  [syncResult.products, t("products")],
+                  [syncResult.categories, t("categories")],
+                  [syncResult.modifiers, t("modifiers")],
+                ].map(([value, label]) => (
+                  <div key={String(label)} className="rounded-lg border border-border/70 bg-background/50 p-3">
+                    <p className="text-xl font-semibold tracking-tight">{value}</p>
                     <p className="text-[10px] font-semibold tracking-[0.14em] text-muted-foreground uppercase">
-                      {t("products")}
+                      {label}
                     </p>
                   </div>
-                  <div className="rounded-lg border bg-background/50 p-3">
-                    <p className="text-xl font-semibold tracking-tight">{syncResult.categories}</p>
-                    <p className="text-[10px] font-semibold tracking-[0.14em] text-muted-foreground uppercase">
-                      {t("categories")}
-                    </p>
-                  </div>
-                  <div className="rounded-lg border bg-background/50 p-3">
-                    <p className="text-xl font-semibold tracking-tight">{syncResult.modifiers}</p>
-                    <p className="text-[10px] font-semibold tracking-[0.14em] text-muted-foreground uppercase">
-                      {t("modifiers")}
-                    </p>
-                  </div>
-                </div>
-              )}
-              <Button onClick={handleSyncMenu} disabled={syncMenuMutation.isPending} className="w-full">
-                {syncMenuMutation.isPending && <Spinner className="mr-2 size-4" />}
-                {syncMenuMutation.isPending ? t("syncing") : t("confirm_sync")}
-              </Button>
-            </CardContent>
-          </Card>
-          <div className="flex justify-end">
-            <Button variant="outline" onClick={() => setStepOverride(1)}>
-              <ArrowLeft className="mr-2 size-4" />
-              {t("config_step_verify")}
+                ))}
+              </div>
+            ) : null}
+            <Button onClick={handleSyncMenu} disabled={syncMenuMutation.isPending} className="w-full sm:w-auto">
+              {syncMenuMutation.isPending ? <Spinner className="mr-2 size-4" /> : <RefreshCw className="mr-2 size-4" />}
+              {syncMenuMutation.isPending ? t("syncing") : t("confirm_sync")}
             </Button>
           </div>
-        </div>
-      )}
+        </SettingsGroup>
+      ) : null}
 
       {/* Delete confirmation */}
       <AlertDialog open={deleteOpen} onOpenChange={setDeleteOpen}>

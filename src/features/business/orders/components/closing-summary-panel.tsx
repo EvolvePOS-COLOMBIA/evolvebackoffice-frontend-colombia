@@ -44,7 +44,8 @@ export function ClosingSummaryPanel({
   const [methodsOpen, setMethodsOpen] = useState(true)
 
   const count = summary.counted.length
-  const blocked = unresolvedCount > 0
+  // No depende solo del contador del backend: si no llega, las órdenes abiertas del resumen también bloquean.
+  const blocked = unresolvedCount > 0 || summary.open.count > 0
   const maxMethod = summary.byMethod[0]?.total ?? 0
 
   return (

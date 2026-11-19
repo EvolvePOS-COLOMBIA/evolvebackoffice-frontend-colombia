@@ -280,5 +280,8 @@
   "resolve_cancel_confirm": "¿Cancelar la orden {{ref}}?",
   "resolve_cancel_reason": "Cancelada desde el cierre del día",
   "resolved_delivered_ok": "Orden marcada como entregada.",
-  "resolved_cancelled_ok": "Orden cancelada."
+  "resolved_cancelled_ok": "Orden cancelada.",
+  "resolve_error": "No se pudo actualizar la orden.",
+  "pending_days_error": "No se pudieron cargar los días anteriores sin cerrar.",
+  "pending_days_retry": "Reintentar"
 }

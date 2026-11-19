@@ -41,7 +41,7 @@ import { BranchSelector } from "@/features/business/items/catalog/components/bra
 // import { useBranchIntegrations } from "@/features/business/branches/hooks/use-branch-integrations"
 import { SelectionActionBar } from "@/components/share/selection-action-bar"
 import { AssignDeliveryUserDialog } from "@/features/business/delivery/components/assign-delivery-user-dialog"
-import { useOrders, useUpdateOrderStatus, useBulkUpdateOrderStatus } from "../hooks/use-orders"
+import { useCurrentPeriodOrders, useUpdateOrderStatus, useBulkUpdateOrderStatus } from "../hooks/use-orders"
 import { OrdersKanban } from "../components/orders-kanban"
 import { OrderDetailDialog } from "../components/order-detail-dialog"
 import { CancelOrderDialog } from "../components/cancel-order-dialog"
@@ -166,14 +166,11 @@ export function OrdersPage() {
   //   return row.isActive ? "active" : "configured"
   // }
 
-  // enabled=!!branchId: no se pide órdenes sin sucursal (evita una petición sin filtrar mientras carga la lista)
-  // En "todas" se pide sin branchId (el backend devuelve todas las sucursales).
-  const { data: ordersData, isLoading } = useOrders(
-    1,
-    500,
-    branchId ? { branchId } : undefined,
-    !!branchId || showAllBranches
-  )
+  // Solo el turno actual (día operativo), completo. Las órdenes de días
+  // anteriores no se muestran aquí: se resuelven en el cierre de su día.
+  // enabled=!!branchId: no se pide sin sucursal mientras carga la lista; en
+  // "todas" se pide sin branchId (cada sucursal con su propio turno).
+  const { data: ordersData, isLoading } = useCurrentPeriodOrders(branchId, !!branchId || showAllBranches)
   const updateStatusMutation = useUpdateOrderStatus()
   const bulkStatusMutation = useBulkUpdateOrderStatus()
 

@@ -1,4 +1,7 @@
+import { PackageCheck, XCircle } from "lucide-react"
+
 import { Badge } from "@/components/ui/badge"
+import { Button } from "@/components/ui/button"
 import { useLocaleFormat } from "@/hooks/use-locale-format"
 import { useTranslation } from "@/i18n/use-i18n"
 import { cn } from "@/lib/utils"
@@ -11,12 +14,22 @@ interface ClosingOrdersTableProps {
   orders: OrderClosingOrderRow[]
   /** Cancelled orders are listed but dimmed and flagged when they do not add to the total. */
   cancelledExcluded: boolean
+  /** Resolver desde el cierre una orden sin estado final (entregada o cancelada). */
+  onResolve?: (order: OrderClosingOrderRow, outcome: ClosingResolveOutcome) => void
+  resolving?: boolean
 }
+
+export type ClosingResolveOutcome = "delivered" | "cancelled"
 
 const HEAD = "px-3.5 py-2.5 text-left text-[10px] font-semibold tracking-[0.14em] whitespace-nowrap uppercase"
 
 /** Orders of the closing window. Scrolls inside its own box so the header stays in view. */
-export function ClosingOrdersTable({ orders, cancelledExcluded }: ClosingOrdersTableProps) {
+export function ClosingOrdersTable({
+  orders,
+  cancelledExcluded,
+  onResolve,
+  resolving = false,
+}: ClosingOrdersTableProps) {
   const { t } = useTranslation("business-orders")
   const { formatCurrency } = useLocaleFormat()
   const methodName = usePaymentMethodNames()
@@ -43,6 +56,7 @@ export function ClosingOrdersTable({ orders, cancelledExcluded }: ClosingOrdersT
           ) : (
             orders.map((order) => {
               const dimmed = cancelledExcluded && statusGroup(order.status) === "cancelled"
+              const canResolve = !!onResolve && order.editable !== false && statusGroup(order.status) === "open"
               return (
                 <tr key={order.id} className="border-b border-border/60 last:border-0 hover:bg-foreground/[0.03]">
                   <td className={cn("px-3.5 py-3", dimmed && "opacity-55")}>
@@ -62,11 +76,37 @@ export function ClosingOrdersTable({ orders, cancelledExcluded }: ClosingOrdersT
                     {dimmed ? <div className="text-xs text-muted-foreground">{t("closing_not_included")}</div> : null}
                   </td>
                   <td className="px-3.5 py-3">
-                    {order.reconciled ? (
-                      <Badge tone="success">{t("state_reconciled")}</Badge>
-                    ) : (
-                      <Badge tone="warning">{t("state_pending")}</Badge>
-                    )}
+                    <div className="flex flex-wrap items-center gap-1.5">
+                      {order.reconciled ? (
+                        <Badge tone="success">{t("state_reconciled")}</Badge>
+                      ) : (
+                        <Badge tone="warning">{t("state_pending")}</Badge>
+                      )}
+                      {canResolve ? (
+                        <>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            className="h-7 px-2 text-xs"
+                            disabled={resolving}
+                            onClick={() => onResolve(order, "delivered")}
+                          >
+                            <PackageCheck className="size-3.5" />
+                            {t("resolve_delivered")}
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            className="h-7 px-2 text-xs text-destructive"
+                            disabled={resolving}
+                            onClick={() => onResolve(order, "cancelled")}
+                          >
+                            <XCircle className="size-3.5" />
+                            {t("resolve_cancel")}
+                          </Button>
+                        </>
+                      ) : null}
+                    </div>
                   </td>
                 </tr>
               )

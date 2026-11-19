@@ -1,6 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
 import {
   getOrders,
+  getCurrentPeriodOrders,
   getOrderById,
   updateOrderStatus,
   bulkUpdateOrderStatus,
@@ -20,7 +21,20 @@ export const ordersKeys = {
   all: ["orders"] as const,
   list: (page: number, pageSize: number, filters?: Record<string, string>) =>
     ["orders", "list", page, pageSize, filters] as const,
+  currentPeriod: (branchId?: string) => ["orders", "current-period", branchId ?? "all"] as const,
   detail: (id: string) => ["orders", "detail", id] as const,
+}
+
+/**
+ * Órdenes del turno actual (día operativo) de una sucursal o de todas
+ * (`branchId` vacío). Siempre completo; las de días anteriores van al cierre.
+ */
+export function useCurrentPeriodOrders(branchId?: string, enabled = true) {
+  return useQuery({
+    queryKey: ordersKeys.currentPeriod(branchId || undefined),
+    queryFn: () => getCurrentPeriodOrders(branchId || undefined),
+    enabled,
+  })
 }
 
 export function useOrders(

@@ -68,5 +68,7 @@
   "order_active": "activas",
   "order_done": "hechas",
   "order_items": "ítems",
-  "view_all": "Ver todas"
+  "view_all": "Ver todas",
+  "no_active_orders": "No hay órdenes activas.",
+  "order_progress": "Progreso"
 }

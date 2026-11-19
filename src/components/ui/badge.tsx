@@ -8,6 +8,8 @@ type BadgeProps = {
   children: ReactNode
   tone?: BadgeTone
   className?: string
+  /** Optional pulsing dot before the text, for something that is running right now. Off by default. */
+  live?: boolean
 }
 
 export const badgeTones: Record<BadgeTone, string> = {
@@ -21,15 +23,19 @@ export const badgeTones: Record<BadgeTone, string> = {
   orange: "border-orange-400/30 bg-orange-500/10 dark:text-orange-200 text-orange-500",
 }
 
-export function Badge({ children, tone = "neutral", className }: BadgeProps) {
+export function Badge({ children, tone = "neutral", className, live = false }: BadgeProps) {
   return (
     <span
       className={cn(
         "inline-flex items-center rounded-full border px-2.5 py-1 text-[11px] font-semibold tracking-[0.18em] uppercase",
         badgeTones[tone],
+        live && "gap-1.5",
         className
       )}
     >
+      {live ? (
+        <span aria-hidden data-slot="badge-live" className="size-1.5 animate-pulse rounded-full bg-current" />
+      ) : null}
       {children}
     </span>
   )

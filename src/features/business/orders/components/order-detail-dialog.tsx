@@ -96,6 +96,8 @@ export function OrderDetailDialog({ open, onOpenChange, order, onEdit }: OrderDe
       ? t(ORDER_ORIGIN_LABEL_KEY[current.origin])
       : current.origin
     : null
+  // Vacío mientras el detalle carga si el pedido se abrió desde fuera de Órdenes (dashboard).
+  const createdAt = current.externalCreatedAt
   const wasteCost = current.wasteCost ?? 0
   const reference = order.externalOrderId?.slice(0, 8) ?? order.id.slice(0, 8)
 
@@ -115,7 +117,7 @@ export function OrderDetailDialog({ open, onOpenChange, order, onEdit }: OrderDe
           <DialogDescription className="flex flex-wrap items-center gap-x-2 text-xs leading-5">
             <span>{order.branchName}</span>
             <span aria-hidden>·</span>
-            <time dateTime={order.externalCreatedAt}>{formatDateTime(order.externalCreatedAt)}</time>
+            {createdAt ? <time dateTime={createdAt}>{formatDateTime(createdAt)}</time> : null}
           </DialogDescription>
         </DialogHeader>
 
@@ -178,7 +180,7 @@ export function OrderDetailDialog({ open, onOpenChange, order, onEdit }: OrderDe
               </InfoField>
             ) : null}
             <InfoField icon={<Clock className="size-3.5" />} label={t("created_at")}>
-              {formatDateTime(order.externalCreatedAt)}
+              {createdAt ? formatDateTime(createdAt) : "—"}
             </InfoField>
             <InfoField icon={<MapPin className="size-3.5" />} label={t("address")} className="sm:col-span-2">
               {[order.shippingStreet, order.shippingCity].filter(Boolean).join(" · ") || "—"}

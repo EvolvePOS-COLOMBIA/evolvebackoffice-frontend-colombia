@@ -40,6 +40,8 @@ import businessReportsEs from "@/features/business/reports/i18n/es.json"
 import businessReportsEn from "@/features/business/reports/i18n/en.json"
 import businessSettingsEs from "@/features/business/settings/i18n/es.json"
 import businessSettingsEn from "@/features/business/settings/i18n/en.json"
+import businessWhatsAppEs from "@/features/business/settings/whatsapp/i18n/es.json"
+import businessWhatsAppEn from "@/features/business/settings/whatsapp/i18n/en.json"
 import businessUsersCatalogEs from "@/features/business/people/users/i18n/es.json"
 import businessUsersCatalogEn from "@/features/business/people/users/i18n/en.json"
 import businessCustomersEs from "@/features/business/people/customers/i18n/es.json"
@@ -82,6 +84,7 @@ const resources = {
     "business-people": businessPeopleEs,
     "business-reports": businessReportsEs,
     "business-settings": businessSettingsEs,
+    "business-whatsapp": businessWhatsAppEs,
     "business-users-catalog": businessUsersCatalogEs,
     "business-customers": businessCustomersEs,
     "business-suppliers": businessSuppliersEs,
@@ -113,6 +116,7 @@ const resources = {
     "business-people": businessPeopleEn,
     "business-reports": businessReportsEn,
     "business-settings": businessSettingsEn,
+    "business-whatsapp": businessWhatsAppEn,
     "business-users-catalog": businessUsersCatalogEn,
     "business-customers": businessCustomersEn,
     "business-suppliers": businessSuppliersEn,
@@ -152,6 +156,7 @@ i18n.use(initReactI18next).init({
     "business-people",
     "business-reports",
     "business-settings",
+    "business-whatsapp",
     "business-users-catalog",
     "business-customers",
     "business-suppliers",

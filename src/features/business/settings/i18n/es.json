@@ -9,6 +9,8 @@
   "store_information_desc": "Edita detalles esenciales, dirección física e información de contacto para tu ubicación.",
   "tenders": "Formas de Pago",
   "tenders_desc": "Administra métodos de pago aceptados, reglas de redondeo y configuraciones de formas de pago.",
+  "whatsapp": "WhatsApp",
+  "whatsapp_desc": "Conecta el WhatsApp del negocio para enviar rutas y pedidos a tus domiciliarios.",
   "pos_options": "Opciones POS",
   "pos_options_desc": "Configura ajustes operacionales para la interfaz del Punto de Venta y el flujo de transacciones.",
   "woocommerce_integration": "Integración WooCommerce",

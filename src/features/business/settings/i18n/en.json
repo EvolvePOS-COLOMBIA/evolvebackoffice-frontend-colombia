@@ -9,6 +9,8 @@
   "store_information_desc": "Edit essential details, physical address, and contact information for your location.",
   "tenders": "Tenders",
   "tenders_desc": "Manage accepted payment methods, cash rounding rules, and tender configurations.",
+  "whatsapp": "WhatsApp",
+  "whatsapp_desc": "Connect the business WhatsApp to send routes and orders to your delivery drivers.",
   "pos_options": "Pos Options",
   "pos_options_desc": "Configure operational settings for the Point of Sale interface and transaction flow.",
   "woocommerce_integration": "WooCommerce Integration",

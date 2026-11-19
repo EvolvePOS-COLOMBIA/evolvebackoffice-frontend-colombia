@@ -83,7 +83,7 @@ export function OrderCard({ order, showBranch, priority = false, onViewDetail, o
   const items = detail?.items ?? []
   const customerName = detail?.customerName ?? detail?.personName ?? null
   const totalUnits = items.reduce((sum, item) => sum + item.quantity, 0)
-  const visibleLines = items.slice(0, 2).map((item) => `${item.quantity} × ${item.nameSnapshot}`)
+  const visibleLines = items.slice(0, 2).map((item) => `${item.quantity} × ${item.name}`)
   const remainingLines = items.length - 2
   const itemsSummary = `${t("items_count", { count: totalUnits })} · ${visibleLines.join(", ")}${
     remainingLines > 0 ? ` ${t("more_items", { count: remainingLines })}` : ""
@@ -235,7 +235,7 @@ export function OrderCard({ order, showBranch, priority = false, onViewDetail, o
             <div className="space-y-1">
               {detail.items.map((item) => (
                 <div key={item.id} className="flex items-center justify-between gap-2">
-                  <span className="min-w-0 truncate text-xs">{`${item.quantity} × ${item.nameSnapshot}`}</span>
+                  <span className="min-w-0 truncate text-xs">{`${item.quantity} × ${item.name}`}</span>
                   <span className="shrink-0 text-xs tabular-nums">{formatCurrency(item.subtotal)}</span>
                 </div>
               ))}

@@ -24,6 +24,7 @@ import {
 } from "../hooks/use-dashboard"
 import { PeriodFilter } from "../components/period-filter"
 import { SalesByPeriodChart } from "../components/sales-by-period-chart"
+import { fillSalesBuckets } from "../utils/sales-buckets"
 import { ActiveOrdersCard } from "../components/active-orders-card"
 import { StatsGrid } from "../components/stats-grid"
 import { DepartmentSalesChart } from "../components/department-sales-chart"
@@ -93,7 +94,8 @@ export function BusinessDashboardPage() {
     const map = { day: "hourly", week: "weekly", month: "monthly" } as const
     const points = salesByPeriod?.[map[period]] ?? []
     return {
-      points,
+      // The API only sends the buckets that have sales; fill the empty ones so the area chart can draw.
+      points: fillSalesBuckets(points, period),
       totalSales: points.reduce((sum, p) => sum + p.sales, 0),
       totalTransactions: points.reduce((sum, p) => sum + p.transactions, 0),
     }
@@ -122,7 +124,7 @@ export function BusinessDashboardPage() {
   )
 
   return (
-    <div>
+    <div className="pb-8">
       <div className="dashboard grid grid-cols-1 gap-4 lg:grid-cols-[1fr_440px]">
         {/* ═══════════════════════════════════════════
             LEFT COLUMN: Period filter → Stats → Dept Sales → Year-on-year
@@ -182,10 +184,11 @@ export function BusinessDashboardPage() {
         {/* ═══════════════════════════════════════════
             RIGHT COLUMN: Tender Report → Vs. Previous Month
            ═══════════════════════════════════════════ */}
-        <div className="space-y-4">
-          {/* Active Orders */}
-          <div>
-            <ActiveOrdersCard orders={activeOrders ?? []} />
+        <div className="flex flex-col gap-4">
+          {/* Active Orders: en escritorio absorbe la altura sobrante para que la columna termine
+              alineada con la izquierda; la lista hace scroll dentro. */}
+          <div className="relative lg:min-h-96 lg:flex-1">
+            <ActiveOrdersCard className="lg:absolute lg:inset-0" orders={activeOrders ?? []} />
           </div>
 
           {/* Tender Report */}

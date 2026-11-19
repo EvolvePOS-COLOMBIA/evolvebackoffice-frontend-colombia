@@ -5,6 +5,7 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
+import { MoneyInput } from "@/components/ui/money-input"
 import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Skeleton } from "@/components/ui/skeleton"
@@ -211,15 +212,12 @@ export function BranchDeliverySettings({ branchId, branch, hasDeliveryModule }: 
               <div className="grid gap-4 sm:grid-cols-3">
                 <div className="space-y-2">
                   <Label htmlFor="delivery-base">{t("delivery_base_label")}</Label>
-                  <Input
+                  <MoneyInput
                     id="delivery-base"
-                    type="number"
-                    min="0"
-                    step="1"
-                    inputMode="decimal"
+                    emit="string"
                     value={baseAmount}
                     placeholder="0"
-                    onChange={(e) => setBaseAmount(e.target.value)}
+                    onChange={setBaseAmount}
                   />
                   <p className="text-xs text-muted-foreground">{t("delivery_base_hint")}</p>
                 </div>

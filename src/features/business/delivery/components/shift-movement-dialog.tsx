@@ -9,7 +9,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog"
-import { Input } from "@/components/ui/input"
+import { MoneyInput } from "@/components/ui/money-input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { useTranslation } from "@/i18n/use-i18n"
@@ -82,16 +82,7 @@ export function ShiftMovementDialog({
         <div className="space-y-4">
           <div className="space-y-2">
             <Label htmlFor="movement-amount">{t("movement_amount_label")}</Label>
-            <Input
-              id="movement-amount"
-              type="number"
-              min="0"
-              step="1"
-              inputMode="decimal"
-              value={amount}
-              placeholder="0"
-              onChange={(e) => setAmount(e.target.value)}
-            />
+            <MoneyInput id="movement-amount" emit="string" value={amount} placeholder="0" onChange={setAmount} />
             {error ? <p className="text-sm font-medium text-destructive">{error}</p> : null}
           </div>
 

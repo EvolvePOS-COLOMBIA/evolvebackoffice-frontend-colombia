@@ -14,6 +14,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog"
 import { Input } from "@/components/ui/input"
+import { MoneyInput } from "@/components/ui/money-input"
 import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Skeleton } from "@/components/ui/skeleton"
@@ -256,14 +257,11 @@ export function DeliverOrderDialog({
                       </div>
                       <div className="space-y-1">
                         <Label className="text-xs">{t("deliver_amount")}</Label>
-                        <Input
-                          type="number"
-                          min="0"
-                          step="1"
-                          inputMode="decimal"
+                        <MoneyInput
+                          emit="string"
                           value={row.amount}
                           placeholder="0"
-                          onChange={(e) => updateRow(row.key, { amount: e.target.value })}
+                          onChange={(amount) => updateRow(row.key, { amount })}
                         />
                       </div>
                       <div className="space-y-1">
@@ -311,14 +309,11 @@ export function DeliverOrderDialog({
                 {returnAdvance ? (
                   <div className="space-y-1">
                     <Label className="text-xs">{t("deliver_refund_amount")}</Label>
-                    <Input
-                      type="number"
-                      min="0"
-                      step="1"
-                      inputMode="decimal"
+                    <MoneyInput
+                      emit="string"
                       value={refundAmount}
                       placeholder={String(defaultRefund > 0 ? defaultRefund : 0)}
-                      onChange={(e) => setRefundAmount(e.target.value)}
+                      onChange={setRefundAmount}
                     />
                     <p className="text-xs text-muted-foreground">
                       {t("deliver_refund_hint", { amount: formatCurrency(Math.max(defaultRefund, 0)) })}

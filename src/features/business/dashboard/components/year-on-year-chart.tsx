@@ -91,7 +91,7 @@ export function YearOnYearChart({ data, total2025, total2026, onPrint, onSave }:
                 <stop offset="95%" stopColor={CHART_PRIMARY} stopOpacity={0.1} />
               </linearGradient>
             </defs>
-            <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="hsl(var(--border))" />
+            <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="var(--border)" />
             <XAxis
               dataKey="month"
               tickLine={false}

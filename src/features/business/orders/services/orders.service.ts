@@ -10,6 +10,7 @@ import type {
   BulkUpdateOrderStatusDto,
   BulkOrderStatusItemResult,
   BulkOrderStatusResultDto,
+  RouteNotification,
 } from "../types/api"
 
 function normalizePagedResponse(raw: unknown, pageSize: number): PagedOrders {
@@ -56,8 +57,23 @@ export async function getOrderById(id: string): Promise<OrderDetail> {
   return data
 }
 
-export async function updateOrderStatus(id: string, status: string, deliveryUserId?: string | null): Promise<void> {
-  await api.put(`/api/orders/${id}/status`, { status, deliveryUserId: deliveryUserId ?? null })
+/** Cambia el estado; al asignar domiciliario devuelve el resultado del envío de la ruta por WhatsApp. */
+export async function updateOrderStatus(
+  id: string,
+  status: string,
+  deliveryUserId?: string | null
+): Promise<RouteNotification | null> {
+  const { data } = await api.put<{ routeNotification?: RouteNotification | null } | undefined>(
+    `/api/orders/${id}/status`,
+    { status, deliveryUserId: deliveryUserId ?? null }
+  )
+  return data?.routeNotification ?? null
+}
+
+/** Reenvía al domiciliario asignado la ruta del pedido por WhatsApp. */
+export async function notifyOrderRoute(id: string): Promise<RouteNotification> {
+  const { data } = await api.post<RouteNotification>(`/api/orders/${id}/notify-route`)
+  return data
 }
 
 /**
@@ -71,14 +87,19 @@ export async function bulkUpdateOrderStatus(payload: BulkUpdateOrderStatusDto): 
     chunks.push(payload.ids.slice(i, i + 50))
   }
   const results: BulkOrderStatusItemResult[] = []
+  const routeNotifications: RouteNotification[] = []
   for (const ids of chunks) {
-    const { data } = await api.put<BulkOrderStatusResultDto>("/api/orders/status/bulk", {
-      ...payload,
-      ids,
-    })
+    const { data } = await api.put<BulkOrderStatusResultDto & { routeNotification?: RouteNotification | null }>(
+      "/api/orders/status/bulk",
+      {
+        ...payload,
+        ids,
+      }
+    )
     results.push(...(data?.results ?? []))
+    if (data?.routeNotification) routeNotifications.push(data.routeNotification)
   }
-  return { results }
+  return { results, routeNotifications }
 }
 
 /** Inventario de la orden contra la sucursal. Solo informativo, nunca bloquea. */

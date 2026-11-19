@@ -41,7 +41,9 @@ import { BranchSelector } from "@/features/business/items/catalog/components/bra
 // import { useBranchIntegrations } from "@/features/business/branches/hooks/use-branch-integrations"
 import { SelectionActionBar } from "@/components/share/selection-action-bar"
 import { AssignDeliveryUserDialog } from "@/features/business/delivery/components/assign-delivery-user-dialog"
-import { useCurrentPeriodOrders, useUpdateOrderStatus, useBulkUpdateOrderStatus } from "../hooks/use-orders"
+import { useCurrentPeriodOrders, useUpdateOrderStatus, useBulkUpdateOrderStatus, useNotifyOrderRoute } from "../hooks/use-orders"
+import { routeNotificationToast } from "../utils/route-notification"
+import { WHATSAPP_MODULE_CODE } from "@/features/business/settings/whatsapp/types"
 import { OrdersKanban } from "../components/orders-kanban"
 import { OrderDetailDialog } from "../components/order-detail-dialog"
 import { CancelOrderDialog } from "../components/cancel-order-dialog"
@@ -51,7 +53,7 @@ import { OrdersActionsMenu } from "../components/orders-actions-menu"
 import { OrdersFiltersDialog, type OrdersSortOrder } from "../components/orders-filters-dialog"
 import { KANBAN_COLUMNS, ORDER_STATUS_CONFIG } from "../types"
 import { checkOrderStock } from "../services/orders.service"
-import type { OrderListItem, OrderStatus, OrderStockItem } from "../types/api"
+import type { OrderListItem, OrderStatus, OrderStockItem, RouteNotification } from "../types/api"
 
 type PlatformFilter = "all" | "CLUVI" | "WOOCOMMERCE" | "POSCO"
 
@@ -173,6 +175,7 @@ export function OrdersPage() {
   const { data: ordersData, isLoading } = useCurrentPeriodOrders(branchId, !!branchId || showAllBranches)
   const updateStatusMutation = useUpdateOrderStatus()
   const bulkStatusMutation = useBulkUpdateOrderStatus()
+  const notifyRouteMutation = useNotifyOrderRoute()
 
   // ───── Asignación de domiciliarios (módulo DOMICILIOS) ─────
   // Licencia del tenant y sucursales con el módulo asignado (misma caché de
@@ -188,6 +191,23 @@ export function OrdersPage() {
       ),
     [branches, moduleQueries]
   )
+  /** Con el módulo WHATSAPP la ruta se envía al domiciliario al asignarle pedidos. */
+  const hasWhatsApp =
+    !tenantModulesLoading && tenantModules.some((m) => m.moduleCode === WHATSAPP_MODULE_CODE && m.isEnabled)
+
+  /** Avisa el resultado del envío de la ruta por WhatsApp (silencioso si el módulo está apagado). */
+  const showRouteNotification = (notification: RouteNotification | null | undefined) => {
+    const toast = routeNotificationToast(notification)
+    if (toast) notify[toast.tone](t(toast.key, toast.params))
+  }
+
+  const handleResendRoute = (order: OrderListItem) => {
+    notifyRouteMutation.mutate(order.id, {
+      onSuccess: showRouteNotification,
+      onError: () => notify.error(t("route_failed")),
+    })
+  }
+
   /** Con DOMICILIOS habilitado el pedido exige domiciliario al pasar a En camino. */
   const orderNeedsCourier = (order: OrderListItem) => {
     const bid = order.branchId ?? branchId
@@ -366,8 +386,9 @@ export function OrdersPage() {
       updateStatusMutation.mutate(
         { id: order.id, status: "Shipped", deliveryUserId: userId },
         {
-          onSuccess: () => {
+          onSuccess: (routeNotification) => {
             notify.success(t("status") + " → " + t(ORDER_STATUS_CONFIG.Shipped.labelKey))
+            showRouteNotification(routeNotification)
             setAssignTargets([])
             setSelectedReadyIds((prev) => {
               const next = new Set(prev)
@@ -392,6 +413,7 @@ export function OrdersPage() {
           if (failed === 0) notify.success(t("assign_done"))
           else if (ok === 0) notify.error(t("assign_failed"))
           else notify.info(t("assign_partial", { ok, failed }))
+          result.routeNotifications?.forEach(showRouteNotification)
           setAssignTargets([])
           setSelectedReadyIds(new Set())
         },
@@ -615,6 +637,7 @@ export function OrdersPage() {
           onDragEnd={handleDragEnd}
           onViewDetail={handleViewDetail}
           onCancelOrder={(order) => setCancellingOrder(order)}
+          onResendRoute={hasWhatsApp ? handleResendRoute : undefined}
           showBranch={showAllBranches}
           showCancelled={showCancelled}
           selectableStatus={hasDeliveryLicense ? "Ready" : undefined}

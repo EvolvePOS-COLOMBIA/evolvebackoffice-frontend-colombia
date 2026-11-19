@@ -22,6 +22,10 @@ export interface OrderListItem {
   cancellationType?: CancellationType | null
   wasteCost?: number | null
   wastedAt?: string | null
+  /** Domiciliario asignado (PublicId del usuario); null si no tiene. */
+  deliveryUserId?: string | null
+  /** Última vez que se le envió la ruta por WhatsApp; null si nunca. */
+  routeNotifiedAt?: string | null
 }
 
 export type CancellationType = "Restocked" | "Waste"
@@ -258,4 +262,19 @@ export interface BulkOrderStatusItemResult {
 
 export interface BulkOrderStatusResultDto {
   results: BulkOrderStatusItemResult[]
+  /** Envío de la ruta por WhatsApp (uno por llamada al backend al asignar domiciliario). */
+  routeNotifications?: RouteNotification[]
+}
+
+/**
+ * Resultado de enviar la ruta al domiciliario por WhatsApp (módulo WHATSAPP).
+ * Nunca hace fallar la asignación. `Skipped` sin `message` = módulo apagado (silencioso).
+ */
+export type RouteNotificationStatus = "Sent" | "Skipped" | "NoPhone" | "NotConnected" | "Failed"
+
+export interface RouteNotification {
+  status: RouteNotificationStatus
+  deliveryUserName: string | null
+  ordersCount: number
+  message: string | null
 }

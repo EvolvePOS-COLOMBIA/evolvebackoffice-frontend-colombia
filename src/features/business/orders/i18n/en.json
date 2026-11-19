@@ -280,5 +280,12 @@
   "resolve_cancel_confirm": "Cancel order {{ref}}?",
   "resolve_cancel_reason": "Cancelled from the daily closing",
   "resolved_delivered_ok": "Order marked as delivered.",
-  "resolved_cancelled_ok": "Order cancelled."
+  "resolved_cancelled_ok": "Order cancelled.",
+  "route_sent": "Route sent via WhatsApp to {{name}}.",
+  "route_no_phone": "The route was not sent via WhatsApp: {{name}} has no valid phone number.",
+  "route_not_connected": "The route was not sent: the business WhatsApp is not connected (Settings → WhatsApp).",
+  "route_failed": "The route could not be sent via WhatsApp. Try resending it in a few minutes.",
+  "route_no_courier": "The order has no delivery driver assigned.",
+  "resend_route": "Resend route via WhatsApp",
+  "route_notified": "Route sent {{time}}"
 }

@@ -13,6 +13,8 @@ interface OrdersKanbanProps {
   onDragEnd: (orderId: string, newStatus: OrderStatus) => void
   onViewDetail: (order: OrderListItem) => void
   onCancelOrder?: (order: OrderListItem) => void
+  /** Reenviar la ruta por WhatsApp (solo con el módulo WHATSAPP). */
+  onResendRoute?: (order: OrderListItem) => void
   /** En "todas las sucursales" cada tarjeta muestra su sucursal. */
   showBranch?: boolean
   showCancelled?: boolean
@@ -32,6 +34,7 @@ export function OrdersKanban({
   onDragEnd,
   onViewDetail,
   onCancelOrder,
+  onResendRoute,
   showBranch = false,
   showCancelled = false,
   selectableStatus,
@@ -128,6 +131,7 @@ export function OrdersKanban({
                                   priority={index < 8}
                                   onViewDetail={onViewDetail}
                                   onCancelOrder={onCancelOrder}
+                                  onResendRoute={onResendRoute}
                                 />
                               </div>
                             </div>

@@ -280,5 +280,12 @@
   "resolve_cancel_confirm": "¿Cancelar la orden {{ref}}?",
   "resolve_cancel_reason": "Cancelada desde el cierre del día",
   "resolved_delivered_ok": "Orden marcada como entregada.",
-  "resolved_cancelled_ok": "Orden cancelada."
+  "resolved_cancelled_ok": "Orden cancelada.",
+  "route_sent": "Ruta enviada por WhatsApp a {{name}}.",
+  "route_no_phone": "No se envió la ruta por WhatsApp: {{name}} no tiene un teléfono válido registrado.",
+  "route_not_connected": "No se envió la ruta: el WhatsApp del negocio no está conectado (Configuración → WhatsApp).",
+  "route_failed": "No se pudo enviar la ruta por WhatsApp. Intenta reenviarla en unos minutos.",
+  "route_no_courier": "El pedido no tiene un domiciliario asignado.",
+  "resend_route": "Reenviar ruta por WhatsApp",
+  "route_notified": "Ruta enviada {{time}}"
 }

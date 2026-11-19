@@ -36,6 +36,8 @@ const closingsData: { current: OrderClosing[] } = { current: [] }
 
 vi.mock("../../hooks/use-order-closings", () => ({
   useOrderClosingPreview: (branchId: string | null) => ({ data: previewFor(branchId), isLoading: false }),
+  usePendingClosingDates: () => ({ data: [] }),
+  useResolvePendingOrder: () => ({ mutate: vi.fn(), isPending: false }),
   useOrderClosings: () => ({ data: closingsData.current, isLoading: false }),
   useOrderClosingDetail: () => ({ data: undefined }),
   useCloseOrders: () => ({ mutate: closeMutate, isPending: false }),

@@ -9,6 +9,11 @@ import {
   useRemoveModuleFromBranch,
   useTenantModules,
 } from "@/features/business/branches/hooks/use-branch-modules"
+import {
+  getAssignableTenantModules,
+  getBranchScopedAssignments,
+  isTenantModuleAssigned,
+} from "@/features/business/branches/utils/branch-modules"
 import { notify } from "@/hooks/use-notify"
 import { useTranslation } from "@/i18n/use-i18n"
 import { getApiErrorMessage } from "@/utils/api-error"
@@ -26,19 +31,20 @@ const MODULE_ICONS: Record<string, LucideIcon> = {
 /** One card per module of the license; the switch assigns or removes it for this branch. */
 export function ModulesSection({ branchId }: { branchId: string }) {
   const { t } = useTranslation("business-branches")
-  const { data: tenantModules = [], isLoading: tenantLoading } = useTenantModules()
-  const { data: branchModules = [], isLoading: branchLoading } = useBranchModules(branchId)
+  const { data: allTenantModules = [], isLoading: tenantLoading } = useTenantModules()
+  const { data: allBranchModules = [], isLoading: branchLoading } = useBranchModules(branchId)
+  // Only per-branch modules: business-wide ones already apply everywhere and the backend rejects assigning them.
+  const tenantModules = getAssignableTenantModules(allTenantModules)
+  const branchModules = getBranchScopedAssignments(allBranchModules)
   const assign = useAssignModuleToBranch()
   const remove = useRemoveModuleFromBranch()
 
   const isLoading = tenantLoading || branchLoading
   const isMutating = assign.isPending || remove.isPending
 
-  // The tenant module id is a GUID and `tenantModuleId` of a branch module is an internal integer,
-  // so there is no id to join them: the module code is the shared key.
   const assignedFor = (moduleCode: string | null) =>
     moduleCode ? branchModules.find((branchModule) => branchModule.moduleCode === moduleCode) : undefined
-  const assignedCount = tenantModules.filter((module) => assignedFor(module.moduleCode)).length
+  const assignedCount = tenantModules.filter((module) => isTenantModuleAssigned(module, branchModules)).length
 
   const toggle = (tenantModuleId: string, moduleCode: string | null, checked: boolean) => {
     if (checked) {
@@ -85,7 +91,7 @@ export function ModulesSection({ branchId }: { branchId: string }) {
           <div className="grid gap-3 p-4 @xl:grid-cols-2 @4xl:grid-cols-3">
             {tenantModules.map((module) => {
               const Icon = MODULE_ICONS[module.moduleCode ?? ""] ?? Package
-              const assigned = Boolean(assignedFor(module.moduleCode))
+              const assigned = isTenantModuleAssigned(module, branchModules)
               return (
                 <article
                   key={module.id}

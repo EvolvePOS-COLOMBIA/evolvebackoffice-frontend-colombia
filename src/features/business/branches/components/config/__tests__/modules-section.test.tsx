@@ -64,9 +64,8 @@ describe("ModulesSection", () => {
     expect(state.remove.mock.calls[0][0]).toEqual({ branchId: "b1", modulePublicId: "bm-orders" })
   })
 
-  it("shows modules outside the license as not available", () => {
+  it("hides modules outside the license", () => {
     render(<ModulesSection branchId="b1" />)
-    expect(screen.getByText("cfg_module_no_license")).toBeInTheDocument()
-    expect(screen.queryByRole("switch", { name: "Mesas" })).toBeNull()
+    expect(screen.queryByText("Mesas")).toBeNull()
   })
 })

@@ -38,6 +38,19 @@ export async function getOrders(
   return normalizePagedResponse(data, pageSize)
 }
 
+/**
+ * Ventana de órdenes: todas las órdenes del periodo actual (día operativo de la
+ * sucursal, o de cada sucursal si no se indica). Sin paginación: el backend
+ * devuelve el turno completo y no incluye órdenes de días anteriores.
+ */
+export async function getCurrentPeriodOrders(branchId?: string): Promise<PagedOrders> {
+  const { data } = await api.get("/api/orders/current-period", {
+    params: branchId ? { branchId } : undefined,
+  })
+  const page = normalizePagedResponse(data, 1)
+  return { ...page, totalPages: page.data.length > 0 ? 1 : 0 }
+}
+
 export async function getOrderById(id: string): Promise<OrderDetail> {
   const { data } = await api.get<OrderDetail>(`/api/orders/${id}`)
   return data

@@ -37,6 +37,7 @@ export const branchFormSchema = (t: TFunction) =>
     longitude: coordinateField(-180, 180, t("longitude_invalid"), t("longitude_range")),
     adminUserId: z.string(),
     isSupplier: z.boolean(),
+    timeZoneId: z.string().optional(),
   })
 
 export type BranchFormSchemaValues = z.infer<ReturnType<typeof branchFormSchema>>

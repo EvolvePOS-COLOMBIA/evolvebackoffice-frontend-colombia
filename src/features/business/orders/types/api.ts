@@ -78,14 +78,16 @@ export interface OrderDetail {
 
 export interface OrderItemDto {
   id: string
-  nameSnapshot: string
+  /** Catalog item id; null for lines that are not linked to the catalog. */
+  itemId: string | null
+  externalItemId: string | null
+  name: string
+  sku: string | null
   quantity: number
   unitPrice: number
   subtotal: number
   tax: number
   discount: number
-  skuSnapshot: string | null
-  externalItemId: string | null
   modifiersJson: string | null
 }
 
@@ -112,7 +114,16 @@ export interface OrderStockCheck {
   items: OrderStockItem[]
 }
 
-export type OrderStatus = "Pending" | "Confirmed" | "Preparing" | "Ready" | "Shipped" | "Delivered" | "Cancelled"
+export type OrderStatus =
+  | "Pending"
+  | "Confirmed"
+  | "Preparing"
+  | "Ready"
+  | "Shipped"
+  | "Delivered"
+  | "Cancelled"
+  | "NeedsReview"
+  | "Refunded"
 
 export interface CluviStoreInfo {
   id: number

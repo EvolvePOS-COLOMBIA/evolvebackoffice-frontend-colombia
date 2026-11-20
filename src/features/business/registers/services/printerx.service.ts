@@ -133,7 +133,7 @@ export function buildKitchenOrderPrintRequest(
   const rawItems: OrderItemDto[] = order.items ?? []
   const items = rawItems.map((item) => ({
     cantidad: item.quantity,
-    descripcion: item.nameSnapshot,
+    descripcion: item.name,
     notas: null,
     extras: parseModifiersText(item.modifiersJson),
     total: formatCopAmount(item.subtotal),

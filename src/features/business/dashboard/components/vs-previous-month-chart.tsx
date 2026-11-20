@@ -156,7 +156,7 @@ export function VsPreviousMonthChart({
       <CardContent>
         <ChartContainer config={chartConfig} className="h-[250px] w-full">
           <BarChart data={weeks} margin={{ top: 10, right: 10, left: -10, bottom: 10 }}>
-            <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="hsl(var(--border))" />
+            <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="var(--border)" />
             <XAxis
               dataKey="label"
               tickLine={false}

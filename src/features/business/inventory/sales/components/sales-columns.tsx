@@ -23,10 +23,10 @@ export function buildSaleColumns(
       render: (sale) => <span className="font-medium text-foreground">{sale.number}</span>,
     },
     {
-      key: "customer",
-      header: t("sale_customer"),
+      key: "employee",
+      header: t("sale_employee"),
       minWidth: "min-w-[170px]",
-      render: (sale) => <span className="text-muted-foreground">{sale.customerName ?? t("sale_customer_none")}</span>,
+      render: (sale) => <span className="text-muted-foreground">{sale.employeeName ?? t("sale_employee_none")}</span>,
     },
     {
       key: "date",

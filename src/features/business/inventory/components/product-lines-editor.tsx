@@ -4,6 +4,7 @@ import { Plus, Search, Trash2 } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
+import { MoneyInput } from "@/components/ui/money-input"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { useItems } from "@/features/business/items/catalog/hooks/use-items"
 import { useTranslation } from "@/i18n/use-i18n"
@@ -229,13 +230,12 @@ export function ProductLinesEditor({
                   </TableCell>
                   {withPrice ? (
                     <TableCell>
-                      <Input
-                        type="number"
-                        min={0}
-                        step="any"
+                      <MoneyInput
+                        emit="string"
+                        decimals={2}
                         aria-label={t("price_per_unit_chosen")}
                         value={l.unitCost ?? ""}
-                        onChange={(e) => update(l.itemId, { unitCost: e.target.value })}
+                        onChange={(unitCost) => update(l.itemId, { unitCost })}
                       />
                     </TableCell>
                   ) : null}

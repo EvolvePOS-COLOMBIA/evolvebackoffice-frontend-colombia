@@ -28,7 +28,6 @@ import {
   Search,
   SlidersHorizontal,
   ShoppingCartIcon,
-  Menu,
 } from "lucide-react"
 import { useQueries } from "@tanstack/react-query"
 import { useBranches } from "@/features/business/branches/hooks/use-branches"
@@ -42,12 +41,13 @@ import { BranchSelector } from "@/features/business/items/catalog/components/bra
 // import { useBranchIntegrations } from "@/features/business/branches/hooks/use-branch-integrations"
 import { SelectionActionBar } from "@/components/share/selection-action-bar"
 import { AssignDeliveryUserDialog } from "@/features/business/delivery/components/assign-delivery-user-dialog"
-import { useOrders, useUpdateOrderStatus, useBulkUpdateOrderStatus } from "../hooks/use-orders"
+import { useCurrentPeriodOrders, useUpdateOrderStatus, useBulkUpdateOrderStatus } from "../hooks/use-orders"
 import { OrdersKanban } from "../components/orders-kanban"
 import { OrderDetailDialog } from "../components/order-detail-dialog"
 import { CancelOrderDialog } from "../components/cancel-order-dialog"
 import { ManualOrderDialog } from "../components/manual-order-dialog"
 import { EditOrderDialog } from "../components/edit-order-dialog"
+import { OrdersActionsMenu } from "../components/orders-actions-menu"
 import { OrdersFiltersDialog, type OrdersSortOrder } from "../components/orders-filters-dialog"
 import { KANBAN_COLUMNS, ORDER_STATUS_CONFIG } from "../types"
 import { checkOrderStock } from "../services/orders.service"
@@ -166,14 +166,11 @@ export function OrdersPage() {
   //   return row.isActive ? "active" : "configured"
   // }
 
-  // enabled=!!branchId: no se pide órdenes sin sucursal (evita una petición sin filtrar mientras carga la lista)
-  // En "todas" se pide sin branchId (el backend devuelve todas las sucursales).
-  const { data: ordersData, isLoading } = useOrders(
-    1,
-    500,
-    branchId ? { branchId } : undefined,
-    !!branchId || showAllBranches
-  )
+  // Solo el turno actual (día operativo), completo. Las órdenes de días
+  // anteriores no se muestran aquí: se resuelven en el cierre de su día.
+  // enabled=!!branchId: no se pide sin sucursal mientras carga la lista; en
+  // "todas" se pide sin branchId (cada sucursal con su propio turno).
+  const { data: ordersData, isLoading } = useCurrentPeriodOrders(branchId, !!branchId || showAllBranches)
   const updateStatusMutation = useUpdateOrderStatus()
   const bulkStatusMutation = useBulkUpdateOrderStatus()
 
@@ -299,7 +296,12 @@ export function OrdersPage() {
     updateStatusMutation.mutate(
       { id: orderId, status: newStatus, deliveryUserId: deliveryUserId ?? null },
       {
-        onSuccess: () => notify.success(t("status") + " → " + (ORDER_STATUS_CONFIG[newStatus]?.label ?? newStatus)),
+        onSuccess: () =>
+          notify.success(
+            t("status") +
+              " → " +
+              (ORDER_STATUS_CONFIG[newStatus] ? t(ORDER_STATUS_CONFIG[newStatus].labelKey) : newStatus)
+          ),
         onError: (error: unknown) => {
           const message = (error as { response?: { data?: { message?: string } } })?.response?.data?.message
           notify.error(message || t("status_update_failed"))
@@ -365,7 +367,7 @@ export function OrdersPage() {
         { id: order.id, status: "Shipped", deliveryUserId: userId },
         {
           onSuccess: () => {
-            notify.success(t("status") + " → " + (ORDER_STATUS_CONFIG.Shipped?.label ?? "Shipped"))
+            notify.success(t("status") + " → " + t(ORDER_STATUS_CONFIG.Shipped.labelKey))
             setAssignTargets([])
             setSelectedReadyIds((prev) => {
               const next = new Set(prev)
@@ -587,14 +589,7 @@ export function OrdersPage() {
           </Button>
 
           <div className="flex items-center gap-2 rounded-xl border border-border/70 bg-background/90 p-1">
-            <Button
-              variant="outline"
-              size="sm"
-              aria-label={isMaximized ? t("minimize_view") : t("maximize_view")}
-              title={isMaximized ? t("minimize_view") : t("maximize_view")}
-            >
-              <Menu />
-            </Button>
+            <OrdersActionsMenu />
 
             <Button
               variant="outline"

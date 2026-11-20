@@ -13,6 +13,7 @@ import {
 } from "@/components/ui/dialog"
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form"
 import { Input } from "@/components/ui/input"
+import { MoneyInput } from "@/components/ui/money-input"
 import { Switch } from "@/components/ui/switch"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { useTranslation } from "@/i18n/use-i18n"
@@ -154,7 +155,7 @@ function PricingPanel({ branchId, item }: { branchId: string; item: BranchItemRe
         <FormItem>
           <FormLabel>{label}</FormLabel>
           <FormControl>
-            <Input type="number" step="0.01" {...field} value={field.value ?? ""} />
+            <MoneyInput decimals={2} {...field} />
           </FormControl>
           <FormMessage />
         </FormItem>

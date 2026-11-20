@@ -13,6 +13,7 @@ import {
 } from "@/components/ui/dialog"
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form"
 import { Input } from "@/components/ui/input"
+import { MoneyInput } from "@/components/ui/money-input"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Switch } from "@/components/ui/switch"
 import { useTranslation } from "@/i18n/use-i18n"
@@ -269,7 +270,7 @@ export function ItemModifierFormDialog({
                 <FormItem>
                   <FormLabel>{t("extra_price_label")}</FormLabel>
                   <FormControl>
-                    <Input type="number" step="0.01" min={0} {...field} />
+                    <MoneyInput {...field} />
                   </FormControl>
                   <p className="text-xs text-muted-foreground">{t("extra_price_hint")}</p>
                   <FormMessage />

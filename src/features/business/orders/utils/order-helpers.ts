@@ -48,7 +48,7 @@ export function buildCancellationInitialState(
   if (items.length > 0) {
     items.forEach((item) => {
       if (isWasteDefault) {
-        if (isBeverage(item.nameSnapshot)) {
+        if (isBeverage(item.name)) {
           initialMap[item.id] = "Restocked"
           hasBeverage = true
         } else {

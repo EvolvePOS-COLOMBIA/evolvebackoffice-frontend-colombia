@@ -41,9 +41,9 @@ export function OrderDetailDialog({ open, onOpenChange, order, onEdit }: OrderDe
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-md">
+      <DialogContent className="sm:max-w-lg">
         <DialogHeader>
-          <div className="flex items-center justify-between">
+          <div className="flex items-center justify-between gap-3 pr-8">
             <DialogTitle>
               {t("order_number")} #{order.externalOrderId?.slice(0, 8) ?? order.id.slice(0, 8)}
             </DialogTitle>
@@ -164,11 +164,11 @@ export function OrderDetailDialog({ open, onOpenChange, order, onEdit }: OrderDe
           </div>
 
           {/* Acciones de la orden (Imprimir comanda / Editar detalles / Cancelar orden) */}
-          <div className="flex flex-col gap-2 sm:flex-row">
+          <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap">
             <Button
               type="button"
               variant="outline"
-              className="flex-1"
+              className="flex-1 whitespace-nowrap"
               onClick={() => void printComanda(current)}
               disabled={isPrinting}
             >
@@ -176,13 +176,18 @@ export function OrderDetailDialog({ open, onOpenChange, order, onEdit }: OrderDe
               {t("print_kitchen")}
             </Button>
             {onEdit && canEdit ? (
-              <Button type="button" variant="outline" className="flex-1" onClick={onEdit}>
+              <Button type="button" variant="outline" className="flex-1 whitespace-nowrap" onClick={onEdit}>
                 <SquarePen className="mr-2 size-4" />
                 {t("edit_order")}
               </Button>
             ) : null}
             {canCancel ? (
-              <Button type="button" variant="destructive" className="flex-1" onClick={() => setCancelDialogOpen(true)}>
+              <Button
+                type="button"
+                variant="destructive"
+                className="flex-1 whitespace-nowrap"
+                onClick={() => setCancelDialogOpen(true)}
+              >
                 <Ban className="mr-2 size-4" />
                 {t("cancel_order")}
               </Button>

@@ -280,5 +280,8 @@
   "resolve_cancel_confirm": "Cancel order {{ref}}?",
   "resolve_cancel_reason": "Cancelled from the daily closing",
   "resolved_delivered_ok": "Order marked as delivered.",
-  "resolved_cancelled_ok": "Order cancelled."
+  "resolved_cancelled_ok": "Order cancelled.",
+  "resolve_error": "The order could not be updated.",
+  "pending_days_error": "The previous unclosed days could not be loaded.",
+  "pending_days_retry": "Retry"
 }

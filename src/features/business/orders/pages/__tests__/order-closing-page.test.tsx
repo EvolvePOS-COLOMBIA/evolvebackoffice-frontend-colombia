@@ -4,7 +4,12 @@ import { fireEvent, render, screen, within } from "@testing-library/react"
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query"
 import { MemoryRouter } from "react-router-dom"
 
-import type { OrderClosing, OrderClosingOrderRow, OrderClosingPreview } from "../../types/closing"
+import type {
+  OrderClosing,
+  OrderClosingOrderRow,
+  OrderClosingPendingDate,
+  OrderClosingPreview,
+} from "../../types/closing"
 import { OrderClosingPage } from "../order-closing-page"
 
 vi.mock("@/i18n/use-i18n", () => ({
@@ -31,13 +36,25 @@ vi.mock("@/features/business/payment-methods/services/payment-methods.service", 
 }))
 
 const closeMutate = vi.fn()
+const resolveMutate = vi.fn()
+const refetchPendingDates = vi.fn()
 const previewFor = vi.fn()
 const closingsData: { current: OrderClosing[] } = { current: [] }
+const pendingDatesState: { current: { data?: OrderClosingPendingDate[]; isError: boolean } } = {
+  current: { data: [], isError: false },
+}
 
 vi.mock("../../hooks/use-order-closings", () => ({
-  useOrderClosingPreview: (branchId: string | null) => ({ data: previewFor(branchId), isLoading: false }),
-  usePendingClosingDates: () => ({ data: [] }),
-  useResolvePendingOrder: () => ({ mutate: vi.fn(), isPending: false }),
+  useOrderClosingPreview: (branchId: string | null, date: string | null = null) => ({
+    data: previewFor(branchId, date),
+    isLoading: false,
+  }),
+  usePendingClosingDates: () => ({
+    ...pendingDatesState.current,
+    refetch: refetchPendingDates,
+    isFetching: false,
+  }),
+  useResolvePendingOrder: () => ({ mutate: resolveMutate, isPending: false }),
   useOrderClosings: () => ({ data: closingsData.current, isLoading: false }),
   useOrderClosingDetail: () => ({ data: undefined }),
   useCloseOrders: () => ({ mutate: closeMutate, isPending: false }),
@@ -89,6 +106,26 @@ const ORDERS = [
   order("ccc333", "CANCELLED", 3000, "Rosa Díaz"),
 ]
 
+// Todas con estado final: el día se puede cerrar.
+const RESOLVED_ORDERS = [
+  order("aaa111", "DELIVERED", 10000, "Ana Pérez"),
+  order("ccc333", "CANCELLED", 3000, "Rosa Díaz"),
+]
+
+const pendingDay = (date: string): OrderClosingPendingDate => ({
+  date,
+  windowStartUtc: `${date}T05:00:00Z`,
+  windowEndUtc: `${date}T05:00:00Z`,
+  ordersCount: 4,
+  unresolvedCount: 1,
+  totalAmount: 42000,
+})
+
+const confirmClose = () => {
+  fireEvent.click(screen.getByRole("button", { name: /closing_close_action/ }))
+  fireEvent.click(within(screen.getByRole("dialog")).getByRole("button", { name: "closing_confirm_action" }))
+}
+
 function setup() {
   render(
     <QueryClientProvider client={new QueryClient()}>
@@ -101,6 +138,9 @@ function setup() {
 
 beforeEach(() => {
   closeMutate.mockReset()
+  resolveMutate.mockReset()
+  refetchPendingDates.mockReset()
+  pendingDatesState.current = { data: [], isError: false }
   previewFor.mockReset()
   previewFor.mockImplementation((branchId: string | null) =>
     branchId === "b1" ? preview(ORDERS, 15000) : preview([], 0)
@@ -144,7 +184,14 @@ describe("OrderClosingPage", () => {
     expect(screen.getByText("Luis Gómez")).toBeInTheDocument()
   })
 
+  it("blocks closing while orders are still in progress", () => {
+    setup()
+    expect(screen.getByRole("button", { name: /closing_close_action/ })).toBeDisabled()
+    expect(screen.getByText("closing_blocked")).toBeInTheDocument()
+  })
+
   it("asks for confirmation and then closes the window with the notes", () => {
+    previewFor.mockImplementation(() => preview(RESOLVED_ORDERS, 10000))
     setup()
     fireEvent.change(screen.getByLabelText("closing_notes_label"), { target: { value: "Diferencia en caja" } })
     fireEvent.click(screen.getByRole("button", { name: /closing_close_action/ }))
@@ -167,7 +214,94 @@ describe("OrderClosingPage", () => {
   it("loads the preview of the branch that is picked", () => {
     setup()
     fireEvent.click(screen.getByRole("button", { name: /Sede Bogotá/ }))
-    expect(previewFor).toHaveBeenLastCalledWith("b2")
+    expect(previewFor).toHaveBeenLastCalledWith("b2", null)
+  })
+
+  it("sends the date of the previewed period when closing the current shift", () => {
+    previewFor.mockImplementation(() => ({ ...preview(RESOLVED_ORDERS, 10000), date: "2026-11-19" }))
+    setup()
+    confirmClose()
+    expect(closeMutate.mock.calls[0][0]).toMatchObject({ branchId: "b1", date: "2026-11-19" })
+  })
+
+  it("loads a previous day picked in the pending days picker", () => {
+    pendingDatesState.current = { data: [pendingDay("2026-11-17")], isError: false }
+    setup()
+    fireEvent.click(screen.getByRole("button", { name: /2026-11-17/ }))
+    expect(previewFor).toHaveBeenLastCalledWith("b1", "2026-11-17")
+    expect(screen.getByRole("button", { name: "current_period" })).toHaveAttribute("aria-pressed", "false")
+  })
+
+  it("goes back to the current shift after closing a previous day", () => {
+    pendingDatesState.current = { data: [pendingDay("2026-11-17")], isError: false }
+    previewFor.mockImplementation((_branchId: string | null, date: string | null) => ({
+      ...preview(RESOLVED_ORDERS, 10000),
+      date: date ?? "2026-11-19",
+    }))
+    closeMutate.mockImplementation((_vars: unknown, options?: { onSuccess?: () => void }) => {
+      // Tras cerrar, el día ya no figura entre los pendientes.
+      pendingDatesState.current = { data: [], isError: false }
+      options?.onSuccess?.()
+    })
+    setup()
+    fireEvent.click(screen.getByRole("button", { name: /2026-11-17/ }))
+    confirmClose()
+
+    expect(closeMutate.mock.calls[0][0]).toMatchObject({ date: "2026-11-17" })
+    expect(previewFor).toHaveBeenLastCalledWith("b1", null)
+  })
+
+  it("keeps the picker visible while a previous day is selected", () => {
+    pendingDatesState.current = { data: [pendingDay("2026-11-17")], isError: false }
+    const { rerender } = render(
+      <QueryClientProvider client={new QueryClient()}>
+        <MemoryRouter>
+          <OrderClosingPage />
+        </MemoryRouter>
+      </QueryClientProvider>
+    )
+    fireEvent.click(screen.getByRole("button", { name: /2026-11-17/ }))
+    pendingDatesState.current = { data: [], isError: false }
+    rerender(
+      <QueryClientProvider client={new QueryClient()}>
+        <MemoryRouter>
+          <OrderClosingPage />
+        </MemoryRouter>
+      </QueryClientProvider>
+    )
+    expect(screen.getByRole("button", { name: "current_period" })).toBeInTheDocument()
+  })
+
+  it("shows an error with retry when the pending days cannot be loaded", () => {
+    pendingDatesState.current = { data: undefined, isError: true }
+    setup()
+    expect(screen.getByText("pending_days_error")).toBeInTheDocument()
+    fireEvent.click(screen.getByRole("button", { name: "pending_days_retry" }))
+    expect(refetchPendingDates).toHaveBeenCalledTimes(1)
+  })
+
+  it("marks an open order as delivered after confirming", () => {
+    setup()
+    fireEvent.click(screen.getByRole("button", { name: "resolve_delivered" }))
+    fireEvent.click(within(screen.getByRole("dialog")).getByRole("button", { name: "resolve_delivered" }))
+    expect(resolveMutate).toHaveBeenCalledTimes(1)
+    expect(resolveMutate.mock.calls[0][0]).toMatchObject({ orderId: "bbb222", outcome: "delivered" })
+  })
+
+  it("cancels an open order with the closing reason", () => {
+    setup()
+    fireEvent.click(screen.getByRole("button", { name: "resolve_cancel" }))
+    fireEvent.click(within(screen.getByRole("dialog")).getByRole("button", { name: "resolve_cancel" }))
+    expect(resolveMutate.mock.calls[0][0]).toEqual({
+      orderId: "bbb222",
+      outcome: "cancelled",
+      reason: "resolve_cancel_reason",
+    })
+  })
+
+  it("offers resolve actions only on orders still in progress", () => {
+    setup()
+    expect(screen.getAllByRole("button", { name: "resolve_delivered" })).toHaveLength(1)
   })
 
   it("lists the past closings in the history tab", () => {

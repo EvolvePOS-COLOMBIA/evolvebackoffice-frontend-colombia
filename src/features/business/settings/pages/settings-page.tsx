@@ -14,16 +14,23 @@ import {
   Tv,
   CreditCard,
 } from "lucide-react"
-import { useNavigate } from "react-router-dom"
+import { useNavigate, useSearchParams } from "react-router-dom"
 
 import { Card, CardContent } from "@/components/ui/card"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { useTranslation } from "@/i18n/use-i18n"
 import { ItemCard, type ItemCardLink } from "@/features/business/components/item-card"
 
+type SettingsTab = "store" | "global"
+
 export function SettingsPage() {
   const { t } = useTranslation("business-settings")
   const navigate = useNavigate()
+  // La pestaña vive en la URL (?tab=), así las subpantallas pueden volver a la misma pestaña.
+  const [searchParams, setSearchParams] = useSearchParams()
+  const tab: SettingsTab = searchParams.get("tab") === "global" ? "global" : "store"
+  const selectTab = (value: string) =>
+    setSearchParams({ tab: value === "global" ? "global" : "store" }, { replace: true })
 
   const globalLinks: ItemCardLink[] = [
     {
@@ -136,7 +143,7 @@ export function SettingsPage() {
           />
         </header>
 
-        <Tabs defaultValue="store" className="mt-6">
+        <Tabs value={tab} onValueChange={selectTab} className="mt-6">
           <TabsList className="w-full">
             <TabsTrigger value="store" className="flex-1">
               {t("store")}

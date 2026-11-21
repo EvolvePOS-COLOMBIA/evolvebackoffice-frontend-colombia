@@ -76,7 +76,7 @@ export function OrderDetailDialog({ open, onOpenChange, order, onEdit }: OrderDe
   const { t } = useTranslation("business-orders")
   const { formatCurrency, formatDateTime } = useLocaleFormat()
   const { data: detail } = useOrderDetail(open ? (order?.id ?? "") : "")
-  const { printComanda, isPrinting } = usePrintComanda()
+  const { printComanda, printCustomerReceipt, isPrinting, isCustomerReceiptConfigured } = usePrintComanda()
   const [cancelDialogOpen, setCancelDialogOpen] = useState(false)
 
   if (!order) return null
@@ -257,6 +257,19 @@ export function OrderDetailDialog({ open, onOpenChange, order, onEdit }: OrderDe
             {isPrinting ? <Loader2 className="mr-2 size-4 animate-spin" /> : <Printer className="mr-2 size-4" />}
             {t("print_kitchen")}
           </Button>
+          {isCustomerReceiptConfigured ? (
+            <Button
+              type="button"
+              variant="outline"
+              size="lg"
+              className="h-11 w-full whitespace-nowrap sm:flex-1"
+              onClick={() => void printCustomerReceipt(current)}
+              disabled={isPrinting}
+            >
+              {isPrinting ? <Loader2 className="mr-2 size-4 animate-spin" /> : <Printer className="mr-2 size-4" />}
+              {t("print_receipt")}
+            </Button>
+          ) : null}
           {onEdit && canEdit ? (
             <Button
               type="button"

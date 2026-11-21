@@ -17,12 +17,14 @@ import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Separator } from "@/components/ui/separator"
 import { Switch } from "@/components/ui/switch"
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { notify } from "@/hooks/use-notify"
 import { useTranslation } from "@/i18n/use-i18n"
 import { getApiErrorMessage } from "@/utils/api-error"
 import { useRegisterPrintSettings, useUpsertRegisterPrintSettings } from "../hooks/use-register-print-settings"
 import {
   DEFAULT_PRINTERX_URL,
+  buildCustomerReceiptPrintRequest,
   buildKitchenOrderPrintRequest,
   checkPrinterXHealth,
   getActiveRegisterId,
@@ -34,6 +36,7 @@ import {
 } from "../services/printerx.service"
 import type { Register } from "../types"
 import type {
+  PrintDocumentType,
   PrintPaperFormat,
   PrintTemplateMappingDto,
   PrinterXPrinter,
@@ -80,7 +83,7 @@ export function RegisterPrintSettingsDialog({ open, onOpenChange, register }: Re
           </div>
         ) : (
           <RegisterPrintSettingsForm
-            key={`${register.id}-${settings.serviceUrl}-${settings.isEnabled}-${settings.mappings[0]?.templateId ?? ""}`}
+            key={`${register.id}-${settings.serviceUrl}-${settings.isEnabled}-${settings.mappings.map((m) => `${m.documentType}:${m.templateId}`).join("|")}`}
             register={register}
             initialSettings={settings}
             onClose={() => onOpenChange(false)}
@@ -97,24 +100,51 @@ interface RegisterPrintSettingsFormProps {
   onClose: () => void
 }
 
+const NO_TEMPLATE_SELECTED = "__none__"
+
+interface MappingFormState {
+  templateId: string
+  templateName: string
+  printerName: string
+  format: PrintPaperFormat
+  autoPrint: boolean
+  copies: number
+}
+
+function buildInitialMappingState(mapping?: PrintTemplateMappingDto): MappingFormState {
+  return {
+    templateId: mapping?.templateId ?? "",
+    templateName: mapping?.templateName ?? "",
+    printerName: mapping?.printerName || DEFAULT_WINDOWS_PRINTER,
+    format: (mapping?.format as PrintPaperFormat) || "Ticket80mm",
+    autoPrint: mapping?.autoPrint ?? false,
+    copies: mapping?.copies ?? 1,
+  }
+}
+
 function RegisterPrintSettingsForm({ register, initialSettings, onClose }: RegisterPrintSettingsFormProps) {
   const { t } = useTranslation("business-registers")
   const upsertMutation = useUpsertRegisterPrintSettings()
-
-  const kitchenMapping = initialSettings.mappings.find((m) => m.documentType === "KitchenOrder")
 
   const [serviceUrl, setServiceUrl] = useState(initialSettings.serviceUrl || DEFAULT_PRINTERX_URL)
   const [probeUrl, setProbeUrl] = useState(initialSettings.serviceUrl || DEFAULT_PRINTERX_URL)
   const [isEnabled, setIsEnabled] = useState(initialSettings.isEnabled)
   const [useOnThisDevice, setUseOnThisDevice] = useState(() => getActiveRegisterId() === register.id)
 
-  const [templateId, setTemplateId] = useState(kitchenMapping?.templateId ?? "")
-  const [templateName, setTemplateName] = useState(kitchenMapping?.templateName ?? "")
-  const [printerName, setPrinterName] = useState(kitchenMapping?.printerName || DEFAULT_WINDOWS_PRINTER)
-  const [format, setFormat] = useState<PrintPaperFormat>((kitchenMapping?.format as PrintPaperFormat) || "Ticket80mm")
-  const [autoPrint, setAutoPrint] = useState(kitchenMapping?.autoPrint ?? false)
-  const [copies, setCopies] = useState(kitchenMapping?.copies ?? 1)
+  const [activeDocType, setActiveDocType] = useState<PrintDocumentType>("KitchenOrder")
+  const [mappingsState, setMappingsState] = useState<Record<PrintDocumentType, MappingFormState>>(() => ({
+    KitchenOrder: buildInitialMappingState(initialSettings.mappings.find((m) => m.documentType === "KitchenOrder")),
+    SaleReceipt: buildInitialMappingState(initialSettings.mappings.find((m) => m.documentType === "SaleReceipt")),
+  }))
   const [sendingTest, setSendingTest] = useState(false)
+
+  const currentMapping = mappingsState[activeDocType]
+  const updateCurrentMapping = (patch: Partial<MappingFormState>) => {
+    setMappingsState((prev) => ({
+      ...prev,
+      [activeDocType]: { ...prev[activeDocType], ...patch },
+    }))
+  }
 
   const {
     data: probeData,
@@ -143,13 +173,21 @@ function RegisterPrintSettingsForm({ register, initialSettings, onClose }: Regis
 
   // Garantiza que la plantilla y la impresora guardadas sigan visibles aunque PrinterX esté apagado
   const templateOptions: Array<{ id: string; name: string; format?: string }> = [...(probeData?.templates ?? [])]
-  if (templateId && !templateOptions.some((tpl) => tpl.id === templateId)) {
-    templateOptions.unshift({ id: templateId, name: templateName || templateId, format })
+  for (const state of Object.values(mappingsState)) {
+    if (state.templateId && !templateOptions.some((tpl) => tpl.id === state.templateId)) {
+      templateOptions.unshift({
+        id: state.templateId,
+        name: state.templateName || state.templateId,
+        format: state.format,
+      })
+    }
   }
 
   const printerOptions: Array<{ name: string; isDefault?: boolean }> = [...(probeData?.printers ?? [])]
-  if (printerName !== DEFAULT_WINDOWS_PRINTER && !printerOptions.some((p) => p.name === printerName)) {
-    printerOptions.unshift({ name: printerName })
+  for (const state of Object.values(mappingsState)) {
+    if (state.printerName !== DEFAULT_WINDOWS_PRINTER && !printerOptions.some((p) => p.name === state.printerName)) {
+      printerOptions.unshift({ name: state.printerName })
+    }
   }
 
   const handleTestConnection = async () => {
@@ -167,33 +205,41 @@ function RegisterPrintSettingsForm({ register, initialSettings, onClose }: Regis
   }
 
   const handleSelectTemplate = (selectedId: string) => {
-    setTemplateId(selectedId)
-    const found = templateOptions.find((tpl) => tpl.id === selectedId)
-    setTemplateName(found?.name ?? selectedId)
-    if (found?.format === "Ticket80mm" || found?.format === "Ticket55mm" || found?.format === "Letter") {
-      setFormat(found.format)
+    if (selectedId === NO_TEMPLATE_SELECTED) {
+      updateCurrentMapping({ templateId: "", templateName: "" })
+      return
     }
+    const found = templateOptions.find((tpl) => tpl.id === selectedId)
+    const patch: Partial<MappingFormState> = {
+      templateId: selectedId,
+      templateName: found?.name ?? selectedId,
+    }
+    if (found?.format === "Ticket80mm" || found?.format === "Ticket55mm" || found?.format === "Letter") {
+      patch.format = found.format
+    }
+    updateCurrentMapping(patch)
   }
 
   const handleSave = () => {
-    if (isEnabled && !templateId) {
+    const mappings: PrintTemplateMappingDto[] = (["KitchenOrder", "SaleReceipt"] as const)
+      .filter((docType) => Boolean(mappingsState[docType].templateId))
+      .map((docType) => {
+        const s = mappingsState[docType]
+        return {
+          documentType: docType,
+          templateId: s.templateId,
+          templateName: s.templateName || s.templateId,
+          printerName: s.printerName === DEFAULT_WINDOWS_PRINTER ? null : s.printerName,
+          format: s.format,
+          autoPrint: s.autoPrint,
+          copies: Math.min(10, Math.max(1, Number(s.copies) || 1)),
+        }
+      })
+
+    if (isEnabled && mappings.length === 0) {
       notify.error(t("print_template_required"))
       return
     }
-
-    const mappings: PrintTemplateMappingDto[] = templateId
-      ? [
-          {
-            documentType: "KitchenOrder",
-            templateId,
-            templateName: templateName || templateId,
-            printerName: printerName === DEFAULT_WINDOWS_PRINTER ? null : printerName,
-            format,
-            autoPrint,
-            copies: Math.min(10, Math.max(1, Number(copies) || 1)),
-          },
-        ]
-      : []
 
     upsertMutation.mutate(
       {
@@ -220,15 +266,15 @@ function RegisterPrintSettingsForm({ register, initialSettings, onClose }: Regis
   }
 
   const handleTestPrint = async () => {
-    if (!templateId) {
+    if (!currentMapping.templateId) {
       notify.error(t("print_template_required"))
       return
     }
     setSendingTest(true)
     try {
-      const resolvedPrinter = printerName === DEFAULT_WINDOWS_PRINTER ? null : printerName
-      const resolvedCopies = Math.min(10, Math.max(1, Number(copies) || 1))
-      const selectedTemplate = probeData?.templates.find((tpl) => tpl.id === templateId)
+      const resolvedPrinter = currentMapping.printerName === DEFAULT_WINDOWS_PRINTER ? null : currentMapping.printerName
+      const resolvedCopies = Math.min(10, Math.max(1, Number(currentMapping.copies) || 1))
+      const selectedTemplate = probeData?.templates.find((tpl) => tpl.id === currentMapping.templateId)
 
       let sampleData: Record<string, unknown> | null = null
       if (selectedTemplate?.sampleDataJson) {
@@ -242,51 +288,59 @@ function RegisterPrintSettingsForm({ register, initialSettings, onClose }: Regis
         }
       }
 
+      const sampleOrder = {
+        id: "PRUEBA-001",
+        externalOrderId: "PRUEBA-001",
+        branchName: register.name,
+        origin: "EvolvePOS",
+        platformCode: "POS",
+        shippingCost: 0,
+        subtotal: 12605,
+        tax: 2395,
+        discount: 0,
+        total: 15000,
+        paymentMethod: "Efectivo",
+        notes: "Impresión de prueba desde configuración de caja.",
+        customerName: "Cliente de Prueba",
+        createdAt: new Date().toISOString(),
+        externalCreatedAt: new Date().toISOString(),
+        items: [
+          {
+            id: "test-item-1",
+            name: "Producto de Prueba",
+            quantity: 1,
+            unitPrice: 15000,
+            subtotal: 15000,
+            modifiersJson: null,
+          },
+        ],
+      } as PrintableOrder
+
+      const mappingDto: PrintTemplateMappingDto = {
+        documentType: activeDocType,
+        templateId: currentMapping.templateId,
+        templateName: currentMapping.templateName || currentMapping.templateId,
+        printerName: resolvedPrinter,
+        format: currentMapping.format,
+        autoPrint: currentMapping.autoPrint,
+        copies: resolvedCopies,
+      }
+
       const payload = sampleData
         ? {
             printerName: resolvedPrinter,
-            templateId,
+            templateId: currentMapping.templateId,
             type: "HtmlTemplate" as const,
-            format,
+            format: currentMapping.format,
             documentTitle: `Prueba - ${selectedTemplate?.name || register.name}`,
             copies: resolvedCopies,
             cutPaper: true,
             openCashDrawer: false,
             data: sampleData,
           }
-        : buildKitchenOrderPrintRequest(
-            {
-              id: "PRUEBA-001",
-              externalOrderId: "PRUEBA-001",
-              branchName: register.name,
-              origin: "EvolvePOS",
-              platformCode: "POS",
-              shippingCost: 0,
-              notes: "Impresión de prueba desde configuración de caja.",
-              customerName: "Cliente de Prueba",
-              createdAt: new Date().toISOString(),
-              externalCreatedAt: new Date().toISOString(),
-              items: [
-                {
-                  id: "test-item-1",
-                  name: "Producto de Prueba",
-                  quantity: 1,
-                  unitPrice: 15000,
-                  subtotal: 15000,
-                  modifiersJson: null,
-                },
-              ],
-            } as PrintableOrder,
-            {
-              documentType: "KitchenOrder",
-              templateId,
-              templateName: templateName || templateId,
-              printerName: resolvedPrinter,
-              format,
-              autoPrint,
-              copies: resolvedCopies,
-            }
-          )
+        : activeDocType === "SaleReceipt"
+          ? buildCustomerReceiptPrintRequest(sampleOrder, mappingDto)
+          : buildKitchenOrderPrintRequest(sampleOrder, mappingDto)
 
       await sendPrinterXPrintJob(serviceUrl, payload)
       notify.success(t("print_test_sent"))
@@ -360,91 +414,122 @@ function RegisterPrintSettingsForm({ register, initialSettings, onClose }: Regis
 
       <Separator />
 
-      {/* Mapeo por tipo de recibo: Comanda de Cocina */}
+      {/* Mapeo por tipo de recibo: Comanda de Cocina y Recibo del Cliente */}
       <div className="space-y-4">
         <div>
           <h4 className="text-sm font-semibold text-foreground">{t("print_receipt_section_title")}</h4>
           <p className="text-xs text-muted-foreground">{t("print_receipt_section_desc")}</p>
         </div>
 
-        <div className="space-y-4 rounded-lg border border-border/60 p-4">
-          <div className="flex items-center justify-between">
-            <span className="text-sm font-medium">{t("print_doc_kitchen_order")}</span>
-            <Badge tone="info">{t("print_doc_badge_active")}</Badge>
-          </div>
+        <Tabs
+          value={activeDocType}
+          onValueChange={(v) => setActiveDocType(v as PrintDocumentType)}
+          className="space-y-3"
+        >
+          <TabsList className="grid w-full grid-cols-2">
+            <TabsTrigger value="KitchenOrder">{t("print_doc_kitchen_order")}</TabsTrigger>
+            <TabsTrigger value="SaleReceipt">{t("print_doc_sale_receipt")}</TabsTrigger>
+          </TabsList>
 
-          <div className="grid gap-3 sm:grid-cols-2">
-            <div className="space-y-1.5">
-              <Label>{t("print_template_label")}</Label>
-              <Select value={templateId} onValueChange={handleSelectTemplate}>
-                <SelectTrigger>
-                  <SelectValue placeholder={t("print_template_placeholder")} />
-                </SelectTrigger>
-                <SelectContent>
-                  {templateOptions.map((tpl) => (
-                    <SelectItem key={tpl.id} value={tpl.id}>
-                      {tpl.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+          <div className="space-y-4 rounded-lg border border-border/60 p-4">
+            <div className="flex items-center justify-between">
+              <span className="text-sm font-medium">
+                {activeDocType === "SaleReceipt" ? t("print_doc_sale_receipt") : t("print_doc_kitchen_order")}
+              </span>
+              {currentMapping.templateId ? (
+                <Badge tone="info">{t("print_doc_badge_active")}</Badge>
+              ) : (
+                <Badge tone="neutral">{t("print_doc_badge_unconfigured")}</Badge>
+              )}
             </div>
 
-            <div className="space-y-1.5">
-              <Label>{t("print_printer_label")}</Label>
-              <Select value={printerName} onValueChange={setPrinterName}>
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value={DEFAULT_WINDOWS_PRINTER}>{t("print_printer_default")}</SelectItem>
-                  {printerOptions.map((p) => (
-                    <SelectItem key={p.name} value={p.name}>
-                      {p.name}
-                      {p.isDefault ? ` (${t("print_default_tag")})` : ""}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+            <div className="grid gap-3 sm:grid-cols-2">
+              <div className="space-y-1.5">
+                <Label>{t("print_template_label")}</Label>
+                <Select value={currentMapping.templateId || NO_TEMPLATE_SELECTED} onValueChange={handleSelectTemplate}>
+                  <SelectTrigger>
+                    <SelectValue placeholder={t("print_template_placeholder")} />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value={NO_TEMPLATE_SELECTED}>{t("print_template_none")}</SelectItem>
+                    {templateOptions.map((tpl) => (
+                      <SelectItem key={tpl.id} value={tpl.id}>
+                        {tpl.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="space-y-1.5">
+                <Label>{t("print_printer_label")}</Label>
+                <Select
+                  value={currentMapping.printerName}
+                  onValueChange={(v) => updateCurrentMapping({ printerName: v })}
+                >
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value={DEFAULT_WINDOWS_PRINTER}>{t("print_printer_default")}</SelectItem>
+                    {printerOptions.map((p) => (
+                      <SelectItem key={p.name} value={p.name}>
+                        {p.name}
+                        {p.isDefault ? ` (${t("print_default_tag")})` : ""}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="space-y-1.5">
+                <Label>{t("print_format_label")}</Label>
+                <Select
+                  value={currentMapping.format}
+                  onValueChange={(v) => updateCurrentMapping({ format: v as PrintPaperFormat })}
+                >
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {PAPER_FORMATS.map((f) => (
+                      <SelectItem key={f} value={f}>
+                        {f}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="space-y-1.5">
+                <Label htmlFor="print-copies">{t("print_copies_label")}</Label>
+                <Input
+                  id="print-copies"
+                  type="number"
+                  min={1}
+                  max={10}
+                  value={currentMapping.copies}
+                  onChange={(e) =>
+                    updateCurrentMapping({ copies: Math.max(1, Math.min(10, Number(e.target.value) || 1)) })
+                  }
+                />
+              </div>
             </div>
 
-            <div className="space-y-1.5">
-              <Label>{t("print_format_label")}</Label>
-              <Select value={format} onValueChange={(v) => setFormat(v as PrintPaperFormat)}>
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {PAPER_FORMATS.map((f) => (
-                    <SelectItem key={f} value={f}>
-                      {f}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div className="space-y-1.5">
-              <Label htmlFor="print-copies">{t("print_copies_label")}</Label>
-              <Input
-                id="print-copies"
-                type="number"
-                min={1}
-                max={10}
-                value={copies}
-                onChange={(e) => setCopies(Math.max(1, Math.min(10, Number(e.target.value) || 1)))}
+            <div className="flex items-center justify-between pt-1">
+              <div>
+                <Label className="text-sm">{t("print_auto_label")}</Label>
+                <p className="text-xs text-muted-foreground">
+                  {activeDocType === "SaleReceipt" ? t("print_auto_hint_receipt") : t("print_auto_hint")}
+                </p>
+              </div>
+              <Switch
+                checked={currentMapping.autoPrint}
+                onCheckedChange={(checked) => updateCurrentMapping({ autoPrint: checked })}
               />
             </div>
           </div>
-
-          <div className="flex items-center justify-between pt-1">
-            <div>
-              <Label className="text-sm">{t("print_auto_label")}</Label>
-              <p className="text-xs text-muted-foreground">{t("print_auto_hint")}</p>
-            </div>
-            <Switch checked={autoPrint} onCheckedChange={setAutoPrint} />
-          </div>
-        </div>
+        </Tabs>
       </div>
 
       <DialogFooter className="gap-2 sm:justify-between">
@@ -452,7 +537,7 @@ function RegisterPrintSettingsForm({ register, initialSettings, onClose }: Regis
           type="button"
           variant="outline"
           onClick={() => void handleTestPrint()}
-          disabled={!health || !templateId || sendingTest}
+          disabled={!health || !currentMapping.templateId || sendingTest}
         >
           {sendingTest ? <Loader2 className="mr-2 size-4 animate-spin" /> : <Printer className="mr-2 size-4" />}
           {t("print_test_button")}

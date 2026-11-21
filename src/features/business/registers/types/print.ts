@@ -1,4 +1,4 @@
-export type PrintDocumentType = "KitchenOrder"
+export type PrintDocumentType = "KitchenOrder" | "SaleReceipt"
 
 export type PrintPaperFormat = "Ticket80mm" | "Ticket55mm" | "Letter"
 

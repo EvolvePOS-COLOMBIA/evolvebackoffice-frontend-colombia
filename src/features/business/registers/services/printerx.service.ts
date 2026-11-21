@@ -167,3 +167,61 @@ export function buildKitchenOrderPrintRequest(
     },
   }
 }
+
+/** Construye el payload esperado por PrinterX para imprimir el recibo del cliente. */
+export function buildCustomerReceiptPrintRequest(
+  order: PrintableOrder,
+  mapping: PrintTemplateMappingDto
+): PrinterXPrintRequest {
+  const orderNumber = order.externalOrderId?.trim() || order.id.slice(0, 8)
+  const rawItems: OrderItemDto[] = order.items ?? []
+  const items = rawItems.map((item) => ({
+    cantidad: item.quantity,
+    descripcion: item.name,
+    precio_unitario: formatCopAmount(item.unitPrice),
+    extras: parseModifiersText(item.modifiersJson),
+    total: formatCopAmount(item.subtotal),
+  }))
+
+  const createdAt = "createdAt" in order ? order.createdAt : order.externalCreatedAt
+  const subtotal = "subtotal" in order && typeof order.subtotal === "number" ? order.subtotal : order.total
+  const tax = "tax" in order && typeof order.tax === "number" ? order.tax : 0
+  const discount = "discount" in order && typeof order.discount === "number" ? order.discount : 0
+  const shippingCost = order.shippingCost ?? 0
+
+  return {
+    printerName: mapping.printerName || null,
+    templateId: mapping.templateId,
+    type: "HtmlTemplate",
+    format: mapping.format || "Ticket80mm",
+    documentTitle: `Recibo Pedido #${orderNumber}`,
+    copies: mapping.copies || 1,
+    cutPaper: true,
+    openCashDrawer: false,
+    data: {
+      orden: {
+        numero: orderNumber,
+        fecha: formatOrderDate(createdAt || order.externalCreatedAt),
+        sucursal: order.branchName ?? "POS",
+        origen: order.origin || order.platformCode || "POS",
+        tipo: shippingCost > 0 || order.shippingStreet ? "Domicilio" : "Local",
+        metodo_pago: "paymentMethod" in order ? (order.paymentMethod ?? "Efectivo") : "Efectivo",
+        notas_generales: order.notes ?? order.shippingNotes ?? null,
+      },
+      cliente: {
+        nombre: order.customerName || order.personName || "Consumidor Final",
+        telefono: order.phone ?? "",
+        direccion: order.shippingStreet ?? "",
+        ciudad: order.shippingCity ?? "",
+      },
+      items,
+      totales: {
+        subtotal: formatCopAmount(subtotal),
+        descuento: formatCopAmount(discount),
+        impuesto: formatCopAmount(tax),
+        envio: formatCopAmount(shippingCost),
+        total: formatCopAmount(order.total),
+      },
+    },
+  }
+}

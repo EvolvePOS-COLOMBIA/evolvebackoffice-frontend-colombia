@@ -1,5 +1,5 @@
 import { useMemo, useRef, useState } from "react"
-import { MonitorCog, Plus, RefreshCw, Settings2, SquarePen, AlertTriangle, ChevronRight } from "lucide-react"
+import { MonitorCog, Plus, Printer, RefreshCw, Settings2, SquarePen, AlertTriangle, ChevronRight } from "lucide-react"
 import { useNavigate } from "react-router-dom"
 
 import { EmptyState } from "@/components/share/empty-state"
@@ -14,6 +14,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 
 import { CreateRegisterDialog } from "@/features/business/registers/components/create-register-dialog"
 import { EditRegisterDialog } from "@/features/business/registers/components/edit-register-dialog"
+import { RegisterPrintSettingsDialog } from "@/features/business/registers/components/register-print-settings-dialog"
 import { SetStatusDialog } from "@/features/business/registers/components/set-status-dialog"
 import {
   useCreateRegister,
@@ -137,6 +138,7 @@ export function RegistersPage() {
   const [createOpen, setCreateOpen] = useState(false)
   const [editOpen, setEditOpen] = useState(false)
   const [setStatusOpen, setSetStatusOpen] = useState(false)
+  const [printSettingsOpen, setPrintSettingsOpen] = useState(false)
   const [selectedRegister, setSelectedRegister] = useState<Register | null>(null)
 
   // Búsqueda server-side (searchField=all) con debounce, como en el catálogo.
@@ -243,6 +245,11 @@ export function RegistersPage() {
   const openSetStatus = (r: Register) => {
     setSelectedRegister(r)
     setSetStatusOpen(true)
+  }
+
+  const openPrintSettings = (r: Register) => {
+    setSelectedRegister(r)
+    setPrintSettingsOpen(true)
   }
 
   const goToBranchSettings = (branchId: string) => {
@@ -405,6 +412,17 @@ export function RegistersPage() {
                               <ChevronRight className="size-4 rotate-90" />
                               {t("status_label")}
                             </Button>
+                            <Button
+                              type="button"
+                              variant="outline"
+                              size="sm"
+                              onClick={() => openPrintSettings(r)}
+                              disabled={isMutating}
+                              title={t("print_settings_action")}
+                            >
+                              <Printer className="size-4" />
+                              {t("print_settings_action")}
+                            </Button>
                             {r.branchPublicId ? (
                               <Button
                                 type="button"
@@ -459,6 +477,16 @@ export function RegistersPage() {
                           >
                             <ChevronRight className="size-4 rotate-90" />
                             {t("status_label")}
+                          </Button>
+                          <Button
+                            type="button"
+                            variant="outline"
+                            size="sm"
+                            onClick={() => openPrintSettings(r)}
+                            disabled={isMutating}
+                          >
+                            <Printer className="size-4" />
+                            {t("print_settings_action")}
                           </Button>
                           {r.branchPublicId ? (
                             <Button
@@ -644,6 +672,15 @@ export function RegistersPage() {
         registerToUpdate={selectedRegister}
         onSubmit={handleSetStatus}
         isSubmitting={setStatusMutation.isPending}
+      />
+
+      <RegisterPrintSettingsDialog
+        open={printSettingsOpen}
+        onOpenChange={(open) => {
+          setPrintSettingsOpen(open)
+          if (!open) setSelectedRegister(null)
+        }}
+        register={selectedRegister}
       />
     </div>
   )

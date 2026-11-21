@@ -34,6 +34,18 @@ vi.mock("../../hooks/use-orders", () => ({
   useCreateManualOrder: () => ({ mutate: createMutate, isPending: false }),
 }))
 
+vi.mock("../../hooks/use-print-comanda", () => ({
+  usePrintComanda: () => ({
+    printComanda: vi.fn(),
+    printCustomerReceipt: vi.fn(),
+    isPrinting: false,
+    isConfigured: false,
+    isCustomerReceiptConfigured: false,
+    autoPrintEnabled: false,
+    customerReceiptAutoPrintEnabled: false,
+  }),
+}))
+
 const mockedUseBranchItems = vi.mocked(useBranchItems)
 type BranchItemsResult = ReturnType<typeof useBranchItems>
 

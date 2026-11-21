@@ -1,5 +1,5 @@
 import { useState, type ReactNode } from "react"
-import { Ban, Clock, CreditCard, MapPin, SquarePen, Tag, User, FileText } from "lucide-react"
+import { Ban, Clock, CreditCard, Loader2, MapPin, Printer, SquarePen, Tag, User, FileText } from "lucide-react"
 
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
@@ -7,6 +7,7 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } f
 import { useLocaleFormat } from "@/hooks/use-locale-format"
 import { useTranslation } from "@/i18n/use-i18n"
 import { useOrderDetail } from "../hooks/use-orders"
+import { usePrintComanda } from "../hooks/use-print-comanda"
 import { ORDER_ORIGIN_LABEL_KEY, ORDER_STATUS_CONFIG } from "../types"
 import type { OrderListItem } from "../types/api"
 import { orderReference } from "../utils/order-reference"
@@ -76,6 +77,7 @@ export function OrderDetailDialog({ open, onOpenChange, order, onEdit }: OrderDe
   const { t } = useTranslation("business-orders")
   const { formatCurrency, formatDateTime } = useLocaleFormat()
   const { data: detail } = useOrderDetail(open ? (order?.id ?? "") : "")
+  const { printComanda, printCustomerReceipt, isPrinting, isCustomerReceiptConfigured } = usePrintComanda()
   const [cancelDialogOpen, setCancelDialogOpen] = useState(false)
 
   if (!order) return null
@@ -85,7 +87,6 @@ export function OrderDetailDialog({ open, onOpenChange, order, onEdit }: OrderDe
   const canCancel =
     current.statusCode !== "Delivered" && current.statusCode !== "Cancelled" && current.statusCode !== "Refunded"
   const canEdit = current.statusCode !== "Cancelled" && current.statusCode !== "Refunded"
-  const showActions = (onEdit && canEdit) || canCancel
 
   const paymentLabel = current.paymentMethod
     ? PAYMENT_LABEL_KEY[current.paymentMethod]
@@ -245,28 +246,56 @@ export function OrderDetailDialog({ open, onOpenChange, order, onEdit }: OrderDe
           </dl>
         </div>
 
-        {showActions ? (
-          <div className="flex flex-col gap-3 border-t border-border/60 px-5 pt-4 pb-[max(1rem,env(safe-area-inset-bottom))] sm:flex-row sm:px-6">
-            {onEdit && canEdit ? (
-              <Button type="button" variant="outline" size="lg" className="h-11 w-full sm:flex-1" onClick={onEdit}>
-                <SquarePen className="mr-2 size-4" />
-                {t("edit_order")}
-              </Button>
-            ) : null}
-            {canCancel ? (
-              <Button
-                type="button"
-                variant="destructive"
-                size="lg"
-                className="h-11 w-full sm:flex-1"
-                onClick={() => setCancelDialogOpen(true)}
-              >
-                <Ban className="mr-2 size-4" />
-                {t("cancel_order")}
-              </Button>
-            ) : null}
-          </div>
-        ) : null}
+        <div className="flex flex-col gap-3 border-t border-border/60 px-5 pt-4 pb-[max(1rem,env(safe-area-inset-bottom))] sm:flex-row sm:flex-wrap sm:px-6">
+          <Button
+            type="button"
+            variant="outline"
+            size="lg"
+            className="h-11 w-full whitespace-nowrap sm:flex-1"
+            onClick={() => void printComanda(current)}
+            disabled={isPrinting}
+          >
+            {isPrinting ? <Loader2 className="mr-2 size-4 animate-spin" /> : <Printer className="mr-2 size-4" />}
+            {t("print_kitchen")}
+          </Button>
+          {isCustomerReceiptConfigured ? (
+            <Button
+              type="button"
+              variant="outline"
+              size="lg"
+              className="h-11 w-full whitespace-nowrap sm:flex-1"
+              onClick={() => void printCustomerReceipt(current)}
+              disabled={isPrinting}
+            >
+              {isPrinting ? <Loader2 className="mr-2 size-4 animate-spin" /> : <Printer className="mr-2 size-4" />}
+              {t("print_receipt")}
+            </Button>
+          ) : null}
+          {onEdit && canEdit ? (
+            <Button
+              type="button"
+              variant="outline"
+              size="lg"
+              className="h-11 w-full whitespace-nowrap sm:flex-1"
+              onClick={onEdit}
+            >
+              <SquarePen className="mr-2 size-4" />
+              {t("edit_order")}
+            </Button>
+          ) : null}
+          {canCancel ? (
+            <Button
+              type="button"
+              variant="destructive"
+              size="lg"
+              className="h-11 w-full whitespace-nowrap sm:flex-1"
+              onClick={() => setCancelDialogOpen(true)}
+            >
+              <Ban className="mr-2 size-4" />
+              {t("cancel_order")}
+            </Button>
+          ) : null}
+        </div>
       </DialogContent>
 
       <CancelOrderDialog

@@ -53,7 +53,8 @@ import { EditOrderDialog } from "../components/edit-order-dialog"
 import { OrdersActionsMenu } from "../components/orders-actions-menu"
 import { OrdersFiltersDialog, type OrdersSortOrder } from "../components/orders-filters-dialog"
 import { KANBAN_COLUMNS, ORDER_STATUS_CONFIG } from "../types"
-import { checkOrderStock } from "../services/orders.service"
+import { checkOrderStock, getOrderById } from "../services/orders.service"
+import { usePrintComanda } from "../hooks/use-print-comanda"
 import type { OrderListItem, OrderStatus, OrderStockItem } from "../types/api"
 
 type PlatformFilter = "all" | "CLUVI" | "WOOCOMMERCE" | "POSCO"
@@ -176,6 +177,7 @@ export function OrdersPage() {
   const { data: ordersData, isLoading } = useCurrentPeriodOrders(branchId, !!branchId || showAllBranches)
   const updateStatusMutation = useUpdateOrderStatus()
   const bulkStatusMutation = useBulkUpdateOrderStatus()
+  const { printCustomerReceipt, customerReceiptAutoPrintEnabled } = usePrintComanda()
 
   // ───── Asignación de domiciliarios (módulo DOMICILIOS) ─────
   // Licencia del tenant y sucursales con el módulo asignado (misma caché de
@@ -305,12 +307,23 @@ export function OrdersPage() {
     updateStatusMutation.mutate(
       { id: orderId, status: newStatus, deliveryUserId: deliveryUserId ?? null },
       {
-        onSuccess: () =>
+        onSuccess: () => {
           notify.success(
             t("status") +
               " → " +
               (ORDER_STATUS_CONFIG[newStatus] ? t(ORDER_STATUS_CONFIG[newStatus].labelKey) : newStatus)
-          ),
+          )
+          if (newStatus === "Ready" && customerReceiptAutoPrintEnabled) {
+            void (async () => {
+              try {
+                const detail = await getOrderById(orderId)
+                await printCustomerReceipt(detail, { autoOnly: true })
+              } catch {
+                // No interrumpir el flujo de estados si falla la obtención o impresión
+              }
+            })()
+          }
+        },
         onError: (error: unknown) => {
           const message = (error as { response?: { data?: { message?: string } } })?.response?.data?.message
           notify.error(message || t("status_update_failed"))

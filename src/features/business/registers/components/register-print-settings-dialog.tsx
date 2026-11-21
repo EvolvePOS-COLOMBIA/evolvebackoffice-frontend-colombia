@@ -23,12 +23,14 @@ import { getApiErrorMessage } from "@/utils/api-error"
 import { useRegisterPrintSettings, useUpsertRegisterPrintSettings } from "../hooks/use-register-print-settings"
 import {
   DEFAULT_PRINTERX_URL,
+  buildKitchenOrderPrintRequest,
   checkPrinterXHealth,
   getActiveRegisterId,
   getPrinterXPrinters,
   getPrinterXTemplates,
   sendPrinterXPrintJob,
   setActiveRegisterId,
+  type PrintableOrder,
 } from "../services/printerx.service"
 import type { Register } from "../types"
 import type {
@@ -224,42 +226,73 @@ function RegisterPrintSettingsForm({ register, initialSettings, onClose }: Regis
     }
     setSendingTest(true)
     try {
-      await sendPrinterXPrintJob(serviceUrl, {
-        printerName: printerName === DEFAULT_WINDOWS_PRINTER ? null : printerName,
-        templateId,
-        type: "HtmlTemplate",
-        format,
-        documentTitle: `Prueba Comanda - ${register.name}`,
-        copies: 1,
-        cutPaper: true,
-        openCashDrawer: false,
-        data: {
-          orden: {
-            numero: "PRUEBA-001",
-            fecha: new Date().toLocaleString("es-CO"),
-            mesa: register.name,
-            mesero: "EvolvePOS",
-            tipo: "Local",
-            notas_generales: "Impresión de prueba desde configuración de caja.",
-          },
-          cliente: {
-            nombre: "Cliente de Prueba",
-            documento: "0000000000",
-          },
-          items: [
+      const resolvedPrinter = printerName === DEFAULT_WINDOWS_PRINTER ? null : printerName
+      const resolvedCopies = Math.min(10, Math.max(1, Number(copies) || 1))
+      const selectedTemplate = probeData?.templates.find((tpl) => tpl.id === templateId)
+
+      let sampleData: Record<string, unknown> | null = null
+      if (selectedTemplate?.sampleDataJson) {
+        try {
+          const parsed = JSON.parse(selectedTemplate.sampleDataJson) as unknown
+          if (parsed && typeof parsed === "object" && !Array.isArray(parsed)) {
+            sampleData = parsed as Record<string, unknown>
+          }
+        } catch {
+          // Si el JSON de ejemplo de la plantilla es inválido, se usa el payload estándar
+        }
+      }
+
+      const payload = sampleData
+        ? {
+            printerName: resolvedPrinter,
+            templateId,
+            type: "HtmlTemplate" as const,
+            format,
+            documentTitle: `Prueba - ${selectedTemplate?.name || register.name}`,
+            copies: resolvedCopies,
+            cutPaper: true,
+            openCashDrawer: false,
+            data: sampleData,
+          }
+        : buildKitchenOrderPrintRequest(
             {
-              cantidad: 1,
-              descripcion: "Producto de Prueba",
-              notas: "Sin cebolla",
-              extras: null,
-              total: "$ 15.000",
-            },
-          ],
-        },
-      })
+              id: "PRUEBA-001",
+              externalOrderId: "PRUEBA-001",
+              branchName: register.name,
+              origin: "EvolvePOS",
+              platformCode: "POS",
+              shippingCost: 0,
+              notes: "Impresión de prueba desde configuración de caja.",
+              customerName: "Cliente de Prueba",
+              createdAt: new Date().toISOString(),
+              externalCreatedAt: new Date().toISOString(),
+              items: [
+                {
+                  id: "test-item-1",
+                  name: "Producto de Prueba",
+                  quantity: 1,
+                  unitPrice: 15000,
+                  subtotal: 15000,
+                  modifiersJson: null,
+                },
+              ],
+            } as PrintableOrder,
+            {
+              documentType: "KitchenOrder",
+              templateId,
+              templateName: templateName || templateId,
+              printerName: resolvedPrinter,
+              format,
+              autoPrint,
+              copies: resolvedCopies,
+            }
+          )
+
+      await sendPrinterXPrintJob(serviceUrl, payload)
       notify.success(t("print_test_sent"))
-    } catch {
-      notify.error(t("print_connection_error"))
+    } catch (err) {
+      const message = err instanceof Error && err.message ? err.message : t("print_connection_error")
+      notify.error(message)
     } finally {
       setSendingTest(false)
     }

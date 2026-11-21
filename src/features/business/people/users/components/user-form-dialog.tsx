@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react"
-import { useForm } from "react-hook-form"
+import { useForm, useWatch } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { Search } from "lucide-react"
 
@@ -64,6 +64,9 @@ export function UserFormDialog({
     resolver: zodResolver(createUserSchema(t)) as never,
     defaultValues,
   })
+  // Domiciliario: el teléfono es obligatorio y el correo opcional (entra con usuario/PIN).
+  const role = useWatch({ control: form.control, name: "role" })
+  const isDelivery = role?.toLowerCase() === "delivery"
 
   /**
    * Consulta la tabla Persons compartida por tipo + número de identificación
@@ -167,7 +170,10 @@ export function UserFormDialog({
               name="phoneNumber"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>{t("phone")}</FormLabel>
+                  <FormLabel>
+                    {t("phone")}
+                    {isDelivery ? " *" : ""}
+                  </FormLabel>
                   <FormControl>
                     <Input
                       placeholder={t("phone_placeholder")}
@@ -187,7 +193,7 @@ export function UserFormDialog({
                   name="email"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>{t("email")}</FormLabel>
+                      <FormLabel>{isDelivery ? t("email_optional") : t("email")}</FormLabel>
                       <FormControl>
                         <Input
                           type="email"

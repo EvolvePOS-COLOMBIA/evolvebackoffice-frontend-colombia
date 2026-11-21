@@ -1,4 +1,5 @@
 import { useMemo, useState } from "react"
+import { useQuery } from "@tanstack/react-query"
 import { ChevronDown, Minus, Plus, Search, ShoppingBasket, Trash2 } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
@@ -11,6 +12,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Textarea } from "@/components/ui/textarea"
 import { useBranchItems } from "@/features/business/items/catalog/hooks/use-branch-items"
+import { getActivePaymentMethods } from "@/features/business/payment-methods/services/payment-methods.service"
 import { useCreateManualOrder } from "../hooks/use-orders"
 import { ORDER_ORIGIN_LABEL_KEY } from "../types"
 import type { CreateManualOrderDto } from "../types/api"
@@ -78,7 +80,17 @@ export function ManualOrderDialog({ open, onOpenChange, branchId }: ManualOrderD
   const [lines, setLines] = useState<OrderLine[]>([])
   const [productQuery, setProductQuery] = useState("")
   const [pickerOpen, setPickerOpen] = useState(false)
-  const [paymentMethod, setPaymentMethod] = useState("CASH")
+  // Medios del catálogo del tenant: el código viaja tal cual al pedido, así el
+  // backend sabe si es efectivo (anticipo y cobro del domiciliario).
+  const { data: paymentMethods = [] } = useQuery({
+    queryKey: ["payment-methods", "active"],
+    queryFn: getActivePaymentMethods,
+    enabled: open,
+    staleTime: 60_000,
+  })
+  const [chosenPaymentMethod, setPaymentMethod] = useState<string | null>(null)
+  // Sin elección: el primer medio en efectivo (o el primero del catálogo).
+  const paymentMethod = chosenPaymentMethod ?? (paymentMethods.find((m) => m.isCash) ?? paymentMethods[0])?.code ?? ""
   const [status, setStatus] = useState("Confirmed")
   const [origin, setOrigin] = useState("")
   const [notes, setNotes] = useState("")
@@ -93,7 +105,7 @@ export function ManualOrderDialog({ open, onOpenChange, branchId }: ManualOrderD
       setLines([])
       setProductQuery("")
       setPickerOpen(false)
-      setPaymentMethod("CASH")
+      setPaymentMethod(null)
       setStatus("Confirmed")
       setOrigin("")
       setNotes("")
@@ -163,7 +175,11 @@ export function ManualOrderDialog({ open, onOpenChange, branchId }: ManualOrderD
   const shipping = shippingCost !== null && shippingCost > 0 ? shippingCost : 0
   const total = subtotal + shipping
 
-  const canSubmit = lines.length > 0 && lines.every((l) => l.quantity >= 1 && l.price >= 0) && !createOrder.isPending
+  const canSubmit =
+    lines.length > 0 &&
+    lines.every((l) => l.quantity >= 1 && l.price >= 0) &&
+    Boolean(paymentMethod) &&
+    !createOrder.isPending
 
   const handleSubmit = () => {
     if (!branchId || !canSubmit) return
@@ -482,10 +498,11 @@ export function ManualOrderDialog({ open, onOpenChange, branchId }: ManualOrderD
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="CASH">{t("pay_cash")}</SelectItem>
-                      <SelectItem value="CARD">{t("pay_card")}</SelectItem>
-                      <SelectItem value="TRANSFER">{t("pay_transfer")}</SelectItem>
-                      <SelectItem value="MIXED">{t("pay_mixed")}</SelectItem>
+                      {paymentMethods.map((m) => (
+                        <SelectItem key={m.code} value={m.code}>
+                          {m.name}
+                        </SelectItem>
+                      ))}
                     </SelectContent>
                   </Select>
                 </div>

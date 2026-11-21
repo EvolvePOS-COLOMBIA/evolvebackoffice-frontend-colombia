@@ -23,15 +23,14 @@ import { notify } from "@/hooks/use-notify"
 import { formatCurrency } from "@/utils/format"
 import { getApiErrorMessage } from "@/utils/api-error"
 import { useOrderDetail } from "@/features/business/orders/hooks/use-orders"
-import type { OrderListItem } from "@/features/business/orders/types/api"
 import { getActivePaymentMethods } from "@/features/business/payment-methods/services/payment-methods.service"
 import { useDeliverOrder } from "../hooks/use-delivery"
-import { ADVANCE_MODE, type DeliverOrderResponseDto } from "../types"
+import { ADVANCE_MODE, type DeliverableOrder, type DeliverOrderResponseDto } from "../types"
 
 type DeliverOrderDialogProps = {
   open: boolean
   onOpenChange: (open: boolean) => void
-  order: OrderListItem | null
+  order: DeliverableOrder | null
   /** Modelo de anticipo de la sucursal (`ADVANCE_MODE.Advance` = 0 habilita la devolución). */
   advanceMode?: number
   onDelivered?: (result: DeliverOrderResponseDto) => void
@@ -187,7 +186,7 @@ export function DeliverOrderDialog({
         <DialogHeader>
           <DialogTitle>
             {t("deliver_title")}
-            {order ? ` #${order.externalOrderId?.slice(0, 8) ?? order.id.slice(0, 8)}` : ""}
+            {order ? ` #${order.externalOrderId?.slice(0, 8) || order.id.slice(0, 8)}` : ""}
           </DialogTitle>
           <DialogDescription>{t("deliver_desc")}</DialogDescription>
         </DialogHeader>

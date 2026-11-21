@@ -41,6 +41,9 @@ import { BranchSelector } from "@/features/business/items/catalog/components/bra
 // import { useBranchIntegrations } from "@/features/business/branches/hooks/use-branch-integrations"
 import { SelectionActionBar } from "@/components/share/selection-action-bar"
 import { AssignDeliveryUserDialog } from "@/features/business/delivery/components/assign-delivery-user-dialog"
+import { DeliverOrderDialog } from "@/features/business/delivery/components/deliver-order-dialog"
+import { useBranchDeliverySettings } from "@/features/business/delivery/hooks/use-delivery"
+import { ADVANCE_MODE } from "@/features/business/delivery/types"
 import { useCurrentPeriodOrders, useUpdateOrderStatus, useBulkUpdateOrderStatus } from "../hooks/use-orders"
 import { OrdersKanban } from "../components/orders-kanban"
 import { OrderDetailDialog } from "../components/order-detail-dialog"
@@ -197,6 +200,11 @@ export function OrdersPage() {
   // Selección múltiple en la columna "Listo" (para asignar varios a la vez).
   const [selectedReadyIds, setSelectedReadyIds] = useState<Set<string>>(new Set())
   const [assignTargets, setAssignTargets] = useState<OrderListItem[]>([])
+  // Pedido en camino que se suelta en "Entregado": registro de entrega con cobro.
+  const [deliverTarget, setDeliverTarget] = useState<OrderListItem | null>(null)
+  const { data: deliverSettings } = useBranchDeliverySettings(
+    deliverTarget ? (deliverTarget.branchId ?? branchId) || null : null
+  )
 
   const toggleSelect = (orderId: string) => {
     setSelectedReadyIds((prev) => {
@@ -331,6 +339,12 @@ export function OrdersPage() {
         setAssignTargets([order])
         return
       }
+    }
+    // Con domiciliario, la entrega registra el cobro del comprador en su turno:
+    // se abre el mismo formulario de entrega del módulo de domicilios.
+    if (newStatus === "Delivered" && order.statusCode === "Shipped" && orderNeedsCourier(order)) {
+      setDeliverTarget(order)
+      return
     }
     if (newStatus === "Confirmed") {
       try {
@@ -647,6 +661,13 @@ export function OrdersPage() {
         orders={assignTargets.map((o) => ({ id: o.id, branchId: (o.branchId ?? branchId) || null }))}
         onConfirm={handleAssignConfirm}
         isPending={updateStatusMutation.isPending || bulkStatusMutation.isPending}
+      />
+
+      <DeliverOrderDialog
+        open={Boolean(deliverTarget)}
+        onOpenChange={(open) => !open && setDeliverTarget(null)}
+        order={deliverTarget}
+        advanceMode={deliverSettings?.advanceMode ?? ADVANCE_MODE.Advance}
       />
 
       <OrderDetailDialog

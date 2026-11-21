@@ -16,7 +16,19 @@ vi.mock("@/features/business/items/catalog/hooks/use-branch-items", () => ({
   useBranchItems: vi.fn(),
 }))
 
-const { createMutate } = vi.hoisted(() => ({ createMutate: vi.fn() }))
+const { createMutate, PAYMENT_METHODS } = vi.hoisted(() => ({
+  createMutate: vi.fn(),
+  PAYMENT_METHODS: [
+    { code: "TARJETA_CREDITO", name: "Tarjeta Crédito", isCash: false },
+    { code: "EFFECTIVO", name: "Efectivo", isCash: true },
+  ],
+}))
+
+// Único useQuery del diálogo: el catálogo de medios de pago activos.
+vi.mock("@tanstack/react-query", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("@tanstack/react-query")>()),
+  useQuery: () => ({ data: PAYMENT_METHODS, isLoading: false }),
+}))
 
 vi.mock("../../hooks/use-orders", () => ({
   useCreateManualOrder: () => ({ mutate: createMutate, isPending: false }),
@@ -222,6 +234,17 @@ describe("ManualOrderDialog money fields (EC-3)", () => {
     const payload = createMutate.mock.calls[0][0]
     expect(payload.shippingCost).toBe(5000)
     expect(payload.items[0].unitPriceOverride).toBe(12500)
+  })
+
+  it("sends the tenant's cash payment code by default, not a hardcoded one", async () => {
+    render(<ManualOrderDialog open onOpenChange={vi.fn()} branchId="branch-1" />)
+    openPicker()
+    await screen.findByText("Producto 0")
+    addFromPicker("Producto 0")
+
+    submitOrder()
+
+    expect(createMutate.mock.calls[0][0].paymentMethod).toBe("EFFECTIVO")
   })
 
   it("sends no shipping cost when the field is left empty", async () => {

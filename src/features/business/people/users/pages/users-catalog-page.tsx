@@ -4,7 +4,9 @@ import { Plus, UserCheck, UserX, Users } from "lucide-react"
 import { DataTable } from "@/components/data-table"
 import { EntityListLayout } from "@/components/share"
 import { Button } from "@/components/ui/button"
+import { notify } from "@/hooks/use-notify"
 import { useTranslation } from "@/i18n/use-i18n"
+import { getApiErrorMessage } from "@/utils/api-error"
 import { useUsers, useCreateUser, useUpdateUser } from "../hooks/use-users"
 import { getUserDisplayName, type UserResponseDto } from "../types"
 import { buildUserColumns } from "../components/users-columns"
@@ -69,6 +71,7 @@ export function UsersCatalogPage() {
           setCreatedUser(result)
           setCredentialsOpen(true)
         },
+        onError: (err) => notify.error(getApiErrorMessage(err, t("save_failed"))),
       }
     )
   }
@@ -89,6 +92,7 @@ export function UsersCatalogPage() {
           setFormOpen(false)
           setSelectedUser(null)
         },
+        onError: (err) => notify.error(getApiErrorMessage(err, t("save_failed"))),
       }
     )
   }

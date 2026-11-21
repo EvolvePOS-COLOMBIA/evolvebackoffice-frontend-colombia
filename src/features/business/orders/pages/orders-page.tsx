@@ -240,6 +240,7 @@ export function OrdersPage() {
       // Casi todo lo demás: # de orden, plataforma, estado, sucursal, origen,
       // método de pago, dirección y fechas (ISO y dd/MM/yyyy).
       const searchableFields = [
+        order.orderNumber,
         order.externalOrderId,
         order.id,
         order.platformCode,

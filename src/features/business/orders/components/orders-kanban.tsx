@@ -6,6 +6,7 @@ import { useLocaleFormat } from "@/hooks/use-locale-format"
 import { useTranslation } from "@/i18n/use-i18n"
 import { KANBAN_COLUMNS, ORDER_STATUS_CONFIG } from "../types"
 import type { OrderListItem, OrderStatus } from "../types/api"
+import { orderReference } from "../utils/order-reference"
 import { OrderCard } from "./order-card"
 
 interface OrdersKanbanProps {
@@ -117,7 +118,7 @@ export function OrdersKanban({
                                   <Checkbox
                                     checked={selectedIds?.has(order.id) ?? false}
                                     onCheckedChange={() => onToggleSelect(order.id)}
-                                    aria-label={`#${order.externalOrderId?.slice(0, 8) ?? order.id.slice(0, 8)}`}
+                                    aria-label={`#${orderReference(order)}`}
                                   />
                                 </span>
                               ) : null}

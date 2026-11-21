@@ -78,11 +78,13 @@ export interface DeliveryShiftOrderDto {
   paymentMethod: string | null
   shippingStreet: string | null
   shippingCity: string | null
+  orderNumber?: string | null
 }
 
 /** Datos mínimos de un pedido para registrar su entrega. */
 export interface DeliverableOrder {
   id: string
+  orderNumber?: string | null
   externalOrderId?: string | null
   total: number
 }

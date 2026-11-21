@@ -292,7 +292,7 @@ function RegisterPrintSettingsForm({ register, initialSettings, onClose }: Regis
       const sampleOrder: PrintableOrder = {
         id: "PRUEBA-001",
         externalOrderId: "PRUEBA-001",
-        branchId: register.branchId ?? null,
+        branchId: null,
         branchName: register.name,
         customerId: null,
         customerName: "Cliente de Prueba",

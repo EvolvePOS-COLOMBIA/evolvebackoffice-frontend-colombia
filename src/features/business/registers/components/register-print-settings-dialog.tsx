@@ -288,33 +288,53 @@ function RegisterPrintSettingsForm({ register, initialSettings, onClose }: Regis
         }
       }
 
-      const sampleOrder = {
+      const nowIso = new Date().toISOString()
+      const sampleOrder: PrintableOrder = {
         id: "PRUEBA-001",
         externalOrderId: "PRUEBA-001",
+        branchId: register.branchId ?? null,
         branchName: register.name,
+        customerId: null,
+        customerName: "Cliente de Prueba",
+        personId: null,
+        personName: null,
+        statusCode: "Ready",
+        statusName: "Listo",
         origin: "EvolvePOS",
         platformCode: "POS",
-        shippingCost: 0,
-        subtotal: 12605,
+        subTotal: 12605,
         tax: 2395,
         discount: 0,
+        shippingCost: 0,
         total: 15000,
         paymentMethod: "Efectivo",
         notes: "Impresión de prueba desde configuración de caja.",
-        customerName: "Cliente de Prueba",
-        createdAt: new Date().toISOString(),
-        externalCreatedAt: new Date().toISOString(),
+        shippingStreet: null,
+        shippingCity: null,
+        shippingState: null,
+        shippingZipCode: null,
+        shippingLatitude: null,
+        shippingLongitude: null,
+        shippingNotes: null,
+        externalCreatedAt: nowIso,
+        externalUpdatedAt: null,
+        needsOutboundSync: false,
         items: [
           {
             id: "test-item-1",
+            itemId: null,
+            externalItemId: null,
             name: "Producto de Prueba",
+            sku: "PRUEBA-001",
             quantity: 1,
             unitPrice: 15000,
             subtotal: 15000,
+            tax: 2395,
+            discount: 0,
             modifiersJson: null,
           },
         ],
-      } as PrintableOrder
+      }
 
       const mappingDto: PrintTemplateMappingDto = {
         documentType: activeDocType,

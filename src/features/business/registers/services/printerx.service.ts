@@ -184,9 +184,9 @@ export function buildCustomerReceiptPrintRequest(
   }))
 
   const createdAt = "createdAt" in order ? order.createdAt : order.externalCreatedAt
-  const subtotal = "subtotal" in order && typeof order.subtotal === "number" ? order.subtotal : order.total
-  const tax = "tax" in order && typeof order.tax === "number" ? order.tax : 0
-  const discount = "discount" in order && typeof order.discount === "number" ? order.discount : 0
+  const subtotal = order.subTotal ?? order.total
+  const tax = order.tax ?? 0
+  const discount = order.discount ?? 0
   const shippingCost = order.shippingCost ?? 0
 
   return {
@@ -210,7 +210,7 @@ export function buildCustomerReceiptPrintRequest(
       },
       cliente: {
         nombre: order.customerName || order.personName || "Consumidor Final",
-        telefono: order.phone ?? "",
+        telefono: "",
         direccion: order.shippingStreet ?? "",
         ciudad: order.shippingCity ?? "",
       },

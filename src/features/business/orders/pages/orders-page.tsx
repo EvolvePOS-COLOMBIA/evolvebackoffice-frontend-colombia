@@ -41,7 +41,12 @@ import { BranchSelector } from "@/features/business/items/catalog/components/bra
 // import { useBranchIntegrations } from "@/features/business/branches/hooks/use-branch-integrations"
 import { SelectionActionBar } from "@/components/share/selection-action-bar"
 import { AssignDeliveryUserDialog } from "@/features/business/delivery/components/assign-delivery-user-dialog"
-import { useCurrentPeriodOrders, useUpdateOrderStatus, useBulkUpdateOrderStatus, useNotifyOrderRoute } from "../hooks/use-orders"
+import {
+  useCurrentPeriodOrders,
+  useUpdateOrderStatus,
+  useBulkUpdateOrderStatus,
+  useNotifyOrderRoute,
+} from "../hooks/use-orders"
 import { routeNotificationToast } from "../utils/route-notification"
 import { WHATSAPP_MODULE_CODE } from "@/features/business/settings/whatsapp/types"
 import { OrdersKanban } from "../components/orders-kanban"
@@ -316,12 +321,16 @@ export function OrdersPage() {
     updateStatusMutation.mutate(
       { id: orderId, status: newStatus, deliveryUserId: deliveryUserId ?? null },
       {
-        onSuccess: () =>
+        onSuccess: ({ courierNotification }) => {
           notify.success(
             t("status") +
               " → " +
               (ORDER_STATUS_CONFIG[newStatus] ? t(ORDER_STATUS_CONFIG[newStatus].labelKey) : newStatus)
-          ),
+          )
+          // Al pasar a Entregado se avisa al domiciliario con el cuadre de su turno.
+          const toast = routeNotificationToast(courierNotification, "notice")
+          if (toast) notify[toast.tone](t(toast.key, toast.params))
+        },
         onError: (error: unknown) => {
           const message = (error as { response?: { data?: { message?: string } } })?.response?.data?.message
           notify.error(message || t("status_update_failed"))
@@ -386,7 +395,7 @@ export function OrdersPage() {
       updateStatusMutation.mutate(
         { id: order.id, status: "Shipped", deliveryUserId: userId },
         {
-          onSuccess: (routeNotification) => {
+          onSuccess: ({ routeNotification }) => {
             notify.success(t("status") + " → " + t(ORDER_STATUS_CONFIG.Shipped.labelKey))
             showRouteNotification(routeNotification)
             setAssignTargets([])

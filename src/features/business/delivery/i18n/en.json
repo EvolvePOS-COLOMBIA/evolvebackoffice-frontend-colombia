@@ -122,6 +122,7 @@
   "assign_desc_many": "Choose the courier with an open shift who will deliver the {{count}} selected orders.",
   "assign_confirm": "Assign",
   "assign_empty": "No couriers with an open shift.",
+  "assign_no_phone": "⚠ No phone: won't receive the route on WhatsApp",
   "assign_multi_branch": "The selected orders belong to different branches. Select orders from a single branch to assign them together.",
   "assign_success": "Orders assigned to {{name}}.",
   "assign_partial": "{{ok}} order(s) assigned; {{failed}} could not be assigned.",

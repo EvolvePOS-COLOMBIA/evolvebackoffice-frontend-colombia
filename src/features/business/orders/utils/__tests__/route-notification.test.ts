@@ -40,4 +40,15 @@ describe("routeNotificationToast", () => {
     })
     expect(routeNotificationToast({ ...base, status: "Failed" })).toMatchObject({ tone: "error", key: "route_failed" })
   })
+
+  it("uses the courier notice messages for delivered/cancelled orders and stays silent when skipped", () => {
+    expect(routeNotificationToast({ ...base, status: "Sent" }, "notice")).toMatchObject({
+      tone: "success",
+      key: "courier_notice_sent",
+    })
+    expect(routeNotificationToast({ ...base, status: "NoPhone" }, "notice")).toMatchObject({
+      key: "courier_notice_no_phone",
+    })
+    expect(routeNotificationToast({ ...base, status: "Skipped", message: "sin turno" }, "notice")).toBeNull()
+  })
 })

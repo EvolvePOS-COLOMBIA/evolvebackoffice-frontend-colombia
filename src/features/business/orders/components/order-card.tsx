@@ -9,6 +9,7 @@ import { useTranslation } from "@/i18n/use-i18n"
 import { useOrderDetail } from "../hooks/use-orders"
 import { ORDER_ORIGIN_LABEL_KEY } from "../types"
 import type { OrderListItem } from "../types/api"
+import { orderReference } from "../utils/order-reference"
 
 /** i18n key for each canonical paymentMethod value (SelectItem in manual-order-dialog). */
 const PAYMENT_LABEL_KEY: Record<string, string> = {
@@ -59,8 +60,9 @@ export function OrderCard({ order, showBranch, priority = false, onViewDetail, o
     Date.now() - createdAt.getTime() > SLA_BREACH_MS && SLA_BREACH_STATUSES.includes(order.statusCode)
   const dateLocale = i18n.language.startsWith("es") ? es : enUS
 
+  // Visible: número del pedido en la sucursal; el tooltip conserva el id externo.
   const reference = order.externalOrderId ?? order.id
-  const shortReference = order.externalOrderId?.slice(0, 12) ?? order.id.slice(0, 8)
+  const shortReference = orderReference(order)
 
   const originLabel = order.origin
     ? ORDER_ORIGIN_LABEL_KEY[order.origin]

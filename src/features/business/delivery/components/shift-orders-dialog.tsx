@@ -13,6 +13,7 @@ import {
 } from "@/components/ui/dialog"
 import { Skeleton } from "@/components/ui/skeleton"
 import { useTranslation } from "@/i18n/use-i18n"
+import { orderReference } from "@/features/business/orders/utils/order-reference"
 import { formatCurrency } from "@/utils/format"
 import { useShiftOrders } from "../hooks/use-delivery"
 import type { DeliverableOrder, DeliveryShiftDto } from "../types"
@@ -73,7 +74,7 @@ export function ShiftOrdersDialog({ open, onOpenChange, shift, onDeliver }: Shif
                 <div className="min-w-0 flex-1">
                   <div className="flex flex-wrap items-center gap-1.5">
                     <span className="font-mono text-xs text-muted-foreground">
-                      #{order.externalOrderId?.slice(0, 8) || order.orderId.slice(0, 8)}
+                      #{orderReference({ ...order, id: order.orderId })}
                     </span>
                     <Badge tone="neutral" className="text-[10px]">
                       {order.paymentMethod ?? "—"}
@@ -95,7 +96,12 @@ export function ShiftOrdersDialog({ open, onOpenChange, shift, onDeliver }: Shif
                     size="sm"
                     variant="outline"
                     onClick={() =>
-                      onDeliver({ id: order.orderId, externalOrderId: order.externalOrderId, total: order.total })
+                      onDeliver({
+                        id: order.orderId,
+                        orderNumber: order.orderNumber,
+                        externalOrderId: order.externalOrderId,
+                        total: order.total,
+                      })
                     }
                   >
                     {t("deliver")}

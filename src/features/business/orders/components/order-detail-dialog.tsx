@@ -9,6 +9,7 @@ import { useTranslation } from "@/i18n/use-i18n"
 import { useOrderDetail } from "../hooks/use-orders"
 import { ORDER_ORIGIN_LABEL_KEY, ORDER_STATUS_CONFIG } from "../types"
 import type { OrderListItem } from "../types/api"
+import { orderReference } from "../utils/order-reference"
 import { CancelOrderDialog } from "./cancel-order-dialog"
 
 interface OrderDetailDialogProps {
@@ -99,7 +100,7 @@ export function OrderDetailDialog({ open, onOpenChange, order, onEdit }: OrderDe
   // Vacío mientras el detalle carga si el pedido se abrió desde fuera de Órdenes (dashboard).
   const createdAt = current.externalCreatedAt
   const wasteCost = current.wasteCost ?? 0
-  const reference = order.externalOrderId?.slice(0, 8) ?? order.id.slice(0, 8)
+  const reference = orderReference(order)
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>

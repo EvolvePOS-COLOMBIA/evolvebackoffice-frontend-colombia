@@ -23,6 +23,7 @@ import { notify } from "@/hooks/use-notify"
 import { formatCurrency } from "@/utils/format"
 import { getApiErrorMessage } from "@/utils/api-error"
 import { useOrderDetail } from "@/features/business/orders/hooks/use-orders"
+import { orderReference } from "@/features/business/orders/utils/order-reference"
 import { getActivePaymentMethods } from "@/features/business/payment-methods/services/payment-methods.service"
 import { useDeliverOrder } from "../hooks/use-delivery"
 import { ADVANCE_MODE, type DeliverableOrder, type DeliverOrderResponseDto } from "../types"
@@ -186,7 +187,7 @@ export function DeliverOrderDialog({
         <DialogHeader>
           <DialogTitle>
             {t("deliver_title")}
-            {order ? ` #${order.externalOrderId?.slice(0, 8) || order.id.slice(0, 8)}` : ""}
+            {order ? ` #${orderReference(order)}` : ""}
           </DialogTitle>
           <DialogDescription>{t("deliver_desc")}</DialogDescription>
         </DialogHeader>

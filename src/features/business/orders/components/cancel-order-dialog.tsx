@@ -18,6 +18,7 @@ import type { OrderListItem, OrderDetail, CancellationType, OrderItemDto } from 
 import { useCancelOrder, useOrderDetail } from "../hooks/use-orders"
 import { getApiErrorMessage } from "@/utils/api-error"
 import { isBeverage, buildCancellationInitialState } from "../utils/order-helpers"
+import { orderReference } from "../utils/order-reference"
 import { RotateCcw, Trash2, AlertTriangle, Loader2, Coffee, Utensils, Sparkles } from "lucide-react"
 
 /** Propiedades del componente CancelOrderDialog. */
@@ -61,7 +62,7 @@ function CancelOrderForm({ order, items, onOpenChange, onSuccess }: CancelOrderF
 
   const isWasteDefault =
     order.statusCode === "Preparing" || order.statusCode === "Ready" || order.statusCode === "Shipped"
-  const orderRef = order.externalOrderId?.slice(0, 8) ?? order.id.slice(0, 8)
+  const orderRef = orderReference(order)
   const statusConfig = ORDER_STATUS_CONFIG[order.statusCode]
 
   // Conteo de ítems según disposición

@@ -1,5 +1,7 @@
 export interface OrderListItem {
   id: string
+  /** Número en la sucursal y su día operativo ("100001"); se reinicia cada día. */
+  orderNumber?: string | null
   externalOrderId: string | null
   platformCode: string
   /** Origen controlado (OrderOrigin): WhatsApp, Facebook, Call, Others, Cluvi, WooCommerce. */
@@ -43,6 +45,7 @@ export interface CancelOrderDto {
 
 export interface OrderDetail {
   id: string
+  orderNumber?: string | null
   externalOrderId: string | null
   platformCode: string
   /** Origen controlado (OrderOrigin). */

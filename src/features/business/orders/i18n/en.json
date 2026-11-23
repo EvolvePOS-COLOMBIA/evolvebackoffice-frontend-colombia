@@ -268,6 +268,13 @@
   "assign_done": "Orders assigned successfully.",
   "assign_partial": "{{ok}} order(s) assigned; {{failed}} could not be assigned.",
   "assign_failed": "No order could be assigned.",
+  "print_kitchen": "Print kitchen order",
+  "print_kitchen_sent": "Kitchen order sent to PrinterX.",
+  "print_kitchen_not_configured": "No register with printing enabled is bound to this device. Configure it under Registers.",
+  "print_kitchen_failed": "Could not connect to PrinterX. Make sure the local service is running.",
+  "print_receipt": "Print receipt",
+  "print_receipt_sent": "Customer receipt sent to PrinterX.",
+  "print_receipt_not_configured": "No customer receipt template is configured for this register.",
   "current_period": "Current shift",
   "past_period": "Previous day",
   "pending_days_title": "Previous days with unclosed orders",
@@ -291,5 +298,8 @@
   "route_failed": "The route could not be sent via WhatsApp. Try resending it in a few minutes.",
   "route_no_courier": "The order has no delivery driver assigned.",
   "resend_route": "Resend route via WhatsApp",
-  "route_notified": "Route sent {{time}}"
+  "route_notified": "Route sent {{time}}",
+  "resolve_error": "The order could not be updated.",
+  "pending_days_error": "The previous unclosed days could not be loaded.",
+  "pending_days_retry": "Retry"
 }

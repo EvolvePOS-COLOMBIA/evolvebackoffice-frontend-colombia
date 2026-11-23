@@ -7,6 +7,7 @@ import type {
   DeliveryShiftDetailDto,
   DeliveryShiftDto,
   DeliveryShiftMovementDto,
+  DeliveryShiftOrderDto,
   DeliverOrderDto,
   DeliverOrderResponseDto,
   UpdateBranchDeliverySettingsDto,
@@ -57,6 +58,14 @@ export async function getShifts(branchId?: string, status?: "open" | "closed"): 
 export async function getShiftDetail(shiftId: string): Promise<DeliveryShiftDetailDto> {
   const { data } = await api.get<DeliveryShiftDetailDto>(`/api/delivery/shifts/${shiftId}`)
   return data
+}
+
+/** Pedidos asignados al turno (todos los estados; el más reciente primero). */
+export async function getShiftOrders(shiftId: string): Promise<DeliveryShiftOrderDto[]> {
+  const { data } = await api.get<{ data: DeliveryShiftOrderDto[]; totalCount: number }>(
+    `/api/delivery/shifts/${shiftId}/orders`
+  )
+  return data?.data ?? []
 }
 
 /** Entrega de más base durante el turno (aumenta el dinero esperado en mano). */

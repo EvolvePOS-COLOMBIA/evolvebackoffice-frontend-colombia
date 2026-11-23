@@ -41,6 +41,9 @@ import { BranchSelector } from "@/features/business/items/catalog/components/bra
 // import { useBranchIntegrations } from "@/features/business/branches/hooks/use-branch-integrations"
 import { SelectionActionBar } from "@/components/share/selection-action-bar"
 import { AssignDeliveryUserDialog } from "@/features/business/delivery/components/assign-delivery-user-dialog"
+import { DeliverOrderDialog } from "@/features/business/delivery/components/deliver-order-dialog"
+import { useBranchDeliverySettings } from "@/features/business/delivery/hooks/use-delivery"
+import { ADVANCE_MODE } from "@/features/business/delivery/types"
 import {
   useCurrentPeriodOrders,
   useUpdateOrderStatus,
@@ -57,7 +60,8 @@ import { EditOrderDialog } from "../components/edit-order-dialog"
 import { OrdersActionsMenu } from "../components/orders-actions-menu"
 import { OrdersFiltersDialog, type OrdersSortOrder } from "../components/orders-filters-dialog"
 import { KANBAN_COLUMNS, ORDER_STATUS_CONFIG } from "../types"
-import { checkOrderStock } from "../services/orders.service"
+import { checkOrderStock, getOrderById } from "../services/orders.service"
+import { usePrintComanda } from "../hooks/use-print-comanda"
 import type { OrderListItem, OrderStatus, OrderStockItem, RouteNotification } from "../types/api"
 
 type PlatformFilter = "all" | "CLUVI" | "WOOCOMMERCE" | "POSCO"
@@ -181,6 +185,7 @@ export function OrdersPage() {
   const updateStatusMutation = useUpdateOrderStatus()
   const bulkStatusMutation = useBulkUpdateOrderStatus()
   const notifyRouteMutation = useNotifyOrderRoute()
+  const { printCustomerReceipt, customerReceiptAutoPrintEnabled } = usePrintComanda()
 
   // ───── Asignación de domiciliarios (módulo DOMICILIOS) ─────
   // Licencia del tenant y sucursales con el módulo asignado (misma caché de
@@ -222,6 +227,11 @@ export function OrdersPage() {
   // Selección múltiple en la columna "Listo" (para asignar varios a la vez).
   const [selectedReadyIds, setSelectedReadyIds] = useState<Set<string>>(new Set())
   const [assignTargets, setAssignTargets] = useState<OrderListItem[]>([])
+  // Pedido en camino que se suelta en "Entregado": registro de entrega con cobro.
+  const [deliverTarget, setDeliverTarget] = useState<OrderListItem | null>(null)
+  const { data: deliverSettings } = useBranchDeliverySettings(
+    deliverTarget ? (deliverTarget.branchId ?? branchId) || null : null
+  )
 
   const toggleSelect = (orderId: string) => {
     setSelectedReadyIds((prev) => {
@@ -257,6 +267,7 @@ export function OrdersPage() {
       // Casi todo lo demás: # de orden, plataforma, estado, sucursal, origen,
       // método de pago, dirección y fechas (ISO y dd/MM/yyyy).
       const searchableFields = [
+        order.orderNumber,
         order.externalOrderId,
         order.id,
         order.platformCode,
@@ -330,6 +341,16 @@ export function OrdersPage() {
           // Al pasar a Entregado se avisa al domiciliario con el cuadre de su turno.
           const toast = routeNotificationToast(courierNotification, "notice")
           if (toast) notify[toast.tone](t(toast.key, toast.params))
+          if (newStatus === "Ready" && customerReceiptAutoPrintEnabled) {
+            void (async () => {
+              try {
+                const detail = await getOrderById(orderId)
+                await printCustomerReceipt(detail, { autoOnly: true })
+              } catch {
+                // No interrumpir el flujo de estados si falla la obtención o impresión
+              }
+            })()
+          }
         },
         onError: (error: unknown) => {
           const message = (error as { response?: { data?: { message?: string } } })?.response?.data?.message
@@ -360,6 +381,12 @@ export function OrdersPage() {
         setAssignTargets([order])
         return
       }
+    }
+    // Con domiciliario, la entrega registra el cobro del comprador en su turno:
+    // se abre el mismo formulario de entrega del módulo de domicilios.
+    if (newStatus === "Delivered" && order.statusCode === "Shipped" && orderNeedsCourier(order)) {
+      setDeliverTarget(order)
+      return
     }
     if (newStatus === "Confirmed") {
       try {
@@ -679,6 +706,13 @@ export function OrdersPage() {
         orders={assignTargets.map((o) => ({ id: o.id, branchId: (o.branchId ?? branchId) || null }))}
         onConfirm={handleAssignConfirm}
         isPending={updateStatusMutation.isPending || bulkStatusMutation.isPending}
+      />
+
+      <DeliverOrderDialog
+        open={Boolean(deliverTarget)}
+        onOpenChange={(open) => !open && setDeliverTarget(null)}
+        order={deliverTarget}
+        advanceMode={deliverSettings?.advanceMode ?? ADVANCE_MODE.Advance}
       />
 
       <OrderDetailDialog

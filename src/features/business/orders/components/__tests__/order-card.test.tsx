@@ -66,6 +66,7 @@ const ITEMS: OrderItemDto[] = [
 function makeOrder(overrides: Partial<OrderListItem> = {}): OrderListItem {
   return {
     id: "ord-1",
+    orderNumber: "100001",
     externalOrderId: "EXT-123456789012345",
     platformCode: "POSCO",
     origin: "WhatsApp",
@@ -150,7 +151,8 @@ describe("OrderCard", () => {
 
     renderCard(makeOrder())
 
-    expect(screen.getByText("#EXT-12345678")).toBeInTheDocument()
+    // Número del pedido en la sucursal; el id externo queda en el tooltip.
+    expect(screen.getByText("#100001")).toHaveAttribute("title", "EXT-123456789012345")
     expect(screen.getByText("Cra 7 # 12-34 · Bogotá")).toBeInTheDocument()
     expect(screen.getByText("POSCO")).toBeInTheDocument()
     expect(screen.getByText(/42[.,]000/)).toBeInTheDocument()

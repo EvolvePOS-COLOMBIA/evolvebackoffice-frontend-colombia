@@ -16,6 +16,8 @@
   "phone": "Teléfono",
   "phone_placeholder": "Ej: 300 000 0000",
   "email": "Email",
+  "email_optional": "Email (opcional)",
+  "save_failed": "No se pudo guardar el usuario.",
   "email_placeholder": "carlos@tiendita.com",
   "document_type": "Tipo de documento",
   "document_number": "Número de documento",

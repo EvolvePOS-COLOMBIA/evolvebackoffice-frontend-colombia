@@ -64,6 +64,33 @@ export interface DeliveryShiftDetailDto {
   movements: DeliveryShiftMovementDto[]
 }
 
+/**
+ * Pedido asignado a un turno (`GET /api/delivery/shifts/{id}/orders`, por
+ * `Order.DeliveryShiftId`). `advanceAmount` = anticipos − devoluciones.
+ */
+export interface DeliveryShiftOrderDto {
+  orderId: string
+  externalOrderId: string | null
+  status: string
+  total: number
+  shippingCost: number
+  advanceAmount: number
+  hasAdvance: boolean
+  createdAt: string
+  paymentMethod: string | null
+  shippingStreet: string | null
+  shippingCity: string | null
+  orderNumber?: string | null
+}
+
+/** Datos mínimos de un pedido para registrar su entrega. */
+export interface DeliverableOrder {
+  id: string
+  orderNumber?: string | null
+  externalOrderId?: string | null
+  total: number
+}
+
 export interface ActivateDomiciliarioDto {
   branchId: string
   baseAmount?: number | null

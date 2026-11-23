@@ -70,7 +70,12 @@ export function OrderClosingPage() {
   } | null>(null)
 
   const { data: preview, isLoading: previewLoading } = useOrderClosingPreview(branchId, periodDate)
-  const { data: pendingDates } = usePendingClosingDates(branchId)
+  const {
+    data: pendingDates,
+    isError: pendingDatesError,
+    refetch: refetchPendingDates,
+    isFetching: pendingDatesFetching,
+  } = usePendingClosingDates(branchId)
   const { data: closings, isLoading: closingsLoading } = useOrderClosings(branchId)
   const closeMutation = useCloseOrders()
   const resolveMutation = useResolvePendingOrder()
@@ -106,11 +111,15 @@ export function OrderClosingPage() {
   const handleClose = () => {
     if (!branchId) return
     closeMutation.mutate(
-      { branchId, notes: notes.trim() || undefined, date: periodDate },
+      // Se envía la fecha del periodo que el usuario vio en la vista previa: si el día operativo
+      // cambia con la pantalla abierta, se cierra ese día y no el turno nuevo.
+      { branchId, notes: notes.trim() || undefined, date: preview?.date ?? periodDate },
       {
         onSuccess: () => {
           setConfirmOpen(false)
           setNotes("")
+          // El día cerrado sale de los pendientes: se vuelve al turno actual.
+          setPeriodDate(null)
           setTab("history")
           notify.success(t("closed_ok"))
         },
@@ -129,12 +138,15 @@ export function OrderClosingPage() {
           setResolveTarget(null)
           notify.success(outcome === "delivered" ? t("resolved_delivered_ok") : t("resolved_cancelled_ok"))
         },
-        onError: (error) => notify.error(getApiErrorMessage(error, t("close_error"))),
+        onError: (error) => notify.error(getApiErrorMessage(error, t("resolve_error"))),
       }
     )
   }
 
   const showPending = tab === "pending"
+  // Con un día anterior elegido el selector sigue visible aunque la lista quede vacía,
+  // para poder volver al turno actual.
+  const showPeriodPicker = (pendingDates?.length ?? 0) > 0 || periodDate !== null
   const closeCount = summary?.counted.length ?? 0
 
   return (
@@ -199,7 +211,28 @@ export function OrderClosingPage() {
             )}
           >
             <div className="flex min-h-0 flex-col gap-3 max-lg:min-h-96">
-              {showPending && (pendingDates?.length ?? 0) > 0 ? (
+              {showPending && pendingDatesError ? (
+                <section
+                  role="alert"
+                  className="flex shrink-0 flex-wrap items-center justify-between gap-2 rounded-xl border border-destructive/30 bg-destructive/10 p-3"
+                >
+                  <p className="flex items-center gap-1.5 text-sm text-destructive">
+                    <AlertTriangle className="size-4 shrink-0" />
+                    {t("pending_days_error")}
+                  </p>
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant="outline"
+                    className="h-7 rounded-full px-3 text-xs"
+                    disabled={pendingDatesFetching}
+                    onClick={() => void refetchPendingDates()}
+                  >
+                    {t("pending_days_retry")}
+                  </Button>
+                </section>
+              ) : null}
+              {showPending && showPeriodPicker ? (
                 <section className="shrink-0 space-y-2 rounded-xl border border-amber-400/35 bg-amber-500/10 p-3">
                   <p className="flex items-center gap-1.5 text-sm font-semibold text-amber-700 dark:text-amber-200">
                     <AlertTriangle className="size-4 shrink-0" />

@@ -15,7 +15,6 @@ import { useBranches } from "@/features/business/branches/hooks/use-branches"
 import { branchModulesKeys } from "@/features/business/branches/hooks/use-branch-modules"
 import { getBranchModules } from "@/features/business/branches/services/branch-modules.service"
 import { useOrders } from "@/features/business/orders/hooks/use-orders"
-import type { OrderListItem } from "@/features/business/orders/types/api"
 import { notify } from "@/hooks/use-notify"
 import { getApiErrorMessage } from "@/utils/api-error"
 import { formatCurrency, formatDateTime } from "@/utils/format"
@@ -35,7 +34,7 @@ import {
   useDomiciliarios,
   useShifts,
 } from "../hooks/use-delivery"
-import { ADVANCE_MODE, type DeliveryDomiciliarioDto, type DeliveryShiftDto } from "../types"
+import { ADVANCE_MODE, type DeliverableOrder, type DeliveryDomiciliarioDto, type DeliveryShiftDto } from "../types"
 
 const DELIVERY_BRANCH_STORAGE_KEY = "delivery_branch_id"
 
@@ -122,7 +121,7 @@ export function DeliveryPage() {
   const [detailShiftId, setDetailShiftId] = useState<string | null>(null)
   const [ordersShift, setOrdersShift] = useState<DeliveryShiftDto | null>(null)
   const [ordersDialogOpen, setOrdersDialogOpen] = useState(false)
-  const [deliverOrder, setDeliverOrder] = useState<OrderListItem | null>(null)
+  const [deliverOrder, setDeliverOrder] = useState<DeliverableOrder | null>(null)
 
   /** Turno abierto de un domiciliario (para las acciones de la tarjeta). */
   const shiftOf = (courier: DeliveryDomiciliarioDto) =>
@@ -467,7 +466,6 @@ export function DeliveryPage() {
       <ShiftOrdersDialog
         open={ordersDialogOpen}
         onOpenChange={setOrdersDialogOpen}
-        branchId={branchId || null}
         shift={ordersShift}
         onDeliver={(order) => {
           setOrdersDialogOpen(false)

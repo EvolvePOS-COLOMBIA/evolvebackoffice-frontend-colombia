@@ -80,7 +80,11 @@ export function useResolvePendingOrder() {
       orderId: string
       outcome: "delivered" | "cancelled"
       reason?: string
-    }) => (outcome === "delivered" ? resolveOrderAsDelivered(orderId) : cancelOrder(orderId, { reason })),
+    }) =>
+      outcome === "delivered"
+        ? resolveOrderAsDelivered(orderId)
+        : // El cierre no muestra el resultado del aviso al domiciliario.
+          cancelOrder(orderId, { reason }).then(() => undefined),
     onSuccess: invalidate,
   })
 }

@@ -8,6 +8,7 @@ import {
   createManualOrder,
   updateOrderDetails,
   cancelOrder,
+  notifyOrderRoute,
 } from "../services/orders.service"
 import type {
   CreateManualOrderDto,
@@ -15,6 +16,7 @@ import type {
   CancelOrderDto,
   BulkUpdateOrderStatusDto,
   BulkOrderStatusResultDto,
+  RouteNotification,
 } from "../types/api"
 
 export const ordersKeys = {
@@ -79,6 +81,18 @@ export function useBulkUpdateOrderStatus() {
   const qc = useQueryClient()
   return useMutation<BulkOrderStatusResultDto, Error, BulkUpdateOrderStatusDto>({
     mutationFn: bulkUpdateOrderStatus,
+    onSuccess: () => qc.invalidateQueries({ queryKey: ordersKeys.all }),
+  })
+}
+
+/**
+ * Reenvía la ruta del pedido al domiciliario por WhatsApp. Refresca la lista
+ * para mostrar la marca de "ruta enviada".
+ */
+export function useNotifyOrderRoute() {
+  const qc = useQueryClient()
+  return useMutation<RouteNotification, Error, string>({
+    mutationFn: notifyOrderRoute,
     onSuccess: () => qc.invalidateQueries({ queryKey: ordersKeys.all }),
   })
 }

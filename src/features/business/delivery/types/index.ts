@@ -1,3 +1,5 @@
+import type { RouteNotification } from "@/features/business/orders/types/api"
+
 /**
  * Contratos del módulo de Domicilios (endpoints B14 + `delivery-settings` de B8b).
  * JSON camelCase; los enums viajan como strings PascalCase salvo `advanceMode`
@@ -121,6 +123,8 @@ export interface DeliverOrderResponseDto {
   cashCollected: number
   advanceRefundRegistered: boolean
   advanceRefundAmount: number | null
+  /** Aviso por WhatsApp al domiciliario con el cuadre de su turno (null si no se intentó). */
+  courierNotification?: RouteNotification | null
 }
 
 /** Configuración de domicilios de la sucursal (`GET/PUT .../delivery-settings`). */

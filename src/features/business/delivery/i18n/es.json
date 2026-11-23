@@ -123,6 +123,7 @@
   "assign_desc_many": "Elige el domiciliario con turno abierto que llevará los {{count}} pedidos seleccionados.",
   "assign_confirm": "Asignar",
   "assign_empty": "No hay domiciliarios con turno abierto.",
+  "assign_no_phone": "⚠ Sin teléfono: no recibirá la ruta por WhatsApp",
   "assign_multi_branch": "Los pedidos seleccionados son de varias sucursales. Selecciona pedidos de una sola sucursal para asignarlos juntos.",
   "assign_success": "Pedidos asignados a {{name}}.",
   "assign_partial": "{{ok}} pedido(s) asignado(s); {{failed}} no se pudieron asignar.",

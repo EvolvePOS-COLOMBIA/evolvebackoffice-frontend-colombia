@@ -23,6 +23,7 @@ import { notify } from "@/hooks/use-notify"
 import { formatCurrency } from "@/utils/format"
 import { getApiErrorMessage } from "@/utils/api-error"
 import { useOrderDetail } from "@/features/business/orders/hooks/use-orders"
+import { routeNotificationToast } from "@/features/business/orders/utils/route-notification"
 import { orderReference } from "@/features/business/orders/utils/order-reference"
 import { getActivePaymentMethods } from "@/features/business/payment-methods/services/payment-methods.service"
 import { useDeliverOrder } from "../hooks/use-delivery"
@@ -63,6 +64,7 @@ export function DeliverOrderDialog({
   onDelivered,
 }: DeliverOrderDialogProps) {
   const { t } = useTranslation("business-delivery")
+  const { t: tOrders } = useTranslation("business-orders")
   const { t: tCommon } = useTranslation()
   const { data: orderDetail, isLoading: orderLoading } = useOrderDetail(open && order ? order.id : "")
   const { data: paymentMethods = [], isLoading: methodsLoading } = useQuery({
@@ -173,6 +175,8 @@ export function DeliverOrderDialog({
               ? t("deliver_success_cash", { cash: formatCurrency(result.cashCollected) })
               : t("deliver_success")
           )
+          const toast = routeNotificationToast(result.courierNotification, "notice")
+          if (toast) notify[toast.tone](tOrders(toast.key, toast.params))
           onOpenChange(false)
           onDelivered?.(result)
         },

@@ -18,6 +18,7 @@ import type { OrderListItem, OrderDetail, CancellationType, OrderItemDto } from 
 import { useCancelOrder, useOrderDetail } from "../hooks/use-orders"
 import { getApiErrorMessage } from "@/utils/api-error"
 import { isBeverage, buildCancellationInitialState } from "../utils/order-helpers"
+import { routeNotificationToast } from "../utils/route-notification"
 import { orderReference } from "../utils/order-reference"
 import { RotateCcw, Trash2, AlertTriangle, Loader2, Coffee, Utensils, Sparkles } from "lucide-react"
 
@@ -118,8 +119,10 @@ function CancelOrderForm({ order, items, onOpenChange, onSuccess }: CancelOrderF
         },
       },
       {
-        onSuccess: () => {
+        onSuccess: (courierNotification) => {
           notify.success(t("cancel_order_success"))
+          const toast = routeNotificationToast(courierNotification, "notice")
+          if (toast) notify[toast.tone](t(toast.key, toast.params))
           onOpenChange(false)
           onSuccess?.()
         },

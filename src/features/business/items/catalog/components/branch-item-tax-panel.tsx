@@ -1,8 +1,6 @@
-import { useMemo, useState } from "react"
-import { Save } from "lucide-react"
+import { useEffect, useMemo, useState } from "react"
 
 import { Badge } from "@/components/ui/badge"
-import { Button } from "@/components/ui/button"
 import { Label } from "@/components/ui/label"
 import { Skeleton } from "@/components/ui/skeleton"
 import { Switch } from "@/components/ui/switch"
@@ -22,6 +20,8 @@ import type { BranchItemResponseDto } from "../types"
 type BranchItemTaxPanelProps = {
   branchId: string
   item: BranchItemResponseDto
+  formId?: string
+  onFooterStateChange?: (state: { canSave: boolean; isSaving: boolean }) => void
 }
 
 /**
@@ -29,7 +29,7 @@ type BranchItemTaxPanelProps = {
  * modal de edición). Interruptor "Usar configuración global" vs configuración
  * propia; en modo global la lista es de solo lectura.
  */
-export function BranchItemTaxPanel({ branchId, item }: BranchItemTaxPanelProps) {
+export function BranchItemTaxPanel({ branchId, item, formId, onFooterStateChange }: BranchItemTaxPanelProps) {
   const { t } = useTranslation("business-items-catalog")
   const [checkedIds, setCheckedIds] = useState<Set<string>>(new Set())
 
@@ -94,6 +94,10 @@ export function BranchItemTaxPanel({ branchId, item }: BranchItemTaxPanelProps) 
 
   const isLoading = assignedQuery.isLoading || ratesQuery.isLoading
 
+  useEffect(() => {
+    onFooterStateChange?.({ canSave: !useGlobal && isDirty, isSaving })
+  }, [useGlobal, isDirty, isSaving, onFooterStateChange])
+
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between rounded-lg border p-3">
@@ -121,7 +125,14 @@ export function BranchItemTaxPanel({ branchId, item }: BranchItemTaxPanelProps) 
           <p className="text-sm">{t("no_active_rates")}</p>
         </div>
       ) : (
-        <div className="space-y-4">
+        <form
+          id={formId}
+          className="space-y-4"
+          onSubmit={(e) => {
+            e.preventDefault()
+            void handleSave()
+          }}
+        >
           {!useGlobal && <p className="text-xs text-muted-foreground">{t("taxes_assign_hint")}</p>}
           <div className="flex items-center justify-between">
             <Badge tone={useGlobal ? "neutral" : "primary"} className="w-fit">
@@ -170,15 +181,8 @@ export function BranchItemTaxPanel({ branchId, item }: BranchItemTaxPanelProps) 
 
           {useGlobal ? (
             <p className="rounded-lg border border-dashed p-3 text-xs text-muted-foreground">{t("readonly_global")}</p>
-          ) : (
-            <div className="flex justify-end">
-              <Button onClick={handleSave} disabled={!isDirty || isSaving}>
-                <Save className="size-4" />
-                {isSaving ? t("saving") : t("save")}
-              </Button>
-            </div>
-          )}
-        </div>
+          ) : null}
+        </form>
       )}
     </div>
   )

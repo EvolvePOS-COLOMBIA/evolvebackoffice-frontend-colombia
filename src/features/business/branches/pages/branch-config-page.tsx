@@ -141,7 +141,7 @@ export function BranchConfigPage() {
       case "info":
         return <InfoSection branch={branch} onDirtyChange={reportDirty} />
       case "schedule":
-        return <ScheduleSection branchId={branchId} onDirtyChange={reportDirty} />
+        return <ScheduleSection branchId={branchId} timeZoneId={branch.timeZoneId} onDirtyChange={reportDirty} />
       case "modules":
         return <ModulesSection branchId={branchId} />
       case "delivery":

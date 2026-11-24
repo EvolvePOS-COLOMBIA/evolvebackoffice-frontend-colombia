@@ -57,26 +57,49 @@ interface SaveBarProps {
   isPending?: boolean
   onSave: () => void
   onDiscard: () => void
+  /** Blocks saving (invalid data) while the bar stays visible. */
+  saveDisabled?: boolean
+  /** Replaces the default "unsaved changes" text, e.g. an error count. */
+  message?: ReactNode
+  /** Paints the dot rose and the text as an error. */
+  messageTone?: "default" | "error"
 }
 
 /** Appears at the bottom of a section while it has unsaved edits. */
-export function SaveBar({ visible, isPending = false, onSave, onDiscard }: SaveBarProps) {
+export function SaveBar({
+  visible,
+  isPending = false,
+  onSave,
+  onDiscard,
+  saveDisabled = false,
+  message,
+  messageTone = "default",
+}: SaveBarProps) {
   const { t } = useTranslation("business-branches")
   if (!visible) return null
 
   return (
     // Right padding leaves room for the floating assistant button of the app layout.
     <div className="flex shrink-0 animate-in flex-wrap items-center justify-between gap-3 border-t border-border/70 bg-card/90 py-3 pr-20 pl-5 backdrop-blur fade-in slide-in-from-bottom-2">
-      <p className="flex items-center gap-2 text-sm text-muted-foreground">
-        <span aria-hidden className="size-2 animate-pulse rounded-full bg-amber-400" />
-        {t("cfg_unsaved")}
+      <p
+        className={cn(
+          "flex items-center gap-2 text-sm text-muted-foreground",
+          messageTone === "error" && "text-rose-500 dark:text-rose-300"
+        )}
+        aria-live="polite"
+      >
+        <span
+          aria-hidden
+          className={cn("size-2 rounded-full", messageTone === "error" ? "bg-rose-400" : "animate-pulse bg-amber-400")}
+        />
+        {message ?? t("cfg_unsaved")}
       </p>
       <div className="flex gap-2">
         <Button type="button" variant="outline" onClick={onDiscard} disabled={isPending}>
           <X className="size-4" />
           {t("cfg_discard")}
         </Button>
-        <Button type="button" onClick={onSave} disabled={isPending}>
+        <Button type="button" onClick={onSave} disabled={isPending || saveDisabled}>
           <Check className="size-4" />
           {isPending ? t("saving") : t("save_changes")}
         </Button>

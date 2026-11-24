@@ -57,7 +57,18 @@ vi.mock("@/features/business/branches/hooks/use-branch-integrations", () => ({
   useBranchIntegrations: () => ({ data: [{ platformCode: "CLUVI", isActive: true }], isLoading: false }),
 }))
 vi.mock("@/features/business/branches/hooks/use-branch-schedule", () => ({
-  useBranchSchedule: () => ({ data: { openingTime: "08:00:00", closingTime: "22:00:00" }, isLoading: false }),
+  useBranchSchedule: () => ({
+    data: {
+      supportsPerDay: true,
+      days: ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"].map((dayOfWeek) => ({
+        dayOfWeek,
+        isOpen: true,
+        openingTime: "08:00:00",
+        closingTime: "22:00:00",
+      })),
+    },
+    isLoading: false,
+  }),
   useUpdateBranchSchedule: () => ({ mutate: vi.fn(), isPending: false }),
 }))
 vi.mock("@/features/business/branches/hooks/use-branches", () => ({

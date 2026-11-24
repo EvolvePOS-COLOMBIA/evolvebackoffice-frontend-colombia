@@ -1,5 +1,5 @@
 import { useRef, useState } from "react"
-import { useNavigate } from "react-router-dom"
+import { useNavigate, useSearchParams } from "react-router-dom"
 import { Pencil, Power, CheckSquare, Square, Package, SearchX } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
@@ -30,12 +30,30 @@ type GlobalCatalogViewProps = {
 export function GlobalCatalogView({ onAssignToBranch }: GlobalCatalogViewProps) {
   const { t } = useTranslation("business-items-catalog")
   const navigate = useNavigate()
-  const [page, setPage] = useState(1)
-  const [search, setSearch] = useState("")
-  const [debouncedSearch, setDebouncedSearch] = useState("")
+  const [searchParams, setSearchParams] = useSearchParams()
+  const page = Math.max(1, Number(searchParams.get("page")) || 1)
+  const debouncedSearch = searchParams.get("q") ?? ""
+  const [search, setSearch] = useState(debouncedSearch)
   const searchTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set())
   const [deactivateTarget, setDeactivateTarget] = useState<ItemResponseDto | null>(null)
+
+  const setPage = (next: number | ((prev: number) => number)) => {
+    setSearchParams(
+      (prev) => {
+        const currentPage = Math.max(1, Number(prev.get("page")) || 1)
+        const nextPage = typeof next === "function" ? next(currentPage) : next
+        const updated = new URLSearchParams(prev)
+        if (nextPage > 1) {
+          updated.set("page", String(nextPage))
+        } else {
+          updated.delete("page")
+        }
+        return updated
+      },
+      { replace: true }
+    )
+  }
 
   const { data, isLoading } = useItems({
     pageNumber: page,
@@ -50,8 +68,20 @@ export function GlobalCatalogView({ onAssignToBranch }: GlobalCatalogViewProps) 
     setSearch(value)
     if (searchTimer.current) clearTimeout(searchTimer.current)
     searchTimer.current = setTimeout(() => {
-      setDebouncedSearch(value)
-      setPage(1)
+      setSearchParams(
+        (prev) => {
+          const next = new URLSearchParams(prev)
+          const trimmed = value.trim()
+          if (trimmed) {
+            next.set("q", trimmed)
+          } else {
+            next.delete("q")
+          }
+          next.delete("page")
+          return next
+        },
+        { replace: true }
+      )
     }, 350)
   }
 

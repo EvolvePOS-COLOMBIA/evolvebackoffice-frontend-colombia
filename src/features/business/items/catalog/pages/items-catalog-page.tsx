@@ -1,4 +1,5 @@
 import { useState } from "react"
+import { useSearchParams } from "react-router-dom"
 import { useMutation, useQueryClient } from "@tanstack/react-query"
 import { AlertTriangle, CheckCircle2, DollarSign, Package, PowerOff } from "lucide-react"
 import toast from "react-hot-toast"
@@ -19,7 +20,24 @@ import type { ItemResponseDto, CreateBranchItemDto } from "../types"
 export function ItemsCatalogPage() {
   const { t } = useTranslation("business-items-catalog")
   const queryClient = useQueryClient()
-  const [selectedBranchId, setSelectedBranchId] = useState<string | null>(null)
+  const [searchParams, setSearchParams] = useSearchParams()
+  const selectedBranchId = searchParams.get("branch")
+  const setSelectedBranchId = (branchId: string | null) => {
+    setSearchParams(
+      (prev) => {
+        const next = new URLSearchParams(prev)
+        if (branchId) {
+          next.set("branch", branchId)
+        } else {
+          next.delete("branch")
+        }
+        next.delete("page")
+        next.delete("q")
+        return next
+      },
+      { replace: true }
+    )
+  }
   const [assignDialogOpen, setAssignDialogOpen] = useState(false)
   const [assignMode, setAssignMode] = useState<"select-branch" | "select-items">("select-branch")
   const [itemsToAssign, setItemsToAssign] = useState<ItemResponseDto[]>([])

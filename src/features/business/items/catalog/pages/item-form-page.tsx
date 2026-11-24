@@ -162,8 +162,16 @@ export function ItemFormPage() {
       subDescription3: v.subDescription3 ?? null,
     })
 
+    const goBackToPrevious = () => {
+      if ((window.history.state as { idx?: number } | null)?.idx) {
+        navigate(-1)
+      } else {
+        navigate("/business/items/catalog")
+      }
+    }
+
     if (!isCreateMode && item) {
-      updateItem.mutate({ id: item.id, payload: transformValues(values) })
+      updateItem.mutate({ id: item.id, payload: transformValues(values) }, { onSuccess: goBackToPrevious })
     } else {
       createItem.mutate(transformValues(values), {
         onSuccess: (created) => {

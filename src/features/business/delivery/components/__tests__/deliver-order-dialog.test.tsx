@@ -4,7 +4,7 @@ import { fireEvent, render, screen } from "@testing-library/react"
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query"
 
 import { DeliverOrderDialog } from "../deliver-order-dialog"
-import type { OrderListItem } from "@/features/business/orders/types/api"
+import type { DeliverableOrder } from "../../types"
 
 vi.mock("@/i18n/use-i18n", () => ({
   useTranslation: () => ({ t: (key: string) => key, i18n: { language: "es" } }),
@@ -25,7 +25,7 @@ vi.mock("@/features/business/payment-methods/services/payment-methods.service", 
     Promise.resolve([{ code: "CASH", name: "Efectivo", isCash: true, requiresReference: false }]),
 }))
 
-const ORDER = { id: "order-1", externalOrderId: null, total: 136000 } as unknown as OrderListItem
+const ORDER: DeliverableOrder = { id: "order-1", externalOrderId: null, total: 136000 }
 
 function renderDialog() {
   const client = new QueryClient({ defaultOptions: { queries: { retry: false } } })

@@ -10,6 +10,7 @@ import {
   getBranchDeliverySettings,
   getDomiciliarios,
   getShiftDetail,
+  getShiftOrders,
   getShifts,
   updateBranchDeliverySettings,
 } from "../services/delivery.service"
@@ -20,6 +21,7 @@ import type {
   DeliveryShiftDetailDto,
   DeliveryShiftDto,
   DeliveryShiftMovementDto,
+  DeliveryShiftOrderDto,
   DeliverOrderDto,
   DeliverOrderResponseDto,
   UpdateBranchDeliverySettingsDto,
@@ -32,6 +34,7 @@ export const deliveryKeys = {
   shifts: (branchId?: string, status?: "open" | "closed") =>
     [...deliveryKeys.all, "shifts", branchId ?? "all", status ?? "all"] as const,
   shiftDetail: (shiftId: string) => [...deliveryKeys.all, "shift", shiftId] as const,
+  shiftOrders: (shiftId: string) => [...deliveryKeys.all, "shift-orders", shiftId] as const,
   settings: (branchId: string) => [...deliveryKeys.all, "settings", branchId] as const,
 }
 
@@ -69,6 +72,15 @@ export function useShiftDetail(shiftId: string | null) {
   return useQuery<DeliveryShiftDetailDto>({
     queryKey: deliveryKeys.shiftDetail(shiftId ?? ""),
     queryFn: () => getShiftDetail(shiftId!),
+    enabled: Boolean(shiftId),
+  })
+}
+
+/** Pedidos asignados al turno (cualquier estado). */
+export function useShiftOrders(shiftId: string | null) {
+  return useQuery<DeliveryShiftOrderDto[]>({
+    queryKey: deliveryKeys.shiftOrders(shiftId ?? ""),
+    queryFn: () => getShiftOrders(shiftId!),
     enabled: Boolean(shiftId),
   })
 }

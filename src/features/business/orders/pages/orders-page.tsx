@@ -41,7 +41,17 @@ import { BranchSelector } from "@/features/business/items/catalog/components/bra
 // import { useBranchIntegrations } from "@/features/business/branches/hooks/use-branch-integrations"
 import { SelectionActionBar } from "@/components/share/selection-action-bar"
 import { AssignDeliveryUserDialog } from "@/features/business/delivery/components/assign-delivery-user-dialog"
-import { useCurrentPeriodOrders, useUpdateOrderStatus, useBulkUpdateOrderStatus } from "../hooks/use-orders"
+import { DeliverOrderDialog } from "@/features/business/delivery/components/deliver-order-dialog"
+import { useBranchDeliverySettings } from "@/features/business/delivery/hooks/use-delivery"
+import { ADVANCE_MODE } from "@/features/business/delivery/types"
+import {
+  useCurrentPeriodOrders,
+  useUpdateOrderStatus,
+  useBulkUpdateOrderStatus,
+  useNotifyOrderRoute,
+} from "../hooks/use-orders"
+import { routeNotificationToast } from "../utils/route-notification"
+import { WHATSAPP_MODULE_CODE } from "@/features/business/settings/whatsapp/types"
 import { OrdersKanban } from "../components/orders-kanban"
 import { OrderDetailDialog } from "../components/order-detail-dialog"
 import { CancelOrderDialog } from "../components/cancel-order-dialog"
@@ -50,8 +60,9 @@ import { EditOrderDialog } from "../components/edit-order-dialog"
 import { OrdersActionsMenu } from "../components/orders-actions-menu"
 import { OrdersFiltersDialog, type OrdersSortOrder } from "../components/orders-filters-dialog"
 import { KANBAN_COLUMNS, ORDER_STATUS_CONFIG } from "../types"
-import { checkOrderStock } from "../services/orders.service"
-import type { OrderListItem, OrderStatus, OrderStockItem } from "../types/api"
+import { checkOrderStock, getOrderById } from "../services/orders.service"
+import { usePrintComanda } from "../hooks/use-print-comanda"
+import type { OrderListItem, OrderStatus, OrderStockItem, RouteNotification } from "../types/api"
 
 type PlatformFilter = "all" | "CLUVI" | "WOOCOMMERCE" | "POSCO"
 
@@ -173,6 +184,8 @@ export function OrdersPage() {
   const { data: ordersData, isLoading } = useCurrentPeriodOrders(branchId, !!branchId || showAllBranches)
   const updateStatusMutation = useUpdateOrderStatus()
   const bulkStatusMutation = useBulkUpdateOrderStatus()
+  const notifyRouteMutation = useNotifyOrderRoute()
+  const { printCustomerReceipt, customerReceiptAutoPrintEnabled } = usePrintComanda()
 
   // ───── Asignación de domiciliarios (módulo DOMICILIOS) ─────
   // Licencia del tenant y sucursales con el módulo asignado (misma caché de
@@ -188,6 +201,23 @@ export function OrdersPage() {
       ),
     [branches, moduleQueries]
   )
+  /** Con el módulo WHATSAPP la ruta se envía al domiciliario al asignarle pedidos. */
+  const hasWhatsApp =
+    !tenantModulesLoading && tenantModules.some((m) => m.moduleCode === WHATSAPP_MODULE_CODE && m.isEnabled)
+
+  /** Avisa el resultado del envío de la ruta por WhatsApp (silencioso si el módulo está apagado). */
+  const showRouteNotification = (notification: RouteNotification | null | undefined) => {
+    const toast = routeNotificationToast(notification)
+    if (toast) notify[toast.tone](t(toast.key, toast.params))
+  }
+
+  const handleResendRoute = (order: OrderListItem) => {
+    notifyRouteMutation.mutate(order.id, {
+      onSuccess: showRouteNotification,
+      onError: () => notify.error(t("route_failed")),
+    })
+  }
+
   /** Con DOMICILIOS habilitado el pedido exige domiciliario al pasar a En camino. */
   const orderNeedsCourier = (order: OrderListItem) => {
     const bid = order.branchId ?? branchId
@@ -197,6 +227,11 @@ export function OrdersPage() {
   // Selección múltiple en la columna "Listo" (para asignar varios a la vez).
   const [selectedReadyIds, setSelectedReadyIds] = useState<Set<string>>(new Set())
   const [assignTargets, setAssignTargets] = useState<OrderListItem[]>([])
+  // Pedido en camino que se suelta en "Entregado": registro de entrega con cobro.
+  const [deliverTarget, setDeliverTarget] = useState<OrderListItem | null>(null)
+  const { data: deliverSettings } = useBranchDeliverySettings(
+    deliverTarget ? (deliverTarget.branchId ?? branchId) || null : null
+  )
 
   const toggleSelect = (orderId: string) => {
     setSelectedReadyIds((prev) => {
@@ -232,6 +267,7 @@ export function OrdersPage() {
       // Casi todo lo demás: # de orden, plataforma, estado, sucursal, origen,
       // método de pago, dirección y fechas (ISO y dd/MM/yyyy).
       const searchableFields = [
+        order.orderNumber,
         order.externalOrderId,
         order.id,
         order.platformCode,
@@ -296,12 +332,26 @@ export function OrdersPage() {
     updateStatusMutation.mutate(
       { id: orderId, status: newStatus, deliveryUserId: deliveryUserId ?? null },
       {
-        onSuccess: () =>
+        onSuccess: ({ courierNotification }) => {
           notify.success(
             t("status") +
               " → " +
               (ORDER_STATUS_CONFIG[newStatus] ? t(ORDER_STATUS_CONFIG[newStatus].labelKey) : newStatus)
-          ),
+          )
+          // Al pasar a Entregado se avisa al domiciliario con el cuadre de su turno.
+          const toast = routeNotificationToast(courierNotification, "notice")
+          if (toast) notify[toast.tone](t(toast.key, toast.params))
+          if (newStatus === "Ready" && customerReceiptAutoPrintEnabled) {
+            void (async () => {
+              try {
+                const detail = await getOrderById(orderId)
+                await printCustomerReceipt(detail, { autoOnly: true })
+              } catch {
+                // No interrumpir el flujo de estados si falla la obtención o impresión
+              }
+            })()
+          }
+        },
         onError: (error: unknown) => {
           const message = (error as { response?: { data?: { message?: string } } })?.response?.data?.message
           notify.error(message || t("status_update_failed"))
@@ -331,6 +381,12 @@ export function OrdersPage() {
         setAssignTargets([order])
         return
       }
+    }
+    // Con domiciliario, la entrega registra el cobro del comprador en su turno:
+    // se abre el mismo formulario de entrega del módulo de domicilios.
+    if (newStatus === "Delivered" && order.statusCode === "Shipped" && orderNeedsCourier(order)) {
+      setDeliverTarget(order)
+      return
     }
     if (newStatus === "Confirmed") {
       try {
@@ -366,8 +422,9 @@ export function OrdersPage() {
       updateStatusMutation.mutate(
         { id: order.id, status: "Shipped", deliveryUserId: userId },
         {
-          onSuccess: () => {
+          onSuccess: ({ routeNotification }) => {
             notify.success(t("status") + " → " + t(ORDER_STATUS_CONFIG.Shipped.labelKey))
+            showRouteNotification(routeNotification)
             setAssignTargets([])
             setSelectedReadyIds((prev) => {
               const next = new Set(prev)
@@ -392,6 +449,7 @@ export function OrdersPage() {
           if (failed === 0) notify.success(t("assign_done"))
           else if (ok === 0) notify.error(t("assign_failed"))
           else notify.info(t("assign_partial", { ok, failed }))
+          result.routeNotifications?.forEach(showRouteNotification)
           setAssignTargets([])
           setSelectedReadyIds(new Set())
         },
@@ -615,6 +673,7 @@ export function OrdersPage() {
           onDragEnd={handleDragEnd}
           onViewDetail={handleViewDetail}
           onCancelOrder={(order) => setCancellingOrder(order)}
+          onResendRoute={hasWhatsApp ? handleResendRoute : undefined}
           showBranch={showAllBranches}
           showCancelled={showCancelled}
           selectableStatus={hasDeliveryLicense ? "Ready" : undefined}
@@ -647,6 +706,13 @@ export function OrdersPage() {
         orders={assignTargets.map((o) => ({ id: o.id, branchId: (o.branchId ?? branchId) || null }))}
         onConfirm={handleAssignConfirm}
         isPending={updateStatusMutation.isPending || bulkStatusMutation.isPending}
+      />
+
+      <DeliverOrderDialog
+        open={Boolean(deliverTarget)}
+        onOpenChange={(open) => !open && setDeliverTarget(null)}
+        order={deliverTarget}
+        advanceMode={deliverSettings?.advanceMode ?? ADVANCE_MODE.Advance}
       />
 
       <OrderDetailDialog

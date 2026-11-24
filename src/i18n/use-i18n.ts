@@ -27,6 +27,7 @@ export type Namespace =
   | "business-reports"
   | "business-registers"
   | "business-settings"
+  | "business-whatsapp"
   | "business-branches"
   | "business-users-catalog"
   | "business-customers"

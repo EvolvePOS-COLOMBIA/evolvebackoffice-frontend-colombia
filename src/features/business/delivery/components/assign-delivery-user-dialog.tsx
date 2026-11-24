@@ -53,11 +53,12 @@ export function AssignDeliveryUserDialog({
       .map((d) => ({
         value: d.userId,
         label: d.fullName,
-        description: d.phoneNumber ?? undefined,
+        // Sin teléfono no le llega la ruta por WhatsApp: se avisa antes de asignar.
+        description: d.phoneNumber || t("assign_no_phone"),
         badge: d.branchName ? { label: d.branchName, tone: "info" as const } : null,
         icon: Bike,
       }))
-  }, [domiciliarios, branchId, singleBranch])
+  }, [domiciliarios, branchId, singleBranch, t])
 
   return (
     <OptionPickerDialog

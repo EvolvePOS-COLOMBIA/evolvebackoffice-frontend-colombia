@@ -5,6 +5,7 @@ import {
   Image,
   Keyboard,
   Layers,
+  MessageCircle,
   ListOrdered,
   MonitorCog,
   Printer,
@@ -20,6 +21,8 @@ import { Card, CardContent } from "@/components/ui/card"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { useTranslation } from "@/i18n/use-i18n"
 import { ItemCard, type ItemCardLink } from "@/features/business/components/item-card"
+import { useTenantModules } from "@/features/business/branches/hooks/use-branch-modules"
+import { WHATSAPP_MODULE_CODE } from "@/features/business/settings/whatsapp/types"
 
 type SettingsTab = "store" | "global"
 
@@ -31,6 +34,9 @@ export function SettingsPage() {
   const tab: SettingsTab = searchParams.get("tab") === "global" ? "global" : "store"
   const selectTab = (value: string) =>
     setSearchParams({ tab: value === "global" ? "global" : "store" }, { replace: true })
+  const { data: tenantModules } = useTenantModules()
+  // La tarjeta de WhatsApp solo aparece con el módulo habilitado (no como "Próximamente").
+  const hasWhatsApp = (tenantModules ?? []).some((m) => m.moduleCode === WHATSAPP_MODULE_CODE && m.isEnabled)
 
   const globalLinks: ItemCardLink[] = [
     {
@@ -99,6 +105,17 @@ export function SettingsPage() {
       disabled: false,
       onClick: () => navigate("/business/settings/payment-methods"),
     },
+    ...(hasWhatsApp
+      ? [
+          {
+            name: t("whatsapp"),
+            label: t("whatsapp_desc"),
+            icon: MessageCircle,
+            disabled: false,
+            onClick: () => navigate("/business/settings/whatsapp"),
+          },
+        ]
+      : []),
     {
       name: t("pos_options"),
       label: t("pos_options_desc"),

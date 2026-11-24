@@ -16,6 +16,8 @@
   "phone": "Phone",
   "phone_placeholder": "e.g.: 300 000 0000",
   "email": "Email",
+  "email_optional": "Email (optional)",
+  "save_failed": "The user could not be saved.",
   "email_placeholder": "carlos@tiendita.com",
   "document_type": "Document type",
   "document_number": "Document number",

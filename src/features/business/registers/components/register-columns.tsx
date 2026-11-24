@@ -1,4 +1,4 @@
-import { ChevronsUpDown, CircleEllipsis, Settings2, SquarePen } from "lucide-react"
+import { ChevronsUpDown, CircleEllipsis, Printer, Settings2, SquarePen } from "lucide-react"
 
 import type { ColumnDef } from "@/components/data-table"
 import { Badge } from "@/components/ui/badge"
@@ -11,13 +11,14 @@ import { formatDateTime } from "@/utils/format"
 type RegisterColumnActions = {
   onEdit: (register: Register) => void
   onSetStatus: (register: Register) => void
+  onPrintSettings: (register: Register) => void
   onBranchSettings: (branchId: string) => void
   disabled?: boolean
 }
 
 export function buildRegisterColumns(
   t: (key: string) => string,
-  { onEdit, onSetStatus, onBranchSettings, disabled }: RegisterColumnActions
+  { onEdit, onSetStatus, onPrintSettings, onBranchSettings, disabled }: RegisterColumnActions
 ): ColumnDef<Register>[] {
   return [
     {
@@ -80,6 +81,10 @@ export function buildRegisterColumns(
             <DropdownMenuItem onSelect={() => onSetStatus(r)}>
               <ChevronsUpDown className="size-4" />
               {t("set_status_title")}
+            </DropdownMenuItem>
+            <DropdownMenuItem onSelect={() => onPrintSettings(r)}>
+              <Printer className="size-4" />
+              {t("print_settings_action")}
             </DropdownMenuItem>
             {r.branchPublicId ? (
               <DropdownMenuItem onSelect={() => onBranchSettings(r.branchPublicId)}>

@@ -10,6 +10,7 @@ import type {
   BulkUpdateOrderStatusDto,
   BulkOrderStatusItemResult,
   BulkOrderStatusResultDto,
+  RouteNotification,
 } from "../types/api"
 
 function normalizePagedResponse(raw: unknown, pageSize: number): PagedOrders {
@@ -56,8 +57,34 @@ export async function getOrderById(id: string): Promise<OrderDetail> {
   return data
 }
 
-export async function updateOrderStatus(id: string, status: string, deliveryUserId?: string | null): Promise<void> {
-  await api.put(`/api/orders/${id}/status`, { status, deliveryUserId: deliveryUserId ?? null })
+/** Cambia el estado; al asignar domiciliario devuelve el resultado del envío de la ruta por WhatsApp. */
+export async function updateOrderStatus(
+  id: string,
+  status: string,
+  deliveryUserId?: string | null
+): Promise<UpdateOrderStatusResult> {
+  const { data } = await api.put<
+    { routeNotification?: RouteNotification | null; courierNotification?: RouteNotification | null } | undefined
+  >(`/api/orders/${id}/status`, { status, deliveryUserId: deliveryUserId ?? null })
+  return {
+    routeNotification: data?.routeNotification ?? null,
+    courierNotification: data?.courierNotification ?? null,
+  }
+}
+
+/**
+ * Resultado del cambio de estado: la ruta enviada al asignar domiciliario y el
+ * aviso con el cuadre del turno al pasar a Entregado.
+ */
+export interface UpdateOrderStatusResult {
+  routeNotification: RouteNotification | null
+  courierNotification: RouteNotification | null
+}
+
+/** Reenvía al domiciliario asignado la ruta del pedido por WhatsApp. */
+export async function notifyOrderRoute(id: string): Promise<RouteNotification> {
+  const { data } = await api.post<RouteNotification>(`/api/orders/${id}/notify-route`)
+  return data
 }
 
 /**
@@ -71,14 +98,19 @@ export async function bulkUpdateOrderStatus(payload: BulkUpdateOrderStatusDto): 
     chunks.push(payload.ids.slice(i, i + 50))
   }
   const results: BulkOrderStatusItemResult[] = []
+  const routeNotifications: RouteNotification[] = []
   for (const ids of chunks) {
-    const { data } = await api.put<BulkOrderStatusResultDto>("/api/orders/status/bulk", {
-      ...payload,
-      ids,
-    })
+    const { data } = await api.put<BulkOrderStatusResultDto & { routeNotification?: RouteNotification | null }>(
+      "/api/orders/status/bulk",
+      {
+        ...payload,
+        ids,
+      }
+    )
     results.push(...(data?.results ?? []))
+    if (data?.routeNotification) routeNotifications.push(data.routeNotification)
   }
-  return { results }
+  return { results, routeNotifications }
 }
 
 /** Inventario de la orden contra la sucursal. Solo informativo, nunca bloquea. */
@@ -138,6 +170,11 @@ export async function updateOrderDetails(id: string, payload: UpdateOrderDetails
  * Cancela una orden. Permite indicar si los productos regresan al stock
  * disponible (Restocked) o se registran como merma física (Waste), y el motivo.
  */
-export async function cancelOrder(id: string, payload?: CancelOrderDto): Promise<void> {
-  await api.post(`/api/orders/${id}/cancel`, payload ?? {})
+export async function cancelOrder(id: string, payload?: CancelOrderDto): Promise<RouteNotification | null> {
+  // Si el pedido iba en camino, el backend avisa al domiciliario por WhatsApp.
+  const { data } = await api.post<{ courierNotification?: RouteNotification | null } | "">(
+    `/api/orders/${id}/cancel`,
+    payload ?? {}
+  )
+  return (data && data.courierNotification) || null
 }

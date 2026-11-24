@@ -12,6 +12,7 @@ import { useBranchTerminalSettings } from "@/features/business/branches/hooks/us
 import { buildRegisterColumns, buildSerialColumns } from "@/features/business/registers/components/register-columns"
 import { CreateRegisterDialog } from "@/features/business/registers/components/create-register-dialog"
 import { EditRegisterDialog } from "@/features/business/registers/components/edit-register-dialog"
+import { RegisterPrintSettingsDialog } from "@/features/business/registers/components/register-print-settings-dialog"
 import { SetStatusDialog } from "@/features/business/registers/components/set-status-dialog"
 import {
   useCreateRegister,
@@ -64,6 +65,7 @@ export function RegistersListPage() {
   const [createOpen, setCreateOpen] = useState(false)
   const [editOpen, setEditOpen] = useState(false)
   const [statusOpen, setStatusOpen] = useState(false)
+  const [printOpen, setPrintOpen] = useState(false)
   const [selected, setSelected] = useState<Register | null>(null)
 
   const registersQuery = useRegisters(page, PAGE_SIZE, debouncedQuery)
@@ -163,6 +165,10 @@ export function RegistersListPage() {
     onSetStatus: (r) => {
       setSelected(r)
       setStatusOpen(true)
+    },
+    onPrintSettings: (r) => {
+      setSelected(r)
+      setPrintOpen(true)
     },
     onBranchSettings: goToBranchSettings,
     disabled: isMutating,
@@ -338,6 +344,14 @@ export function RegistersListPage() {
         registerToUpdate={selected}
         onSubmit={handleSetStatus}
         isSubmitting={statusMutation.isPending}
+      />
+      <RegisterPrintSettingsDialog
+        open={printOpen}
+        onOpenChange={(open) => {
+          setPrintOpen(open)
+          if (!open) setSelected(null)
+        }}
+        register={selected}
       />
     </>
   )

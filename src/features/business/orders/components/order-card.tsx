@@ -1,7 +1,7 @@
 import { useState } from "react"
 import { formatDistanceToNow } from "date-fns"
 import { enUS, es } from "date-fns/locale"
-import { AlertTriangle, Ban, ChevronDown, Clock, Eye, MapPin, ShoppingCart } from "lucide-react"
+import { AlertTriangle, Ban, ChevronDown, Clock, Eye, MapPin, MessageCircle, ShoppingCart } from "lucide-react"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { useLocaleFormat } from "@/hooks/use-locale-format"
@@ -9,6 +9,7 @@ import { useTranslation } from "@/i18n/use-i18n"
 import { useOrderDetail } from "../hooks/use-orders"
 import { ORDER_ORIGIN_LABEL_KEY } from "../types"
 import type { OrderListItem } from "../types/api"
+import { orderReference } from "../utils/order-reference"
 
 /** i18n key for each canonical paymentMethod value (SelectItem in manual-order-dialog). */
 const PAYMENT_LABEL_KEY: Record<string, string> = {
@@ -30,6 +31,8 @@ interface OrderCardProps {
   priority?: boolean
   onViewDetail: (order: OrderListItem) => void
   onCancelOrder?: (order: OrderListItem) => void
+  /** Reenviar la ruta al domiciliario por WhatsApp (solo con el módulo WHATSAPP). */
+  onResendRoute?: (order: OrderListItem) => void
 }
 
 /**
@@ -41,7 +44,14 @@ interface OrderCardProps {
  * `OrdersKanban`; this component only renders the content and owns the
  * hover/expand state that lazily enables the detail fetch.
  */
-export function OrderCard({ order, showBranch, priority = false, onViewDetail, onCancelOrder }: OrderCardProps) {
+export function OrderCard({
+  order,
+  showBranch,
+  priority = false,
+  onViewDetail,
+  onCancelOrder,
+  onResendRoute,
+}: OrderCardProps) {
   const { t, i18n } = useTranslation("business-orders")
   const { formatCurrency, formatDateTime } = useLocaleFormat()
 
@@ -59,8 +69,9 @@ export function OrderCard({ order, showBranch, priority = false, onViewDetail, o
     Date.now() - createdAt.getTime() > SLA_BREACH_MS && SLA_BREACH_STATUSES.includes(order.statusCode)
   const dateLocale = i18n.language.startsWith("es") ? es : enUS
 
+  // Visible: número del pedido en la sucursal; el tooltip conserva el id externo.
   const reference = order.externalOrderId ?? order.id
-  const shortReference = order.externalOrderId?.slice(0, 12) ?? order.id.slice(0, 8)
+  const shortReference = orderReference(order)
 
   const originLabel = order.origin
     ? ORDER_ORIGIN_LABEL_KEY[order.origin]
@@ -170,6 +181,18 @@ export function OrderCard({ order, showBranch, priority = false, onViewDetail, o
         </div>
       )}
 
+      {/* Route sent to the courier via WhatsApp */}
+      {onResendRoute && order.routeNotifiedAt && (
+        <div className="mb-1 flex items-center gap-1 text-[11px] text-muted-foreground">
+          <MessageCircle className="h-3 w-3 shrink-0" />
+          <span className="truncate">
+            {t("route_notified", {
+              time: formatDistanceToNow(new Date(order.routeNotifiedAt), { addSuffix: true, locale: dateLocale }),
+            })}
+          </span>
+        </div>
+      )}
+
       {/* Origin + actions (revealed on card hover/focus) */}
       <div className="flex items-center justify-between gap-1">
         <div className="flex min-w-0 items-center gap-1 text-[11px] text-muted-foreground">
@@ -181,6 +204,21 @@ export function OrderCard({ order, showBranch, priority = false, onViewDetail, o
           )}
         </div>
         <div className="flex shrink-0 items-center gap-1 opacity-70 transition-opacity group-focus-within:opacity-100 group-hover:opacity-100">
+          {onResendRoute && order.statusCode === "Shipped" && order.deliveryUserId && (
+            <Button
+              aria-label={t("resend_route")}
+              title={t("resend_route")}
+              variant="ghost"
+              size="sm"
+              className="h-6 px-1.5"
+              onClick={(e) => {
+                e.stopPropagation()
+                onResendRoute(order)
+              }}
+            >
+              <MessageCircle className="h-3 w-3" />
+            </Button>
+          )}
           {order.statusCode !== "Delivered" && order.statusCode !== "Cancelled" && onCancelOrder && (
             <Button
               aria-label={t("cancel_order")}

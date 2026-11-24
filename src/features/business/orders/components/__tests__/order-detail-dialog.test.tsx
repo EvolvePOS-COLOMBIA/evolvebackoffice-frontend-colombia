@@ -17,6 +17,18 @@ vi.mock("../../hooks/use-orders", () => ({
   useOrderDetail: vi.fn(),
 }))
 
+vi.mock("../../hooks/use-print-comanda", () => ({
+  usePrintComanda: () => ({
+    printComanda: vi.fn(),
+    printCustomerReceipt: vi.fn(),
+    isPrinting: false,
+    isConfigured: false,
+    isCustomerReceiptConfigured: false,
+    autoPrintEnabled: false,
+    customerReceiptAutoPrintEnabled: false,
+  }),
+}))
+
 vi.mock("../cancel-order-dialog", () => ({
   CancelOrderDialog: () => null,
 }))

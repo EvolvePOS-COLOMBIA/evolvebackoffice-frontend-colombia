@@ -1,6 +1,13 @@
 import { api } from "@/config/axios-client"
 
-import type { AssignModuleBody, BranchModuleResponseDto, TenantModuleResponseDto } from "../types/modules"
+import type {
+  AssignModuleBody,
+  BranchModuleResponseDto,
+  ModuleUsageMap,
+  TenantModuleResponseDto,
+} from "../types/modules"
+import { computeModuleUsage, usageFromTenantModules } from "../utils/module-usage"
+import { getBranches } from "./branches.service"
 
 /**
  * Servicio de módulos de sucursal.
@@ -67,4 +74,41 @@ export async function assignModuleToBranch(
 /** Quita un módulo de una sucursal. */
 export async function removeModuleFromBranch(branchId: string, modulePublicId: string): Promise<void> {
   await api.delete(`/api/Branches/${branchId}/modules/${modulePublicId}`)
+}
+
+/* ------------------------------------------------------------------ */
+/*  Uso de licencias por módulo                                       */
+/* ------------------------------------------------------------------ */
+
+const BRANCH_PAGE_SIZE = 100
+
+/** Ids de todas las sucursales del tenant, recorriendo las páginas. */
+async function getAllBranchIds(): Promise<string[]> {
+  const first = await getBranches(1, BRANCH_PAGE_SIZE)
+  const ids = first.data.map((branch) => branch.id)
+  for (let page = 2; page <= first.totalPages; page++) {
+    const next = await getBranches(page, BRANCH_PAGE_SIZE)
+    ids.push(...next.data.map((branch) => branch.id))
+  }
+  return ids
+}
+
+/**
+ * Licencias en uso por módulo. Si /api/tenant-modules ya trae el uso
+ * (`assignedBranches` o `assignedCount`) se usa directo; mientras el backend no
+ * lo envíe se calcula consultando los módulos de cada sucursal. El cambio es
+ * interno: la UI consume siempre el mismo ModuleUsageMap.
+ */
+export async function getModuleUsage(): Promise<ModuleUsageMap> {
+  const tenantModules = await getTenantModules()
+  const direct = usageFromTenantModules(tenantModules)
+  if (direct) return direct
+
+  const branchIds = await getAllBranchIds()
+  const lists = await Promise.all(branchIds.map((id) => getBranchModules(id)))
+  const byBranch: Record<string, BranchModuleResponseDto[]> = {}
+  branchIds.forEach((id, index) => {
+    byBranch[id] = lists[index]
+  })
+  return computeModuleUsage(tenantModules, byBranch)
 }

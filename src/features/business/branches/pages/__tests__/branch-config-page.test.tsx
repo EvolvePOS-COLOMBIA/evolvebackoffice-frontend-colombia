@@ -43,6 +43,7 @@ vi.mock("@/features/business/branches/services/branches.service", () => ({
 vi.mock("@/features/business/branches/hooks/use-branch-modules", () => ({
   useTenantModules: () => ({ data: state.tenantModules, isLoading: false }),
   useBranchModules: () => ({ data: state.branchModules, isLoading: false }),
+  useModuleUsage: () => ({ data: undefined, isLoading: false, isError: false }),
   useAssignModuleToBranch: () => ({ mutate: vi.fn(), isPending: false }),
   useRemoveModuleFromBranch: () => ({ mutate: vi.fn(), isPending: false }),
 }))

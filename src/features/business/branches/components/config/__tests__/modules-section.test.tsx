@@ -4,7 +4,11 @@ import { fireEvent, render, screen } from "@testing-library/react"
 
 import { ModulesSection } from "../modules-section"
 
-const state = vi.hoisted(() => ({ assign: vi.fn(), remove: vi.fn() }))
+const state = vi.hoisted(() => ({
+  assign: vi.fn(),
+  remove: vi.fn(),
+  usage: { data: undefined, isLoading: false, isError: false } as Record<string, unknown>,
+}))
 
 vi.mock("@/i18n/use-i18n", () => ({
   useTranslation: () => ({
@@ -35,6 +39,7 @@ vi.mock("@/features/business/branches/hooks/use-branch-modules", () => ({
     data: [{ id: "bm-orders", tenantModuleId: 16, moduleCode: "ORDERS", isEnabled: true }],
     isLoading: false,
   }),
+  useModuleUsage: () => state.usage,
   useAssignModuleToBranch: () => ({ mutate: state.assign, isPending: false }),
   useRemoveModuleFromBranch: () => ({ mutate: state.remove, isPending: false }),
 }))
@@ -42,6 +47,7 @@ vi.mock("@/features/business/branches/hooks/use-branch-modules", () => ({
 beforeEach(() => {
   state.assign.mockReset()
   state.remove.mockReset()
+  state.usage = { data: undefined, isLoading: false, isError: false }
 })
 
 describe("ModulesSection", () => {
@@ -67,5 +73,35 @@ describe("ModulesSection", () => {
   it("hides modules outside the license", () => {
     render(<ModulesSection branchId="b1" />)
     expect(screen.queryByText("Mesas")).toBeNull()
+  })
+
+  describe("license usage", () => {
+    const usage = {
+      "guid-orders": { quantity: 1, used: 1, assignedBranches: [{ branchPublicId: "b1", branchName: "Norte" }] },
+      "guid-dom": {
+        quantity: 2,
+        used: 2,
+        assignedBranches: [
+          { branchPublicId: "b2", branchName: "Sur" },
+          { branchPublicId: "b3", branchName: "Centro" },
+        ],
+      },
+    }
+
+    it("disables a module without free licenses unless the branch already has it", () => {
+      state.usage = { data: usage, isLoading: false, isError: false }
+      render(<ModulesSection branchId="b1" />)
+      expect(screen.getByRole("switch", { name: "Domicilios" })).toBeDisabled()
+      expect(screen.getByRole("switch", { name: "Órdenes" })).toBeEnabled()
+      expect(screen.getByText("cfg_modules_exhausted")).toBeInTheDocument()
+      expect(screen.getByText("cfg_modules_in_use_at|Sur, Centro")).toBeInTheDocument()
+    })
+
+    it("keeps switches usable and shows a note when usage fails", () => {
+      state.usage = { data: undefined, isLoading: false, isError: true }
+      render(<ModulesSection branchId="b1" />)
+      expect(screen.getByText("cfg_modules_usage_error")).toBeInTheDocument()
+      expect(screen.getByRole("switch", { name: "Domicilios" })).toBeEnabled()
+    })
   })
 })

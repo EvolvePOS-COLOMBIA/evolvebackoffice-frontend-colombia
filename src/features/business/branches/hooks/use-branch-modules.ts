@@ -3,15 +3,35 @@ import { useMutation, useQueries, useQuery, useQueryClient } from "@tanstack/rea
 import {
   assignModuleToBranch,
   getBranchModules,
+  getModuleUsage,
   getTenantModules,
   removeModuleFromBranch,
 } from "@/features/business/branches/services/branch-modules.service"
-import type { BranchModuleResponseDto, TenantModuleResponseDto } from "@/features/business/branches/types/modules"
+import type {
+  BranchModuleResponseDto,
+  ModuleUsageMap,
+  TenantModuleResponseDto,
+} from "@/features/business/branches/types/modules"
 
 export const branchModulesKeys = {
   all: ["branch-modules"] as const,
   tenant: () => ["branch-modules", "tenant"] as const,
   list: (branchId: string) => ["branch-modules", "list", branchId] as const,
+}
+
+export const moduleUsageKeys = {
+  all: ["module-usage"] as const,
+}
+
+/** Licencias en uso por módulo (compradas vs. sedes que las consumen). */
+export function useModuleUsage(enabled = true) {
+  return useQuery<ModuleUsageMap>({
+    queryKey: moduleUsageKeys.all,
+    queryFn: getModuleUsage,
+    staleTime: 60_000,
+    retry: false,
+    enabled,
+  })
 }
 
 /** Modules available at the tenant level (catalog for assignment). */
@@ -74,6 +94,7 @@ export function useAssignModuleToBranch() {
       assignModuleToBranch(branchId, tenantModulePublicId),
     onSuccess: (_data, variables) => {
       qc.invalidateQueries({ queryKey: branchModulesKeys.list(variables.branchId) })
+      qc.invalidateQueries({ queryKey: moduleUsageKeys.all })
     },
   })
 }
@@ -87,6 +108,7 @@ export function useRemoveModuleFromBranch() {
       removeModuleFromBranch(branchId, modulePublicId),
     onSuccess: (_data, variables) => {
       qc.invalidateQueries({ queryKey: branchModulesKeys.list(variables.branchId) })
+      qc.invalidateQueries({ queryKey: moduleUsageKeys.all })
     },
   })
 }

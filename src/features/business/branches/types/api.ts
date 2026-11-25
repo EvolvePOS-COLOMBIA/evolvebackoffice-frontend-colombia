@@ -20,6 +20,8 @@ export interface BranchResponseDto {
   /** El backend los devuelve en null cuando la sucursal no tiene coordenadas. */
   latitude?: number | null
   longitude?: number | null
+  /** IANA time zone (for example America/Bogota). */
+  timeZoneId?: string | null
 }
 
 export interface CreateBranchDto {
@@ -33,6 +35,7 @@ export interface CreateBranchDto {
   /** Opcionales: el backend acepta null cuando no hay coordenadas. */
   latitude?: number | null
   longitude?: number | null
+  timeZoneId?: string | null
 }
 
 export interface UpdateBranchDto {
@@ -46,6 +49,7 @@ export interface UpdateBranchDto {
   /** Opcionales: el backend acepta null cuando no hay coordenadas. */
   latitude?: number | null
   longitude?: number | null
+  timeZoneId?: string | null
 }
 
 /**

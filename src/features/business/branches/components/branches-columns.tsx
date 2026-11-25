@@ -1,38 +1,30 @@
-import { Building2, CircleEllipsis, MonitorCog, Power, Settings2, SquarePen } from "lucide-react"
+import { Building2, Power, Settings2 } from "lucide-react"
 
 import type { ColumnDef } from "@/components/data-table"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu"
 import type { Branch } from "../types"
 
 export type BranchPendingAction = "activate" | "deactivate"
 
 type BranchColumnActions = {
   isMutating: boolean
-  onEdit: (branch: Branch) => void
-  onNavigate: (path: string) => void
+  onConfigure: (branch: Branch) => void
   onRequestAction: (branch: Branch, type: BranchPendingAction) => void
 }
 
 export function buildBranchColumns(
   t: (key: string) => string,
-  { isMutating, onEdit, onNavigate, onRequestAction }: BranchColumnActions
+  { isMutating, onConfigure, onRequestAction }: BranchColumnActions
 ): ColumnDef<Branch>[] {
   return [
     {
       key: "branch",
       header: t("branch_label"),
-      minWidth: "min-w-[220px]",
+      minWidth: "min-w-[200px]",
       render: (branch) => (
         <div className="flex items-start gap-3">
-          <div className="flex size-10 shrink-0 items-center justify-center rounded-2xl border border-primary/15 bg-primary/10 text-primary shadow-sm shadow-primary/5">
+          <div className="flex size-10 shrink-0 items-center justify-center rounded-2xl border border-primary/15 bg-primary/10 text-primary shadow-sm shadow-primary/5 transition-transform duration-200 hover:scale-110 hover:-rotate-3">
             <Building2 className="size-4.5" />
           </div>
           <div className="min-w-0">
@@ -45,7 +37,7 @@ export function buildBranchColumns(
     {
       key: "contact",
       header: t("contact_label"),
-      minWidth: "min-w-[200px]",
+      minWidth: "min-w-[180px]",
       responsive: "md",
       render: (branch) => (
         <div className="space-y-1 text-muted-foreground">
@@ -57,7 +49,7 @@ export function buildBranchColumns(
     {
       key: "admin",
       header: t("admin_label"),
-      minWidth: "min-w-[150px]",
+      minWidth: "min-w-[140px]",
       responsive: "lg",
       render: (branch) => <span className="text-muted-foreground">{branch.adminUserName || "—"}</span>,
     },
@@ -67,9 +59,13 @@ export function buildBranchColumns(
       minWidth: "min-w-[90px]",
       render: (branch) => (
         <div className="flex flex-wrap gap-1">
-          <Badge tone={branch.isActive ? "success" : "neutral"}>
-            {branch.isActive ? t("status_active") : t("status_inactive")}
-          </Badge>
+          {branch.isActive ? (
+            <Badge live tone="success">
+              {t("status_active")}
+            </Badge>
+          ) : (
+            <Badge tone="neutral">{t("status_inactive")}</Badge>
+          )}
           {branch.isSupplier ? <Badge tone="primary">{t("supplier_badge")}</Badge> : null}
         </div>
       ),
@@ -77,45 +73,24 @@ export function buildBranchColumns(
     {
       key: "actions",
       header: t("actions"),
-      minWidth: "min-w-[150px]",
+      minWidth: "min-w-[270px]",
       align: "right",
       render: (branch) => (
-        <div className="flex justify-end gap-2">
-          <Button type="button" variant="outline" size="sm" onClick={() => onEdit(branch)} disabled={isMutating}>
-            <SquarePen className="size-4" />
-            {t("edit")}
+        <div className="flex flex-wrap justify-end gap-1.5">
+          <Button type="button" variant="outline" size="sm" onClick={() => onConfigure(branch)} disabled={isMutating}>
+            <Settings2 className="size-4" />
+            {t("configure")}
           </Button>
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button
-                type="button"
-                variant="outline"
-                size="icon-sm"
-                aria-label={t("more_actions")}
-                disabled={isMutating}
-              >
-                <CircleEllipsis className="size-4" />
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-52">
-              <DropdownMenuItem onSelect={() => onNavigate(`/business/branches/${branch.id}/config`)}>
-                <Settings2 className="size-4" />
-                {t("configure")}
-              </DropdownMenuItem>
-              <DropdownMenuItem onSelect={() => onNavigate(`/business/branches/${branch.id}/settings/terminals`)}>
-                <MonitorCog className="size-4" />
-                {t("terminals")}
-              </DropdownMenuItem>
-              <DropdownMenuSeparator />
-              <DropdownMenuItem
-                variant={branch.isActive ? "destructive" : "default"}
-                onSelect={() => onRequestAction(branch, branch.isActive ? "deactivate" : "activate")}
-              >
-                <Power className="size-4" />
-                {branch.isActive ? t("deactivate") : t("activate")}
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
+          <Button
+            type="button"
+            variant={branch.isActive ? "destructive" : "outline"}
+            size="sm"
+            onClick={() => onRequestAction(branch, branch.isActive ? "deactivate" : "activate")}
+            disabled={isMutating}
+          >
+            <Power className="size-4" />
+            {branch.isActive ? t("deactivate") : t("activate")}
+          </Button>
         </div>
       ),
     },

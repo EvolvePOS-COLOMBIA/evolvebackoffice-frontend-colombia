@@ -28,6 +28,7 @@ function mapBranchResponseToBranch(dto: BranchResponseDto): Branch {
     isSupplier: dto.isSupplier ?? false,
     latitude: dto.latitude == null ? "" : String(dto.latitude),
     longitude: dto.longitude == null ? "" : String(dto.longitude),
+    timeZoneId: dto.timeZoneId ?? undefined,
   }
 }
 

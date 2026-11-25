@@ -23,10 +23,9 @@ import {
   useBranches,
   useCreateBranch,
   useDeactivateBranch,
-  useUpdateBranch,
 } from "@/features/business/branches/hooks/use-branches"
 import type { Branch, BranchFormValues } from "@/features/business/branches/types"
-import type { CreateBranchDto, UpdateBranchDto } from "@/features/business/branches/types/api"
+import type { CreateBranchDto } from "@/features/business/branches/types/api"
 import { useUsers } from "@/features/business/people/users/hooks/use-users"
 import { useTranslation } from "@/i18n/use-i18n"
 import { notify } from "@/hooks/use-notify"
@@ -40,7 +39,6 @@ export function BranchesPage() {
   const [search, setSearch] = useState("")
   const deferredSearch = useDeferredValue(search.trim())
   const [formOpen, setFormOpen] = useState(false)
-  const [selectedBranch, setSelectedBranch] = useState<Branch | null>(null)
   const [pendingAction, setPendingAction] = useState<{ branch: Branch; type: BranchPendingAction } | null>(null)
 
   const listOptions = useMemo(
@@ -50,7 +48,6 @@ export function BranchesPage() {
   const { data: pagedData, isLoading, isError, refetch } = useBranches(page, PAGE_SIZE, listOptions)
   const { data: users = [], isLoading: isUsersLoading } = useUsers()
   const createMutation = useCreateBranch()
-  const updateMutation = useUpdateBranch()
   const deactivateMutation = useDeactivateBranch()
   const activateMutation = useActivateBranch()
 
@@ -59,8 +56,7 @@ export function BranchesPage() {
   const totalPages = pagedData?.totalPages ?? 1
   const activeOnPage = branches.filter((branch) => branch.isActive).length
   const inactiveOnPage = branches.length - activeOnPage
-  const isMutating =
-    createMutation.isPending || updateMutation.isPending || deactivateMutation.isPending || activateMutation.isPending
+  const isMutating = createMutation.isPending || deactivateMutation.isPending || activateMutation.isPending
 
   /** Convierte una coordenada del formulario a número; vacío → null (opcional en el backend). */
   const toCoordinate = (value: string): number | null => {
@@ -90,22 +86,6 @@ export function BranchesPage() {
     })
   }
 
-  const handleEdit = (values: BranchFormValues) => {
-    if (!selectedBranch) return
-
-    const payload: UpdateBranchDto = toPayload(values)
-    updateMutation.mutate(
-      { id: selectedBranch.id, payload },
-      {
-        onSuccess: () => {
-          notify.success(t("updated_success"))
-          closeForm()
-        },
-        onError: (error) => notify.error(error instanceof Error ? error.message : t("save_error")),
-      }
-    )
-  }
-
   const handleAction = () => {
     if (!pendingAction) return
 
@@ -120,25 +100,12 @@ export function BranchesPage() {
     })
   }
 
-  const openCreate = () => {
-    setSelectedBranch(null)
-    setFormOpen(true)
-  }
-
-  const openEdit = (branch: Branch) => {
-    setSelectedBranch(branch)
-    setFormOpen(true)
-  }
-
-  const closeForm = () => {
-    setFormOpen(false)
-    setSelectedBranch(null)
-  }
+  const openCreate = () => setFormOpen(true)
+  const closeForm = () => setFormOpen(false)
 
   const columns = buildBranchColumns(t, {
     isMutating,
-    onEdit: openEdit,
-    onNavigate: navigate,
+    onConfigure: (branch) => navigate(`/business/branches/${branch.id}/config`),
     onRequestAction: (branch, type) => setPendingAction({ branch, type }),
   })
 
@@ -161,6 +128,7 @@ export function BranchesPage() {
   return (
     <>
       <EntityListLayout
+        className="animate-in duration-500 fade-in slide-in-from-bottom-2"
         back={{ to: "/business/settings", label: t("back_to_settings") }}
         title={t("page_title")}
         description={t("page_desc")}
@@ -211,11 +179,10 @@ export function BranchesPage() {
       <BranchFormDialog
         open={formOpen}
         onOpenChange={(open) => (open ? setFormOpen(true) : closeForm())}
-        branchToEdit={selectedBranch}
         users={users}
         isUsersLoading={isUsersLoading}
-        isSubmitting={createMutation.isPending || updateMutation.isPending}
-        onSubmit={selectedBranch ? handleEdit : handleCreate}
+        isSubmitting={createMutation.isPending}
+        onSubmit={handleCreate}
       />
 
       <AlertDialog open={Boolean(pendingAction)} onOpenChange={(open) => !open && setPendingAction(null)}>

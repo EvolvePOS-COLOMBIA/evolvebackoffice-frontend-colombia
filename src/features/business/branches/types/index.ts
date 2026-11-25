@@ -16,6 +16,8 @@ export interface Branch {
   /** Coordenadas como texto; vacío cuando el backend no tiene datos. */
   latitude: string
   longitude: string
+  /** Optional: only the advanced settings read and write it. */
+  timeZoneId?: string
 }
 
 export interface PagedBranches {
@@ -36,4 +38,5 @@ export interface BranchFormValues {
   longitude: string
   adminUserId: string
   isSupplier: boolean
+  timeZoneId?: string
 }

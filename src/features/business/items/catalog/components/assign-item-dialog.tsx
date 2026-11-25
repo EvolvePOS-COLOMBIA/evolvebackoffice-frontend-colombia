@@ -1,6 +1,7 @@
 import { useState } from "react"
-import { CheckSquare, Square, Search, Store, Phone, Mail } from "lucide-react"
+import { CheckCircle2, CheckSquare, Square, Search, Store, Phone, Mail } from "lucide-react"
 
+import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import {
   Dialog,
@@ -12,8 +13,16 @@ import {
 } from "@/components/ui/dialog"
 import { Input } from "@/components/ui/input"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
+import { cn } from "@/lib/utils"
 import { useTranslation } from "@/i18n/use-i18n"
 import type { ItemResponseDto } from "../types"
+import {
+  buildAssignPayload,
+  filterItems,
+  getSelectableIds,
+  splitAndSortItems,
+  toggleSelectAll,
+} from "../utils/assign-dialog"
 
 type Branch = {
   id: string
@@ -30,12 +39,16 @@ type AssignItemDialogProps = {
   // For select-branch mode: items are pre-selected, user picks branches
   items?: ItemResponseDto[]
   branches?: Branch[]
-  // For select-items mode: branches are pre-selected, user picks items
-  availableBranches?: Branch[]
+  // For select-items mode: la sucursal destino es fija, el usuario elige artículos
+  targetBranchId?: string | null
+  targetBranchName?: string | null
+  assignedItemIds?: Set<string>
   targetItems?: ItemResponseDto[]
   onConfirm: (data: { items: ItemResponseDto[]; branchIds: string[] }) => void
   isSubmitting?: boolean
 }
+
+const EMPTY_SET: Set<string> = new Set()
 
 export function AssignItemDialog({
   open,
@@ -43,7 +56,9 @@ export function AssignItemDialog({
   mode,
   items = [],
   branches = [],
-  availableBranches = [],
+  targetBranchId = null,
+  targetBranchName = null,
+  assignedItemIds = EMPTY_SET,
   targetItems,
   onConfirm,
   isSubmitting = false,
@@ -56,6 +71,17 @@ export function AssignItemDialog({
 
   // Select-items mode: show items
   const [selectedItemIds, setSelectedItemIds] = useState<Set<string>>(new Set())
+
+  // Reinicia el estado cada vez que el diálogo se abre (el componente sigue montado).
+  const [prevOpen, setPrevOpen] = useState(open)
+  if (open !== prevOpen) {
+    setPrevOpen(open)
+    if (open) {
+      setSearchQuery("")
+      setSelectedBranchIds(new Set())
+      setSelectedItemIds(new Set())
+    }
+  }
 
   const toggleBranch = (id: string) => {
     setSelectedBranchIds((prev) => {
@@ -70,6 +96,7 @@ export function AssignItemDialog({
   }
 
   const toggleItem = (id: string) => {
+    if (assignedItemIds.has(id)) return
     setSelectedItemIds((prev) => {
       const next = new Set(prev)
       if (next.has(id)) {
@@ -82,22 +109,23 @@ export function AssignItemDialog({
   }
 
   const handleConfirm = () => {
-    if (mode === "select-branch" && selectedBranchIds.size > 0) {
-      onConfirm({ items, branchIds: Array.from(selectedBranchIds) })
-    } else if (mode === "select-items" && availableBranches.length > 0) {
-      const selected = targetItems?.filter((item) => selectedItemIds.has(item.id)) ?? []
-      onConfirm({ items: selected, branchIds: availableBranches.map((b) => b.id) })
-    }
+    const payload = buildAssignPayload(mode, {
+      selectedItemIds,
+      items: mode === "select-branch" ? items : (targetItems ?? []),
+      targetBranchId,
+      selectedBranchIds,
+      assignedItemIds,
+    })
+    if (payload) onConfirm(payload)
   }
 
   const filteredBranches = branches.filter((branch) => branch.name?.toLowerCase().includes(searchQuery.toLowerCase()))
 
-  const filteredItems =
-    targetItems?.filter(
-      (item) =>
-        item.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        item.sku?.toLowerCase().includes(searchQuery.toLowerCase())
-    ) ?? []
+  const filteredItems = splitAndSortItems(filterItems(targetItems ?? [], searchQuery), assignedItemIds)
+  const selectableIds = getSelectableIds(filteredItems, assignedItemIds)
+  const allSelectableSelected = selectableIds.length > 0 && selectableIds.every((id) => selectedItemIds.has(id))
+  const assignedCount = (targetItems ?? []).filter((item) => assignedItemIds.has(item.id)).length
+  const availableCount = (targetItems ?? []).length - assignedCount
 
   const isConfirmDisabled = mode === "select-branch" ? selectedBranchIds.size === 0 : selectedItemIds.size === 0
 
@@ -106,7 +134,7 @@ export function AssignItemDialog({
   const description =
     mode === "select-branch"
       ? t("assign_items_to_branch_desc", { count: items.length })
-      : t("assign_items_to_branch_desc", { count: selectedItemIds.size })
+      : t("assign_items_to_target_branch_desc", { branch: targetBranchName ?? "—" })
 
   const confirmLabel =
     mode === "select-branch"
@@ -131,6 +159,11 @@ export function AssignItemDialog({
             className="pl-9"
           />
         </div>
+        {mode === "select-items" && (
+          <p className="shrink-0 pb-3 text-xs text-muted-foreground">
+            {t("assign_counter", { assigned: assignedCount, available: availableCount })}
+          </p>
+        )}
 
         {/* Content - take full remaining height and scroll */}
         <div className="flex-1 overflow-y-auto pb-2">
@@ -192,32 +225,87 @@ export function AssignItemDialog({
           filteredItems.length === 0 ? (
             <div className="py-8 text-center text-muted-foreground">{t("no_items")}</div>
           ) : (
-            <Table className="min-w-100">
+            <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead className="w-10"></TableHead>
+                  <TableHead className="w-10">
+                    <button
+                      type="button"
+                      onClick={() => setSelectedItemIds((prev) => toggleSelectAll(prev, selectableIds))}
+                      disabled={selectableIds.length === 0}
+                      aria-label={t("assign_select_all_aria")}
+                      aria-pressed={allSelectableSelected}
+                      className="flex items-center disabled:opacity-50"
+                    >
+                      {allSelectableSelected ? (
+                        <CheckSquare className="size-4 text-primary" />
+                      ) : (
+                        <Square className="size-4 text-muted-foreground" />
+                      )}
+                    </button>
+                  </TableHead>
                   <TableHead>{t("name")}</TableHead>
                   <TableHead className="hidden sm:table-cell">{t("sku")}</TableHead>
                   <TableHead className="hidden md:table-cell">{t("plu")}</TableHead>
+                  <TableHead className="hidden sm:table-cell">{t("department")}</TableHead>
+                  <TableHead>{t("status")}</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {filteredItems.map((item) => (
-                  <TableRow key={item.id} className={selectedItemIds.has(item.id) ? "bg-primary/5" : undefined}>
-                    <TableCell>
-                      <button onClick={() => toggleItem(item.id)} className="flex items-center">
-                        {selectedItemIds.has(item.id) ? (
-                          <CheckSquare className="size-4 text-primary" />
+                {filteredItems.map((item) => {
+                  const isAssigned = assignedItemIds.has(item.id)
+                  const isSelected = selectedItemIds.has(item.id)
+                  const cellMuted = isAssigned ? "opacity-60" : undefined
+                  return (
+                    <TableRow key={item.id} className={isSelected ? "bg-primary/5" : undefined}>
+                      <TableCell>
+                        {isAssigned ? (
+                          <CheckCircle2
+                            className="size-4 text-emerald-500"
+                            role="img"
+                            aria-label={t("assign_item_assigned_aria", { name: item.name ?? "—" })}
+                          />
                         ) : (
-                          <Square className="size-4 text-muted-foreground" />
+                          <button
+                            type="button"
+                            onClick={() => toggleItem(item.id)}
+                            aria-label={t("assign_select_item_aria", { name: item.name ?? "—" })}
+                            aria-pressed={isSelected}
+                            className="flex items-center"
+                          >
+                            {isSelected ? (
+                              <CheckSquare className="size-4 text-primary" />
+                            ) : (
+                              <Square className="size-4 text-muted-foreground" />
+                            )}
+                          </button>
                         )}
-                      </button>
-                    </TableCell>
-                    <TableCell className="font-medium">{item.name ?? "—"}</TableCell>
-                    <TableCell className="hidden text-muted-foreground sm:table-cell">{item.sku ?? "—"}</TableCell>
-                    <TableCell className="hidden text-muted-foreground md:table-cell">{item.plu}</TableCell>
-                  </TableRow>
-                ))}
+                      </TableCell>
+                      {/* overflow-wrap:anywhere evita que un nombre largo sin espacios estire la tabla */}
+                      <TableCell className={cn("font-medium [overflow-wrap:anywhere]", cellMuted)}>
+                        {item.name ?? "—"}
+                      </TableCell>
+                      <TableCell
+                        className={cn("hidden whitespace-nowrap text-muted-foreground sm:table-cell", cellMuted)}
+                      >
+                        {item.sku ?? "—"}
+                      </TableCell>
+                      <TableCell className={cn("hidden text-muted-foreground md:table-cell", cellMuted)}>
+                        {item.plu}
+                      </TableCell>
+                      <TableCell className={cn("hidden text-muted-foreground sm:table-cell", cellMuted)}>
+                        {item.departmentName ?? "—"}
+                      </TableCell>
+                      <TableCell>
+                        {isAssigned && (
+                          <Badge tone="success" className="sm:whitespace-nowrap">
+                            {t("assign_already_in_branch")}
+                          </Badge>
+                        )}
+                      </TableCell>
+                    </TableRow>
+                  )
+                })}
               </TableBody>
             </Table>
           )}

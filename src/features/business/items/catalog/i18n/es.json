@@ -293,5 +293,13 @@
   "suggest_applied_images_one": "Completamos los campos vacíos; su imagen se copiará al crear el artículo.",
   "suggest_applied_images_other": "Completamos los campos vacíos; sus {{count}} imágenes se copiarán al crear el artículo.",
   "suggest_dismiss": "Descartar sugerencia",
-  "suggest_images_error": "El artículo se creó, pero no se pudieron copiar las imágenes sugeridas"
+  "suggest_images_error": "El artículo se creó, pero no se pudieron copiar las imágenes sugeridas",
+  "assign_items_to_target_branch_desc": "Selecciona los artículos que quieres asignar a {{branch}}.",
+  "assign_already_in_branch": "Ya en la sucursal",
+  "assign_counter": "{{assigned}} ya asignados · {{available}} disponibles",
+  "assign_select_all_aria": "Seleccionar todos los artículos disponibles",
+  "assign_select_item_aria": "Seleccionar {{name}}",
+  "assign_item_assigned_aria": "{{name}} ya está en la sucursal",
+  "toast_assign_partial_error": "No se pudieron asignar {{count}} artículos",
+  "toast_assign_error_all": "No se pudo asignar ningún artículo"
 }

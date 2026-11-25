@@ -293,5 +293,13 @@
   "suggest_applied_images_one": "We filled the empty fields; its image will be copied when the item is created.",
   "suggest_applied_images_other": "We filled the empty fields; its {{count}} images will be copied when the item is created.",
   "suggest_dismiss": "Dismiss suggestion",
-  "suggest_images_error": "The item was created, but the suggested images could not be copied"
+  "suggest_images_error": "The item was created, but the suggested images could not be copied",
+  "assign_items_to_target_branch_desc": "Select the items you want to assign to {{branch}}.",
+  "assign_already_in_branch": "Already in branch",
+  "assign_counter": "{{assigned}} already assigned · {{available}} available",
+  "assign_select_all_aria": "Select all available items",
+  "assign_select_item_aria": "Select {{name}}",
+  "assign_item_assigned_aria": "{{name}} is already in the branch",
+  "toast_assign_partial_error": "{{count}} items could not be assigned",
+  "toast_assign_error_all": "No items could be assigned"
 }

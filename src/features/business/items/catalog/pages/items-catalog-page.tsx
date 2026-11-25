@@ -1,12 +1,13 @@
 import { useState } from "react"
 import { useSearchParams } from "react-router-dom"
-import { useMutation, useQueryClient } from "@tanstack/react-query"
+import { useQueryClient } from "@tanstack/react-query"
 import { AlertTriangle, CheckCircle2, DollarSign, Package, PowerOff } from "lucide-react"
-import toast from "react-hot-toast"
 
 import { EntityListLayout, type StatConfig } from "@/components/share"
 import { Skeleton } from "@/components/ui/skeleton"
 import { useTranslation } from "@/i18n/use-i18n"
+import { useNotify } from "@/hooks/use-notify"
+import { getApiErrorMessage } from "@/utils/api-error"
 import { useBranches } from "@/features/business/branches/hooks/use-branches"
 import { useItems } from "../hooks/use-items"
 import { useAllBranchItems } from "../hooks/use-branch-items"
@@ -15,10 +16,11 @@ import { BranchSelector, type BranchSelectorOption } from "../components/branch-
 import { GlobalCatalogView } from "../components/global-catalog-view"
 import { BranchCatalogView } from "../components/branch-catalog-view"
 import { AssignItemDialog } from "../components/assign-item-dialog"
-import type { ItemResponseDto, CreateBranchItemDto } from "../types"
+import type { ItemResponseDto } from "../types"
 
 export function ItemsCatalogPage() {
   const { t } = useTranslation("business-items-catalog")
+  const notify = useNotify()
   const queryClient = useQueryClient()
   const [searchParams, setSearchParams] = useSearchParams()
   const selectedBranchId = searchParams.get("branch")
@@ -41,6 +43,7 @@ export function ItemsCatalogPage() {
   const [assignDialogOpen, setAssignDialogOpen] = useState(false)
   const [assignMode, setAssignMode] = useState<"select-branch" | "select-items">("select-branch")
   const [itemsToAssign, setItemsToAssign] = useState<ItemResponseDto[]>([])
+  const [isAssigning, setIsAssigning] = useState(false)
 
   // Fetch branches for the selector
   const { data: branchesData, isLoading: branchesLoading } = useBranches(1, 100)
@@ -69,6 +72,7 @@ export function ItemsCatalogPage() {
   const { data: branchStatsData } = useAllBranchItems(selectedBranchId)
   const branchStatsItems = branchStatsData?.data ?? []
   const noPriceCount = branchStatsItems.filter((item) => item.price === 0).length
+  const assignedItemIds = new Set(branchStatsItems.map((item) => item.itemPublicId))
   const lowStockCount = branchStatsItems.filter((item) => item.quantity <= item.reorderPoint).length
 
   const stats: StatConfig[] = isGlobalView
@@ -82,15 +86,6 @@ export function ItemsCatalogPage() {
         { icon: DollarSign, tone: "warning", label: t("stat_no_price"), value: noPriceCount },
         { icon: AlertTriangle, tone: "danger", label: t("stat_low_stock"), value: lowStockCount },
       ]
-
-  // Mutation for creating branch items — dynamic branchId
-  const createBranchItemMutation = useMutation({
-    mutationFn: ({ branchId, payload }: { branchId: string; payload: CreateBranchItemDto }) =>
-      createBranchItem(branchId, payload),
-    onSuccess: (_data, variables) => {
-      queryClient.invalidateQueries({ queryKey: ["branch-items", variables.branchId] })
-    },
-  })
 
   // From Global view: select items → pick branch
   const handleAssignToBranch = (items: ItemResponseDto[]) => {
@@ -108,13 +103,14 @@ export function ItemsCatalogPage() {
 
   const handleAssignConfirm = async (data: { items: ItemResponseDto[]; branchIds: string[] }) => {
     const { items, branchIds } = data
+    if (isAssigning) return
+    setIsAssigning(true)
 
-    // Create branch items for each selected item and each selected branch
-    for (const branchId of branchIds) {
-      for (const item of items) {
-        createBranchItemMutation.mutate({
-          branchId,
-          payload: {
+    try {
+      // Una petición por cada par (sucursal, artículo); se espera a que todas terminen.
+      const requests = branchIds.flatMap((branchId) =>
+        items.map((item) =>
+          createBranchItem(branchId, {
             branchPublicId: branchId,
             itemPublicId: item.id,
             price: 0,
@@ -127,19 +123,36 @@ export function ItemsCatalogPage() {
             reorderPoint: 0,
             restockLevel: 0,
             binLocation: null,
-          },
-        })
-      }
-    }
-
-    setAssignDialogOpen(false)
-    setItemsToAssign([])
-
-    const totalCreated = branchIds.length * items.length
-    if (totalCreated > 0) {
-      toast.success(
-        totalCreated === 1 ? t("toast_item_assigned") : t("toast_items_assigned_count", { count: totalCreated })
+          })
+        )
       )
+      const results = await Promise.allSettled(requests)
+
+      const succeeded = results.filter((r) => r.status === "fulfilled").length
+      const failures = results.filter((r): r is PromiseRejectedResult => r.status === "rejected")
+
+      await Promise.all(
+        branchIds.map((branchId) => queryClient.invalidateQueries({ queryKey: ["branch-items", branchId] }))
+      )
+
+      if (succeeded > 0) {
+        notify.success(
+          succeeded === 1 ? t("toast_item_assigned") : t("toast_items_assigned_count", { count: succeeded })
+        )
+      }
+      if (failures.length > 0) {
+        const fallback =
+          succeeded === 0 ? t("toast_assign_error_all") : t("toast_assign_partial_error", { count: failures.length })
+        notify.error(failures.length === 1 ? getApiErrorMessage(failures[0].reason, fallback) : fallback)
+      }
+
+      // Si todo falló, el diálogo queda abierto con la selección para reintentar.
+      if (succeeded > 0) {
+        setAssignDialogOpen(false)
+        setItemsToAssign([])
+      }
+    } finally {
+      setIsAssigning(false)
     }
   }
 
@@ -181,10 +194,12 @@ export function ItemsCatalogPage() {
         mode={assignMode}
         items={assignMode === "select-branch" ? itemsToAssign : undefined}
         branches={assignMode === "select-branch" ? branches : undefined}
-        availableBranches={assignMode === "select-items" ? branches : undefined}
+        targetBranchId={assignMode === "select-items" ? selectedBranchId : undefined}
+        targetBranchName={assignMode === "select-items" ? selectedBranch?.name : undefined}
+        assignedItemIds={assignMode === "select-items" ? assignedItemIds : undefined}
         targetItems={assignMode === "select-items" ? itemsToAssign : undefined}
         onConfirm={handleAssignConfirm}
-        isSubmitting={createBranchItemMutation.isPending}
+        isSubmitting={isAssigning}
       />
     </EntityListLayout>
   )

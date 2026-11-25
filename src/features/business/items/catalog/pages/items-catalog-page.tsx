@@ -9,7 +9,7 @@ import { Skeleton } from "@/components/ui/skeleton"
 import { useTranslation } from "@/i18n/use-i18n"
 import { useBranches } from "@/features/business/branches/hooks/use-branches"
 import { useItems } from "../hooks/use-items"
-import { useBranchItems } from "../hooks/use-branch-items"
+import { useAllBranchItems } from "../hooks/use-branch-items"
 import { createBranchItem } from "../services/branch-items.service"
 import { BranchSelector, type BranchSelectorOption } from "../components/branch-selector"
 import { GlobalCatalogView } from "../components/global-catalog-view"
@@ -65,8 +65,8 @@ export function ItemsCatalogPage() {
   const activeItems = globalItemsData?.totalCount ?? 0
   const inactiveItems = Math.max(totalItems - activeItems, 0)
 
-  // Stats de la sucursal: asignados, sin precio y bajo mínimo sobre la lista completa (tope 200).
-  const { data: branchStatsData } = useBranchItems(selectedBranchId, { pageNumber: 1, pageSize: 200 })
+  // Stats de la sucursal: asignados, sin precio y bajo mínimo sobre la lista completa (todas las páginas).
+  const { data: branchStatsData } = useAllBranchItems(selectedBranchId)
   const branchStatsItems = branchStatsData?.data ?? []
   const noPriceCount = branchStatsItems.filter((item) => item.price === 0).length
   const lowStockCount = branchStatsItems.filter((item) => item.quantity <= item.reorderPoint).length

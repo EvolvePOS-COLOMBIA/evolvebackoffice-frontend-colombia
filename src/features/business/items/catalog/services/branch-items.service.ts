@@ -7,6 +7,7 @@ import type {
   PaginatedResponse,
   UpdateBranchItemDto,
 } from "../types"
+import { fetchAllPages, type PageResult } from "../utils/fetch-all-pages"
 
 /**
  * Branch items endpoints: /api/branches/{branchId}/items
@@ -32,6 +33,14 @@ export async function getBranchItems(
     totalCount: data.totalCount,
     totalPages: Math.ceil(data.totalCount / pageSize),
   }
+}
+
+// El backend acepta como máximo 100 por página; con un valor mayor responde silenciosamente con 20.
+export const BRANCH_ITEMS_MAX_PAGE_SIZE = 100
+
+/** Todos los artículos de la sucursal, recorriendo las páginas que haga falta. */
+export async function getAllBranchItems(branchId: string): Promise<PageResult<BranchItemResponseDto>> {
+  return fetchAllPages((pageNumber) => getBranchItems(branchId, { pageNumber, pageSize: BRANCH_ITEMS_MAX_PAGE_SIZE }))
 }
 
 export async function getBranchItemById(branchId: string, id: string): Promise<BranchItemResponseDto> {

@@ -8,6 +8,7 @@ import {
   createBranchItem,
   deactivateBranchItem,
   deleteBranchItem,
+  getAllBranchItems,
   getBranchItems,
   updateBranchItemConfig,
   updateBranchItemPricing,
@@ -18,6 +19,15 @@ export function useBranchItems(branchId: string | null, params: ItemListParams =
   return useQuery({
     queryKey: ["branch-items", branchId, params],
     queryFn: () => getBranchItems(branchId!, params),
+    enabled: Boolean(branchId),
+  })
+}
+
+/** Lista completa de artículos de la sucursal (para estadísticas y para saber cuáles ya están asignados). */
+export function useAllBranchItems(branchId: string | null) {
+  return useQuery({
+    queryKey: ["branch-items", branchId, "all"],
+    queryFn: () => getAllBranchItems(branchId!),
     enabled: Boolean(branchId),
   })
 }

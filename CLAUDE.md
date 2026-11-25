@@ -89,6 +89,7 @@ Each feature folder: `components/ hooks/ pages/ schemas/ services/ types/ i18n/ 
 - Order item name field is `nameSnapshot` in types, but the real API payload renders as `undefined` on the cards; verify the real response before touching order items.
 - "Todas las sucursales" on the orders board renders empty columns even when the counter shows orders.
 - Sales/production stats paginate the whole history client-side; avoid calling them in new places.
+- `GET /api/branches/{id}/items` caps `pageSize` at 100: a larger value silently returns the default 20. Use `getAllBranchItems` / `useAllBranchItems` (pages of 100 via `fetchAllPages`) when you need the full list. Check other endpoints' caps before asking for big pages.
 - `tests/*` is in `.gitignore`, so Playwright specs and `tests/seed/*` are not versioned. `package-lock.json` and `.atl/` are tracked by mistake.
 - The sidebar items for orders/delivery/AI appear a moment after load (module/license check), which shifts layout.
 

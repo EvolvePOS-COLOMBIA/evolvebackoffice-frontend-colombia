@@ -1,7 +1,7 @@
 {
   "page_title": "Departments",
   "back_to_items": "Back to items",
-  "page_desc": "Organize your products into departments and subdepartments (nested departments).",
+  "page_desc": "Organize your items into departments and subdepartments (nested departments).",
   "total_departments": "Total",
   "active_departments": "Active",
   "inactive_departments": "Inactive",
@@ -30,7 +30,7 @@
   "list_total": "{{total}} departments",
   "list_progress": "{{count}} of {{total}} departments",
   "empty_title": "No departments yet",
-  "empty_desc": "Create the first one to classify your products.",
+  "empty_desc": "Create the first one to classify your items.",
   "search_title": "No departments found",
   "search_desc": "Try another name.",
   "code_placeholder": "e.g.: BREAD",

@@ -1,7 +1,7 @@
 {
   "page_title": "Departamentos",
   "back_to_items": "Volver a artículos",
-  "page_desc": "Organiza tus productos en departamentos y subdepartamentos (departamentos anidados).",
+  "page_desc": "Organiza tus artículos en departamentos y subdepartamentos (departamentos anidados).",
   "total_departments": "Total",
   "active_departments": "Activos",
   "inactive_departments": "Inactivos",
@@ -30,7 +30,7 @@
   "list_total": "{{total}} departamentos",
   "list_progress": "{{count}} de {{total}} departamentos",
   "empty_title": "Aún no hay departamentos",
-  "empty_desc": "Crea el primero para clasificar tus productos.",
+  "empty_desc": "Crea el primero para clasificar tus artículos.",
   "search_title": "No encontramos departamentos",
   "search_desc": "Prueba con otro nombre.",
   "code_placeholder": "Ej: PAN",

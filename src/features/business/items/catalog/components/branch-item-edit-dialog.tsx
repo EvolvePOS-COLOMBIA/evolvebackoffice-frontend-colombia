@@ -40,6 +40,15 @@ type BranchItemEditDialogProps = {
   item: BranchItemResponseDto | null
 }
 
+type FooterState = { canSave: boolean; isSaving: boolean }
+
+const FORM_ID_BY_TAB: Record<string, string | null> = {
+  prices: "branch-item-pricing-form",
+  stock: "branch-item-stock-form",
+  taxes: "branch-item-taxes-form",
+  modifiers: null,
+}
+
 /**
  * Edición de un ítem EN LA SUCURSAL con pestañas (igual que el modal del
  * catálogo general): Precios, Stock, Impuestos y Modificadores — reemplaza a
@@ -48,6 +57,7 @@ type BranchItemEditDialogProps = {
 export function BranchItemEditDialog({ open, onOpenChange, branchId, item }: BranchItemEditDialogProps) {
   const { t } = useTranslation("business-items-catalog")
   const [activeTab, setActiveTab] = useState("prices")
+  const [footerStateByTab, setFooterStateByTab] = useState<Record<string, FooterState>>({})
   const [prevOpen, setPrevOpen] = useState(open)
   if (open !== prevOpen) {
     setPrevOpen(open)
@@ -55,6 +65,16 @@ export function BranchItemEditDialog({ open, onOpenChange, branchId, item }: Bra
   }
 
   if (!item) return null
+
+  const activeFormId = FORM_ID_BY_TAB[activeTab] ?? null
+  const activeFooterState = footerStateByTab[activeTab] ?? { canSave: true, isSaving: false }
+  const setTabFooterState = (tab: string, state: FooterState) => {
+    setFooterStateByTab((prev) => {
+      const current = prev[tab]
+      if (current && current.canSave === state.canSave && current.isSaving === state.isSaving) return prev
+      return { ...prev, [tab]: state }
+    })
+  }
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -73,23 +93,47 @@ export function BranchItemEditDialog({ open, onOpenChange, branchId, item }: Bra
           </TabsList>
 
           <TabsContent value="prices">
-            <PricingPanel branchId={branchId} item={item} />
+            <PricingPanel
+              branchId={branchId}
+              item={item}
+              formId={FORM_ID_BY_TAB.prices!}
+              onFooterStateChange={(s) => setTabFooterState("prices", s)}
+            />
           </TabsContent>
           <TabsContent value="stock">
-            <StockPanel branchId={branchId} item={item} />
+            <StockPanel
+              branchId={branchId}
+              item={item}
+              formId={FORM_ID_BY_TAB.stock!}
+              onFooterStateChange={(s) => setTabFooterState("stock", s)}
+            />
           </TabsContent>
           <TabsContent value="taxes">
-            <BranchItemTaxPanel branchId={branchId} item={item} />
+            <BranchItemTaxPanel
+              branchId={branchId}
+              item={item}
+              formId={FORM_ID_BY_TAB.taxes!}
+              onFooterStateChange={(s) => setTabFooterState("taxes", s)}
+            />
           </TabsContent>
           <TabsContent value="modifiers">
             <BranchItemModifierPanel branchId={branchId} item={item} />
           </TabsContent>
         </Tabs>
 
-        <DialogFooter>
+        <DialogFooter className="gap-2 sm:justify-end">
           <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
             {t("cancel")}
           </Button>
+          {activeFormId ? (
+            <Button
+              type="submit"
+              form={activeFormId}
+              disabled={!activeFooterState.canSave || activeFooterState.isSaving}
+            >
+              {activeFooterState.isSaving ? t("saving") : t("save")}
+            </Button>
+          ) : null}
         </DialogFooter>
       </DialogContent>
     </Dialog>
@@ -97,9 +141,23 @@ export function BranchItemEditDialog({ open, onOpenChange, branchId, item }: Bra
 }
 
 /** Pestaña "Precios": mismos campos que el antiguo BranchItemFormDialog. */
-function PricingPanel({ branchId, item }: { branchId: string; item: BranchItemResponseDto }) {
+function PricingPanel({
+  branchId,
+  item,
+  formId,
+  onFooterStateChange,
+}: {
+  branchId: string
+  item: BranchItemResponseDto
+  formId: string
+  onFooterStateChange: (state: FooterState) => void
+}) {
   const { t } = useTranslation("business-items-catalog")
   const updatePricing = useUpdateBranchItemPricing(branchId)
+
+  useEffect(() => {
+    onFooterStateChange({ canSave: true, isSaving: updatePricing.isPending })
+  }, [updatePricing.isPending, onFooterStateChange])
 
   const form = useForm<UpdateBranchItemPricingFormValues>({
     resolver: zodResolver(updateBranchItemPricingSchema()) as never,
@@ -165,7 +223,7 @@ function PricingPanel({ branchId, item }: { branchId: string; item: BranchItemRe
 
   return (
     <Form {...form}>
-      <form className="space-y-5" onSubmit={form.handleSubmit(handleSubmit)}>
+      <form id={formId} className="space-y-5" onSubmit={form.handleSubmit(handleSubmit)}>
         <SellHereSwitch branchId={branchId} item={item} />
         <div className="grid gap-4 sm:grid-cols-2">
           {numberField("price", t("price"))}
@@ -180,12 +238,6 @@ function PricingPanel({ branchId, item }: { branchId: string; item: BranchItemRe
           {numberField("cost", t("cost"))}
         </div>
         {numberField("replacementCost", t("replacement_cost"))}
-
-        <div className="flex justify-end">
-          <Button type="submit" disabled={updatePricing.isPending}>
-            {updatePricing.isPending ? t("saving") : t("save")}
-          </Button>
-        </div>
       </form>
     </Form>
   )
@@ -221,9 +273,23 @@ function SellHereSwitch({ branchId, item }: { branchId: string; item: BranchItem
 }
 
 /** Pestaña "Stock": ajuste de la cantidad existente en la sucursal. */
-function StockPanel({ branchId, item }: { branchId: string; item: BranchItemResponseDto }) {
+function StockPanel({
+  branchId,
+  item,
+  formId,
+  onFooterStateChange,
+}: {
+  branchId: string
+  item: BranchItemResponseDto
+  formId: string
+  onFooterStateChange: (state: FooterState) => void
+}) {
   const { t } = useTranslation("business-items-catalog")
   const adjustStock = useAdjustBranchItemStock(branchId)
+
+  useEffect(() => {
+    onFooterStateChange({ canSave: true, isSaving: adjustStock.isPending })
+  }, [adjustStock.isPending, onFooterStateChange])
 
   const form = useForm<AdjustStockFormValues>({
     resolver: zodResolver(adjustStockSchema(t)) as never,
@@ -243,7 +309,7 @@ function StockPanel({ branchId, item }: { branchId: string; item: BranchItemResp
 
   return (
     <Form {...form}>
-      <form className="mb-4 space-y-4" onSubmit={form.handleSubmit(handleSubmit)}>
+      <form id={formId} className="mb-4 space-y-4" onSubmit={form.handleSubmit(handleSubmit)}>
         <div className="rounded-lg border border-border/70 bg-accent/35 p-4">
           <p className="text-xs text-muted-foreground">{t("current_stock")}</p>
           <p className="text-2xl font-semibold text-foreground">{item.quantity ?? 0}</p>
@@ -263,12 +329,6 @@ function StockPanel({ branchId, item }: { branchId: string; item: BranchItemResp
             </FormItem>
           )}
         />
-
-        <div className="flex justify-end">
-          <Button type="submit" disabled={adjustStock.isPending}>
-            {adjustStock.isPending ? t("saving") : t("apply")}
-          </Button>
-        </div>
       </form>
 
       <StockLevelsSection
